@@ -223,37 +223,34 @@ merge. Open items live in section 8, not here.
 ## 8. Handoff
 
 State on 2026-10-30, end of the second orchestration session. Phases 0 to 7 are merged on
-`rebuild/mvp` at c2e6699 with the gate green (65 unit test files, 463 tests, 12 Playwright specs
-on `vite preview`, build). The spec section 12 acceptance suite passes, which is the MVP
-definition of done. `rebuild/mvp` is 20 commits ahead of `main` and of `origin/rebuild/mvp`;
-nothing from this session is pushed. The tree is clean; no lane is in flight; no worktree exists.
+`rebuild/mvp` with the gate green (65 unit test files, 463 tests, 12 Playwright specs on
+`vite preview`, build). The spec section 12 acceptance suite passes, which is the MVP definition
+of done. The user approved a merge to `main` and a push on 2026-10-30: `main` is at that merge,
+and both branches are on `origin`. The tree is clean; no lane is in flight; no worktree exists.
 
 **Orchestrator prompt.** Paste this to start the next session:
 
 ```text
-You are the orchestrator for Profile Studio at /Users/caseytalbot/Projects/profile-studio.
-Work on branch rebuild/mvp; main and rebuild/mvp track origin (private GitHub repo
-caseyvalkryn/profile-studio). Read CLAUDE.md, then docs/plan.md sections 5, 7 and 8, then
-reviews/phase-7-first-use.md and reviews/phase-7-budgets.md. Run `npm run gate` to confirm the
-baseline: 65 unit files, 463 tests, 12 e2e specs, build green.
+You are the orchestrator for Profile Studio at /Users/caseytalbot/Projects/profile-studio,
+branch rebuild/mvp (tracks origin). Read CLAUDE.md, then docs/plan.md sections 5, 7 and 8, then
+reviews/phase-7-first-use.md. Run `npm run gate` to confirm the baseline: 65 unit files, 463
+tests, 12 e2e specs, build green.
 
-The MVP acceptance suite passes. Next: the fix lanes 7.2 proposed (section 8, "Fix lanes
-proposed by 7.2"), grouped by folder so they own disjoint files; then a browser re-check. Brief
-each with the standard items from section 5 rule 3. One worker agent per lane in a worktree under
-.worktrees/<id>; workers do not commit. Before each merge, run the gate in the worktree and read
-git diff --stat. Merge with --no-ff into rebuild/mvp, run the gate there, remove the worktree,
-update the status table and the open items in section 8.
+The MVP acceptance suite passes. Run the fix lanes that section 8 lists under "Fix lanes
+proposed by 7.2" as parallel lanes with disjoint folders, then one review lane with a browser
+pass (port 5174) and its fix lane. Section 5 rules apply: one worker per lane in a worktree
+under .worktrees/<id>, workers do not commit, gate and git diff --stat before each --no-ff
+merge, gate on rebuild/mvp after, worktree removed, status table and section 8 updated.
 
-Ask me before: any download, any push, and any merge to main. Ports: 5173 is taken; use 5174 for
-browser checks, 5175 is the Playwright port, 5177 the perf spec port.
+Ask me before any download, any push, and any merge to main.
 ```
 
 **Start here.** Read `CLAUDE.md`, this file (sections 5 to 8), the two phase 7 reviews, then the
 "Open items" below. Run `npm run gate` once to confirm the baseline. Then:
 
-1. Ask the user whether to push `rebuild/mvp` and merge it to `main` (20 commits since the last
-   push).
-2. Schedule the 7.2 fix lanes (below) as parallel lanes by folder, then one browser re-check.
+1. Schedule the 7.2 fix lanes (below) as parallel lanes by folder, then one review with a
+   browser pass and its fix lane.
+2. Ask the user before any push or merge to `main`.
 3. Phase 8 (vos port) is a separate plan, after the user accepts the MVP.
 
 **Approvals on record.** The user approved the phase 0 commits, the first phase 1 commit, one
