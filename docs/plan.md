@@ -192,13 +192,17 @@ The orchestrator updates this table at each merge.
 | 3.R | done | rebuild/mvp | 6551924 | `reviews/phase-3.md`: 1 blocker (F-01 autosave drops the pending save), 4 majors (F-02 undo unlocks predictions; F-03 no-op edits are undo steps; F-04 legacy library export does not import; F-05 Escape double-fires), 8 minors; 11-item wiring list for 4.5. Fix lane 3.F |
 | 3.F | done | rebuild/mvp | 343ffcc | All 13 fixed; 296 tests. API changes: `importJson` returns `Vignette[]`; `useDocument.apply` (no undo step); `forTarget` in spec order; `map.add.threat` takes an archetype arg; `Command.options`; `hypothesis.setPrediction`; `RunEntry.predictions/docId/docUpdated/note/detail`. Open: `RunSummary` needs `predictions?` and `note?` (domain); cancel TODO waits on 2.F's simClient handle |
 | 4.1 | done | rebuild/mvp | 2c68b24 | MapView + controller, 40 tests; drag move 0.18 ms, cold build 0.07 ms at 40x15; MapView chunk about 394 kB gzip (consider lazy load). Open: nodes fall back to the empty-map menu (`forTarget('node')` empty); labels are an HTML overlay (no glyphs offline); circle areas draw as polygons; time layers update every 100 ms during a drag; state colour tokens proposed; not yet seen in a browser |
-| 4.5 | running | lane/4.5 | | Build workspace wiring |
+| 4.5 | done | rebuild/mvp | f36b9a6 | BuildWorkspace, root wiring (TooltipProvider, bindKeys, autosave, palette, shortcut sheet), one command adapter in `src/features/commands/`, `src/features/shared/units.ts`, Escape owner, Field props, `--state-covered/--state-warning`, node menu, `time.clearLoop`, dev vignette (phase 6 removal). Entry 169 kB gzip, MapView chunk 296 kB. Open: `useRuns.cancel` still to adopt the 2.F handle; dev server not verified (port 5173 held by the user's rangeboard server; use 5174) |
 | 4.4 | done | rebuild/mvp | 9e4b3d5 | Timeline (ref-counted `usePlayback`), ProfileView, 14 tests. Open for 4.5: no command clears the loop range; timeline commands have no shortcuts; `RunTrace.threat` is the display id, not the key; lift `format.ts` and `useSize.ts` |
 | 4.3 | done | rebuild/mvp | 05e573f | Inspector, 7 tests. Open: `Field` lacks placeholder, blank state and a format hook (local `NumberInput` used); `Area` has no circle field (16+ vertex guess); no warning colour token; `units.ts` to be lifted by 4.5 |
 | 4.2 | done | rebuild/mvp | ef6d3b1 | AssetsPanel, `dnd.ts` (MIME `application/x-profile-studio-asset`, payload `{kind, type}`; `type` is the sub-kind for non-threats), 9 tests. For 4.5: dedupe MIME constant with map `dnd.ts`; one Escape owner; lift `format.ts` |
 | 5.1 | done | rebuild/mvp | bcc5fbd | ResultsWorkspace: scorecard, hypotheses, SVG measure charts, compare, sweep (recharts line, SVG heat map), ChartFrame export; 8 tests. Open: PNG export untested (no canvas in jsdom); `--state-*` and `--chart-*` tokens defined locally in `results.css` (lift to tokens.css); about 60 muted unscored rows (collapse per step); `Hypothesis.value` assumed in the canonical unit |
 | 5.2 | done | rebuild/mvp | f52238a | ReportWorkspace (`renderChart`, `renderMap` props), 14 tests; terminology check clean. Notes and picked charts live in `report.slides` under `aar:` keys (proposal: `ReportDraft.sections` and `.charts`); stored runs have no prediction snapshot (proposal: `RunSummary.predictions`); local `format.ts` to swap for the shared one |
-| 4.R, 5.3 wiring, 6.1 to 7.3 | not started | | | 5.3 = mount Results and Report on their routes, inject charts into the report |
+| 4.R | running | lane/4.R | | review + browser check on port 5174 |
+| 5.3 | running | lane/5.3 | | mount Results and Report, inject charts, adopt cancel handle, domain fields |
+| 6.1 | running | lane/6.1 | | |
+| 6.2 | running | lane/6.2 | | |
+| 5.R, 6.R, 7.1 to 7.3 | not started | | | |
 
 ## 8. Handoff
 
