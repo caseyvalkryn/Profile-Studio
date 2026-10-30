@@ -1,8 +1,9 @@
 // The Build workspace (spec section 7, Build). A thin top bar, the asset library on the left, the
 // map (or the profile) in the centre, the inspector on the right and the timeline along the
 // bottom. The map takes all the space the panels leave (principle 5.1).
-import { lazy, Suspense, useEffect, useId, useState, type KeyboardEvent } from 'react';
+import { lazy, Suspense, useId, useState, type KeyboardEvent } from 'react';
 import { Link, useInRouterContext } from 'react-router-dom';
+import { create } from 'zustand';
 import { currentContext, execute, get, shortcutLabel } from '../../commands/registry';
 import { useDocument } from '../../state/document';
 import { useActiveRun, useRuns } from '../../state/runs';
@@ -18,7 +19,11 @@ import Timeline from './timeline/Timeline';
 // MapLibre is most of the Build code, so the map loads as its own chunk.
 const MapView = lazy(() => import('./map/MapView'));
 
-export const TIMELINE_HEIGHT = 160;
+/**
+ * The timeline panel: its 1 px top border, the 32 px control bar, the 20 px time axis and two
+ * threat rows of 64 px (review 7.R F-08). More rows scroll under the sticky axis.
+ */
+export const TIMELINE_HEIGHT = 1 + 32 + 20 + 2 * 64;
 
 /** Re-render on any store change a command's enable rule reads, then ask the rule. */
 function useWhen(id: string): true | string {
@@ -135,29 +140,21 @@ function RunProgress() {
   );
 }
 
-/** How long the "run done" note stays in the top bar. */
-export const RUN_DONE_MS = 6000;
-
-/** After a run ends, says so for a few seconds and links to Results (review F-08). */
+/**
+ * After a run ends, says so and links to Results (review F-08). The note stays until the user
+ * opens Results or edits the vignette (review FR-03); the runs store clears it on an edit, and
+ * ResultsWorkspace clears it when it mounts (review 7.R F-05).
+ */
 function RunDone() {
   const run = useActiveRun();
+  const noteKey = useRuns((s) => s.doneNoteKey);
   const docId = useDocument((s) => s.doc?.id);
   const runId = useDocument((s) => s.doc?.runs.find((r) => r.key === run?.key)?.id);
   const inRouter = useInRouterContext();
   // Only for a run of the open vignette (review 6 F-08).
-  const doneKey = run?.status === 'done' && run.docId === docId ? run.key : null;
-  const [shown, setShown] = useState<string | null>(null);
-  const [seen, setSeen] = useState<string | null>(null);
-  if (doneKey !== seen) {
-    setSeen(doneKey);
-    setShown(doneKey);
-  }
-  useEffect(() => {
-    if (!shown) return;
-    const t = setTimeout(() => setShown(null), RUN_DONE_MS);
-    return () => clearTimeout(t);
-  }, [shown]);
-  if (!shown || shown !== doneKey) return null;
+  const shown =
+    run?.status === 'done' && run.docId === docId && run.key === noteKey ? run.key : null;
+  if (!shown) return null;
   const label = `${runId ? `Run ${runId}` : 'Run'} done`;
   return (
     <span className="flex items-center gap-1.5 text-xs text-muted" role="status">
@@ -171,19 +168,45 @@ function RunDone() {
   );
 }
 
+/**
+ * The finished sweep whose "done" note an edit has cleared (review 7.R F-12). The note follows the
+ * run-done rule: an edit, undo or redo after the sweep means the note no longer describes the
+ * vignette on the map.
+ */
+const useSweepNote = create<{ clearedKey: string | null }>(() => ({ clearedKey: null }));
+useDocument.subscribe((s, prev) => {
+  if (s.history === prev.history && s.future === prev.future) return;
+  const sweep = useRuns.getState().sweep;
+  if (sweep?.status === 'done') useSweepNote.setState({ clearedKey: sweep.key });
+});
+
 /** Sweep state for the open vignette, with a link to Results when it is done (review 6 F-02). */
 function SweepStatus() {
   const sweep = useRuns((s) => s.sweep);
+  const cleared = useSweepNote((s) => s.clearedKey);
   const docId = useDocument((s) => s.doc?.id);
   const inRouter = useInRouterContext();
   if (!sweep || sweep.docId !== docId) return null;
   if (sweep.status === 'running')
     return (
-      <span className="text-xs text-muted" role="status">
+      <span
+        className="text-xs whitespace-nowrap text-muted"
+        role="status"
+        aria-label="Sweep progress"
+      >
         Sweep running
+        {sweep.progress ? (
+          <>
+            {' '}
+            <span className="font-mono tabular-nums">
+              {sweep.progress.done}/{sweep.progress.total}
+            </span>{' '}
+            test points
+          </>
+        ) : null}
       </span>
     );
-  if (sweep.status !== 'done') return null;
+  if (sweep.status !== 'done' || sweep.key === cleared) return null;
   return (
     <span className="flex items-center gap-1.5 text-xs text-muted" role="status">
       Sweep done

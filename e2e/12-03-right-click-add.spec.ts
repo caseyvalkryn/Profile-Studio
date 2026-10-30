@@ -8,7 +8,8 @@ test('12.3 Right-click on empty map, Add here, Sensor, Radar places a radar at t
   const g = await mapGeom(page);
   const before = await assetLabels(page);
 
-  const at = { x: g.origin.x - 220, y: g.origin.y + 160 };
+  // An empty spot in metres (2 km W, 2 km S), clear of every ring and sector at any panel size.
+  const at = { x: g.origin.x - 2000 * g.pxPerM, y: g.origin.y + 2000 * g.pxPerM };
   await page.mouse.click(at.x, at.y, { button: 'right' });
   const menu = page.getByRole('menu');
   await menu.getByRole('menuitem', { name: /^Add here/ }).click();

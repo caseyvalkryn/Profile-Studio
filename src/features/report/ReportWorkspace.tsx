@@ -18,6 +18,7 @@ import {
 } from './draft';
 import { downloadText, fileName, rowsToCsv, vignetteJson } from './export';
 import { factorLine, factorRows, type FactorRow } from './factors';
+import { simulationLimits } from './limits';
 import {
   EVALUATION_WORD,
   SOURCE_WORD,
@@ -42,6 +43,7 @@ export type ReportWorkspaceProps = {
 
 export const NO_RUN = 'No run yet. The prediction locks at the first run.';
 export const SCOPE_LEAD = 'This result applies to the conditions tested:';
+export const LIMITS_LEAD = 'The simulation differs from these conditions as follows:';
 
 /** The run the report states: the active run of this vignette, else the newest stored run. */
 type ReportRun = {
@@ -277,6 +279,7 @@ export default function ReportWorkspace({ renderChart, renderMap }: ReportWorksp
     () => (doc ? factorRows(doc, run ? { n: run.n, seed: run.seed } : null, units) : []),
     [doc, run, units],
   );
+  const limits = useMemo(() => (doc ? simulationLimits(doc, units) : []), [doc, units]);
 
   if (!doc) return <Muted>No vignette open.</Muted>;
 
@@ -469,6 +472,16 @@ export default function ReportWorkspace({ renderChart, renderMap }: ReportWorksp
             <li key={f.key}>{factorLine(f)}</li>
           ))}
         </ul>
+        {limits.length ? (
+          <>
+            <p className="mt-2">{LIMITS_LEAD}</p>
+            <ul className="mt-1 list-disc pl-5" aria-label="Simulation limits">
+              {limits.map((l) => (
+                <li key={l}>{l}</li>
+              ))}
+            </ul>
+          </>
+        ) : null}
         <p className="mt-2">Conclusions outside these conditions need a further test.</p>
       </div>
     ),

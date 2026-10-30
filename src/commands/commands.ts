@@ -716,6 +716,8 @@ const COMMANDS: Command[] = [
     id: 'map.measureFrom',
     label: 'Measure from here',
     group: 'map',
+    // The Measure tool with its start set here, so the menu shows the tool's key (review 7 1a).
+    shortcutFrom: 'map.measure',
     kinds: ['map'],
     needsPointer: true,
     when: every(needDoc, needPointer),

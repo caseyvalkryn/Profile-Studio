@@ -65,8 +65,8 @@ describe('ResultsWorkspace', () => {
     const r = within(row('1.1.2'));
     r.getByText('1.1.2');
     r.getByText('Detection Range (ground)');
-    r.getByText(/^\d+\.\d{2} nm$/); // value, nav units
-    r.getByText(/^\[\d+\.\d{2}, \d+\.\d{2}\]$/); // interval
+    r.getByText(/^\d+\.\d{2,4} nm$/); // value, nav units
+    r.getByText(/^\[\d+\.\d{2,4}, \d+\.\d{2,4}\]$/); // interval
     r.getByText('≥ 1.62 nm'); // 3000 m threshold
     r.getByText('Meets');
     r.getByText('Simulated');
@@ -107,7 +107,7 @@ describe('ResultsWorkspace', () => {
     fireEvent.click(row('1.1.2'));
     expect(screen.getByTestId('chart-title').textContent).toBe('1.1.2 Detection Range (ground)');
     expect(screen.getByTestId('chart-subtitle').textContent).toMatch(
-      /^Meets: \d+\.\d{2} nm \[[\d., ]+\] against ≥ 1\.62 nm$/,
+      /^Meets: \d+\.\d{2,4} nm \[[\d., ]+\] against ≥ 1\.62 nm$/,
     );
     fireEvent.click(row('1.1.1'));
     expect(screen.getByTestId('chart-title').textContent).toBe(
@@ -146,6 +146,30 @@ describe('charts', () => {
     expect(screen.getByTestId('chart-title').textContent).toBe(
       '1.1.1 Probability of Detection against threat altitude',
     );
+    // The y axis carries the measure's display unit (first-use FR-08), inside the chart.
+    const yTitle = container.querySelector('.recharts-yAxis .recharts-label');
+    expect(yTitle?.textContent).toBe('1.1.1, %');
+    expect(Number(yTitle?.getAttribute('x'))).toBeGreaterThanOrEqual(8);
+    expect(yTitle?.getAttribute('transform')).toMatch(/rotate\(-90/);
+  });
+
+  it('the caption names the band only when the band can be seen (review 7.R F-20)', () => {
+    const base = sweep(testVignette(), [{ kind: 'threat-altitude', levels: [50, 150, 300] }], 5, 1);
+    const withBand = (half: number) => ({
+      ...base,
+      cells: base.cells.map((c) => ({
+        ...c,
+        scores: c.scores.map((sc, i) =>
+          i === 0 ? { ...sc, value: 50, interval: { low: 50 - half, high: 50 + half } } : sc,
+        ),
+      })),
+    });
+    const { unmount } = render(<SweepChart sweep={withBand(0.05)} units="si" />);
+    expect(screen.queryByText(/Band: 95 % interval\./)).toBeNull();
+    screen.getByText(/95 % interval: too narrow to see at this scale/);
+    unmount();
+    render(<SweepChart sweep={withBand(20)} units="si" />);
+    screen.getByText(/Band: 95 % interval\./);
   });
 
   it('a two-factor sweep draws a heat map cell per level pair', () => {

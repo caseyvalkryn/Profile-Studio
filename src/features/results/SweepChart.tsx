@@ -23,6 +23,7 @@ import {
   M_PER_NM,
   OP_TEXT,
   canonicalThreshold,
+  decimalsFor,
   fmt,
   measureScale,
 } from '../shared/units';
@@ -67,6 +68,10 @@ function levelDecimals(kind: FactorKind): number {
 function levelText(units: Units, f: Factor, level: number): string {
   return fmt(factorLevel(units, f.kind, level).v, levelDecimals(f.kind));
 }
+
+/** Recharts' default x axis height, and the smallest band height in px that reads as a band. */
+const SWEEP_X_AXIS_PX = 30;
+const MIN_BAND_PX = 2;
 
 const TICK = { fontSize: 11, fontFamily: 'var(--font-mono)', fill: 'var(--text-muted)' };
 
@@ -163,21 +168,36 @@ export function SweepChart({ sweep, units, width = 640, height = 260 }: SweepCha
         level: factorLevel(units, f0.kind, c.levels[0]!).v,
         value: sc?.value == null ? null : sc.value * s.factor,
         band: sc?.interval ? [sc.interval.low * s.factor, sc.interval.high * s.factor] : null,
+        decimals: decimalsFor(s, sc?.interval, sc?.value),
       };
     });
+    const rowDecimals = (item: unknown) =>
+      (item as { payload?: { decimals?: number } } | undefined)?.payload?.decimals ?? s.decimals;
+    // The caption names the band only when it can be seen (review 7.R F-20): the widest
+    // interval against the y axis span from 0, over the plot height less margins and x axis.
+    const top = Math.max(
+      t != null ? t * s.factor : 0,
+      ...data.flatMap((d) => [d.value ?? 0, d.band?.[1] ?? 0]),
+    );
+    const widest = Math.max(0, ...data.map((d) => (d.band ? d.band[1]! - d.band[0]! : 0)));
+    const bandPx = top > 0 ? (widest / top) * (height - 8 - 20 - SWEEP_X_AXIS_PX) : 0;
+    const bandNote =
+      bandPx >= MIN_BAND_PX
+        ? 'Band: 95 % interval.'
+        : '95 % interval: too narrow to see at this scale; the tooltip gives it.';
     return (
       <div>
         {picker}
         <ChartFrame
           title={title}
           subtitle={subtitle}
-          note={`Line: ${s.unit} at each level. Band: 95 % interval. Dashed: threshold. x: ${factorLabel(units, f0)}.`}
+          note={`Line: ${s.unit} at each level. ${bandNote} Dashed: threshold. x: ${factorLabel(units, f0)}.`}
         >
           <ComposedChart
             width={width}
             height={height}
             data={data}
-            margin={{ top: 8, right: 16, bottom: 20, left: 0 }}
+            margin={{ top: 8, right: 16, bottom: 20, left: 4 }}
           >
             <CartesianGrid stroke="var(--chart-grid)" vertical={false} />
             <XAxis
@@ -199,14 +219,23 @@ export function SweepChart({ sweep, units, width = 640, height = 260 }: SweepCha
               stroke="var(--text-muted)"
               tick={{ fontSize: 11, fontFamily: 'var(--font-mono)', fill: 'var(--text-muted)' }}
               tickFormatter={(v: number) => fmt(v, s.decimals)}
-              width={52}
+              width={64}
+              label={{
+                value: `${id}, ${s.unit}`,
+                angle: -90,
+                position: 'insideLeft',
+                offset: 8,
+                style: { textAnchor: 'middle' },
+                ...TICK,
+              }}
             />
             <ChartTooltip
-              formatter={(v: unknown) =>
-                Array.isArray(v)
-                  ? `[${fmt(Number(v[0]), s.decimals)}, ${fmt(Number(v[1]), s.decimals)}] ${s.unit}`
-                  : `${fmt(Number(v), s.decimals)} ${s.unit}`
-              }
+              formatter={(v: unknown, _name: unknown, item: unknown) => {
+                const d = rowDecimals(item);
+                return Array.isArray(v)
+                  ? `[${fmt(Number(v[0]), d)}, ${fmt(Number(v[1]), d)}] ${s.unit}`
+                  : `${fmt(Number(v), d)} ${s.unit}`;
+              }}
               labelFormatter={(v: unknown) =>
                 `${FACTOR_WORD[f0.kind]} ${fmt(Number(v), levelDecimals(f0.kind))} ${factorLevel(units, f0.kind, 0).unit}`
               }

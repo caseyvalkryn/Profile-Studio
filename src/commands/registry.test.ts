@@ -3,7 +3,16 @@ import { useDocument } from '../state/document';
 import { useRuns } from '../state/runs';
 import { UI_DEFAULTS, useUi } from '../state/ui';
 import { DEFAULT_RUN_N, DEFAULT_THREAT_TYPE, MENU_TARGETS } from './commands';
-import { all, byShortcut, currentContext, execute, forTarget, shortcutLabel } from './registry';
+import {
+  all,
+  byShortcut,
+  currentContext,
+  execute,
+  forTarget,
+  get,
+  menuShortcutLabel,
+  shortcutLabel,
+} from './registry';
 
 /** Spec section 8, Keys, in canonical form. */
 const SPEC_KEYS = [
@@ -80,6 +89,23 @@ describe('command registry', () => {
       .map((c) => c.shortcut)
       .filter(Boolean);
     expect(new Set(s).size).toBe(s.length);
+  });
+
+  it('every shortcutFrom names a keyed command and binds no key of its own', () => {
+    const hinted = all().filter((c) => c.shortcutFrom);
+    expect(hinted.map((c) => c.id)).toContain('map.measureFrom');
+    for (const c of hinted) {
+      expect(c.shortcut, c.id).toBeUndefined();
+      expect(get(c.shortcutFrom!)?.shortcut, c.id).toBeTruthy();
+    }
+  });
+
+  it('Measure from here shows M in the context menu only; M runs the Measure tool (7 1a, 7.R F-07)', () => {
+    expect(menuShortcutLabel(get('map.measureFrom')!)).toBe('M');
+    expect(menuShortcutLabel({ id: 'map.measureFrom' })).toBe('M');
+    expect(shortcutLabel(get('map.measureFrom')!)).toBe('');
+    expect(shortcutLabel(get('map.measure')!)).toBe('M');
+    expect(byShortcut('M')?.id).toBe('map.measure');
   });
 
   it('registers every shortcut in the spec keys table', () => {

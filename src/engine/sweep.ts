@@ -12,6 +12,7 @@ import type {
   Waypoint,
 } from '../domain/types';
 import { run } from './run';
+import type { Progress } from './run';
 import { enteredValues, score } from './score';
 import type { Score, ScoreOptions } from './score';
 
@@ -103,10 +104,12 @@ export function sweep(
   n: number,
   seed: number,
   opts: ScoreOptions = {},
+  onProgress?: Progress,
 ): Sweep {
   if (factors.length < 1 || factors.length > 2) throw new Error('sweep: one or two factors');
   const cells: SweepCell[] = [];
-  for (const levels of grid(factors)) {
+  const points = grid(factors);
+  for (const levels of points) {
     let cell = v;
     factors.forEach((f, i) => {
       cell = applyFactor(cell, f, levels[i]!);
@@ -116,6 +119,8 @@ export function sweep(
       levels,
       scores: score(rows, cell.measures, { seed, entered: enteredValues(cell), ...opts }),
     });
+    // One report per test point (cell), so the rate is the cell count, not the replicate count.
+    onProgress?.(cells.length, points.length);
   }
   return { factors, cells };
 }

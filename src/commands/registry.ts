@@ -73,10 +73,31 @@ const KEY_LABELS: Record<string, string> = {
   Escape: 'Esc',
 };
 
-/** The shortcut as shown to the user: Cmd on mac, Ctrl elsewhere. Empty when there is none. */
+/**
+ * The shortcut as shown to the user: Cmd on mac, Ctrl elsewhere. Empty when the command has no
+ * key of its own. The palette, the shortcut sheet, buttons and tooltips use this, so a key is
+ * shown only on the command it runs (review 7.R F-07).
+ */
 export function shortcutLabel(cmd: Pick<Command, 'shortcut'>, mac = isMac()): string {
-  if (!cmd.shortcut) return '';
-  return cmd.shortcut
+  return keyLabel(cmd.shortcut, mac);
+}
+
+/**
+ * The shortcut a context-menu item shows: its own key, else the key of its `shortcutFrom`
+ * command, the tool the item starts (review 7 1a). Context menu only (review 7.R F-07).
+ */
+export function menuShortcutLabel(
+  cmd: Pick<Command, 'shortcut'> & Partial<Pick<Command, 'id' | 'shortcutFrom'>>,
+  mac = isMac(),
+): string {
+  // A copy that kept only id and shortcut still finds its hint through the registered command.
+  const from = cmd.shortcutFrom ?? (cmd.id ? get(cmd.id)?.shortcutFrom : undefined);
+  return keyLabel(cmd.shortcut ?? (from ? get(from)?.shortcut : undefined), mac);
+}
+
+function keyLabel(shortcut: string | undefined, mac: boolean): string {
+  if (!shortcut) return '';
+  return shortcut
     .split('+')
     .map((part) => {
       if (part === 'Mod') return mac ? 'Cmd' : 'Ctrl';

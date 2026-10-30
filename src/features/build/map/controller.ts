@@ -28,7 +28,8 @@ import {
   layerUpdates,
 } from './geojson';
 import { DRAG_LABELS, dragStep, startDrag, type DragStart } from './handles';
-import { hitTest, type Hit } from './hit';
+import { hitAll, nextHit, pickHit, type Hit } from './hit';
+import { estimateLabelSize, placeLabels, type LabelBox, type Obstacle } from './labels';
 import { PROMOTE_KEY, SOURCES, blankStyle, layers, readColors, type SourceName } from './layers';
 import { drawStep, type DrawEvent, type PathDraft } from './pathDraw';
 import { commitPath, placeItem } from './place';
@@ -38,13 +39,15 @@ import { formatBearing, formatRange } from '../../shared/units';
 export const TOL_PX = 8;
 /** Movement under this many pixels is a click, not a drag or a pan. */
 const CLICK_PX = 4;
+/** Marker radii in pixels, stroke included (layers.ts): a label keeps clear of these. */
+const MARKER_R = { system: 7, threat: 8, waypoint: 5 };
+/** An area no wider or taller than this, in pixels, is a marker for label placement. */
+const SMALL_AREA_PX = 60;
+/** Clear space between two grid labels on one axis, pixels. */
+const GRID_GAP_PX = 6;
 /** During a drag, preview-dependent layers update at most this often (spec: 100 ms). */
 const DRAG_PREVIEW_MS = 100;
 const FIT_PADDING_PX = 48;
-/** Asset labels closer than this many pixels count as co-located. */
-const LABEL_CELL_PX = 8;
-/** Line height of a stacked asset label. */
-export const LABEL_LINE_PX = 13;
 const EMPTY_BOUNDS: BoundsM = [-2000, -2000, 2000, 2000];
 
 type Press = { px: XY; p: XY; hit: Hit | null; shift: boolean };
@@ -72,6 +75,9 @@ export class MapController {
   private cursorPx: XY | null = null;
   private cursorM: XY | null = null;
   private labels = new Map<string, HTMLDivElement>();
+  private labelSize = new Map<string, { text: string; w: number; h: number }>();
+  /** The last plain click on a target: where, and what it left selected. For stack cycling. */
+  private lastClick: { px: XY; key: string } | null = null;
   private grid: GridLabel[] = [];
 
   constructor(
@@ -175,6 +181,8 @@ export class MapController {
 
   private onDoc(next: Vignette | null, prev: Vignette | null) {
     this.doc = next;
+    // An edit or an undo can move what lies under the last click: restart the cycle (7.R F-04).
+    this.lastClick = null;
     if (!this.ready) return;
     if (!next) {
       for (const n of SOURCES) this.setData(n, fc([]));
@@ -196,6 +204,12 @@ export class MapController {
   }
 
   private onUi(s: UiState, prev: UiState) {
+    // A selection set from outside the map (Escape, the outline, a command) ends the stacked-hit
+    // cycle, so the next click starts at the top of the stack (review 7.R F-04).
+    if (s.selectedKeys !== prev.selectedKeys && this.lastClick) {
+      const k = s.selectedKeys;
+      if (k.length !== 1 || k[0] !== this.lastClick.key) this.lastClick = null;
+    }
     if (s.selectedKeys !== prev.selectedKeys || s.hoverKey !== prev.hoverKey)
       this.renderHighlight();
     if (s.tS !== prev.tS) this.schedule();
@@ -325,32 +339,41 @@ export class MapController {
     const f = this.frame;
     const d = this.doc;
     const want = new Map<string, { text: string; px: XY; cls: string }>();
+    // Markers and small areas that no label may cover (review 7.R F-09).
+    const obstacles: Obstacle[] = [];
+    const marker = (key: string, p: XY, r: number) =>
+      obstacles.push({ key, x: p.x - r, y: p.y - r, w: 2 * r, h: 2 * r });
     if (f && d) {
       const at = (x: number, y: number) => {
         const q = this.map.project(f.toLngLat(x, y));
         return { x: q.x, y: q.y };
       };
-      // Co-located assets stack their labels one line apart instead of overprinting.
-      const stack = new Map<string, number>();
+      // Anchors only; placeLabels moves labels that would overlap (assets keep priority).
       for (const s of [...d.sensors, ...d.effectors, ...d.nodes]) {
-        const px = at(s.x, s.y);
-        const cell = `${Math.round(px.x / LABEL_CELL_PX)},${Math.round(px.y / LABEL_CELL_PX)}`;
-        const n = stack.get(cell) ?? 0;
-        stack.set(cell, n + 1);
-        want.set(s.key, {
-          text: s.id,
-          px: { x: px.x, y: px.y + n * LABEL_LINE_PX },
-          cls: 'asset',
-        });
+        const p = at(s.x, s.y);
+        want.set(s.key, { text: s.id, px: p, cls: 'asset' });
+        marker(s.key, p, MARKER_R.system);
       }
       for (const a of d.areas)
         if (a.pts.length) {
           const c = centroid(a.pts);
           want.set(a.key, { text: a.id, px: at(c.x, c.y), cls: 'area' });
+          const ps = a.pts.map((q) => at(q[0], q[1]));
+          const x0 = Math.min(...ps.map((q) => q.x));
+          const y0 = Math.min(...ps.map((q) => q.y));
+          const w = Math.max(...ps.map((q) => q.x)) - x0;
+          const h = Math.max(...ps.map((q) => q.y)) - y0;
+          if (w <= SMALL_AREA_PX && h <= SMALL_AREA_PX)
+            obstacles.push({ key: a.key, x: x0, y: y0, w, h });
         }
       for (const t of d.threats) {
+        for (const w of t.path) marker(t.key, at(w.x, w.y), MARKER_R.waypoint);
         const q = this.threatPos.get(t.key);
-        if (q) want.set(t.key, { text: t.id, px: at(q.x, q.y), cls: 'threat' });
+        if (q) {
+          const p = at(q.x, q.y);
+          want.set(t.key, { text: t.id, px: p, cls: 'threat' });
+          marker(t.key, p, MARKER_R.threat);
+        }
       }
       const c = this.map.getCanvas();
       const h = c.clientHeight || c.height || 600;
@@ -364,7 +387,31 @@ export class MapController {
       if (!want.has(key)) {
         el.remove();
         this.labels.delete(key);
+        this.labelSize.delete(key);
       }
+    const boxes: LabelBox[] = [];
+    // Grid labels that would run together: along each axis keep the labels that clear every
+    // label kept so far, x axis first, and hide the rest (review 7.R F-10).
+    const gridShown = new Set<string>();
+    const kept: { x: number; y: number; w: number; h: number }[] = [];
+    const gridKeys = [...want].filter(([, w]) => w.cls === 'grid');
+    for (const axis of ['x', 'y'] as const) {
+      const list = gridKeys
+        .filter(([k]) => k.startsWith(`grid:${axis}:`))
+        .sort(([, a], [, b]) => (axis === 'x' ? a.px.x - b.px.x : a.px.y - b.px.y));
+      for (const [k, w] of list) {
+        const r = { ...w.px, ...estimateLabelSize(w.text) };
+        const g = GRID_GAP_PX;
+        if (
+          kept.some(
+            (o) => r.x < o.x + o.w + g && o.x < r.x + r.w + g && r.y < o.y + o.h && o.y < r.y + r.h,
+          )
+        )
+          continue;
+        kept.push(r);
+        gridShown.add(k);
+      }
+    }
     for (const [key, w] of want) {
       let el = this.labels.get(key);
       if (!el) {
@@ -378,9 +425,35 @@ export class MapController {
         this.labels.set(key, el);
       }
       if (el.textContent !== w.text) el.textContent = w.text;
-      const dx = w.cls === 'grid' ? 0 : 8;
-      el.style.transform = `translate(${Math.round(w.px.x + dx)}px, ${Math.round(w.px.y + (w.cls === 'grid' ? 0 : 4))}px)`;
+      if (w.cls === 'grid') {
+        el.style.visibility = gridShown.has(key) ? '' : 'hidden';
+        el.style.transform = `translate(${Math.round(w.px.x)}px, ${Math.round(w.px.y)}px)`;
+        continue;
+      }
+      boxes.push({ key, anchor: w.px, ...this.sizeOf(key, el, w.text) });
     }
+    const c = this.map.getCanvas();
+    const placed = placeLabels(boxes, {
+      obstacles,
+      bounds: { w: c.clientWidth, h: c.clientHeight },
+    });
+    for (const b of boxes) {
+      const el = this.labels.get(b.key)!;
+      const q = placed.get(b.key);
+      // No free slot: hide the label rather than draw it over another label or a marker.
+      el.style.visibility = q ? '' : 'hidden';
+      if (q) el.style.transform = `translate(${Math.round(q.x)}px, ${Math.round(q.y)}px)`;
+    }
+  }
+
+  /** A label's box, measured once per text (layout read), else estimated. */
+  private sizeOf(key: string, el: HTMLElement, text: string): { w: number; h: number } {
+    const known = this.labelSize.get(key);
+    if (known && known.text === text) return known;
+    const est = estimateLabelSize(text);
+    const size = { text, w: el.offsetWidth || est.w, h: el.offsetHeight || est.h };
+    this.labelSize.set(key, size);
+    return size;
   }
 
   private fit(animate: boolean) {
@@ -417,10 +490,16 @@ export class MapController {
     return Math.hypot(b.x - a.x, b.y - a.y) / 100 || 1;
   }
 
-  private hitAt(p: XY): Hit | null {
-    if (!this.doc) return null;
+  /** Everything under `p`, top-most first. */
+  private hitsAt(p: XY): Hit[] {
+    if (!this.doc) return [];
     const ui = useUi.getState();
-    return hitTest(this.doc, p, TOL_PX * this.mPerPx(), ui.selectedKeys, this.threatPos);
+    return hitAll(this.doc, p, TOL_PX * this.mPerPx(), ui.selectedKeys, this.threatPos);
+  }
+
+  /** The hit a press at `p` acts on: the selected target in a stack, else the top-most. */
+  private hitAt(p: XY): Hit | null {
+    return pickHit(this.hitsAt(p), useUi.getState().selectedKeys);
   }
 
   private onDown = (e: MouseEvent) => {
@@ -429,7 +508,9 @@ export class MapController {
     const p = this.toM(px);
     const ui = useUi.getState();
     const placing = this.draft || ui.armed || ui.tool === 'measure';
-    const hit = placing ? null : this.hitAt(p);
+    const hits = placing ? [] : this.hitsAt(p);
+    // Shift toggles the top-most target; a plain press keeps a selected target in a stack.
+    const hit = e.shiftKey ? (hits[0] ?? null) : pickHit(hits, ui.selectedKeys);
     if (hit) {
       // A press on something is ours: keep it from panning the map.
       e.stopPropagation();
@@ -471,7 +552,7 @@ export class MapController {
     if (!pr) return;
     const px = this.px(e);
     if (Math.hypot(px.x - pr.px.x, px.y - pr.px.y) >= CLICK_PX) return; // a pan
-    this.click(pr.p, pr.hit, pr.shift);
+    this.click(pr.p, pr.hit, pr.shift, pr.px);
   };
 
   private endPress() {
@@ -480,9 +561,15 @@ export class MapController {
     window.removeEventListener('mouseup', this.onWinUp);
   }
 
-  /** A click at `p` (map metres). Public for tests. */
-  click(p: XY, hit: Hit | null, shift: boolean) {
+  /**
+   * A click at `p` (map metres), at `px` (container pixels) when it came from the pointer. A
+   * repeat plain click at the same pixel cycles the selection through the targets stacked under
+   * it. Public for tests.
+   */
+  click(p: XY, hit: Hit | null, shift: boolean, px?: XY) {
     const ui = useUi.getState();
+    const last = this.lastClick;
+    this.lastClick = null;
     if (this.draft) {
       this.drawEvent({ t: 'click', p, tolM: TOL_PX * this.mPerPx() });
       return;
@@ -503,7 +590,21 @@ export class MapController {
         ui.setSelection(
           keys.includes(hit.key) ? keys.filter((k) => k !== hit.key) : [...keys, hit.key],
         );
+        return;
       }
+      const sel = useUi.getState().selectedKeys;
+      if (
+        px &&
+        last &&
+        sel.length === 1 &&
+        sel[0] === last.key &&
+        Math.hypot(px.x - last.px.x, px.y - last.px.y) < CLICK_PX
+      ) {
+        const next = nextHit(this.hitsAt(p), sel);
+        if (next) ui.setSelection([next.key]);
+      }
+      const now = useUi.getState().selectedKeys;
+      if (px && now.length === 1) this.lastClick = { px, key: now[0]! };
       return;
     }
     if (ui.selectedKeys.length) ui.setSelection([]);
@@ -631,11 +732,19 @@ export class MapController {
     this.setData('draft', fc(out));
   }
 
+  /** The drag or measure readout, 14 px below right of the pointer, flipped to stay in the map. */
   private showTip(px: XY, text: string) {
     const t = this.tip;
     if (t.textContent !== text) t.textContent = text;
-    t.style.transform = `translate(${Math.round(px.x + 14)}px, ${Math.round(px.y + 14)}px)`;
     t.hidden = false;
+    const c = this.map.getCanvas();
+    const est = estimateLabelSize(text);
+    const w = t.offsetWidth || est.w;
+    const h = t.offsetHeight || est.h;
+    // Near the right or bottom edge the readout goes to the other side (review 7.R F-19).
+    const x = c.clientWidth && px.x + 14 + w > c.clientWidth ? px.x - 14 - w : px.x + 14;
+    const y = c.clientHeight && px.y + 14 + h > c.clientHeight ? px.y - 14 - h : px.y + 14;
+    t.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
   }
 
   private hideTip() {

@@ -67,6 +67,8 @@ export type SweepEntry = {
   docId: string;
   factors: Factor[];
   status: RunStatus;
+  /** Test points (cells) done of total. Absent on entries made before the first report. */
+  progress?: RunProgress;
   result: Sweep | null;
   error: string | null;
 };
@@ -83,6 +85,12 @@ export type RunsState = {
   runHandle: WorkerHandle<RunInWorker> | null;
   /** The worker of the sweep in flight. */
   sweepHandle: WorkerHandle<Sweep> | null;
+  /**
+   * The finished run whose "done" note shows in the Build top bar (review FR-03). It stays until
+   * the user opens Results (`dismissDoneNote`) or edits the vignette (any undo-history change).
+   */
+  doneNoteKey: string | null;
+  dismissDoneNote: () => void;
   /** Starts a run on the open document. Resolves to the run key, or null if none started. */
   startRun: (n: number, seed: number) => Promise<string | null>;
   /** Stops the active run: terminates its worker and marks it cancelled. */
@@ -135,6 +143,11 @@ export const useRuns = create<RunsState>()((set, get) => {
     sweep: null,
     runHandle: null,
     sweepHandle: null,
+    doneNoteKey: null,
+
+    dismissDoneNote: () => {
+      if (get().doneNoteKey !== null) set({ doneNoteKey: null });
+    },
 
     startRun: async (n, seed) => {
       if (isRunning(get())) return null; // one run at a time (review N-01)
@@ -181,6 +194,7 @@ export const useRuns = create<RunsState>()((set, get) => {
         results: { ...s.results, [key]: entry },
         order: [...s.order, key],
         activeKey: key,
+        doneNoteKey: null,
       }));
       prune();
       const live = () => get().results[key]?.status === 'running';
@@ -200,6 +214,7 @@ export const useRuns = create<RunsState>()((set, get) => {
               : null;
         patch(key, { status: 'done', result, progress: { done: n, total: n }, note });
         if (now?.id !== doc.id) return key;
+        set({ doneNoteKey: key });
         useDocument.getState().apply('Run', (d) => {
           const summary: RunSummary = {
             key,
@@ -245,9 +260,23 @@ export const useRuns = create<RunsState>()((set, get) => {
       const doc = useDocument.getState().doc;
       if (!doc) return null;
       const key = newKey();
-      set({ sweep: { key, docId: doc.id, factors, status: 'running', result: null, error: null } });
+      const total = factors.reduce((t, f) => t * f.levels.length, 1);
+      set({
+        sweep: {
+          key,
+          docId: doc.id,
+          factors,
+          status: 'running',
+          progress: { done: 0, total },
+          result: null,
+          error: null,
+        },
+      });
       const live = () => get().sweep?.key === key && get().sweep?.status === 'running';
-      const handle = startSweepInWorker(doc, factors, n, seed);
+      const handle = startSweepInWorker(doc, factors, n, seed, (done, total) => {
+        if (live())
+          set((s) => (s.sweep ? { sweep: { ...s.sweep, progress: { done, total } } } : {}));
+      });
       set({ sweepHandle: handle });
       try {
         const result = await handle;
@@ -284,6 +313,12 @@ export const useRuns = create<RunsState>()((set, get) => {
         return { compareKeys: [...s.compareKeys, key] };
       }),
   };
+});
+
+// A user edit to the vignette (edit, undo, redo, open, close) changes undo history; system
+// edits such as the run result do not. Any such change clears the run-done note.
+useDocument.subscribe((s, prev) => {
+  if (s.history !== prev.history || s.future !== prev.future) useRuns.getState().dismissDoneNote();
 });
 
 export function useRun(key: string | null | undefined): RunEntry | undefined {

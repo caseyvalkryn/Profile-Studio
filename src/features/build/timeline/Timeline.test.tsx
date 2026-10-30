@@ -6,12 +6,19 @@ import { previewOf, useDocument } from '../../../state/document';
 import { useRuns, type RunEntry } from '../../../state/runs';
 import { UI_DEFAULTS, useUi } from '../../../state/ui';
 import { fmtTime } from '../../shared/units';
+import { GUTTER_W, LANE_H, PAD_R, laneY } from './layout';
+import { STEPS } from './steps';
 import Timeline from './Timeline';
 import { advanceTime, usePlayback } from './usePlayback';
 
 const W = 800;
-// Gutter 64 px, right pad 12 px: the axis spans 724 px.
-const px = (t: number, tmax: number) => 64 + (t / tmax) * (W - 64 - 12);
+const px = (t: number, tmax: number) => GUTTER_W + (t / tmax) * (W - GUTTER_W - PAD_R);
+/** True when a mark from y to y + h sits inside lane `i` of row `row`. */
+const inLane = (el: Element, row: number, i: number) => {
+  const y = Number(el.getAttribute('y'));
+  const h = Number(el.getAttribute('height'));
+  return y >= laneY(row, i) && y + h <= laneY(row, i) + LANE_H;
+};
 
 beforeEach(() => {
   useDocument.getState().open(testVignette());
@@ -41,6 +48,45 @@ describe('Timeline', () => {
     }
   });
 
+  it('names the six F2T2EA lanes in the gutter of each row', () => {
+    render(<Timeline width={W} />);
+    const rows = screen.getAllByTestId('timeline-row');
+    rows.forEach((r, row) => {
+      const labels = within(r).getAllByTestId('timeline-lane-label');
+      expect(labels.map((l) => l.textContent)).toEqual([
+        'Find',
+        'Fix',
+        'Track',
+        'Target',
+        'Engage',
+        'Assess',
+      ]);
+      labels.forEach((l, i) => {
+        expect(Number(l.getAttribute('x'))).toBeLessThan(GUTTER_W);
+        const y = Number(l.getAttribute('y'));
+        expect(y).toBeGreaterThan(laneY(row, i));
+        expect(y).toBeLessThanOrEqual(laneY(row, i) + LANE_H);
+      });
+    });
+  });
+
+  it('draws each stage window and mark in the lane of its step', () => {
+    const p = previewOf(useDocument.getState().doc!);
+    render(<Timeline width={W} />);
+    const rows = screen.getAllByTestId('timeline-row');
+    const th = p.threats['k-T-01']!;
+    const windows = within(rows[0]!).getAllByTestId('timeline-window');
+    expect(windows.length).toBeGreaterThan(0);
+    for (const el of [...windows, ...within(rows[0]!).getAllByTestId('timeline-mark')]) {
+      const i = STEPS.findIndex((s) => s.key === el.getAttribute('data-step'));
+      expect(i).toBeGreaterThanOrEqual(0);
+      expect(inLane(el, 0, i)).toBe(true);
+    }
+    const w = windows[0]!;
+    const step = w.getAttribute('data-step') as keyof typeof th.stages;
+    expect(Number(w.getAttribute('x'))).toBeCloseTo(px(th.stages[step]!.t, p.tmaxS), 6);
+  });
+
   it('places marks at the preview step times', () => {
     const p = previewOf(useDocument.getState().doc!);
     render(<Timeline width={W} />);
@@ -65,6 +111,18 @@ describe('Timeline', () => {
       pointerId: 1,
     });
     expect(useUi.getState().tS).toBeCloseTo(p.tmaxS / 2, 6);
+  });
+
+  it('keeps a copy of the time axis in a sticky strip above the rows (review 7.R F-08)', () => {
+    const p = previewOf(useDocument.getState().doc!);
+    render(<Timeline width={W} />);
+    const sticky = screen.getByTestId('timeline-axis-sticky');
+    expect(sticky).toHaveClass('sticky', 'top-0');
+    expect(sticky.getAttribute('height')).toBe('20');
+    const labels = (el: Element) => [...el.querySelectorAll('text')].map((t) => t.textContent);
+    expect(labels(sticky)).toEqual(labels(screen.getByTestId('timeline-axis')));
+    fireEvent.pointerDown(sticky, { clientX: px(p.tmaxS / 4, p.tmaxS), button: 0, pointerId: 1 });
+    expect(useUi.getState().tS).toBeCloseTo(p.tmaxS / 4, 6);
   });
 
   it('overlays the run mean as a second mark', () => {
@@ -107,6 +165,7 @@ describe('Timeline', () => {
       .filter((m) => m.getAttribute('data-kind') === 'run');
     expect(runMarks).toHaveLength(1);
     expect(runMarks[0]!.getAttribute('data-step')).toBe('find');
+    expect(inLane(runMarks[0]!, 0, 0)).toBe(true);
     expect(runMarks[0]!.getAttribute('aria-label')).toBe('Find run mean t+0:15');
   });
 

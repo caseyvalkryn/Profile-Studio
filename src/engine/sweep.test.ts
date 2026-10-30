@@ -35,6 +35,18 @@ describe('sweep', () => {
     ]);
   });
 
+  it('reports progress once per test point', () => {
+    const seen: [number, number][] = [];
+    sweep(testVignette(), [{ kind: 'threat-speed', levels: [10, 20, 30] }], 2, 1, {}, (d, t) =>
+      seen.push([d, t]),
+    );
+    expect(seen).toEqual([
+      [1, 3],
+      [2, 3],
+      [3, 3],
+    ]);
+  });
+
   it('applies each factor purely', () => {
     const v = testVignette();
     const bearing = applyFactor(v, { kind: 'approach-bearing', levels: [], target: 'T-01' }, 90);

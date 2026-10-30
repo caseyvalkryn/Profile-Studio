@@ -219,14 +219,26 @@ merge. Open items live in section 8, not here.
 | 7.2 | done | see `reviews/phase-7-first-use.md` | first-use goal met (76 s of tool time, under 10 min); 2 major and 8 minor friction items; F-15 stands; 23 screenshots |
 | 7.1 | done | 39342af | 12 Playwright specs (section 12 items 1 to 10, phase 6 F-01 and F-04) on `vite preview` port 5175; item 11 as `src/engine/headless.test.ts`; `npm run gate` now ends with `npm run e2e`; 463 unit tests |
 | 7.3 | done | c2e6699 | `reviews/phase-7-budgets.md`: all 5 section 11 budgets pass on an M4 Pro; run 200 x 6 at 2.3 s has the least margin; perf spec in `e2e/perf/` outside the gate |
+| 7.4 | done | dfd06d1 | templates: laydowns spread (25 px or more apart at the default view), unit-free questions, hover limit in plain words (FR-01, FR-04, 6b); no threshold changed |
+| 7.5 | done | dc57e29 | map: stacked-hit cycling on repeat click, area interior hits, label collision avoidance (FR-01, FR-05, 3c); FR-10 not reproduced, declared loss |
+| 7.6 | done | d58dbbc | timeline: six labelled F2T2EA lanes per threat row, 96 px gutter, 64 px rows (F-15, 3b) |
+| 7.7 | done | 38e0e8f | top bar: run-done note stays until Results or a user edit; sweep progress as test points done of total (FR-03, FR-09) |
+| 7.8 | done | 76e4d98 | commands: "Measure from here" shows `M` through a display-only `shortcutFrom` (1a) |
+| 7.9 | done | 0540850 | report: asset positions from the site in the factor table and scope of inference; simulation limits generated from the vignette (FR-02, 6b) |
+| 7.10 | done | 5f8cf3b | results: value and limits print apart, up to 4 decimals; sweep y-axis title `<ID>, <unit>` (FR-06, FR-08) |
+| 7.11 | done | 1be3e17 | library: a template copy saves after its first edit, not on open (FR-07) |
+| 7.R | done | cabd251 | `reviews/phase-7-fixes.md`: 0 blockers, 3 majors (hover limit stated three times, non-DroneScore measure names in template text, 4-decimal float noise), 11 minors, 6 notes; 26 screenshots; FR-01 to FR-09, 1a, 3b, 3c confirmed fixed in the browser |
+| 7.F | done | 6d3ac25 | 17 fixed; F-11 (Swarm start stack, inspector header) and F-19 ("at the site" wording) partial; F-18 stands by design; 7 browser screenshots (`reviews/phase-7-fixes/after-7F-*.jpg`); 526 tests |
 
 ## 8. Handoff
 
-State on 2026-10-30, end of the second orchestration session. Phases 0 to 7 are merged on
-`rebuild/mvp` with the gate green (65 unit test files, 463 tests, 12 Playwright specs on
-`vite preview`, build). The spec section 12 acceptance suite passes, which is the MVP definition
-of done. The user approved a merge to `main` and a push on 2026-10-30: `main` is at that merge,
-and both branches are on `origin`. The tree is clean; no lane is in flight; no worktree exists.
+State on 2026-10-30, end of the third orchestration session. Phases 0 to 7, the eight 7.2 fix
+lanes (7.4 to 7.11), the review 7.R and its fix lane 7.F are merged on `rebuild/mvp` with the
+gate green (69 unit test files, 526 tests, 12 Playwright specs on `vite preview`, build). The
+spec section 12 acceptance suite passes, which is the MVP definition of done. The user approved
+a push and a merge to `main` at the end of the third session (2026-10-30): `main` is at that
+merge and both branches are on `origin`. The tree is clean; no lane is in flight; no worktree
+exists.
 
 **Orchestrator prompt.** Paste this to start the next session:
 
@@ -236,29 +248,34 @@ branch rebuild/mvp (tracks origin). Read CLAUDE.md, then docs/plan.md sections 5
 reviews/phase-7-first-use.md. Run `npm run gate` to confirm the baseline: 65 unit files, 463
 tests, 12 e2e specs, build green.
 
-The MVP acceptance suite passes. Run the fix lanes that section 8 lists under "Fix lanes
-proposed by 7.2" as parallel lanes with disjoint folders, then one review lane with a browser
-pass (port 5174) and its fix lane. Section 5 rules apply: one worker per lane in a worktree
-under .worktrees/<id>, workers do not commit, gate and git diff --stat before each --no-ff
-merge, gate on rebuild/mvp after, worktree removed, status table and section 8 updated.
+The MVP acceptance suite passes and the 7.2 fix lanes, review 7.R and fix lane 7.F are merged.
+Read reviews/phase-7-fixes.md. Section 8 "Open items" lists the follow-ups 7.F left; run them
+as one small fix lane (7.G) if I ask for it, with a browser re-check on port 5174. Section 5
+rules apply: one worker per lane in a worktree under .worktrees/<id>, workers do not commit,
+gate and git diff --stat before each --no-ff merge, gate on rebuild/mvp after, worktree removed,
+status table and section 8 updated. Phase 8 (vos port) needs its own plan and my acceptance of
+the MVP first.
 
 Ask me before any download, any push, and any merge to main.
 ```
 
 **Start here.** Read `CLAUDE.md`, this file (sections 5 to 8), the two phase 7 reviews, then the
-"Open items" below. Run `npm run gate` once to confirm the baseline. Then:
+"Open items" below. Run `npm run gate` once to confirm the baseline (69 unit files, 526 tests, 12 e2e). Then:
 
-1. Schedule the 7.2 fix lanes (below) as parallel lanes by folder, then one review with a
-   browser pass and its fix lane.
-2. Ask the user before any push or merge to `main`.
-3. Phase 8 (vos port) is a separate plan, after the user accepts the MVP.
+1. If the user wants the 7.F follow-ups closed, run them as one lane (7.G) with a browser
+   re-check; they are listed under "Open items" below.
+2. Phase 8 (vos port) is a separate plan, after the user accepts the MVP.
 
 **Approvals on record.** The user approved the phase 0 commits, the first phase 1 commit, one
-merge to `main` with a push, and the Playwright Chromium download, all on 2026-10-30. Each later
-push or merge to `main` needs its own approval.
+merge to `main` with a push, and the Playwright Chromium download, all on 2026-10-30. At the
+end of the third session the user approved a second push and merge to `main` (2026-10-30). Each
+later push or merge to `main` needs its own approval.
 
 **How to run a lane.** `git worktree add .worktrees/<id> -b lane/<id> rebuild/mvp`, then
-`npm ci` there. The brief states: working directory, owned files, gate, report shape, time
+`npm ci` there. Parallel lanes each run the full gate with their own preview port:
+`E2E_PORT=<port> npm run gate` (`playwright.config.mts` reads it; 5181 to 5189 were used).
+`*.tsbuildinfo` is ignored since the third session; two such files slipped into lane commits
+before that and were removed. The brief states: working directory, owned files, gate, report shape, time
 budget, and the lanes running in parallel with their folders. The worker does not commit. The
 orchestrator runs `npm run gate` in the worktree, commits on the lane branch, merges with
 `--no-ff` into `rebuild/mvp`, runs the gate there, removes the worktree and deletes the branch,
@@ -290,7 +307,13 @@ Domain (`src/domain`):
   does not state it.
 - Entered-class measures (2.3 Track Quantity on the Swarm template) score from the asset's
   entered value with no interval (6.F F-05). The sweep factor lives on `Vignette.sweep`.
-- Template thresholds at n 10, seed 1: point defence 1.1.2 3979 m, 2.1.3 3250 m, 3.1.2 100 %
+- Lane 7.4 (2026-10-30) spread every laydown so point assets are 24 px or more apart at the
+  default Build view (rule and spacing test in `src/domain/templates/build.ts` and
+  `templates.test.ts`). No threshold changed. At n 100, seed 1 every main measure still Meets;
+  point defence 2.1.3 fell from 3637 to 2992 m (threshold 2000 m), delta wing 3.1.3 is 2257 m
+  and seed-sensitive (Meets at 2 of 5 seeds, inconclusive at the others, as before the move).
+  The n 10 figures below predate the move.
+- Template thresholds at n 10, seed 1 (before 7.4): point defence 1.1.2 3979 m, 2.1.3 3250 m, 3.1.2 100 %
   inconclusive (Wilson at n 10 cannot clear 80 %); hover 1.2.2 99.6 %; swarm 1.2.1 100 %, 3.1.1
   100 %; delta wing 1.1.2 8975 m, 3.1.3 2038 m, 3.1.4 20.6 s; fiber FPV 1.1.1 100 % inconclusive at
   n 10; surrogate 1.2.3 9.8 m; sweep baseline 1.1.2 3972 m. Proportion thresholds of 80 to 90 %
@@ -309,10 +332,21 @@ Build workspace (`src/features/build`):
 - Labels are an HTML overlay because a blank MapLibre style has no glyphs offline.
 - Time-dependent layers update every 100 ms during a drag (the preview budget), per frame
   otherwise.
-- `reviews/phase-4.md` notes F-16 to F-19 stand (snap invisible at working zoom, map focus ring
-  uses the accent, circle areas and timeline lanes not exercised). `reviews/phase-6.md` F-15
-  repeats two of them: labels overlap at the origin, and the timeline has no F2T2EA lanes. 7.2
-  checks both.
+- `reviews/phase-4.md` notes F-16 and F-17 stand (snap invisible at working zoom, map focus
+  ring uses the accent). Label overlap and the missing F2T2EA timeline lanes (phase 6 F-15) were
+  fixed by lanes 7.5, 7.6 and 7.F; `reviews/phase-7-fixes.md` records the browser evidence.
+- Map labels avoid other labels, markers and small areas (`src/features/build/map/labels.ts`),
+  but still cross sector and ring lines. The small-area obstacle code has no unit test (7.F).
+- Wheel zoom drift (7.2 FR-10) did not reproduce in 7.5 or 7.R: the point under the pointer
+  stayed within 1 px over 4 wheel steps. No code changed. Re-check with a physical wheel.
+- Stacked-hit cycling: a repeat plain click at the same pixel selects the next target in the
+  stack (`hit.ts` `hitAll`, `pickHit`, `nextHit`). The inspector has no "n of m" header for a
+  stack (7.R F-11, partial). Swarm starts are 120 m apart and still look stacked at the default
+  view.
+- The "Sweep done" note in the top bar uses a local store in `BuildWorkspace.tsx` (7.F F-12); it
+  should move into `src/state/runs.ts`.
+- The timeline shows six labelled F2T2EA lanes per threat row (row 64 px, gutter 96 px) with a
+  sticky axis; the panel is 181 px and fits two rows.
 - The inspector hypothesis row truncates at the default inspector width; the threshold is only
   visible in the tooltip (6.F report).
 - Assets at the origin overlap at the default zoom, so the radar is hard to click (6.F report).
@@ -320,6 +354,9 @@ Build workspace (`src/features/build`):
 Library (`src/features/library`):
 - `LibraryScreen` calls `listVignettes` and `loadVignette` with no catch; in a private window with
   no IndexedDB the saved list stays empty with no message (6.3 report).
+- A template copy is saved 500 ms after its first edit, not on open (`src/state/persist.ts`,
+  lane 7.11 and 7.F F-06). A run alone writes nothing; `flushAutosave` runs before the Library
+  list.
 
 Results and report (`src/features/results`, `src/features/report`):
 - `ReportWorkspace.tsx` keeps a "No vignette open." branch that `App` now handles first (6.3).
@@ -328,6 +365,14 @@ Results and report (`src/features/results`, `src/features/report`):
   no light values for `--state-covered` and `--state-warning`.
 - Picked report charts render as nested `<figure>` elements.
 - Stored runs older than 5.3 have no `predictions` snapshot and show `[]`.
+- Factor rows carry each asset's position from the site (`src/features/report/factors.ts`);
+  an asset at the origin prints "0.00 nm E, 0.00 nm N of the site" and should read "at the
+  site" (7.R F-19, partial). The CSV and JSON exports do not carry the factor table.
+- `src/features/report/limits.ts` generates the "Simulation limits" lines from the vignette
+  (holds not flown, flat altitude). `LOSSES.logisticWidth` and `sensorMinRange` are not stated.
+  The delta wing question note repeats the altitude limit (same pattern as 7.R F-01).
+- Value and interval decimals grow to a cap of 4 until value, low and high print apart
+  (`units.ts` `decimalsFor`, 7.10 and 7.F F-03); the sweep y axis is titled `<ID>, <unit>`.
 
 Build and budgets:
 - Measured 2026-10-30 (`reviews/phase-7-budgets.md`, M4 Pro): entry 77.8 kB gzip plus a shared
@@ -341,11 +386,9 @@ Build and budgets:
 - The root `package.json` stays CommonJS so `legacy/test/smoke.js` runs; Vite and Playwright
   configs are `.mts`.
 
-**Fix lanes proposed by 7.2** (`reviews/phase-7-first-use.md`, section "Fix lanes proposed"),
-not yet scheduled: stacked laydown at the origin and stacked-hit picking (FR-01, FR-05), sensor
-positions in the AAR factor table (FR-02), run-done note persistence (FR-03), unit-free template
-questions (FR-04), F2T2EA timeline lanes (F-15), value and limit precision (FR-06), sweep y-axis
-unit (FR-08), template copy saved on open (FR-07).
+**Fix lanes proposed by 7.2**: done in the third session as lanes 7.4 to 7.11, reviewed in
+`reviews/phase-7-fixes.md` (7.R) and fixed in 7.F. Still open from that review: F-11 and F-19
+partial, F-18 stands by design, and the 7.F follow-ups listed above.
 
 **Known problems for the team.**
 

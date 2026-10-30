@@ -8,6 +8,7 @@ import { sweep } from '../../engine/sweep';
 import { HOVER_SCOPE } from './hoverTrackHold';
 import { SWEEP_SCOPE } from './detectionRangeSweep';
 import { preview } from '../../engine/preview';
+import { assetBounds } from '../../features/build/map/geojson';
 
 const RUNNABLE = TEMPLATES.filter((t) => t.id !== 'blank');
 // 2.3 Track Quantity is an entered measure (vendor sheet); it scores from the asset's entered
@@ -98,6 +99,8 @@ describe('TEMPLATES', () => {
     const v = parseVignette(t.make());
     expect(v.sweep?.factors).toEqual([t.sweep!.factor]);
     expect(v.report.sections?.scope).toBe(SWEEP_SCOPE);
+    // stored text names no unit, so it reads the same in nm and km (review 7.R F-17)
+    expect(SWEEP_SCOPE).not.toMatch(/\d\s*(m|ft|km|nm)\b|\b(AGL|MSL)\b/);
     for (const o of TEMPLATES.filter((x) => !x.sweep)) expect(o.make().sweep, o.id).toBeUndefined();
   });
 
@@ -108,10 +111,89 @@ describe('TEMPLATES', () => {
     expect(at[0]!).toBeLessThan(at[at.length - 1]! - 500);
   }, 30_000);
 
-  it('Hover track hold states that the run does not fly the hover (review 6 F-18)', () => {
+  it('Hover track hold leaves the hover limit to the generated scope line (review 7.R F-01)', () => {
     const v = templateById('hover-track-hold')!.make();
     expect(v.report.sections?.scope).toBe(HOVER_SCOPE);
-    expect(HOVER_SCOPE).toMatch(/does not fly waypoint holds/);
+    expect(HOVER_SCOPE).toMatch(/^1\.2\.2 Track Continuity is measured over the orbit turn/);
+    // The limit (the runs do not stop at the hover) is stated once, by simulationLimits.
+    for (const text of [HOVER_SCOPE, v.questions[0]!.note]) {
+      expect(text).not.toMatch(/stop|paus|without|Monte Carlo|waypoint/i);
+    }
+  });
+
+  it('keeps the 24 px laydown rule at the default Build view (build.ts, review 7.R F-13)', () => {
+    // The default view fits assetBounds with 1 m and 48 px padding (controller.ts `fit`) in the
+    // map area of a 1440 x 900 window: 1440 less the 240 px library and the 280 px inspector,
+    // 900 less the 36 px header, the 32 px Build bar and the 181 px timeline. Web Mercator keeps
+    // one scale in x and y near the site, so the fit scale is the larger of the two ratios.
+    const MAP_W = 1440 - 240 - 280;
+    const MAP_H = 900 - 36 - 32 - 181;
+    const PAD = 48;
+    const MIN_PX = 24;
+    for (const t of RUNNABLE) {
+      const v = t.make();
+      const b = assetBounds(v)!;
+      const mPerPx = Math.max(
+        (b[2] - b[0] + 2) / (MAP_W - 2 * PAD),
+        (b[3] - b[1] + 2) / (MAP_H - 2 * PAD),
+      );
+      const assets = [...v.sensors, ...v.effectors, ...v.nodes].map((a) => ({
+        id: a.id,
+        x: a.x,
+        y: a.y,
+      }));
+      const others = [
+        ...v.threats.flatMap((th) =>
+          th.path.map((w, i) => ({ id: `${th.id} WP ${i + 1}`, x: w.x, y: w.y })),
+        ),
+        ...v.areas.flatMap((a) =>
+          a.pts.map(([x, y], i) => ({ id: `${a.id} corner ${i + 1}`, x, y })),
+        ),
+      ];
+      const px = (a: { x: number; y: number }, o: { x: number; y: number }) =>
+        Math.hypot(a.x - o.x, a.y - o.y) / mPerPx;
+      // Every point asset clears every other point asset, every waypoint and every corner.
+      assets.forEach((a, i) => {
+        for (const o of [...assets.slice(i + 1), ...others])
+          expect(px(a, o), `${t.id}: ${a.id} to ${o.id}`).toBeGreaterThanOrEqual(MIN_PX);
+      });
+    }
+  });
+
+  it('Swarm: no two waypoints share a point, so a stacked click reaches each once (7.R F-11)', () => {
+    const v = templateById('swarm-split')!.make();
+    const pts = v.threats.flatMap((t) =>
+      t.path.map((w, i) => ({ id: `${t.id} WP ${i + 1}`, ...w })),
+    );
+    expect(pts).toHaveLength(18);
+    pts.forEach((a, i) => {
+      for (const b of pts.slice(i + 1))
+        expect(Math.hypot(a.x - b.x, a.y - b.y), `${a.id} to ${b.id}`).toBeGreaterThanOrEqual(100);
+    });
+  });
+
+  it('names every measure in template text by its DroneScore ID and name (review 7.R F-02)', () => {
+    const named = /(?<![\d.])(\d[a-z]?\.\d+(?:\.\d+)?) (?=[A-Z])/g;
+    let checked = 0;
+    for (const t of TEMPLATES) {
+      const v = t.make();
+      const texts = [
+        t.question,
+        ...v.questions.flatMap((q) => [q.text, q.note]),
+        ...Object.values(v.report.sections ?? {}),
+      ];
+      for (const text of texts.filter((x): x is string => typeof x === 'string')) {
+        for (const m of text.matchAll(named)) {
+          const measure = measureById(m[1]!);
+          if (!measure) continue;
+          const rest = text.slice(m.index + m[0].length);
+          expect(rest.startsWith(measure.name), `${t.id}: ${m[1]} ${rest.slice(0, 30)}`).toBe(true);
+          expect(rest.charAt(measure.name.length), `${t.id}: ${m[1]}`).not.toMatch(/[A-Za-z]/);
+          checked++;
+        }
+      }
+    }
+    expect(checked).toBeGreaterThanOrEqual(8);
   });
 
   it('Swarm 2.3 Track Quantity scores Meets from the entered value 6 (review 6 F-05)', () => {

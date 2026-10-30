@@ -40,18 +40,27 @@ export function setDb(db: VignetteDb | null): void {
   dbPromise = db ? Promise.resolve(db) : null;
 }
 
+/**
+ * Ids this session has seen in the store (listed, loaded or saved). Autosave writes a run result
+ * on a stored vignette at once; an unsaved template copy is first written on its first edit.
+ */
+const storedIds = new Set<string>();
+
 export async function saveVignette(v: Vignette): Promise<void> {
   await (await getDb()).put('vignettes', v);
+  storedIds.add(v.id);
 }
 
 export async function loadVignette(id: string): Promise<Vignette | null> {
   const v = await (await getDb()).get('vignettes', id);
+  if (v) storedIds.add(v.id);
   return v ?? null;
 }
 
 /** Saved vignettes, newest first. */
 export async function listVignettes(): Promise<VignetteListing[]> {
   const all = await (await getDb()).getAll('vignettes');
+  for (const v of all) storedIds.add(v.id);
   return all
     .map((v) => ({ id: v.id, name: v.name, updated: v.updated }))
     .sort((a, b) => (a.updated < b.updated ? 1 : a.updated > b.updated ? -1 : 0));
@@ -59,6 +68,7 @@ export async function listVignettes(): Promise<VignetteListing[]> {
 
 export async function deleteVignette(id: string): Promise<void> {
   await (await getDb()).delete('vignettes', id);
+  storedIds.delete(id);
 }
 
 export function exportJson(v: Vignette): string {
@@ -106,62 +116,98 @@ export function importJson(text: string): Vignette[] {
   });
 }
 
-/** True when a vignette with this id is in the database. */
-async function isStored(id: string): Promise<boolean> {
-  return (await loadVignette(id)) !== null;
+/** The running autosave's flush, so a route change can write a pending edit at once. */
+let flushActive: (() => Promise<void>) | null = null;
+
+/**
+ * Write the pending autosave now and resolve when it is stored (review 7.R F-06). The Library
+ * calls it on mount, so an edit made less than 500 ms before shows in the Saved list.
+ */
+export function flushAutosave(): Promise<void> {
+  return flushActive ? flushActive() : Promise.resolve();
 }
 
 /**
  * Save the open document 500 ms after its last change. Returns a function that stops autosave.
  * A pending save is written at once, not dropped, when another vignette opens, when the document
- * closes, when autosave stops, and on `pagehide`. Opening a vignette writes nothing unless it is
- * new (`isSaved` says it is not stored yet). `save` defaults to saveVignette; save errors go to
- * `onError`.
+ * closes, when autosave stops, on `pagehide` and on `flushAutosave`. Opening a vignette writes
+ * nothing: a template copy is first written on its first edit (FR-07), and a stored vignette
+ * keeps saving on each edit. A system change (a run result) on a copy that no edit has touched
+ * writes nothing either (review 7.R F-06); the first edit then writes it with its runs. A
+ * cancelled drag that returns the document to its state at open, with nothing written since,
+ * writes nothing. `save` defaults to saveVignette; save errors go to `onError`.
  */
 export function startAutosave(
   save: (v: Vignette) => Promise<void> = saveVignette,
   onError: (err: unknown) => void = (err) => console.error('Autosave failed', err),
   delayMs = AUTOSAVE_MS,
-  isSaved: (id: string) => Promise<boolean> = isStored,
 ): () => void {
   let timer: ReturnType<typeof setTimeout> | null = null;
   let pending: Vignette | null = null;
+  // The document as opened, whether anything was written for it since, and whether the user
+  // has edited it.
+  let opened: Vignette | null = useDocument.getState().doc;
+  let written = false;
+  let edited = false;
 
-  const flush = () => {
+  const flush = (): Promise<void> => {
     if (timer) clearTimeout(timer);
     timer = null;
     const v = pending;
     pending = null;
-    if (v) save(v).catch(onError);
+    if (!v) return Promise.resolve();
+    written = true;
+    return save(v).catch(onError);
+  };
+
+  const schedule = (doc: Vignette) => {
+    pending = doc;
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => void flush(), delayMs);
   };
 
   const unsub = useDocument.subscribe((s, prev) => {
-    if (s.doc === prev.doc) return;
-    const doc = s.doc;
-    if (!doc || !prev.doc || doc.id !== prev.doc.id) {
-      // A switch: write the previous document's pending edit first.
-      flush();
-      if (!doc) return;
-      isSaved(doc.id)
-        .then((saved) => {
-          // A new vignette is written once. An edit since then already has a save pending.
-          if (saved || pending || useDocument.getState().doc !== doc) return;
-          return save(doc);
-        })
-        .catch(onError);
+    const userEdit = s.history !== prev.history || s.future !== prev.future;
+    if (s.doc === prev.doc) {
+      // The end of a drag records it in history without a new document: the first user edit
+      // of a copy whose drag steps were held back.
+      if (userEdit && s.doc && !edited && s.doc !== opened) {
+        edited = true;
+        schedule(s.doc);
+      }
       return;
     }
-    pending = doc;
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(flush, delayMs);
+    const doc = s.doc;
+    if (!doc || !prev.doc || doc.id !== prev.doc.id) {
+      // A switch: write the previous document's pending edit first. Opening writes nothing.
+      void flush();
+      opened = doc;
+      written = false;
+      edited = false;
+      return;
+    }
+    if (doc === opened && !written) {
+      // Back to the document as opened (a cancelled drag): nothing to write.
+      if (timer) clearTimeout(timer);
+      timer = null;
+      pending = null;
+      return;
+    }
+    if (userEdit) edited = true;
+    // A run, or a drag step, on an unedited, unsaved template copy: not a reason to save it.
+    if (!edited && !written && !storedIds.has(doc.id)) return;
+    schedule(doc);
   });
 
   const win = typeof window === 'undefined' ? null : window;
-  win?.addEventListener('pagehide', flush);
+  const onHide = () => void flush();
+  win?.addEventListener('pagehide', onHide);
+  flushActive = flush;
 
   return () => {
-    flush();
+    void flush();
     unsub();
-    win?.removeEventListener('pagehide', flush);
+    win?.removeEventListener('pagehide', onHide);
+    if (flushActive === flush) flushActive = null;
   };
 }
