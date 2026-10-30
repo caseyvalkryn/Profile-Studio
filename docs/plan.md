@@ -24,19 +24,20 @@ Chosen to match vos majors, so the later port stays medium effort.
 
 | Need | Choice |
 | --- | --- |
-| UI | React 18.3, TypeScript, Vite |
-| State | Zustand 5 with Immer patches for undo |
+| UI | React 18.3.1, TypeScript ~5.6.3, Vite ^8.0.16 |
+| State | Zustand ^5.0.2 with Immer patches for undo |
 | Validation | zod |
-| Map | MapLibre GL, with a no-tile grid mode as the default |
+| Map | maplibre-gl ^6.9.0, with a no-tile grid mode as the default |
 | Menus, tooltips, dialogs | Radix primitives |
 | Command palette | cmdk |
-| Charts | Recharts, at the major vos uses |
-| Styling | Tailwind 4 with tokens as CSS custom properties in `src/styles/tokens.css` |
+| Charts | recharts 2.15.2 |
+| Styling | Tailwind 4.1.12 (`@tailwindcss/vite`) with tokens as CSS custom properties in `src/styles/tokens.css` |
 | Storage | IndexedDB through `idb`, plus JSON import and export |
 | Tests | Vitest for unit and engine, Playwright for end-to-end by user action |
 | Lint and format | ESLint flat config and Prettier |
 
-Check each version against `docs/reference/vos.md` at scaffold time and pin exact versions.
+These are the vos versions (`docs/reference/vos.md`, 2026-10-30). Use the latest patch of the
+other packages at scaffold time and pin exact versions in `package-lock.json`.
 
 ## 3. Layout
 
@@ -181,3 +182,35 @@ The orchestrator updates this table at each merge.
 | 0.3 | done | rebuild/mvp | 6d81756 | 9 fixtures; `golden.js --check` green; `Date` fixed to 2026-01-01Z in the vm; templates have no paths, so parity rests on the 4 seeds |
 | 1.1 | next | | | |
 | 2.1 to 7.3 | not started | | | |
+
+## 8. Handoff
+
+State on 2026-10-30: phase 0 is done on `rebuild/mvp`. The tree is clean. Nothing is pushed.
+
+**Next action.** Run lane 1.1. Then run 2.1 and 2.3a in parallel. Then run 2.2 and 2.3b in
+parallel, then 2.R. The lane text in section 6 is the brief. Add the standard brief items from
+section 5 rule 3 when you launch it.
+
+**Approval.** The user approved phase 0 commits. Ask the user before the first commit of phase 1,
+and before any push or merge to `main`.
+
+**Known problems for the team.**
+
+1. The local port and the browser. In an earlier session the sandbox blocked local port binding,
+   and Claude in Chrome could not open `file://` pages. A browser check needs `npm run dev`
+   reachable. If binding fails, the user can set `sandbox.network.allowLocalBinding: true`.
+2. The internet. The user does not allow downloads. The JIATF 401 handbook and the C4 criteria are
+   local in `~/Desktop/MASTER/VALKRYN/01 - C-UAS Doctrine and Operations/`. Plain-text copies
+   need `pdftotext`. The C4 text has broken letter spacing. Remove the spaces before you search it.
+3. DroneScore wins over C4. DroneScore leaves out some C4 rows and adds the `INT-` rows. Follow
+   DroneScore (`docs/reference/jiatf-401.md` section b). C4 prints the ID 5.5 twice. DroneScore
+   uses 5.5b for the second.
+4. The rangeboard engine. `src/playback/killChain.ts` is a sensor to C2 to effector routing graph.
+   It is not the stage ladder. The stages are in `src/analysis/requirements.ts`. One trial needs
+   59 files (`docs/reference/rangeboard-parts.md` section 2).
+5. Parity. The templates have no flight paths. Lane 2.2 parity rests on the 4 seeds.
+   `legacy/test/golden.js` fixes `Date` in its vm, because templates stamp the wall clock.
+6. vos is read-only. Its work is on the unpushed branch `casey/diu-demo-local`. Do not edit vos.
+7. Words. User-facing T&E text uses the `stat-te-terminology` skill. Run its banned-term check
+   on the UI copy and the AAR template.
+
