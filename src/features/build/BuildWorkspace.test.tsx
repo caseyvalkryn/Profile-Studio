@@ -10,7 +10,7 @@ import { useDocument } from '../../state/document';
 import { useRuns } from '../../state/runs';
 import { UI_DEFAULTS, useUi } from '../../state/ui';
 import { M_PER_NM } from '../shared/units';
-import BuildWorkspace, { RUN_DONE_MS } from './BuildWorkspace';
+import BuildWorkspace from './BuildWorkspace';
 import type { RunEntry } from '../../state/runs';
 
 vi.mock('maplibre-gl', () => import('./map/__mocks__/maplibre-gl'));
@@ -19,7 +19,14 @@ const reset = () =>
   act(() => {
     useDocument.getState().close();
     useUi.setState({ ...UI_DEFAULTS });
-    useRuns.setState({ results: {}, order: [], activeKey: null, compareKeys: [], sweep: null });
+    useRuns.setState({
+      results: {},
+      order: [],
+      activeKey: null,
+      compareKeys: [],
+      sweep: null,
+      doneNoteKey: null,
+    });
   });
 
 const renderApp = () =>
@@ -137,27 +144,22 @@ describe('Escape order (edit.escape)', () => {
   });
 });
 
-describe('run feedback (F-08)', () => {
+describe('run feedback (F-08, FR-03)', () => {
   beforeEach(reset);
   afterEach(() => vi.useRealTimers());
 
-  it('says the run finished and links to Results, then clears', () => {
-    vi.useFakeTimers();
+  /** The open vignette with run R-1 stored, and the store as a finished run leaves it. */
+  const finishRun = () => {
     act(() => {
       useDocument.getState().open(testVignette());
-      useDocument.getState().edit('Run', (d) => {
+      useDocument.getState().apply('Run', (d) => {
         d.runs.unshift({ key: 'run-a', id: 'R-1', createdAt: '', n: 10, seed: 1, rows: [] });
       });
     });
-    render(
-      <MemoryRouter initialEntries={['/build']}>
-        <BuildWorkspace />
-      </MemoryRouter>,
-    );
-    expect(screen.queryByText(/done/)).toBeNull();
     act(() =>
       useRuns.setState({
         activeKey: 'run-a',
+        doneNoteKey: 'run-a',
         results: {
           'run-a': {
             key: 'run-a',
@@ -168,9 +170,64 @@ describe('run feedback (F-08)', () => {
         },
       }),
     );
+  };
+
+  it('says the run finished, links to Results and stays until the vignette is edited', () => {
+    vi.useFakeTimers();
+    render(
+      <MemoryRouter initialEntries={['/build']}>
+        <BuildWorkspace />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByText(/done/)).toBeNull();
+    finishRun();
     expect(screen.getByText('Run R-1 done')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'View results' })).toHaveAttribute('href', '/results');
-    act(() => vi.advanceTimersByTime(RUN_DONE_MS + 10));
+    // No timer: the note outlasts the old 6 s limit.
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(screen.getByText('Run R-1 done')).toBeInTheDocument();
+    act(() =>
+      useDocument.getState().edit('Rename vignette', (d) => {
+        d.name = 'edited';
+      }),
+    );
     expect(screen.queryByText('Run R-1 done')).toBeNull();
+  });
+
+  it('clears the note when the user opens Results', async () => {
+    finishRun();
+    renderApp();
+    expect(screen.getByText('Run R-1 done')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('link', { name: 'Results' }));
+    expect(useRuns.getState().doneNoteKey).toBeNull();
+    fireEvent.click(await screen.findByRole('link', { name: 'Build' }));
+    expect(await screen.findByRole('main', { name: 'Build' })).toBeInTheDocument();
+    expect(screen.queryByText('Run R-1 done')).toBeNull();
+  });
+
+  it('shows sweep progress as test points done of total (FR-09)', () => {
+    act(() =>
+      useDocument
+        .getState()
+        .open(
+          testVignette({ sweep: { factors: [{ kind: 'threat-speed', levels: [10, 20, 30] }] } }),
+        ),
+    );
+    act(() =>
+      useRuns.setState({
+        sweep: {
+          key: 's',
+          docId: useDocument.getState().doc!.id,
+          factors: [],
+          status: 'running',
+          progress: { done: 1, total: 3 },
+          result: null,
+          error: null,
+        },
+      }),
+    );
+    render(<BuildWorkspace />);
+    const status = screen.getByRole('status', { name: 'Sweep progress' });
+    expect(status).toHaveTextContent('Sweep running 1/3 test points');
   });
 });

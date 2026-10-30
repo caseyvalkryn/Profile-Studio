@@ -135,29 +135,31 @@ function RunProgress() {
   );
 }
 
-/** How long the "run done" note stays in the top bar. */
-export const RUN_DONE_MS = 6000;
-
-/** After a run ends, says so for a few seconds and links to Results (review F-08). */
+/**
+ * After a run ends, says so and links to Results (review F-08). The note stays until the user
+ * opens Results or edits the vignette (review FR-03); the runs store clears it on an edit.
+ */
 function RunDone() {
   const run = useActiveRun();
+  const noteKey = useRuns((s) => s.doneNoteKey);
   const docId = useDocument((s) => s.doc?.id);
   const runId = useDocument((s) => s.doc?.runs.find((r) => r.key === run?.key)?.id);
   const inRouter = useInRouterContext();
   // Only for a run of the open vignette (review 6 F-08).
-  const doneKey = run?.status === 'done' && run.docId === docId ? run.key : null;
-  const [shown, setShown] = useState<string | null>(null);
-  const [seen, setSeen] = useState<string | null>(null);
-  if (doneKey !== seen) {
-    setSeen(doneKey);
-    setShown(doneKey);
-  }
+  const shown =
+    run?.status === 'done' && run.docId === docId && run.key === noteKey ? run.key : null;
   useEffect(() => {
     if (!shown) return;
-    const t = setTimeout(() => setShown(null), RUN_DONE_MS);
-    return () => clearTimeout(t);
+    // Results opens only through a link to /results: the workspace tab or "View results".
+    const onClick = (e: MouseEvent) => {
+      const a = e.target instanceof Element ? e.target.closest('a[href]') : null;
+      if (a && /\/results$/.test(a.getAttribute('href') ?? ''))
+        useRuns.getState().dismissDoneNote();
+    };
+    document.addEventListener('click', onClick, true);
+    return () => document.removeEventListener('click', onClick, true);
   }, [shown]);
-  if (!shown || shown !== doneKey) return null;
+  if (!shown) return null;
   const label = `${runId ? `Run ${runId}` : 'Run'} done`;
   return (
     <span className="flex items-center gap-1.5 text-xs text-muted" role="status">
@@ -179,8 +181,21 @@ function SweepStatus() {
   if (!sweep || sweep.docId !== docId) return null;
   if (sweep.status === 'running')
     return (
-      <span className="text-xs text-muted" role="status">
+      <span
+        className="text-xs whitespace-nowrap text-muted"
+        role="status"
+        aria-label="Sweep progress"
+      >
         Sweep running
+        {sweep.progress ? (
+          <>
+            {' '}
+            <span className="font-mono tabular-nums">
+              {sweep.progress.done}/{sweep.progress.total}
+            </span>{' '}
+            test points
+          </>
+        ) : null}
       </span>
     );
   if (sweep.status !== 'done') return null;
