@@ -213,8 +213,8 @@ merge. Open items live in section 8, not here.
 | 6.2 | done | 9a4f864 | behaviours and the 8 templates, each runs and scores (table in section 8) |
 | 4.R | done | see `reviews/phase-4.md` | browser check: 3 blockers (map height, worker 404, no right-click menu), 4 majors, 8 minors |
 | 4.F | done | 405bae4 | all 15 fixed; F-01 to F-07 browser-verified (`reviews/phase-4/after-4F.png`); 442 tests |
-| 6.3 | next | | library wiring and dev-vignette removal |
-| 6.R, 6.F | not started | | |
+| 6.3 | done | 26074c3 | Library on `/` with the 8 templates; dev vignette removed; empty state on Build, Results, Report without a document; 445 tests |
+| 6.R, 6.F | next | | |
 | 7.1 to 7.3 | not started | | |
 
 ## 8. Handoff
@@ -303,14 +303,18 @@ State and commands (`src/state`, `src/commands`):
 - The spec has no right-click row for C2 and TSPI nodes; Duplicate and Delete were added.
 
 Build workspace (`src/features/build`):
-- `devVignette.*` opens a legacy template at startup when nothing is stored. Remove in 6.3.
 - Labels are an HTML overlay because a blank MapLibre style has no glyphs offline.
 - Time-dependent layers update every 100 ms during a drag (the preview budget), per frame
   otherwise.
 - `reviews/phase-4.md` notes F-16 to F-19 stand (snap invisible at working zoom, map focus ring
   uses the accent, dev vignette hack, circle areas and timeline lanes not exercised).
 
+Library (`src/features/library`):
+- `LibraryScreen` calls `listVignettes` and `loadVignette` with no catch; in a private window with
+  no IndexedDB the saved list stays empty with no message (6.3 report).
+
 Results and report (`src/features/results`, `src/features/report`):
+- `ReportWorkspace.tsx` keeps a "No vignette open." branch that `App` now handles first (6.3).
 - PNG export is untested (no canvas in jsdom); needs the 6.R browser pass.
 - The one `@media print` light-token rule lives in `results.css` and covers both screens; it has
   no light values for `--state-covered` and `--state-warning`.
