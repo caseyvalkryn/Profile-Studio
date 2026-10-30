@@ -228,8 +228,8 @@ export default function AssetsPanel({
       <div className="flex items-center gap-1 p-1.5">
         <input
           type="search"
-          aria-label="Filter assets"
-          placeholder="Filter"
+          aria-label="Search assets"
+          placeholder="Search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className={`h-6 min-w-0 flex-1 rounded-sm border border-surface-3 bg-surface-0 px-1.5 text-xs text-text placeholder:text-muted ${focusRing}`}
