@@ -7,6 +7,8 @@ const PORT = 5175;
 
 export default defineConfig({
   testDir: './e2e',
+  // Budget measurements (lane 7.3) run on their own config: e2e/perf/playwright.perf.config.mts.
+  testIgnore: ['perf/**'],
   outputDir: './e2e/__results__',
   fullyParallel: true,
   workers: 4,
