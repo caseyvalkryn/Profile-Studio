@@ -31,7 +31,7 @@ const RT: [number, number][] = [
 const q = () =>
   question(
     'How accurate is the radar track against RTK truth on a known racetrack flown at one altitude?',
-    'The threshold on 1.2.3 Track Accuracy is in the measure row. The score is the mean error over the pattern (ground plane; the simulated track carries no altitude).',
+    'The threshold on 1.2.3 Track Accuracy is in the results table. The score is the mean error over the pattern (ground plane; the simulated track carries no altitude).',
   );
 
 export const surrogateRacetrack: Template = {

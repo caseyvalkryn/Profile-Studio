@@ -19,7 +19,7 @@ const ASSET = { x: -500, y: 500 };
 const q = () =>
   question(
     'Does the layer detect, identify and defeat a Group 1 ISR quadrotor before it reaches the defended asset?',
-    'Planning values are the thresholds on 1.1.2 Detection Range, 2.1.3 Identification Range and 3.1.2 Defeat Rate in the measure rows, in the display units.',
+    'Planning values are the thresholds on 1.1.2 Detection Range (ground), 2.1.3 Identification Range and 3.1.2 Probability of Kill (Pk), in the display units in the results table.',
   );
 
 export const pointDefence: Template = {

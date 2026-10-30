@@ -2,7 +2,7 @@ import { testVignette } from '../../engine/testVignette';
 import { useDocument } from '../../state/document';
 import { UI_DEFAULTS, useUi } from '../../state/ui';
 import type { MenuItem } from '../../ui/types';
-import { menuItemsFor, type ArgRequest } from './adapter';
+import { menuItemsFor, paletteItems, type ArgRequest } from './adapter';
 
 const byLabel = (items: MenuItem[], label: string) => items.find((i) => i.label === label);
 
@@ -25,6 +25,14 @@ describe('right-click menus from the registry', () => {
     const sensors = byLabel(add.children!, 'Sensors')!;
     expect(sensors.children!.map((c) => c.label)).toContain('3D radar');
     expect(byLabel(items, 'Fit view')!.shortcut).toBe('F');
+  });
+
+  it('M shows on Measure from here in the menu, not on its palette row (review 7.R F-07)', () => {
+    const items = menuItemsFor('map', { pointer: { x: 10, y: 20 }, onArg: () => {}, mac: true });
+    expect(byLabel(items, 'Measure from here')!.shortcut).toBe('M');
+    const palette = paletteItems({ pointer: null, onArg: () => {}, mac: true });
+    expect(palette.find((p) => p.id === 'map.measureFrom')?.shortcut).toBeUndefined();
+    expect(palette.find((p) => p.id === 'map.measure')?.shortcut).toBe('M');
   });
 
   it('Add here > Sensors > 3D radar places a radar at the click point', () => {

@@ -113,6 +113,18 @@ describe('Timeline', () => {
     expect(useUi.getState().tS).toBeCloseTo(p.tmaxS / 2, 6);
   });
 
+  it('keeps a copy of the time axis in a sticky strip above the rows (review 7.R F-08)', () => {
+    const p = previewOf(useDocument.getState().doc!);
+    render(<Timeline width={W} />);
+    const sticky = screen.getByTestId('timeline-axis-sticky');
+    expect(sticky).toHaveClass('sticky', 'top-0');
+    expect(sticky.getAttribute('height')).toBe('20');
+    const labels = (el: Element) => [...el.querySelectorAll('text')].map((t) => t.textContent);
+    expect(labels(sticky)).toEqual(labels(screen.getByTestId('timeline-axis')));
+    fireEvent.pointerDown(sticky, { clientX: px(p.tmaxS / 4, p.tmaxS), button: 0, pointerId: 1 });
+    expect(useUi.getState().tS).toBeCloseTo(p.tmaxS / 4, 6);
+  });
+
   it('overlays the run mean as a second mark', () => {
     const entry: RunEntry = {
       key: 'r1',

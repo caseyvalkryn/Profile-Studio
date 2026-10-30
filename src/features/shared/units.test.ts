@@ -35,11 +35,24 @@ describe('value and limits print apart (first-use FR-06)', () => {
     expect(formatInterval('nav', '1.1.2', i, 3982.73)).toBe('[2.149, 2.152]');
   });
 
-  it('stops at 4 decimals, and numbers equal in the data may print the same', () => {
+  it('limits that do not separate at 4 decimals print at the value decimals (7.R F-15)', () => {
     expect(formatInterval('nav', '1.2.2', { low: 99.87, high: 99.87001 }, 99.87)).toBe(
-      '[99.8700, 99.8700]',
+      '[99.9, 99.9]',
     );
     expect(formatInterval('nav', '1.2.2', { low: 90, high: 99.5 }, 99.5)).toBe('[90.0, 99.5]');
+  });
+});
+
+describe('float noise does not add decimals (review 7.R F-03)', () => {
+  it('3.1.2 at 100 % with a Wilson high limit of 99.99999999 prints at the scale decimals', () => {
+    const i = { low: 96.3005, high: 99.99999999 };
+    expect(formatValue('nav', '3.1.2', 100, i)).toBe('100 %');
+    expect(formatInterval('nav', '3.1.2', i, 100)).toBe('[96, 100]');
+    expect(formatValue('nav', '3.1.2', 99.99999999, { low: 96.3005, high: 100 })).toBe('100 %');
+  });
+
+  it('a value just above 0 by float noise prints as 0', () => {
+    expect(formatValue('nav', '3.1.2', 1e-12, { low: 0, high: 3.7 })).toBe('0 %');
   });
 });
 

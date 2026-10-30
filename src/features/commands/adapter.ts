@@ -11,6 +11,7 @@ import {
   forTarget,
   get,
   all,
+  menuShortcutLabel,
   shortcutLabel,
 } from '../../commands/registry';
 import { find } from '../../commands/select';
@@ -162,7 +163,7 @@ function hidden(cmd: Command, ctx: CommandContext): boolean {
 export function toMenuItem(cmd: Command, ctx: CommandContext, opts: MenuOptions): MenuItem {
   const ok = cmd.when(ctx);
   const item: MenuItem = { id: cmd.id, label: shortLabel(cmd) };
-  const sc = shortcutLabel(cmd, opts.mac);
+  const sc = menuShortcutLabel(cmd, opts.mac);
   if (sc) item.shortcut = sc;
   if (ok !== true) {
     item.disabledReason = ok;

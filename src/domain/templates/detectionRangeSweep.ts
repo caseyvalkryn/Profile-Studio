@@ -14,13 +14,16 @@ const ASSET = { x: -600, y: 600 };
 const LEVELS = [30, 60, 120, 240, 400];
 const FACTOR = { kind: 'threat-altitude', levels: LEVELS } as const;
 
-/** Scope of inference text for the AAR (review 6 F-14). */
+/**
+ * Scope of inference text for the AAR (review 6 F-14). It is a stored note, so it names no
+ * distance or altitude unit; the levels show in the sweep chart in the display units (7.R F-17).
+ */
 export const SWEEP_SCOPE =
-  'Factor: threat altitude at 30, 60, 120, 240 and 400 m AGL (about 100 to 1,300 ft AGL). ' +
-  "The radar's lower beam edge is 2° above the horizon. Below it, the RF or EO/IR sensor finds " +
-  'the target first, at a shorter range. The model has no terrain masking, multipath or ground ' +
-  'clutter, and the radio horizon is beyond the 4 km (2.2 nm) radar range at every level. ' +
-  'Conclusions apply only to this laydown and these levels.';
+  'Factor: threat altitude at the five levels in the sweep chart, from treetop height to the ' +
+  "top of the low-altitude band. The radar's lower beam edge is 2° above the horizon. Below " +
+  'it, the RF or EO/IR sensor finds the target first, at a shorter range. The model has no ' +
+  'terrain masking, multipath or ground clutter, and the radio horizon is beyond the radar ' +
+  'range at every level. Conclusions apply only to this laydown and these levels.';
 
 const q = () =>
   question(

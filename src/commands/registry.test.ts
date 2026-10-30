@@ -10,6 +10,7 @@ import {
   execute,
   forTarget,
   get,
+  menuShortcutLabel,
   shortcutLabel,
 } from './registry';
 
@@ -99,9 +100,11 @@ describe('command registry', () => {
     }
   });
 
-  it('Measure from here shows M, and M still runs the Measure tool (review 7 1a)', () => {
-    expect(shortcutLabel(get('map.measureFrom')!)).toBe('M');
-    expect(shortcutLabel({ id: 'map.measureFrom' })).toBe('M');
+  it('Measure from here shows M in the context menu only; M runs the Measure tool (7 1a, 7.R F-07)', () => {
+    expect(menuShortcutLabel(get('map.measureFrom')!)).toBe('M');
+    expect(menuShortcutLabel({ id: 'map.measureFrom' })).toBe('M');
+    expect(shortcutLabel(get('map.measureFrom')!)).toBe('');
+    expect(shortcutLabel(get('map.measure')!)).toBe('M');
     expect(byShortcut('M')?.id).toBe('map.measure');
   });
 

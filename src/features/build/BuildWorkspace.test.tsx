@@ -1,5 +1,5 @@
 import '../../ui/test-utils';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import { App } from '../../App';
@@ -199,7 +199,7 @@ describe('run feedback (F-08, FR-03)', () => {
     renderApp();
     expect(screen.getByText('Run R-1 done')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('link', { name: 'Results' }));
-    expect(useRuns.getState().doneNoteKey).toBeNull();
+    await waitFor(() => expect(useRuns.getState().doneNoteKey).toBeNull());
     fireEvent.click(await screen.findByRole('link', { name: 'Build' }));
     expect(await screen.findByRole('main', { name: 'Build' })).toBeInTheDocument();
     expect(screen.queryByText('Run R-1 done')).toBeNull();
@@ -229,5 +229,48 @@ describe('run feedback (F-08, FR-03)', () => {
     render(<BuildWorkspace />);
     const status = screen.getByRole('status', { name: 'Sweep progress' });
     expect(status).toHaveTextContent('Sweep running 1/3 test points');
+  });
+
+  it('an edit after the sweep clears "Sweep done" (review 7.R F-12)', () => {
+    act(() =>
+      useDocument
+        .getState()
+        .open(
+          testVignette({ sweep: { factors: [{ kind: 'threat-speed', levels: [10, 20, 30] }] } }),
+        ),
+    );
+    act(() =>
+      useRuns.setState({
+        sweep: {
+          key: 's-done',
+          docId: useDocument.getState().doc!.id,
+          factors: [],
+          status: 'done',
+          progress: { done: 3, total: 3 },
+          result: null,
+          error: null,
+        },
+      }),
+    );
+    render(
+      <MemoryRouter>
+        <BuildWorkspace />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('Sweep done')).toBeInTheDocument();
+    act(() => useDocument.getState().edit('Move', (d) => void (d.sensors[0]!.x += 100)));
+    expect(screen.queryByText('Sweep done')).toBeNull();
+  });
+
+  it('browser back into Results clears the run-done note (review 7.R F-05)', async () => {
+    act(() => useDocument.getState().open(testVignette()));
+    act(() => useRuns.setState({ doneNoteKey: 'k-1' }));
+    // A history entry straight to /results, as browser back or forward gives, with no link click.
+    render(
+      <MemoryRouter initialEntries={['/build', '/results']} initialIndex={1}>
+        <App />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(useRuns.getState().doneNoteKey).toBeNull());
   });
 });

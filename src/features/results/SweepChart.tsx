@@ -69,6 +69,10 @@ function levelText(units: Units, f: Factor, level: number): string {
   return fmt(factorLevel(units, f.kind, level).v, levelDecimals(f.kind));
 }
 
+/** Recharts' default x axis height, and the smallest band height in px that reads as a band. */
+const SWEEP_X_AXIS_PX = 30;
+const MIN_BAND_PX = 2;
+
 const TICK = { fontSize: 11, fontFamily: 'var(--font-mono)', fill: 'var(--text-muted)' };
 
 /** An x tick whose first and last labels anchor inward, so no label leaves the chart (F-11). */
@@ -169,13 +173,25 @@ export function SweepChart({ sweep, units, width = 640, height = 260 }: SweepCha
     });
     const rowDecimals = (item: unknown) =>
       (item as { payload?: { decimals?: number } } | undefined)?.payload?.decimals ?? s.decimals;
+    // The caption names the band only when it can be seen (review 7.R F-20): the widest
+    // interval against the y axis span from 0, over the plot height less margins and x axis.
+    const top = Math.max(
+      t != null ? t * s.factor : 0,
+      ...data.flatMap((d) => [d.value ?? 0, d.band?.[1] ?? 0]),
+    );
+    const widest = Math.max(0, ...data.map((d) => (d.band ? d.band[1]! - d.band[0]! : 0)));
+    const bandPx = top > 0 ? (widest / top) * (height - 8 - 20 - SWEEP_X_AXIS_PX) : 0;
+    const bandNote =
+      bandPx >= MIN_BAND_PX
+        ? 'Band: 95 % interval.'
+        : '95 % interval: too narrow to see at this scale; the tooltip gives it.';
     return (
       <div>
         {picker}
         <ChartFrame
           title={title}
           subtitle={subtitle}
-          note={`Line: ${s.unit} at each level. Band: 95 % interval. Dashed: threshold. x: ${factorLabel(units, f0)}.`}
+          note={`Line: ${s.unit} at each level. ${bandNote} Dashed: threshold. x: ${factorLabel(units, f0)}.`}
         >
           <ComposedChart
             width={width}

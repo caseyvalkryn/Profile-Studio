@@ -1,5 +1,6 @@
 import '../../ui/test-utils';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { hoverTrackHold } from '../../domain/templates/hoverTrackHold';
 import type { Vignette } from '../../domain/types';
 import { run } from '../../engine/run';
 import { testVignette } from '../../engine/testVignette';
@@ -168,7 +169,21 @@ describe('ReportWorkspace', () => {
     const scope = screen.getByRole('region', { name: '6. Scope of inference' });
     expect(within(scope).getByText(LIMITS_LEAD)).toBeInTheDocument();
     const limits = within(scope).getByRole('list', { name: 'Simulation limits' });
-    expect(limits).toHaveTextContent('T-01 holds 60 s at waypoint 1.');
+    expect(limits).toHaveTextContent('T-01 is drawn to hover 60 s at waypoint 1 of 2, 0:00 into');
+  });
+
+  it('Hover track hold: the hover limit is stated once, in section 6 (review 7.R F-01)', () => {
+    const v = hoverTrackHold.make();
+    useDocument.getState().open(v);
+    render(<ReportWorkspace />);
+    const all = (re: RegExp) => screen.queryAllByText(re, { selector: 'li, p' });
+    expect(all(/stops and hovers|does not stop|without (stopping|pausing)/)).toHaveLength(1);
+    const scope = screen.getByRole('region', { name: '6. Scope of inference' });
+    expect(within(scope).getByRole('list', { name: 'Simulation limits' })).toHaveTextContent(
+      'T1 is drawn to hover 60 s at waypoint 16 of 17',
+    );
+    const question = screen.getByRole('region', { name: '1. Question' });
+    expect(question).not.toHaveTextContent(/stop|paus|scored run/i);
   });
 
   it('shows the lock time when a run exists', () => {

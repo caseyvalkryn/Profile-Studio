@@ -9,7 +9,7 @@ import {
   rangeFromDrag,
   startDrag,
 } from './handles';
-import { hitTest } from './hit';
+import { hitAll } from './hit';
 
 const s = { x: 0, y: 0, bearingDeg: 90 };
 
@@ -62,23 +62,23 @@ describe('hit test', () => {
   const none = new Map();
 
   it('finds rings, sector edges, bearing handles, bodies, waypoints, paths and areas', () => {
-    expect(hitTest(v, { x: 0, y: -4995 }, 10, [], none)).toMatchObject({
+    expect(hitAll(v, { x: 0, y: -4995 }, 10, [], none)[0]).toMatchObject({
       key: 'k-S-01',
       handle: 'range',
     });
     // EO/IR sector edge at bearing 060, halfway out
     const e = { x: Math.sin(Math.PI / 3) * 1200, y: Math.cos(Math.PI / 3) * 1200 };
-    expect(hitTest(v, e, 10, [], none)).toMatchObject({ key: 'k-S-02', handle: 'fov' });
-    expect(hitTest(v, { x: 1250, y: 0 }, 10, ['k-S-02'], none)).toMatchObject({
+    expect(hitAll(v, e, 10, [], none)[0]).toMatchObject({ key: 'k-S-02', handle: 'fov' });
+    expect(hitAll(v, { x: 1250, y: 0 }, 10, ['k-S-02'], none)[0]).toMatchObject({
       handle: 'bearing',
     });
-    expect(hitTest(v, { x: 1250, y: 0 }, 10, [], none)).toBeNull();
-    expect(hitTest(v, { x: -31, y: -29 }, 10, [], none)).toMatchObject({ target: 'node' });
-    expect(hitTest(v, { x: 3, y: 6000 }, 10, [], none)).toMatchObject({ target: 'waypoint' });
-    expect(hitTest(v, { x: 2, y: 3000 }, 10, [], none)).toMatchObject({ target: 'threat' });
-    expect(hitTest(v, { x: 60, y: -60 }, 10, [], none)).toMatchObject({ target: 'area' });
+    expect(hitAll(v, { x: 1250, y: 0 }, 10, [], none)).toEqual([]);
+    expect(hitAll(v, { x: -31, y: -29 }, 10, [], none)[0]).toMatchObject({ target: 'node' });
+    expect(hitAll(v, { x: 3, y: 6000 }, 10, [], none)[0]).toMatchObject({ target: 'waypoint' });
+    expect(hitAll(v, { x: 2, y: 3000 }, 10, [], none)[0]).toMatchObject({ target: 'threat' });
+    expect(hitAll(v, { x: 60, y: -60 }, 10, [], none)[0]).toMatchObject({ target: 'area' });
     const at = new Map([['k-T-02', { x: 500, y: 500 }]]);
-    expect(hitTest(v, { x: 505, y: 500 }, 10, [], at)).toMatchObject({
+    expect(hitAll(v, { x: 505, y: 500 }, 10, [], at)[0]).toMatchObject({
       key: 'k-T-02',
       target: 'threat',
     });
