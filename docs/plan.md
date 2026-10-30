@@ -176,5 +176,8 @@ The orchestrator updates this table at each merge.
 
 | Lane | Status | Branch | Head | Notes |
 | --- | --- | --- | --- | --- |
-| 0.1 | waiting for user approval | | | |
-| 0.2 to 7.3 | not started | | | |
+| 0.1 | done | main | a8e0331 | Legacy v4 baseline, approved by user |
+| 0.2 | done | rebuild/mvp | 189a6c0 | Legacy app in `legacy/`; smoke green |
+| 0.3 | done | rebuild/mvp | 6d81756 | 9 fixtures; `golden.js --check` green; `Date` fixed to 2026-01-01Z in the vm; templates have no paths, so parity rests on the 4 seeds |
+| 1.1 | next | | | |
+| 2.1 to 7.3 | not started | | | |
