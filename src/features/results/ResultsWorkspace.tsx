@@ -74,8 +74,9 @@ export default function ResultsWorkspace({ chartWidth = 640 }: { chartWidth?: nu
     .map((e) => ({ key: e.key, label: labelOf(e), scores: e.result!.scores }));
 
   return (
-    <div className="h-full overflow-auto bg-surface-0">
+    <main className="min-h-0 flex-1 overflow-auto bg-surface-0" aria-label="Results">
       <div className="mx-auto flex max-w-5xl flex-col gap-6 p-4">
+        <h1 className="m-0 text-lg font-semibold">Results</h1>
         <Section title="Runs">
           {entries.length === 0 ? (
             <p className="text-sm text-muted">No run yet. Run the vignette from Build.</p>
@@ -195,6 +196,6 @@ export default function ResultsWorkspace({ chartWidth = 640 }: { chartWidth?: nu
           </Section>
         ) : null}
       </div>
-    </div>
+    </main>
   );
 }

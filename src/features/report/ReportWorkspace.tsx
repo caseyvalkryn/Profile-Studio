@@ -2,10 +2,10 @@
 // with a user note. Read-only toward hypotheses: a locked prediction is shown, never edited.
 import { Fragment, useMemo, type ReactNode } from 'react';
 import { measureById, STEPS, type SourceClass, type Step } from '../../domain/measures';
-import type { RunRow, Vignette } from '../../domain/types';
+import type { RunRow, RunSummary, Vignette } from '../../domain/types';
 import { score, scoreOne, type Evaluation, type Score } from '../../engine/score';
 import { useDocument } from '../../state/document';
-import { useActiveRun, type PredictionSnapshot } from '../../state/runs';
+import { useActiveRun } from '../../state/runs';
 import { useUi, type Units } from '../../state/ui';
 import { Button } from '../../ui';
 import {
@@ -18,7 +18,8 @@ import {
 } from './draft';
 import { downloadText, fileName, rowsToCsv, vignetteJson } from './export';
 import { factorLine, factorRows, type FactorRow } from './factors';
-import { measureValue, utc, type Shown } from './format';
+import { measureValue, utc, type Shown } from '../shared/units';
+import '../results/results.css';
 import './report.css';
 
 export type ReportWorkspaceProps = {
@@ -60,8 +61,11 @@ type ReportRun = {
   n: number;
   seed: number;
   rows: RunRow[];
-  predictions: PredictionSnapshot[];
+  /** Predictions as they stood at run start. Empty for a stored run saved before snapshots. */
+  predictions: Prediction[];
 };
+
+type Prediction = NonNullable<RunSummary['predictions']>[number];
 
 function useReportRun(doc: Vignette | null): ReportRun | null {
   const active = useActiveRun();
@@ -77,23 +81,13 @@ function useReportRun(doc: Vignette | null): ReportRun | null {
       };
     const stored = doc.runs[0];
     if (!stored) return null;
-    // A stored run has no snapshot in memory. A locked prediction cannot change after the lock,
-    // so the locked hypotheses stand for the snapshot.
-    const predictions: PredictionSnapshot[] = doc.hypotheses.flatMap((h) =>
-      h.prediction && h.lockedAt
-        ? [
-            {
-              hypothesis: h.key,
-              measure: h.measure,
-              op: h.op,
-              value: h.value,
-              low: h.prediction.low,
-              high: h.prediction.high,
-            },
-          ]
-        : [],
-    );
-    return { key: stored.key, n: stored.n, seed: stored.seed, rows: stored.rows, predictions };
+    return {
+      key: stored.key,
+      n: stored.n,
+      seed: stored.seed,
+      rows: stored.rows,
+      predictions: stored.predictions ?? [],
+    };
   }, [doc, active]);
 }
 

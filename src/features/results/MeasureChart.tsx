@@ -14,7 +14,7 @@ import {
   formatValue,
   measureScale,
   resultSentence,
-} from './format';
+} from '../shared/units';
 
 export type MeasureChartProps = {
   score: Score;

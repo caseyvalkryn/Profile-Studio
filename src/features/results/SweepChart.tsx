@@ -25,7 +25,7 @@ import {
   canonicalThreshold,
   fmt,
   measureScale,
-} from './format';
+} from '../shared/units';
 
 const FACTOR_WORD: Record<FactorKind, string> = {
   'threat-speed': 'Threat speed',

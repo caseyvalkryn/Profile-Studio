@@ -37,7 +37,17 @@ function withRun(): Vignette {
   return {
     ...base,
     hypotheses: base.hypotheses.map((h) => ({ ...h, lockedAt: LOCKED })),
-    runs: [{ key: 'run-1', id: 'R-1', createdAt: LOCKED, n: 10, seed: 7, rows }],
+    runs: [
+      {
+        key: 'run-1',
+        id: 'R-1',
+        createdAt: LOCKED,
+        n: 10,
+        seed: 7,
+        rows,
+        predictions: [{ hypothesis: 'h1', low: 80, high: 100 }],
+      },
+    ],
   };
 }
 
@@ -82,11 +92,37 @@ describe('ReportWorkspace', () => {
     fireEvent.change(box, { target: { value: 'Add a second radar.' } });
     fireEvent.blur(box);
     expect(useDocument.getState().history).toEqual(['Edit report note']);
-    expect(doc().report.slides.find((s) => s.key === 'aar:next')?.notes).toBe(
-      'Add a second radar.',
-    );
+    expect(doc().report.sections?.next).toBe('Add a second radar.');
     act(() => useDocument.getState().undo());
-    expect(doc().report.slides.find((s) => s.key === 'aar:next')?.notes ?? '').toBe('');
+    expect(doc().report.sections?.next ?? '').toBe('');
+  });
+
+  it('reads legacy aar: notes and charts once and moves them on the next write', () => {
+    const v = withRun();
+    v.report.slides = [
+      { key: 'brief-1', name: 'Brief', caption: '', notes: '' },
+      { key: 'aar:scope', name: 'aar:scope', caption: '', notes: 'Day only.' },
+      { key: 'aar:charts', name: 'aar:charts', caption: '1.1.2', notes: '' },
+    ];
+    useDocument.getState().open(v);
+    render(<ReportWorkspace />);
+    expect(screen.getByLabelText('Note: Scope of inference')).toHaveValue('Day only.');
+    expect(screen.getByRole('checkbox', { name: /1\.1\.2/ })).toBeChecked();
+    const box = screen.getByLabelText('Note: Next test');
+    fireEvent.change(box, { target: { value: 'Night.' } });
+    fireEvent.blur(box);
+    expect(doc().report.sections).toEqual({ scope: 'Day only.', next: 'Night.' });
+    expect(doc().report.charts).toEqual(['1.1.2']);
+    expect(doc().report.slides.map((s) => s.key)).toEqual(['brief-1']);
+  });
+
+  it('states the prediction stored with the run, not the live hypothesis', () => {
+    const v = withRun();
+    v.hypotheses = v.hypotheses.map((h) => ({ ...h, prediction: { low: 10, high: 20 } }));
+    useDocument.getState().open(v);
+    render(<ReportWorkspace />);
+    const evaluation = screen.getByRole('region', { name: '5. Evaluation' });
+    expect(within(evaluation).getByText('80.0 to 100.0 %')).toBeInTheDocument();
   });
 
   it('toggles a picked chart and renders it through renderChart', () => {
@@ -96,6 +132,7 @@ describe('ReportWorkspace', () => {
     const box = screen.getByRole('checkbox', { name: /1\.1\.2/ });
     fireEvent.click(box);
     expect(box).toBeChecked();
+    expect(doc().report.charts).toEqual(['1.1.2']);
     expect(renderChart).toHaveBeenCalledWith('1.1.2', 'run-1');
     expect(screen.getByText('chart 1.1.2 run-1')).toBeInTheDocument();
     renderChart.mockClear();

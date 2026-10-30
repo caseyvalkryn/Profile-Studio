@@ -1,12 +1,12 @@
 // The scorecard: DroneScore measures grouped by F2T2EA step, then areas 4 and 5 as system
 // results. Scored rows come from the run's scores; the step's other measures show muted as
-// unscored. Target has no measures (jiatf-401 section c): it shows the decision time inputs.
-import { Fragment } from 'react';
+// unscored, collapsed per step behind a quiet "n more measures" toggle. Target has no measures (jiatf-401 section c): it shows the decision time inputs.
+import { Fragment, useState } from 'react';
 import { MEASURES, STEPS, measureById } from '../../domain/measures';
 import type { Measure, SourceClass, Step } from '../../domain/measures';
 import type { Evaluation, Score } from '../../engine/score';
 import type { Units } from '../../state/ui';
-import { Tooltip } from '../../ui';
+import { Button, Tooltip } from '../../ui';
 import {
   EVALUATION_WORD,
   SOURCE_WORD,
@@ -14,7 +14,7 @@ import {
   formatInterval,
   formatThreshold,
   formatValue,
-} from './format';
+} from '../shared/units';
 
 export function EvaluationBadge({ evaluation }: { evaluation: Evaluation }) {
   return (
@@ -66,6 +66,13 @@ const COLS = 7;
 export function Scorecard({ scores, units, chainTime, selectedId, onSelect }: ScorecardProps) {
   const byId = new Map(scores.map((s) => [s.id, s]));
   const stepOf = (id: string): Step => measureById(id)?.step ?? 'system';
+  const [open, setOpen] = useState<ReadonlySet<Step>>(() => new Set());
+  const toggle = (step: Step) =>
+    setOpen((o) => {
+      const next = new Set(o);
+      if (!next.delete(step)) next.add(step);
+      return next;
+    });
   return (
     <table className="w-full border-collapse text-sm" aria-label="Scorecard">
       <thead>
@@ -158,7 +165,24 @@ export function Scorecard({ scores, units, chainTime, selectedId, onSelect }: Sc
                   </tr>
                 );
               })}
-              {unscored.map((m) => (
+              {unscored.length > 0 ? (
+                <tr className="results-no-print" data-unscored-toggle={step}>
+                  <td colSpan={COLS} className="py-0.5 pl-1">
+                    <Button
+                      size="sm"
+                      variant="quiet"
+                      aria-expanded={open.has(step)}
+                      onClick={() => toggle(step)}
+                      className="text-xs text-muted"
+                    >
+                      {open.has(step)
+                        ? 'Hide unscored measures'
+                        : `${unscored.length} more ${unscored.length === 1 ? 'measure' : 'measures'}`}
+                    </Button>
+                  </td>
+                </tr>
+              ) : null}
+              {(open.has(step) ? unscored : []).map((m) => (
                 <tr
                   key={m.id}
                   data-measure={m.id}
