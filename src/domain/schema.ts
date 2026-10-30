@@ -189,7 +189,18 @@ export const runSummarySchema: z.ZodType<RunSummary> = z.object({
   n: z.number().int().min(0),
   seed: z.number().int(),
   rows: z.array(runRowSchema),
-  predictions: z.array(z.object({ hypothesis: z.string(), low: num, high: num })).optional(),
+  predictions: z
+    .array(
+      z.object({
+        hypothesis: z.string(),
+        measure: z.string().optional(),
+        op: op.optional(),
+        value: num.optional(),
+        low: num,
+        high: num,
+      }),
+    )
+    .optional(),
   note: z.string().optional(),
 });
 
@@ -225,6 +236,26 @@ export const vignetteSchema: z.ZodType<Vignette> = z.object({
   measures: z.array(measureSettingSchema),
   runs: z.array(runSummarySchema),
   report: reportDraftSchema,
+  sweep: z
+    .object({
+      factors: z
+        .array(
+          z.object({
+            kind: z.enum([
+              'threat-speed',
+              'threat-altitude',
+              'approach-bearing',
+              'sensor-range',
+              'sensor-position-offset',
+            ]),
+            levels: z.array(num).min(1),
+            target: z.string().optional(),
+          }),
+        )
+        .min(1)
+        .max(2),
+    })
+    .optional(),
 });
 
 /** Parse and validate a vignette. Throws an Error whose message lists each problem and its path. */

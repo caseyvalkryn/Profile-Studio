@@ -3,11 +3,15 @@ import { TEMPLATES, templateById } from './index';
 import { parseVignette } from '../schema';
 import { MEASURES, measureById } from '../measures';
 import { run } from '../../engine/run';
-import { score } from '../../engine/score';
+import { enteredValues, score } from '../../engine/score';
+import { sweep } from '../../engine/sweep';
+import { HOVER_SCOPE } from './hoverTrackHold';
+import { SWEEP_SCOPE } from './detectionRangeSweep';
 import { preview } from '../../engine/preview';
 
 const RUNNABLE = TEMPLATES.filter((t) => t.id !== 'blank');
-// 2.3 Track Quantity is an entered measure (vendor sheet); the run rows cannot produce it.
+// 2.3 Track Quantity is an entered measure (vendor sheet); it scores from the asset's entered
+// value, not the run rows.
 const ENTERED = new Set(MEASURES.filter((m) => m.sourceClass !== 'simulated').map((m) => m.id));
 
 describe('TEMPLATES', () => {
@@ -89,6 +93,38 @@ describe('TEMPLATES', () => {
     expect(t.sweep?.factor.levels).toEqual(t.sweep?.levels);
   });
 
+  it('the sweep template stores its factor on the vignette and passes the schema (review 6 F-02)', () => {
+    const t = templateById('detection-range-sweep')!;
+    const v = parseVignette(t.make());
+    expect(v.sweep?.factors).toEqual([t.sweep!.factor]);
+    expect(v.report.sections?.scope).toBe(SWEEP_SCOPE);
+    for (const o of TEMPLATES.filter((x) => !x.sweep)) expect(o.make().sweep, o.id).toBeUndefined();
+  });
+
+  it('the sweep shows an altitude effect on 1.1.2 (review 6 F-14)', () => {
+    const v = templateById('detection-range-sweep')!.make();
+    const s = sweep(v, v.sweep!.factors, 10, 1);
+    const at = s.cells.map((c) => c.scores[0]!.value!);
+    expect(at[0]!).toBeLessThan(at[at.length - 1]! - 500);
+  }, 30_000);
+
+  it('Hover track hold states that the run does not fly the hover (review 6 F-18)', () => {
+    const v = templateById('hover-track-hold')!.make();
+    expect(v.report.sections?.scope).toBe(HOVER_SCOPE);
+    expect(HOVER_SCOPE).toMatch(/does not fly waypoint holds/);
+  });
+
+  it('Swarm 2.3 Track Quantity scores Meets from the entered value 6 (review 6 F-05)', () => {
+    const v = templateById('swarm-split')!.make();
+    const s = score([], v.measures, { entered: enteredValues(v) }).find((x) => x.id === '2.3')!;
+    expect(s).toMatchObject({
+      value: 6,
+      interval: null,
+      sourceClass: 'entered',
+      evaluation: 'meets',
+    });
+  });
+
   it('the preview reaches exactly the listed steps', () => {
     for (const t of TEMPLATES) {
       const pv = preview(t.make());
@@ -106,12 +142,13 @@ describe('TEMPLATES', () => {
       const v = parseVignette(t.make());
       const { rows } = run(v, 10, 1);
       expect(rows.length).toBe(10 * v.threats.length);
-      const scores = score(rows, v.measures);
+      const scores = score(rows, v.measures, { entered: enteredValues(v) });
       for (const id of t.mainMeasures) {
         const s = scores.find((x) => x.id === id)!;
         expect(s, `${t.id}: ${id}`).toBeDefined();
         if (ENTERED.has(id)) {
-          expect(s.value, `${t.id}: ${id} is entered`).toBeNull();
+          expect(s.value, `${t.id}: ${id} is entered`).not.toBeNull();
+          expect(s.interval, `${t.id}: ${id} is entered`).toBeNull();
           expect(s.sourceClass).toBe('entered');
         } else {
           expect(s.value, `${t.id}: ${id}`).not.toBeNull();

@@ -79,11 +79,27 @@ describe('ResultsWorkspace', () => {
     expect(row('1.1.3').hasAttribute('data-unscored')).toBe(true);
   });
 
-  it('a null score shows its note and a not simulated row shows its class', () => {
+  it('a null score shows plain text, not the engine note, and a not simulated row shows its class', () => {
     render(<ResultsWorkspace />);
-    within(row('2.1.4')).getByText(/identified_ok is never false/);
+    within(row('2.1.4')).getByText(
+      'Not simulated. The model does not produce a wrong identification.',
+    );
+    expect(document.body.textContent).not.toMatch(/identified_ok|stage_reached|rangeboard/);
     within(row('4.2.1')).getByText('Not simulated');
     within(row('4.2.1')).getByText('Inconclusive');
+  });
+
+  it('shows only the runs and sweep of the open vignette (review 6 F-01)', () => {
+    act(() =>
+      useRuns.setState({
+        sweep: { key: 's', docId: v.id, factors: [], status: 'running', result: null, error: null },
+      }),
+    );
+    act(() => useDocument.setState({ doc: { ...v, id: 'V-other', runs: [] } }));
+    render(<ResultsWorkspace />);
+    expect(screen.getByText('No run yet. Run the vignette from Build.')).toBeInTheDocument();
+    expect(screen.queryByRole('table', { name: 'Scorecard' })).toBeNull();
+    expect(screen.queryByText('Sweep running.')).toBeNull();
   });
 
   it('clicking a row shows its chart with title and subtitle', () => {

@@ -6,13 +6,13 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit && tsc -p e2e/tsconfig.json",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
     "e2e": "playwright test",
-    "gate": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "gate": "npm run typecheck && npm run lint && npm run test && npm run build && npm run e2e",
     "legacy:smoke": "node legacy/test/smoke.js"
   },
   "dependencies": {

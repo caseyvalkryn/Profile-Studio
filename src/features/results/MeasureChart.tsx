@@ -13,6 +13,7 @@ import {
   fmt,
   formatValue,
   measureScale,
+  noValueText,
   resultSentence,
 } from '../shared/units';
 
@@ -239,7 +240,13 @@ export function MeasureChart({ score, rows, hypothesis, units, width = 640 }: Me
   if (score.value == null || !f || f.kind === 'null')
     return (
       <ChartFrame title={title} subtitle={subtitle}>
-        <div className="text-sm text-muted">{score.note ?? 'No value to chart.'}</div>
+        <div className="text-sm text-muted">
+          {score.value == null
+            ? noValueText(score)
+            : score.sourceClass === 'entered'
+              ? 'Entered value from the vendor sheet. The run does not produce it, so there is no chart.'
+              : 'No value to chart.'}
+        </div>
       </ChartFrame>
     );
   if (f.kind === 'proportion')

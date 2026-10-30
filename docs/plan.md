@@ -213,41 +213,49 @@ merge. Open items live in section 8, not here.
 | 6.2 | done | 9a4f864 | behaviours and the 8 templates, each runs and scores (table in section 8) |
 | 4.R | done | see `reviews/phase-4.md` | browser check: 3 blockers (map height, worker 404, no right-click menu), 4 majors, 8 minors |
 | 4.F | done | 405bae4 | all 15 fixed; F-01 to F-07 browser-verified (`reviews/phase-4/after-4F.png`); 442 tests |
-| 6.3 | next | | library wiring and dev-vignette removal |
-| 6.R, 6.F | not started | | |
-| 7.1 to 7.3 | not started | | |
+| 6.3 | done | 26074c3 | Library on `/` with the 8 templates; dev vignette removed; empty state on Build, Results, Report without a document; 445 tests |
+| 6.R | done | e053836 | `reviews/phase-6.md`: 2 blockers (Results unscoped to the document, no sweep control), 3 majors, 7 minors, 6 notes; 16 screenshots |
+| 6.F | done | f5d8f5b | all 16 worked findings fixed; F-15 (labels, F2T2EA lanes) and F-17 (chunk size) stand; 7 browser screenshots; 462 tests |
+| 7.2 | done | see `reviews/phase-7-first-use.md` | first-use goal met (76 s of tool time, under 10 min); 2 major and 8 minor friction items; F-15 stands; 23 screenshots |
+| 7.1 | done | 39342af | 12 Playwright specs (section 12 items 1 to 10, phase 6 F-01 and F-04) on `vite preview` port 5175; item 11 as `src/engine/headless.test.ts`; `npm run gate` now ends with `npm run e2e`; 463 unit tests |
+| 7.3 | done | c2e6699 | `reviews/phase-7-budgets.md`: all 5 section 11 budgets pass on an M4 Pro; run 200 x 6 at 2.3 s has the least margin; perf spec in `e2e/perf/` outside the gate |
 
 ## 8. Handoff
 
-State on 2026-10-30, end of the first orchestration session. Phases 0 to 6 are merged on
-`rebuild/mvp` with the gate green (63 test files, 442 tests) and the legacy smoke green. Nothing is
-pushed. `main` holds only the legacy baseline. The tree is clean; no lane is in flight.
+State on 2026-10-30, end of the second orchestration session. Phases 0 to 7 are merged on
+`rebuild/mvp` with the gate green (65 unit test files, 463 tests, 12 Playwright specs on
+`vite preview`, build). The spec section 12 acceptance suite passes, which is the MVP definition
+of done. The user approved a merge to `main` and a push on 2026-10-30: `main` is at that merge,
+and both branches are on `origin`. The tree is clean; no lane is in flight; no worktree exists.
 
 **Orchestrator prompt.** Paste this to start the next session:
 
 ```text
 You are the orchestrator for Profile Studio at /Users/caseytalbot/Projects/profile-studio,
-branch rebuild/mvp. Read CLAUDE.md, then docs/plan.md sections 5, 7 and 8, then
-reviews/phase-4.md. Run `npm run gate` to confirm the baseline (442 tests). Run the next lanes
-from the status table in order: 6.3, then 6.R with a browser pass on port 5174, then 6.F, then
-7.1 to 7.3. One worker agent per lane in a worktree under .worktrees/<id>; the lane text in
-section 6 is the brief, with the standard items from section 5 rule 3. Verify each lane with
-the gate and git diff --stat before you merge it, and update the status table at each merge.
-Ask me before any download (Playwright browsers), and before any push or merge to main.
+branch rebuild/mvp (tracks origin). Read CLAUDE.md, then docs/plan.md sections 5, 7 and 8, then
+reviews/phase-7-first-use.md. Run `npm run gate` to confirm the baseline: 65 unit files, 463
+tests, 12 e2e specs, build green.
+
+The MVP acceptance suite passes. Run the fix lanes that section 8 lists under "Fix lanes
+proposed by 7.2" as parallel lanes with disjoint folders, then one review lane with a browser
+pass (port 5174) and its fix lane. Section 5 rules apply: one worker per lane in a worktree
+under .worktrees/<id>, workers do not commit, gate and git diff --stat before each --no-ff
+merge, gate on rebuild/mvp after, worktree removed, status table and section 8 updated.
+
+Ask me before any download, any push, and any merge to main.
 ```
 
-**Start here.** Read `CLAUDE.md`, this file (sections 5 to 8), `reviews/phase-4.md`, then the
+**Start here.** Read `CLAUDE.md`, this file (sections 5 to 8), the two phase 7 reviews, then the
 "Open items" below. Run `npm run gate` once to confirm the baseline. Then:
 
-1. Run 6.3 (wiring). Its brief is in section 6.
-2. Run 6.R with a browser pass, then 6.F.
-3. Run 7.1 to 7.3. 7.1 needs `npx playwright install chromium` (one download; ask the user first,
-   the user does not allow downloads without asking). The gate gains `npm run e2e` at that point.
-4. Ask the user before any push or merge to `main`.
+1. Schedule the 7.2 fix lanes (below) as parallel lanes by folder, then one review with a
+   browser pass and its fix lane.
+2. Ask the user before any push or merge to `main`.
+3. Phase 8 (vos port) is a separate plan, after the user accepts the MVP.
 
-**Approvals on record.** The user approved the phase 0 commits and the first phase 1 commit on
-2026-10-30. Later lane commits on `rebuild/mvp` followed from that. Push and merge to `main` are
-not approved.
+**Approvals on record.** The user approved the phase 0 commits, the first phase 1 commit, one
+merge to `main` with a push, and the Playwright Chromium download, all on 2026-10-30. Each later
+push or merge to `main` needs its own approval.
 
 **How to run a lane.** `git worktree add .worktrees/<id> -b lane/<id> rebuild/mvp`, then
 `npm ci` there. The brief states: working directory, owned files, gate, report shape, time
@@ -280,6 +288,8 @@ Domain (`src/domain`):
   more vertices. Proposal: a `circle` field.
 - `Hypothesis.value` is assumed to be in the measure's canonical unit (m, s, percent). The schema
   does not state it.
+- Entered-class measures (2.3 Track Quantity on the Swarm template) score from the asset's
+  entered value with no interval (6.F F-05). The sweep factor lives on `Vignette.sweep`.
 - Template thresholds at n 10, seed 1: point defence 1.1.2 3979 m, 2.1.3 3250 m, 3.1.2 100 %
   inconclusive (Wilson at n 10 cannot clear 80 %); hover 1.2.2 99.6 %; swarm 1.2.1 100 %, 3.1.1
   100 %; delta wing 1.1.2 8975 m, 3.1.3 2038 m, 3.1.4 20.6 s; fiber FPV 1.1.1 100 % inconclusive at
@@ -287,20 +297,32 @@ Domain (`src/domain`):
   need n of about 30 or more to be conclusive; the Run default is n 100.
 
 State and commands (`src/state`, `src/commands`):
+- `toggleCompare` counts compare keys from other vignettes against `MAX_COMPARE`, so hidden keys
+  can block compare checkboxes (6.F report).
+- Undo and redo never change a locked hypothesis (`keepLocked` in `document.ts`, 6.F F-04).
 - The prediction lock and the run append go through `useDocument.apply` (no undo step).
 - `importJson` returns `Vignette[]`; records with no schema stamp are refused.
 - IndexedDB itself is untested (no `fake-indexeddb`); the persistence tests use a mock db.
 - The spec has no right-click row for C2 and TSPI nodes; Duplicate and Delete were added.
 
 Build workspace (`src/features/build`):
-- `devVignette.*` opens a legacy template at startup when nothing is stored. Remove in 6.3.
 - Labels are an HTML overlay because a blank MapLibre style has no glyphs offline.
 - Time-dependent layers update every 100 ms during a drag (the preview budget), per frame
   otherwise.
 - `reviews/phase-4.md` notes F-16 to F-19 stand (snap invisible at working zoom, map focus ring
-  uses the accent, dev vignette hack, circle areas and timeline lanes not exercised).
+  uses the accent, circle areas and timeline lanes not exercised). `reviews/phase-6.md` F-15
+  repeats two of them: labels overlap at the origin, and the timeline has no F2T2EA lanes. 7.2
+  checks both.
+- The inspector hypothesis row truncates at the default inspector width; the threshold is only
+  visible in the tooltip (6.F report).
+- Assets at the origin overlap at the default zoom, so the radar is hard to click (6.F report).
+
+Library (`src/features/library`):
+- `LibraryScreen` calls `listVignettes` and `loadVignette` with no catch; in a private window with
+  no IndexedDB the saved list stays empty with no message (6.3 report).
 
 Results and report (`src/features/results`, `src/features/report`):
+- `ReportWorkspace.tsx` keeps a "No vignette open." branch that `App` now handles first (6.3).
 - PNG export is untested (no canvas in jsdom); needs the 6.R browser pass.
 - The one `@media print` light-token rule lives in `results.css` and covers both screens; it has
   no light values for `--state-covered` and `--state-warning`.
@@ -308,15 +330,28 @@ Results and report (`src/features/results`, `src/features/report`):
 - Stored runs older than 5.3 have no `predictions` snapshot and show `[]`.
 
 Build and budgets:
-- Entry 169 kB gzip; MapView chunk 296 kB gzip (lazy); Vite warns on the chunk size. First-load
-  interactive in 2 s is not yet measured (7.3).
+- Measured 2026-10-30 (`reviews/phase-7-budgets.md`, M4 Pro): entry 77.8 kB gzip plus a shared
+  116.7 kB chunk loaded on `/` (211 kB before the first click); MapView 286.5 kB gzip (lazy, Vite
+  warns). First load interactive: `/` 73 ms, `/build` with 40 x 15 assets 785 ms (1.2 s at 4x CPU
+  throttle). Run 200 x 6: 2.3 s in the browser, 3.05 s headless; a machine 1.6x slower misses 5 s.
+  Likely cost: one store patch and rerender per replicate (`src/state/runs.ts:188`).
+- The Run dialog has no replicate field; Run sends `DEFAULT_RUN_N` 100 (`commands.ts:422`).
+- `e2e/perf/budgets.spec.ts` reruns the measurements: `npx playwright test -c
+  e2e/perf/playwright.perf.config.mts`, `PERF_HEADED=1` for the GPU run.
 - The root `package.json` stays CommonJS so `legacy/test/smoke.js` runs; Vite and Playwright
   configs are `.mts`.
+
+**Fix lanes proposed by 7.2** (`reviews/phase-7-first-use.md`, section "Fix lanes proposed"),
+not yet scheduled: stacked laydown at the origin and stacked-hit picking (FR-01, FR-05), sensor
+positions in the AAR factor table (FR-02), run-done note persistence (FR-03), unit-free template
+questions (FR-04), F2T2EA timeline lanes (F-15), value and limit precision (FR-06), sweep y-axis
+unit (FR-08), template copy saved on open (FR-07).
 
 **Known problems for the team.**
 
 1. Ports and the browser. Port 5173 is the user's rangeboard dev server; use
-   `npm run dev -- --port 5174 --strictPort`. Local binding worked in this session. Claude in
+   `npm run dev -- --port 5174 --strictPort` for browser checks. Playwright serves `vite preview`
+   on 5175 (`playwright.config.mts`) and the perf spec on 5177. Local binding worked in this session. Claude in
    Chrome cannot drive native HTML5 drag; use click-to-arm then click, and say so in the report.
    A browser GIF export is a download and did not work.
 2. The internet. The user does not allow downloads without asking. The JIATF 401 handbook and

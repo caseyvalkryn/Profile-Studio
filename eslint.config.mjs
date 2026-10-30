@@ -12,6 +12,7 @@ export default tseslint.config(
       'fixtures/',
       'playwright-report/',
       'test-results/',
+      'e2e/__results__/',
       '.worktrees/',
     ],
   },

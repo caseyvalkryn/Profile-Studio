@@ -8,7 +8,7 @@ import { App } from './App';
 vi.mock('maplibre-gl', () => import('./features/build/map/__mocks__/maplibre-gl'));
 
 describe('App shell', () => {
-  it('shows the four workspaces in the top bar', () => {
+  it('shows the four workspaces in the top bar', async () => {
     render(
       <MemoryRouter initialEntries={['/build']}>
         <App />
@@ -19,6 +19,7 @@ describe('App shell', () => {
       expect(nav).toHaveTextContent(name);
     }
     expect(screen.getByRole('link', { name: 'Build' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('main', { name: 'Build' })).toBeInTheDocument();
+    // No storage in jsdom, so start-up opens nothing and Build shows its empty state.
+    expect(await screen.findByRole('main', { name: 'Build' })).toBeInTheDocument();
   });
 });

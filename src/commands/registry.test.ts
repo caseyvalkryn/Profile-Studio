@@ -2,7 +2,7 @@ import { testVignette } from '../engine/testVignette';
 import { useDocument } from '../state/document';
 import { useRuns } from '../state/runs';
 import { UI_DEFAULTS, useUi } from '../state/ui';
-import { DEFAULT_THREAT_TYPE, MENU_TARGETS } from './commands';
+import { DEFAULT_RUN_N, DEFAULT_THREAT_TYPE, MENU_TARGETS } from './commands';
 import { all, byShortcut, currentContext, execute, forTarget, shortcutLabel } from './registry';
 
 /** Spec section 8, Keys, in canonical form. */
@@ -222,6 +222,30 @@ describe('commands edit the document', () => {
     expect(execute('hypothesis.setPrediction', currentContext(), { low: 0, high: 1 })).toBe(
       'Prediction locked at first run',
     );
+  });
+
+  it('Run sweep says why without a sweep factor, then starts the stored sweep (review 6 F-02)', () => {
+    expect(execute('run.sweep', currentContext())).toBe('This vignette has no sweep factor');
+    const calls: unknown[] = [];
+    const original = useRuns.getState().startSweep;
+    useRuns.setState({
+      startSweep: (factors, n, seed) => {
+        calls.push({ factors, n, seed });
+        return Promise.resolve('k');
+      },
+    });
+    try {
+      useDocument.getState().edit('Sweep', (d) => {
+        d.sweep = { factors: [{ kind: 'threat-altitude', levels: [30, 400] }] };
+      });
+      expect(execute('run.sweep', currentContext())).toBe(true);
+      expect(calls).toEqual([
+        { factors: [{ kind: 'threat-altitude', levels: [30, 400] }], n: DEFAULT_RUN_N, seed: 1 },
+      ]);
+      expect(all().find((c) => c.id === 'run.sweep')?.group).toBe('run');
+    } finally {
+      useRuns.setState({ startSweep: original });
+    }
   });
 
   it('delete removes the selection and duplicate copies it', () => {
