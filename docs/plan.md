@@ -217,8 +217,8 @@ merge. Open items live in section 8, not here.
 | 6.R | done | e053836 | `reviews/phase-6.md`: 2 blockers (Results unscoped to the document, no sweep control), 3 majors, 7 minors, 6 notes; 16 screenshots |
 | 6.F | done | f5d8f5b | all 16 worked findings fixed; F-15 (labels, F2T2EA lanes) and F-17 (chunk size) stand; 7 browser screenshots; 462 tests |
 | 7.2 | done | see `reviews/phase-7-first-use.md` | first-use goal met (76 s of tool time, under 10 min); 2 major and 8 minor friction items; F-15 stands; 23 screenshots |
-| 7.1 | in flight | | Playwright suite on port 5175 |
-| 7.3 | not started | | after 7.1 and 7.2, alone, for clean timings |
+| 7.1 | done | 39342af | 12 Playwright specs (section 12 items 1 to 10, phase 6 F-01 and F-04) on `vite preview` port 5175; item 11 as `src/engine/headless.test.ts`; `npm run gate` now ends with `npm run e2e`; 463 unit tests |
+| 7.3 | next | | alone, for clean timings |
 
 ## 8. Handoff
 
@@ -256,6 +256,7 @@ merge to main. The MVP is done when the spec section 12 acceptance suite passes.
 2. Run 6.R with a browser pass, then 6.F.
 3. Run 7.1 to 7.3. 7.1 needs `npx playwright install chromium` (one download; ask the user first,
    the user does not allow downloads without asking). The gate gains `npm run e2e` at that point.
+   Done 2026-10-30: Chromium 1248 installed with the user's approval; the gate includes e2e.
 4. Ask the user before any push or merge to `main`.
 
 **Approvals on record.** The user approved the phase 0 commits, the first phase 1 commit, and
