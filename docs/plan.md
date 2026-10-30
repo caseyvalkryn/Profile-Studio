@@ -215,8 +215,9 @@ merge. Open items live in section 8, not here.
 | 4.F | done | 405bae4 | all 15 fixed; F-01 to F-07 browser-verified (`reviews/phase-4/after-4F.png`); 442 tests |
 | 6.3 | done | 26074c3 | Library on `/` with the 8 templates; dev vignette removed; empty state on Build, Results, Report without a document; 445 tests |
 | 6.R | done | e053836 | `reviews/phase-6.md`: 2 blockers (Results unscoped to the document, no sweep control), 3 majors, 7 minors, 6 notes; 16 screenshots |
-| 6.F | next | | |
-| 7.1 to 7.3 | not started | | |
+| 6.F | done | f5d8f5b | all 16 worked findings fixed; F-15 (labels, F2T2EA lanes) and F-17 (chunk size) stand; 7 browser screenshots; 462 tests |
+| 7.1, 7.2 | next | | parallel: 7.1 on port 5175, 7.2 on 5174 |
+| 7.3 | not started | | after 7.1 and 7.2, alone, for clean timings |
 
 ## 8. Handoff
 
@@ -291,6 +292,8 @@ Domain (`src/domain`):
   more vertices. Proposal: a `circle` field.
 - `Hypothesis.value` is assumed to be in the measure's canonical unit (m, s, percent). The schema
   does not state it.
+- Entered-class measures (2.3 Track Quantity on the Swarm template) score from the asset's
+  entered value with no interval (6.F F-05). The sweep factor lives on `Vignette.sweep`.
 - Template thresholds at n 10, seed 1: point defence 1.1.2 3979 m, 2.1.3 3250 m, 3.1.2 100 %
   inconclusive (Wilson at n 10 cannot clear 80 %); hover 1.2.2 99.6 %; swarm 1.2.1 100 %, 3.1.1
   100 %; delta wing 1.1.2 8975 m, 3.1.3 2038 m, 3.1.4 20.6 s; fiber FPV 1.1.1 100 % inconclusive at
@@ -298,6 +301,9 @@ Domain (`src/domain`):
   need n of about 30 or more to be conclusive; the Run default is n 100.
 
 State and commands (`src/state`, `src/commands`):
+- `toggleCompare` counts compare keys from other vignettes against `MAX_COMPARE`, so hidden keys
+  can block compare checkboxes (6.F report).
+- Undo and redo never change a locked hypothesis (`keepLocked` in `document.ts`, 6.F F-04).
 - The prediction lock and the run append go through `useDocument.apply` (no undo step).
 - `importJson` returns `Vignette[]`; records with no schema stamp are refused.
 - IndexedDB itself is untested (no `fake-indexeddb`); the persistence tests use a mock db.
@@ -308,7 +314,12 @@ Build workspace (`src/features/build`):
 - Time-dependent layers update every 100 ms during a drag (the preview budget), per frame
   otherwise.
 - `reviews/phase-4.md` notes F-16 to F-19 stand (snap invisible at working zoom, map focus ring
-  uses the accent, dev vignette hack, circle areas and timeline lanes not exercised).
+  uses the accent, circle areas and timeline lanes not exercised). `reviews/phase-6.md` F-15
+  repeats two of them: labels overlap at the origin, and the timeline has no F2T2EA lanes. 7.2
+  checks both.
+- The inspector hypothesis row truncates at the default inspector width; the threshold is only
+  visible in the tooltip (6.F report).
+- Assets at the origin overlap at the default zoom, so the radar is hard to click (6.F report).
 
 Library (`src/features/library`):
 - `LibraryScreen` calls `listVignettes` and `loadVignette` with no catch; in a private window with
