@@ -12,6 +12,7 @@
 import type { Effector, Sensor, SensorModel, Threat, Vignette } from '../domain/types';
 import { archetypeById } from '../domain/catalog';
 import { pdFromSnr } from './sim/analysis/radarPd';
+import { CONFIRMED_DECLARE_FACTOR } from './sim/analysis/doctrineFactors';
 import type {
   C2Spec,
   Connection,
@@ -90,7 +91,49 @@ export const DEFAULTS = {
   },
   /** Vignette seed stored on the scenario when the caller passes none. */
   seed: 1,
+  /**
+   * Kill-chain link latency, seconds, on every adapter connection. Rangeboard would otherwise
+   * charge 2 s sensor to C2 and 3 s C2 to effector under doctrine (doctrineFactors.ts
+   * `defaultLinkLatencyS`); the vignette's chain time is `decisionS` + `assignS` only.
+   */
+  linkLatencyS: 0,
+  /**
+   * Declared default, not adjustable from the adapter: rangeboard halves the operator's
+   * `decisionS` dwell when a second phenomenology had confirmed the track by declaration
+   * start (sim.ts, `CONFIRMED_DECLARE_FACTOR`). A radar plus EO/IR vignette therefore pays
+   * decisionS / 2 at the Target step; a single-phenomenology vignette pays the full dwell.
+   */
+  confirmedDeclareFactor: CONFIRMED_DECLARE_FACTOR,
+  /**
+   * Threat route intent. 'attack' sets rangeboard's attack-intent flag, so the ladder's
+   * "suspected" rung opens at first detection and never delays a shot (sim.ts ladder).
+   */
+  routeIntent: 'attack',
 };
+
+/**
+ * Losses in the vignette -> rangeboard mapping that the run cannot recover. Each entry names
+ * the vignette field, what the trial does instead, and the DroneScore rows it touches.
+ */
+export const LOSSES = {
+  /**
+   * Waypoint altitude profile. Rangeboard `FlightPath.points` is `Vec2[]` and the UAS flies
+   * at one altitude (`altBandFt`), so the trial flies flat at the first waypoint's z. A climb
+   * or dive drawn in the vignette is lost: `detect_alt_m` (1.1.3, 1.5) is the first
+   * waypoint's z, and the preview, which samples z along the path, can disagree with the run.
+   */
+  altitudeProfile: 'first waypoint z for the whole path',
+  /** Waypoint holds (`holdS`): rangeboard flies through every waypoint. */
+  waypointHolds: 'ignored',
+  /** Logistic Pd width for RF, EO/IR and acoustic: a hard threshold at r50. */
+  logisticWidth: 'hard threshold at r50M',
+  /**
+   * Sensor `minRangeM`: rangeboard `SensorSpec` has no minimum range, so the trial detects
+   * inside it. run.ts post-filters the observation intervals by truth range before the stage
+   * ladder (detect, track, continuity); the engine's ID draw and release gate still saw them.
+   */
+  sensorMinRange: 'post-filtered in run.ts; the engine ladder saw the holds',
+} as const;
 
 /** Swerling 2 and 4 are not in rangeboard (`SwerlingCase = 0 | 1 | 3`); each maps to its slow-fluctuation sibling. */
 export function toSwerling(s: 0 | 1 | 2 | 3 | 4): SwerlingCase {
@@ -114,7 +157,7 @@ function airframeOf(a: string | undefined): UasSpec['airframe'] {
   }
 }
 
-/** Threat altitude is constant per UAS in rangeboard: take the first waypoint's z. */
+/** Threat altitude is constant per UAS in rangeboard (LOSSES.altitudeProfile): the first waypoint's z. */
 export function threatAltitudeM(t: Threat): number {
   return t.path[0]?.z ?? DEFAULTS.altitudeM;
 }
@@ -272,7 +315,7 @@ export function toScenario(
   const lib = (
     id: string,
     kind: SpecModel['kind'],
-    body: Pick<SpecModel, 'sensor' | 'uas' | 'effector' | 'c2'>,
+    body: Pick<SpecModel, 'sensor' | 'uas' | 'effector' | 'c2' | 'threatProfile'>,
   ) => {
     library.push({
       id: specId(id),
@@ -305,7 +348,13 @@ export function toScenario(
   // effector) link; its built-in integration profiles key on rangeboard spec ids.
   let link = 0;
   const connect = (fromId: string, toId: string) =>
-    connections.push({ id: `link-${++link}`, fromId, toId, label: '' });
+    connections.push({
+      id: `link-${++link}`,
+      fromId,
+      toId,
+      label: '',
+      latencyS: DEFAULTS.linkLatencyS,
+    });
   if (c2Nodes.length > 0) {
     for (const n of c2Nodes) {
       for (const s of v.sensors) connect(s.id, n.id);
@@ -324,7 +373,17 @@ export function toScenario(
     );
   }
   for (const t of v.threats) {
-    const uid = lib(t.id, 'uas', { uas: uasSpec(t) });
+    const uid = lib(t.id, 'uas', {
+      uas: uasSpec(t),
+      // Attack intent: the ladder's "suspected" rung opens at first detection (DEFAULTS.routeIntent).
+      threatProfile: {
+        designator: t.type,
+        routeIntent: DEFAULTS.routeIntent,
+        altitudeFt: Math.round(threatAltitudeM(t) * M_TO_FT),
+        speedMps: threatSpeedMs(t),
+        count: 1,
+      },
+    });
     const first = t.path[0];
     entities.push(
       entity(t.id, t.id, 'uas', uid, first?.x ?? 0, first?.y ?? 0, 0, {

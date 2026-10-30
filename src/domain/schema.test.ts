@@ -118,4 +118,26 @@ describe('vignette schema', () => {
     v.sensors[0]!.entered['1.3'] = { value: 360, source: '' };
     expect(() => parseVignette(v)).toThrow(/source note/);
   });
+
+  it('rejects inverted and empty envelopes', () => {
+    const el = small();
+    el.sensors[0]!.elMinDeg = 60;
+    el.sensors[0]!.elMaxDeg = 10;
+    expect(() => parseVignette(el)).toThrow(/elMinDeg must be below elMaxDeg/);
+    const fov = small();
+    fov.sensors[0]!.fovDeg = 0;
+    expect(() => parseVignette(fov)).toThrow(/fovDeg/);
+    const efov = small();
+    efov.effectors[0]!.fovDeg = 0;
+    expect(() => parseVignette(efov)).toThrow(/fovDeg/);
+    const rmin = small();
+    rmin.sensors[0]!.minRangeM = 5000;
+    expect(() => parseVignette(rmin)).toThrow(/minRangeM must not exceed rangeM/);
+    const z = small();
+    z.areas[0]!.zMinM = 10;
+    z.areas[0]!.zMaxM = 0;
+    expect(() => parseVignette(z)).toThrow(/zMinM must not exceed zMaxM/);
+    // A flat footprint (zMinM equal to zMaxM) is valid: legacy areas carry zmax 0.
+    expect(isVignette(small())).toBe(true);
+  });
 });

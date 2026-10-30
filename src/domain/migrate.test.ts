@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
-import { importLegacyV4 } from './migrate';
+import { DEFAULT_MEASURES, importLegacyV4, TARGET_TIME_NOTE } from './migrate';
 import { parseVignette } from './schema';
 
 type Rec = Record<string, unknown> & {
@@ -95,5 +95,15 @@ describe('importLegacyV4', () => {
       /not profile-studio\/4/,
     );
     expect(() => importLegacyV4(42)).toThrow(/not a profile record/);
+  });
+
+  it('seeds default measures and notes the unset Target time', () => {
+    const [, cuas] = records[0]!;
+    const v = importLegacyV4(cuas);
+    expect(v.measures.map((m) => m.id)).toEqual(['1.1.1', '1.1.2', '2.1.2', '3.1.2']);
+    expect(v.measures).toEqual(DEFAULT_MEASURES);
+    expect(v.chainTime).toEqual({ decisionS: 0, assignS: 0 });
+    expect(v.report.notes).toContain('Target time not set');
+    expect(v.report.notes).toContain(TARGET_TIME_NOTE);
   });
 });

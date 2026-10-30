@@ -76,22 +76,34 @@ export const sensorModelSchema: z.ZodType<SensorModel> = z.object({
 
 const entered = z.record(z.string(), enteredSchema);
 
-export const sensorSchema: z.ZodType<Sensor> = z.object({
-  key,
-  id: z.string(),
-  kind: z.enum(['radar', 'rf', 'eoir', 'acoustic']),
-  x: num,
-  y: num,
-  z: num,
-  rangeM: num.min(0),
-  minRangeM: num.min(0),
-  fovDeg: num.min(0).max(360),
-  bearingDeg: num,
-  elMinDeg: num.min(-90).max(90),
-  elMaxDeg: num.min(-90).max(90),
-  model: sensorModelSchema,
-  entered,
-});
+// A sector is open at 0 and closed at 360: 360 is omnidirectional, 0 sees nothing.
+const fov = num.gt(0, 'fovDeg must be above 0; 360 is omnidirectional.').max(360);
+
+export const sensorSchema: z.ZodType<Sensor> = z
+  .object({
+    key,
+    id: z.string(),
+    kind: z.enum(['radar', 'rf', 'eoir', 'acoustic']),
+    x: num,
+    y: num,
+    z: num,
+    rangeM: num.min(0),
+    minRangeM: num.min(0),
+    fovDeg: fov,
+    bearingDeg: num,
+    elMinDeg: num.min(-90).max(90),
+    elMaxDeg: num.min(-90).max(90),
+    model: sensorModelSchema,
+    entered,
+  })
+  .refine((s) => s.elMinDeg < s.elMaxDeg, {
+    message: 'elMinDeg must be below elMaxDeg.',
+    path: ['elMaxDeg'],
+  })
+  .refine((s) => s.minRangeM <= s.rangeM, {
+    message: 'minRangeM must not exceed rangeM.',
+    path: ['minRangeM'],
+  });
 
 export const effectorSchema: z.ZodType<Effector> = z.object({
   key,
@@ -101,7 +113,7 @@ export const effectorSchema: z.ZodType<Effector> = z.object({
   y: num,
   z: num,
   rangeM: num.min(0),
-  fovDeg: num.min(0).max(360),
+  fovDeg: fov,
   bearingDeg: num,
   timeToEffectS: num.min(0),
   pk: num.min(0).max(1),
@@ -118,15 +130,21 @@ export const nodeSchema: z.ZodType<Node> = z.object({
   rangeM: num.min(0),
 });
 
-export const areaSchema: z.ZodType<Area> = z.object({
-  key,
-  id: z.string(),
-  kind: z.enum(['asset', 'wez', 'nfz', 'ref']),
-  label: z.string(),
-  pts: z.array(z.tuple([num, num])).min(3, 'An area needs three or more vertices.'),
-  zMinM: num,
-  zMaxM: num,
-});
+// zMinM may equal zMaxM: legacy footprints (asset, ref) are flat at zmax 0.
+export const areaSchema: z.ZodType<Area> = z
+  .object({
+    key,
+    id: z.string(),
+    kind: z.enum(['asset', 'wez', 'nfz', 'ref']),
+    label: z.string(),
+    pts: z.array(z.tuple([num, num])).min(3, 'An area needs three or more vertices.'),
+    zMinM: num,
+    zMaxM: num,
+  })
+  .refine((a) => a.zMinM <= a.zMaxM, {
+    message: 'zMinM must not exceed zMaxM.',
+    path: ['zMaxM'],
+  });
 
 export const measureSettingSchema: z.ZodType<MeasureSetting> = z.object({
   id: z.string(),
