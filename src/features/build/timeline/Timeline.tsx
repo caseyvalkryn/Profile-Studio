@@ -1,6 +1,7 @@
-// Bottom timeline (spec section 7, Build): one row per threat, one lane per F2T2EA step.
-// Preview step times are marks with a quiet bar to the next step. An active run's trace adds the
-// Monte Carlo mean as a thinner mark. The accent line is the current time.
+// Bottom timeline (spec section 7, Build): one row per threat, one lane per F2T2EA step. The
+// gutter names each lane. Preview step times are marks in their step's lane with a quiet bar to
+// the next step. An active run's trace adds the Monte Carlo mean as a thinner mark in the same
+// lane. The accent line is the current time.
 import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import '../../../commands/commands';
 import { execute, get, shortcutLabel } from '../../../commands/registry';
@@ -11,6 +12,9 @@ import { useUi } from '../../../state/ui';
 import { Button, ContextMenu, Menu, Tooltip, type MenuItem } from '../../../ui';
 import { fmtTime, timeTicks } from '../../shared/units';
 import { AXIS_H, GUTTER_W, LANE_H, ROW_H, domainS, laneY, timeOfX, xOfTime } from './layout';
+
+/** Right edge of the step names in the gutter. */
+const LABEL_X = GUTTER_W - 6;
 import { STEPS, runStepMeans } from './steps';
 import { usePlayback } from './usePlayback';
 import { useSize } from '../../shared/useSize';
@@ -206,7 +210,7 @@ export default function Timeline({ width: fixedWidth }: TimelineProps) {
                       x2={width}
                       y1={top + ROW_H}
                       y2={top + ROW_H}
-                      className="stroke-surface-2"
+                      className="stroke-surface-3"
                     />
                     <text
                       x={8}
@@ -225,12 +229,31 @@ export default function Timeline({ width: fixedWidth }: TimelineProps) {
                       const mean = means[step.key];
                       return (
                         <g key={step.key} data-testid="timeline-lane" data-step={step.key}>
+                          <text
+                            data-testid="timeline-lane-label"
+                            x={LABEL_X}
+                            y={y + LANE_H - 2}
+                            textAnchor="end"
+                            fontSize={9}
+                            className="fill-muted"
+                          >
+                            {step.label}
+                          </text>
+                          <line
+                            x1={GUTTER_W}
+                            x2={width}
+                            y1={y + LANE_H - 0.5}
+                            y2={y + LANE_H - 0.5}
+                            className="stroke-surface-2"
+                          />
                           {st && next && next.t > st.t ? (
                             <rect
+                              data-testid="timeline-window"
+                              data-step={step.key}
                               x={x(st.t)}
-                              y={y + 1}
+                              y={y + 3}
                               width={x(next.t) - x(st.t)}
-                              height={LANE_H - 2}
+                              height={LANE_H - 6}
                               className="fill-surface-3"
                             />
                           ) : null}
@@ -244,9 +267,9 @@ export default function Timeline({ width: fixedWidth }: TimelineProps) {
                                 data-step={step.key}
                                 aria-label={`${step.label} ${fmtTime(st.t)}`}
                                 x={x(st.t) - 1}
-                                y={y}
+                                y={y + 1}
                                 width={2}
-                                height={LANE_H}
+                                height={LANE_H - 2}
                                 className="fill-text"
                               />
                             </Tooltip>
@@ -261,9 +284,9 @@ export default function Timeline({ width: fixedWidth }: TimelineProps) {
                                 data-step={step.key}
                                 aria-label={`${step.label} run mean ${fmtTime(mean.meanS)}`}
                                 x={x(mean.meanS) - 0.5}
-                                y={y - 1}
+                                y={y}
                                 width={1}
-                                height={LANE_H + 2}
+                                height={LANE_H}
                                 className="fill-muted"
                               />
                             </Tooltip>

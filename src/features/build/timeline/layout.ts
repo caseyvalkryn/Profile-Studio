@@ -1,10 +1,13 @@
 // Timeline geometry in pixels. Shared by the component and its tests.
 
-export const GUTTER_W = 64;
+// The gutter holds the threat id on the left and the six step names, right-aligned, one per lane.
+export const GUTTER_W = 96;
 export const AXIS_H = 20;
-export const ROW_H = 28;
-export const LANE_H = 4;
+/** One lane per F2T2EA step: Find, Fix, Track, Target, Engage, Assess. */
+export const LANE_COUNT = 6;
+export const LANE_H = 10;
 export const ROW_PAD = 2;
+export const ROW_H = LANE_COUNT * LANE_H + 2 * ROW_PAD;
 export const PAD_R = 12;
 
 /** The time span the axis shows. At least one minute so an empty vignette still draws. */
