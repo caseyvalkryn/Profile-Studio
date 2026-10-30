@@ -196,7 +196,9 @@ The orchestrator updates this table at each merge.
 | 4.4 | done | rebuild/mvp | 9e4b3d5 | Timeline (ref-counted `usePlayback`), ProfileView, 14 tests. Open for 4.5: no command clears the loop range; timeline commands have no shortcuts; `RunTrace.threat` is the display id, not the key; lift `format.ts` and `useSize.ts` |
 | 4.3 | done | rebuild/mvp | 05e573f | Inspector, 7 tests. Open: `Field` lacks placeholder, blank state and a format hook (local `NumberInput` used); `Area` has no circle field (16+ vertex guess); no warning colour token; `units.ts` to be lifted by 4.5 |
 | 4.2 | done | rebuild/mvp | ef6d3b1 | AssetsPanel, `dnd.ts` (MIME `application/x-profile-studio-asset`, payload `{kind, type}`; `type` is the sub-kind for non-threats), 9 tests. For 4.5: dedupe MIME constant with map `dnd.ts`; one Escape owner; lift `format.ts` |
-| 4.5, 4.R to 7.3 | not started | | | 4.5 = Build workspace wiring lane (App.tsx, TooltipProvider, bindKeys, autosave, registry to palette), added by the orchestrator |
+| 5.1 | running | lane/5.1 | | |
+| 5.2 | done | rebuild/mvp | f52238a | ReportWorkspace (`renderChart`, `renderMap` props), 14 tests; terminology check clean. Notes and picked charts live in `report.slides` under `aar:` keys (proposal: `ReportDraft.sections` and `.charts`); stored runs have no prediction snapshot (proposal: `RunSummary.predictions`); local `format.ts` to swap for the shared one |
+| 4.R, 5.3 wiring, 6.1 to 7.3 | not started | | | 5.3 = mount Results and Report on their routes, inject charts into the report |
 
 ## 8. Handoff
 
