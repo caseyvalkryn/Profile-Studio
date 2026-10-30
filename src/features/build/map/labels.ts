@@ -10,7 +10,7 @@ export const LABEL_DX = 8;
 export const LABEL_DY = 4;
 /** Clear space kept between two labels, pixels. */
 const GAP = 2;
-/** Rings of slots tried before a label gives up and takes its first slot. */
+/** Rings of slots tried before a label gives up and is hidden. */
 const MAX_RINGS = 48;
 
 type Rect = { x: number; y: number; w: number; h: number };
@@ -35,25 +35,46 @@ function* slots(l: LabelBox): Generator<XY> {
   }
 }
 
+/** A box a label must not cover: a marker or a small area, pixels. `key` is its object. */
+export type Obstacle = Rect & { key: string };
+
+export type PlaceOptions = {
+  /** Markers and small areas; a label never covers one, except its own object's. */
+  obstacles?: readonly Obstacle[];
+  /** Canvas size: a label stays inside it. Omit, or pass 0, to place without bounds. */
+  bounds?: { w: number; h: number };
+};
+
+/** Strict overlap with no gap: a label may touch a marker's box edge. */
+const covers = (a: Rect, b: Rect) =>
+  a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
 /**
- * Place labels so no two overlap. Returns each label's top-left corner, in the input order's
- * priority: the first label always sits in its first slot (right of its anchor).
+ * Place labels so no two overlap and none covers a marker (review 7.R F-09). Returns each
+ * label's top-left corner, in the input order's priority: the first label sits in its first free
+ * slot (right of its anchor). A label with no free slot inside the bounds is left out of the
+ * result, and the caller hides it, rather than drawn over another label or a marker.
  */
-export function placeLabels(items: readonly LabelBox[]): Map<string, XY> {
+export function placeLabels(
+  items: readonly LabelBox[],
+  { obstacles = [], bounds }: PlaceOptions = {},
+): Map<string, XY> {
   const out = new Map<string, XY>();
   const placed: Rect[] = [];
+  const inside = (r: Rect) =>
+    !bounds?.w ||
+    !bounds.h ||
+    (r.x >= 0 && r.y >= 0 && r.x + r.w <= bounds.w && r.y + r.h <= bounds.h);
   for (const l of items) {
-    let at: XY | null = null;
     for (const s of slots(l)) {
       const r = { x: s.x, y: s.y, w: l.w, h: l.h };
-      if (!placed.some((p) => overlaps(p, r))) {
-        at = s;
-        break;
-      }
+      if (!inside(r)) continue;
+      if (placed.some((p) => overlaps(p, r))) continue;
+      if (obstacles.some((o) => o.key !== l.key && covers(o, r))) continue;
+      placed.push(r);
+      out.set(l.key, s);
+      break;
     }
-    at ??= { x: l.anchor.x + LABEL_DX, y: l.anchor.y + LABEL_DY };
-    placed.push({ x: at.x, y: at.y, w: l.w, h: l.h });
-    out.set(l.key, at);
   }
   return out;
 }

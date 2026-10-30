@@ -1,6 +1,6 @@
 // Results workspace: run list, hypotheses, scorecard with the selected row's chart, run compare
 // and sweep charts. Reads the run store, the open document and the display units.
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { RunSummary } from '../../domain/types';
 import { useDocument } from '../../state/document';
 import { MAX_COMPARE, useRuns } from '../../state/runs';
@@ -52,6 +52,9 @@ export default function ResultsWorkspace({ chartWidth = 640 }: { chartWidth?: nu
   const units = useUi((s) => s.units);
   const [pickedKey, setPickedKey] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Results is seen, by a link or by browser back and forward: the Build run-done note has done
+  // its job (review FR-03, 7.R F-05).
+  useEffect(() => useRuns.getState().dismissDoneNote(), []);
 
   const summaries = new Map((doc?.runs ?? []).map((r) => [r.key, r]));
   // The run store holds every run of the session; Results shows the open vignette's only.

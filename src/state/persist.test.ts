@@ -5,6 +5,7 @@ import { useDocument } from './document';
 import {
   deleteVignette,
   exportJson,
+  flushAutosave,
   importJson,
   listVignettes,
   loadVignette,
@@ -197,6 +198,63 @@ describe('autosave', () => {
     vi.advanceTimersByTime(1000);
     stop();
     expect(save).not.toHaveBeenCalled();
+  });
+
+  it('a run alone on a template copy writes nothing; its first edit writes it (7.R F-06)', async () => {
+    const save = vi.fn<(v: Vignette) => Promise<void>>(async () => {});
+    useDocument.getState().close();
+    const stop = startAutosave(save);
+    useDocument.getState().open(testVignette({ id: 'R' }));
+    useDocument.getState().apply('Run result', (d) => {
+      d.name = 'with run';
+    });
+    vi.advanceTimersByTime(1000);
+    expect(save).not.toHaveBeenCalled();
+    // a drag is held back until it ends, then written as the first edit
+    useDocument.getState().beginDrag('Move');
+    useDocument.getState().updateDrag((d) => {
+      d.sensors[0]!.x += 50;
+    });
+    vi.advanceTimersByTime(1000);
+    expect(save).not.toHaveBeenCalled();
+    useDocument.getState().endDrag();
+    vi.advanceTimersByTime(500);
+    expect(names(save)).toEqual(['R:with run']);
+    stop();
+  });
+
+  it('a run on a stored vignette is written without an edit (7.R F-06)', async () => {
+    setDb(mockDb());
+    await saveVignette(testVignette({ id: 'K', name: 'stored' }));
+    const save = vi.fn<(v: Vignette) => Promise<void>>(async () => {});
+    useDocument.getState().close();
+    const stop = startAutosave(save);
+    useDocument.getState().open((await loadVignette('K'))!);
+    useDocument.getState().apply('Run result', (d) => {
+      d.name = 'stored with run';
+    });
+    vi.advanceTimersByTime(500);
+    expect(names(save)).toEqual(['K:stored with run']);
+    stop();
+    setDb(null);
+  });
+
+  it('flushAutosave writes a pending edit at once (route change, 7.R F-06)', async () => {
+    const save = vi.fn<(v: Vignette) => Promise<void>>(async () => {});
+    useDocument.getState().close();
+    const stop = startAutosave(save);
+    useDocument.getState().open(testVignette({ id: 'F' }));
+    useDocument.getState().edit('Rename', (d) => {
+      d.name = 'F-edited';
+    });
+    vi.advanceTimersByTime(100);
+    await flushAutosave();
+    expect(names(save)).toEqual(['F:F-edited']);
+    vi.advanceTimersByTime(1000);
+    expect(save).toHaveBeenCalledTimes(1);
+    stop();
+    await flushAutosave();
+    expect(save).toHaveBeenCalledTimes(1);
   });
 
   it('a re-opened saved vignette keeps saving on each edit', async () => {

@@ -196,22 +196,27 @@ type Interval = { low: number; high: number };
 /**
  * Display decimals for a value and its interval (review 6 F-07, first-use FR-06). Starts at the
  * scale's decimals and adds one, to at most 4, while two of value, low and high print the same
- * though they differ, or while a percentage below 100 (above 0) prints as 100 (0). Numbers that
- * are equal in the data may print the same.
+ * though they differ, or while a percentage below 100 (above 0) prints as 100 (0). Numbers are
+ * compared at the 4-decimal cap (review 7.R F-03, F-15): numbers that print the same there count
+ * as equal, so float noise such as a Wilson limit of 99.99999999 does not add decimals, and limits
+ * that do not separate at the cap print at the decimals the other rules need.
  */
 export function decimalsFor(s: Scale, interval?: Interval | null, value?: number | null): number {
+  const cap = Math.max(s.decimals, MAX_DECIMALS);
   const show = (v: number, d: number) => fmt(v * s.factor, d);
-  const same = (a: number, b: number, d: number) => a !== b && show(a, d) === show(b, d);
+  const same = (a: number, b: number, d: number) =>
+    show(a, cap) !== show(b, cap) && show(a, d) === show(b, d);
+  const atCap = (v: number) => Number(show(v, cap));
   const collides = (d: number) =>
     (interval != null &&
       (same(interval.low, interval.high, d) ||
         (value != null && (same(value, interval.low, d) || same(value, interval.high, d))))) ||
     (s.unit === '%' &&
       value != null &&
-      ((value < 100 && Number(show(value, d)) >= 100) ||
-        (value > 0 && Number(show(value, d)) <= 0)));
+      ((atCap(value) < 100 && Number(show(value, d)) >= 100) ||
+        (atCap(value) > 0 && Number(show(value, d)) <= 0)));
   let d = s.decimals;
-  while (d < Math.max(s.decimals, MAX_DECIMALS) && collides(d)) d++;
+  while (d < cap && collides(d)) d++;
   return d;
 }
 

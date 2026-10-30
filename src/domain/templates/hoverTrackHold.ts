@@ -19,16 +19,17 @@ import {
 const LOITER = { x: 1060, y: 1060 }; // 1.5 km from the radar, bearing 045
 const ASSET = { x: -500, y: 500 };
 
-/** Scope of inference text for the AAR (review 6 F-18, review 7 item 6b). */
+/**
+ * Scope of inference note for the AAR (review 6 F-18, review 7 item 6b). The limit itself (the
+ * runs do not stop at the hover) is the generated line from `simulationLimits` (review 7.R F-01);
+ * this note says only what 1.2.2 covers here.
+ */
 export const HOVER_SCOPE =
-  'The scored run does not stop at the hover point. It flies on through the loiter without ' +
-  'pausing, so 1.2.2 Track Continuity is measured over the orbit turn and the run-in, not over ' +
-  'a stationary 60 s hover. Conclusions on track hold against a hovering target need a further ' +
-  'test with the hover flown.';
+  '1.2.2 Track Continuity is measured over the orbit turn and the run-in that the runs fly.';
 const q = () =>
   question(
     'Does the radar hold a continuous track through a 60 s loiter inside its coverage?',
-    'The loiter is one slow orbit turn (about 60 s) then a 60 s hover. The scored run flies on through the hover without stopping; only the preview and the timeline show the hover. The threshold on 1.2.2 Track Continuity is in the measure row.',
+    'The loiter is one slow orbit turn of about 60 s, then a 60 s hover. The threshold on 1.2.2 Track Continuity is in the results table.',
   );
 
 export const hoverTrackHold: Template = {

@@ -1,5 +1,5 @@
 import { testVignette } from '../../../engine/testVignette';
-import { hitAll, hitTest, nextHit, pickHit, type Hit } from './hit';
+import { hitAll, nextHit, pickHit, type Hit } from './hit';
 
 const none = new Map();
 const keys = (hs: Hit[]) => hs.map((h) => h.key);
@@ -13,7 +13,6 @@ describe('stacked hits (FR-01)', () => {
     const hs = hitAll(v, { x: 2, y: 1 }, 10, [], none);
     expect(keys(hs)).toEqual(['k-S-01', 'k-E-01', 'k-A-01']);
     expect(hs.map((h) => h.handle)).toEqual(['move', 'move', 'move']);
-    expect(hitTest(v, { x: 2, y: 1 }, 10, [], none)).toEqual(hs[0]);
   });
 
   it('a repeat click cycles through the stack and wraps to the top', () => {
@@ -63,12 +62,12 @@ describe('area interiors (FR-05)', () => {
   });
 
   it('selects an area from inside, away from points and rings', () => {
-    expect(hitTest(v, { x: -40, y: 40 }, 10, [], none)).toMatchObject({
+    expect(hitAll(v, { x: -40, y: 40 }, 10, [], none)[0]).toMatchObject({
       target: 'area',
       key: 'k-A-01',
     });
     // inside a sensor's reach but off its ring: the reach is not a target, the area is
-    expect(hitTest(v, { x: 300, y: 300 }, 10, [], none)).toMatchObject({ key: 'k-A-02' });
+    expect(hitAll(v, { x: 300, y: 300 }, 10, [], none)[0]).toMatchObject({ key: 'k-A-02' });
   });
 
   it('puts a ring above the area only within tolerance of the ring', () => {
@@ -77,7 +76,7 @@ describe('area interiors (FR-05)', () => {
     expect(keys(onRing)).toContain('k-A-01');
     // so a repeat click on the ring reaches the area beneath it
     expect(nextHit(onRing, ['k-S-02'])!.key).toBe('k-A-01');
-    expect(hitTest(v, { x: -65, y: 3 }, 10, [], none)).toMatchObject({ key: 'k-A-01' });
+    expect(hitAll(v, { x: -65, y: 3 }, 10, [], none)[0]).toMatchObject({ key: 'k-A-01' });
   });
 
   it('orders overlapping areas top (last drawn) first', () => {

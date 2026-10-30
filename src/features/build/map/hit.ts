@@ -92,17 +92,6 @@ export function hitAll(
   return out;
 }
 
-/** The top-most hit under the pointer, or null for empty map. See hitAll for the order. */
-export function hitTest(
-  d: Vignette,
-  p: XY,
-  tolM: number,
-  selected: readonly string[],
-  threatPos: Map<string, XY>,
-): Hit | null {
-  return hitAll(d, p, tolM, selected, threatPos)[0] ?? null;
-}
-
 const isPoint = (h: Hit) => h.handle === 'move' && h.target !== 'area';
 
 /**

@@ -9,6 +9,7 @@ import { useDocument } from '../../state/document';
 import {
   deleteVignette,
   exportJson,
+  flushAutosave,
   importJson,
   listVignettes,
   loadVignette,
@@ -82,9 +83,12 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
 
   useEffect(() => {
     let live = true;
-    void listVignettes().then((list) => {
-      if (live) setSaved(list);
-    });
+    // Write an edit made less than 500 ms before the route change first (review 7.R F-06).
+    void flushAutosave()
+      .then(() => listVignettes())
+      .then((list) => {
+        if (live) setSaved(list);
+      });
     return () => {
       live = false;
     };

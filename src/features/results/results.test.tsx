@@ -153,6 +153,25 @@ describe('charts', () => {
     expect(yTitle?.getAttribute('transform')).toMatch(/rotate\(-90/);
   });
 
+  it('the caption names the band only when the band can be seen (review 7.R F-20)', () => {
+    const base = sweep(testVignette(), [{ kind: 'threat-altitude', levels: [50, 150, 300] }], 5, 1);
+    const withBand = (half: number) => ({
+      ...base,
+      cells: base.cells.map((c) => ({
+        ...c,
+        scores: c.scores.map((sc, i) =>
+          i === 0 ? { ...sc, value: 50, interval: { low: 50 - half, high: 50 + half } } : sc,
+        ),
+      })),
+    });
+    const { unmount } = render(<SweepChart sweep={withBand(0.05)} units="si" />);
+    expect(screen.queryByText(/Band: 95 % interval\./)).toBeNull();
+    screen.getByText(/95 % interval: too narrow to see at this scale/);
+    unmount();
+    render(<SweepChart sweep={withBand(20)} units="si" />);
+    screen.getByText(/Band: 95 % interval\./);
+  });
+
   it('a two-factor sweep draws a heat map cell per level pair', () => {
     const s = sweep(
       testVignette(),

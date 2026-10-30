@@ -1,4 +1,11 @@
-import { LABEL_DX, LABEL_DY, estimateLabelSize, placeLabels, type LabelBox } from './labels';
+import {
+  LABEL_DX,
+  LABEL_DY,
+  estimateLabelSize,
+  placeLabels,
+  type LabelBox,
+  type Obstacle,
+} from './labels';
 
 const box = (key: string, x: number, y: number, text = key): LabelBox => ({
   key,
@@ -60,19 +67,51 @@ describe('label placement (3c)', () => {
     expect(fewer.get('A2')).toEqual(placeLabels(items).get('A2'));
   });
 
-  it('places 40 threats stacked on 15 co-located sensors in under 2 ms', () => {
+  it('places 40 threats stacked on 15 co-located sensors with no overlap (7.R F-14)', () => {
+    // No wall-clock check: the gate must be deterministic. map.perf.test.ts holds the budgets.
     const items: LabelBox[] = [];
     for (let i = 0; i < 15; i++) items.push(box(`S${i + 1}`, 400, 300));
     for (let i = 0; i < 40; i++) items.push(box(`T${i + 1}`, 420, 300));
-    for (let i = 0; i < 5; i++) placeLabels(items);
-    const ts: number[] = [];
-    for (let i = 0; i < 21; i++) {
-      const t0 = performance.now();
-      placeLabels(items);
-      ts.push(performance.now() - t0);
-    }
-    ts.sort((a, b) => a - b);
-    expect(overlapping(items, placeLabels(items))).toEqual([]);
-    expect(ts[10]!).toBeLessThan(2);
+    const at = placeLabels(items);
+    expect(at.size).toBe(items.length);
+    expect(overlapping(items, at)).toEqual([]);
+    expect([...at]).toEqual([...placeLabels(items)]);
+  });
+});
+
+describe('labels keep off markers and inside the map (review 7.R F-09)', () => {
+  const covers = (p: { x: number; y: number }, l: LabelBox, o: Obstacle) =>
+    p.x < o.x + o.w && o.x < p.x + l.w && p.y < o.y + o.h && o.y < p.y + l.h;
+
+  it('a label moves off another object marker, but may sit next to its own', () => {
+    const l = box('RDR-1', 100, 100);
+    // the DA square right of the radar, where the first slot would be
+    const da: Obstacle = { key: 'DA', x: 104, y: 100, w: 30, h: 30 };
+    const own: Obstacle = { key: 'RDR-1', x: 93, y: 93, w: 14, h: 14 };
+    const p = placeLabels([l], { obstacles: [da, own] }).get('RDR-1')!;
+    expect(covers(p, l, da)).toBe(false);
+    expect(covers(p, l, own)).toBe(false);
+    expect(p).not.toEqual({ x: 100 + LABEL_DX, y: 100 + LABEL_DY });
+    // its own box alone does not move it
+    expect(placeLabels([l], { obstacles: [own] }).get('RDR-1')).toEqual({
+      x: 100 + LABEL_DX,
+      y: 100 + LABEL_DY,
+    });
+  });
+
+  it('stays inside the bounds: a label at the right edge goes left', () => {
+    const l = box('EO-1', 395, 100);
+    const p = placeLabels([l], { bounds: { w: 400, h: 300 } }).get('EO-1')!;
+    expect(p.x).toBeGreaterThanOrEqual(0);
+    expect(p.x + l.w).toBeLessThanOrEqual(400);
+    expect(p.x + l.w).toBeLessThanOrEqual(395 - LABEL_DX);
+  });
+
+  it('hides a label with no free slot rather than overlap', () => {
+    // a 30 x 24 map: one label fits right of the anchor, a second there has nowhere to go
+    const items = [box('A', 2, 2, 'AB'), box('B', 2, 2, 'AB')];
+    const at = placeLabels(items, { bounds: { w: 30, h: 24 } });
+    expect(at.has('A')).toBe(true);
+    expect(at.has('B')).toBe(false);
   });
 });
