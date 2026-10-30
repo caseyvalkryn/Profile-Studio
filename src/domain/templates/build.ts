@@ -80,14 +80,23 @@ export function node(id: string, kind: NodeKind, x: number, y: number, rangeM = 
   return { key: newKey(), id, kind, x, y, z: 0, rangeM };
 }
 
-/** Square footprint of side `sideM` about (0, 0), as the legacy `sq()`. */
-export function square(sideM: number): [number, number][] {
+/**
+ * Laydown rule (review 7 FR-01). The radar is the site datum at (0, 0). Every other point asset,
+ * waypoint and defended-asset corner sits at least 24 px from it and from each other at the
+ * default Build view (fit to the assets, 48 px padding, 1440 x 900): 13.9 m/px for a 4 km radar,
+ * 16.5 m/px for the sweep, 31.4 m/px for the 9 km Delta wing radar. Labels sit 8 px right and
+ * 4 px below a point, so a second point never sits right of and level with another one.
+ */
+export type Pt = { x: number; y: number };
+
+/** Square footprint of side `sideM` about `at` (the origin by default), as the legacy `sq()`. */
+export function square(sideM: number, at: Pt = { x: 0, y: 0 }): [number, number][] {
   const h = sideM / 2;
   return [
-    [-h, -h],
-    [h, -h],
-    [h, h],
-    [-h, h],
+    [at.x - h, at.y - h],
+    [at.x + h, at.y - h],
+    [at.x + h, at.y + h],
+    [at.x - h, at.y + h],
   ];
 }
 
@@ -101,8 +110,8 @@ export function area(
   return { key: newKey(), id, kind, label, pts, zMinM: 0, zMaxM };
 }
 
-export function defendedAsset(sideM = 250): Area {
-  return area('DA', 'asset', 'Defended asset', square(sideM));
+export function defendedAsset(sideM = 250, at: Pt = { x: 0, y: 0 }): Area {
+  return area('DA', 'asset', 'Defended asset', square(sideM, at));
 }
 
 export function threat(id: string, type: string, path: Waypoint[], speedMs?: number): Threat {
