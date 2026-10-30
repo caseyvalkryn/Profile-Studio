@@ -1,6 +1,15 @@
 // The open vignette with undo and redo on immer patches (spec section 8, Undo).
-// Every edit is one undo step. A drag is one step. Selection, view and time live in ui.ts.
-import { applyPatches, enablePatches, produceWithPatches, type Draft, type Patch } from 'immer';
+// Every edit that changes the document is one undo step. A drag is one step. System edits made
+// with `apply` (run results, prediction locks) are not undo steps. Selection, view and time live
+// in ui.ts. `updated` is stamped outside history, so undo never rewinds it.
+import {
+  applyPatches,
+  enablePatches,
+  produce,
+  produceWithPatches,
+  type Draft,
+  type Patch,
+} from 'immer';
 import { create } from 'zustand';
 import type { Vignette } from '../domain/types';
 import { preview, type Preview } from '../engine/preview';
@@ -26,8 +35,13 @@ export type DocumentState = {
   history: string[];
   open: (v: Vignette) => void;
   close: () => void;
-  /** One undo step. */
+  /** One undo step. An edit that changes nothing adds no step. */
   edit: (label: string, recipe: Recipe) => void;
+  /**
+   * A system edit outside undo history, such as a run result or a prediction lock. Undo and redo
+   * never revert it. Ends an open drag first. `label` names the edit for debugging only.
+   */
+  apply: (label: string, recipe: Recipe) => void;
   beginDrag: (label: string) => void;
   /** Applies to the live document; adds no history until endDrag. */
   updateDrag: (recipe: Recipe) => void;
@@ -39,11 +53,11 @@ export type DocumentState = {
 
 const now = () => new Date().toISOString();
 
-function stamp(recipe: Recipe): Recipe {
-  return (d) => {
-    recipe(d);
+/** The document with `updated` set to now. Applied after a change, never recorded in history. */
+function stamp(v: Vignette): Vignette {
+  return produce(v, (d) => {
     d.updated = now();
-  };
+  });
 }
 
 function derived(past: Entry[], future: Entry[]) {
@@ -75,10 +89,19 @@ export const useDocument = create<DocumentState>()((set, get) => {
       if (get().drag) get().endDrag();
       const doc = get().doc;
       if (!doc) return;
-      const [next, patches, inverse] = produceWithPatches(doc, stamp(recipe));
+      const [next, patches, inverse] = produceWithPatches(doc, recipe);
       if (patches.length === 0) return;
-      set({ doc: next });
+      set({ doc: stamp(next) });
       push({ label, patches, inverse });
+    },
+
+    apply: (_label, recipe) => {
+      if (get().drag) get().endDrag();
+      const doc = get().doc;
+      if (!doc) return;
+      const [next, patches] = produceWithPatches(doc, recipe);
+      if (patches.length === 0) return;
+      set({ doc: stamp(next) });
     },
 
     beginDrag: (label) => {
@@ -92,10 +115,10 @@ export const useDocument = create<DocumentState>()((set, get) => {
     updateDrag: (recipe) => {
       const { doc, drag } = get();
       if (!doc || !drag) return;
-      const [next, patches, inverse] = produceWithPatches(doc, stamp(recipe));
+      const [next, patches, inverse] = produceWithPatches(doc, recipe);
       if (patches.length === 0) return;
       set({
-        doc: next,
+        doc: stamp(next),
         // Inverse runs newest first: each step's inverse goes before the earlier ones.
         drag: {
           ...drag,
@@ -124,7 +147,7 @@ export const useDocument = create<DocumentState>()((set, get) => {
       const entry = past[past.length - 1];
       if (!doc || !entry) return;
       set({
-        doc: applyPatches(doc, entry.inverse),
+        doc: stamp(applyPatches(doc, entry.inverse)),
         ...derived(past.slice(0, -1), [entry, ...future]),
       });
     },
@@ -134,7 +157,10 @@ export const useDocument = create<DocumentState>()((set, get) => {
       const { doc, past, future } = get();
       const entry = future[0];
       if (!doc || !entry) return;
-      set({ doc: applyPatches(doc, entry.patches), ...derived([...past, entry], future.slice(1)) });
+      set({
+        doc: stamp(applyPatches(doc, entry.patches)),
+        ...derived([...past, entry], future.slice(1)),
+      });
     },
   };
 });

@@ -34,8 +34,8 @@ import type {
 import { previewOf } from '../state/document';
 import type { Clip, MapPoint } from '../state/ui';
 import { find, selected, type Found } from './select';
-import { get, register } from './registry';
-import type { AssetKind, Command, CommandContext } from './types';
+import { get, register, setMenuOrder } from './registry';
+import type { AssetKind, Command, CommandContext, CommandOption } from './types';
 
 // ---- rules ----
 
@@ -66,8 +66,26 @@ function every(...rules: Rule[]): Rule {
 const num = (arg: unknown): number | null =>
   typeof arg === 'number' && Number.isFinite(arg) ? arg : null;
 
+/** The first selected hypothesis, by key. */
+const selectedHypothesis = (ctx: CommandContext) => {
+  const keys = new Set(ctx.ui.selectedKeys);
+  return docOf(ctx)?.hypotheses.find((h) => keys.has(h.key)) ?? null;
+};
+
 const ASSETS: readonly FoundKind[] = ['threat', 'sensor', 'effector', 'node', 'area'];
 const SYSTEMS: readonly FoundKind[] = ['sensor', 'effector'];
+
+/** Delete refuses to leave a flight path with fewer than two waypoints (delete the threat instead). */
+const keepsTwoWaypoints: Rule = (ctx) => {
+  const sel = selOf(ctx);
+  const gone = new Set(sel.map((f) => f.value.key));
+  for (const f of sel) {
+    if (f.kind !== 'waypoint' || gone.has(f.threat.key)) continue;
+    if (f.threat.path.filter((w) => !gone.has(w.key)).length < 2)
+      return 'A flight path needs two waypoints';
+  }
+  return true;
+};
 
 // ---- record helpers ----
 
@@ -231,6 +249,19 @@ function editSelected(
 
 // ---- add here ----
 
+/** Sentence case inside a label: 'Acoustic' becomes 'acoustic', '3D radar' and 'RF' stay. */
+const lower = (s: string) => (/^[A-Z][a-z]/.test(s) ? s[0]!.toLowerCase() + s.slice(1) : s);
+
+/** The default archetype when Add threat here gets no `arg`. */
+export const DEFAULT_THREAT_TYPE = 'g1-quad-isr';
+
+/** The 13 archetypes, grouped by UAS group, for the Add threat here submenu. */
+export const THREAT_OPTIONS: readonly CommandOption[] = THREAT_ARCHETYPES.map((a) => ({
+  value: a.id,
+  label: a.name,
+  group: `Group ${a.group}`,
+}));
+
 const SYSTEM_EL = { minRangeM: 0, elMinDeg: -5, elMaxDeg: 85 };
 
 function addSensor(d: Draft<Vignette>, kind: SensorKind, p: MapPoint): string {
@@ -327,8 +358,10 @@ function addHere(
   submenu: string,
   add: (d: Draft<Vignette>, p: MapPoint, arg?: unknown) => string,
   after?: (ctx: CommandContext) => void,
+  options?: readonly CommandOption[],
 ): Command {
   return {
+    ...(options ? { options } : {}),
     id,
     label,
     group: 'map',
@@ -355,24 +388,24 @@ const ADD_HERE: Command[] = [
     'Add threat here',
     'Threats',
     (d, p, arg) => {
-      const type =
-        typeof arg === 'string' && archetypeById(arg) ? arg : (THREAT_ARCHETYPES[0]?.id ?? '');
+      const type = typeof arg === 'string' && archetypeById(arg) ? arg : DEFAULT_THREAT_TYPE;
       return addThreat(d, type, p);
     },
     (ctx) => ctx.ui.setTool('path'),
+    THREAT_OPTIONS,
   ),
   ...SENSOR_KINDS.map((k) =>
-    addHere(`map.add.${k}`, `Add ${SYSTEM_LABELS[k]} here`, 'Sensors', (d, p) =>
+    addHere(`map.add.${k}`, `Add ${lower(SYSTEM_LABELS[k])} here`, 'Sensors', (d, p) =>
       addSensor(d, k, p),
     ),
   ),
   ...EFFECTOR_KINDS.map((k) =>
-    addHere(`map.add.${k}`, `Add ${SYSTEM_LABELS[k]} here`, 'Effectors', (d, p) =>
+    addHere(`map.add.${k}`, `Add ${lower(SYSTEM_LABELS[k])} here`, 'Effectors', (d, p) =>
       addEffector(d, k, p),
     ),
   ),
   ...NODE_KINDS.map((k) =>
-    addHere(`map.add.${k}`, `Add ${SYSTEM_LABELS[k]} here`, 'C2 and TSPI', (d, p) =>
+    addHere(`map.add.${k}`, `Add ${lower(SYSTEM_LABELS[k])} here`, 'C2 and TSPI', (d, p) =>
       addNode(d, k, p),
     ),
   ),
@@ -420,9 +453,10 @@ const COMMANDS: Command[] = [
     group: 'edit',
     shortcut: 'Delete',
     kinds: ['threat', 'waypoint', 'sensor', 'effector', 'area'],
-    when: every(needDoc, needSel(undefined, 'something')),
+    when: every(needDoc, needSel(undefined, 'something'), keepsTwoWaypoints),
     run: (ctx) => {
       const keys = new Set(selOf(ctx).map((f) => f.value.key));
+      // Hypotheses cite a measure ID, not an asset key, so a delete cannot leave one dangling.
       ctx.document.edit('Delete', (d) => {
         d.threats = d.threats.filter((t) => !keys.has(t.key));
         for (const t of d.threats) t.path = t.path.filter((w) => !keys.has(w.key));
@@ -430,6 +464,9 @@ const COMMANDS: Command[] = [
         d.effectors = d.effectors.filter((x) => !keys.has(x.key));
         d.nodes = d.nodes.filter((x) => !keys.has(x.key));
         d.areas = d.areas.filter((x) => !keys.has(x.key));
+        const truth = d.report.truth;
+        if (truth.stationKeys.some((k) => keys.has(k)))
+          truth.stationKeys = truth.stationKeys.filter((k) => !keys.has(k));
       });
       ctx.ui.setSelection([]);
     },
@@ -879,6 +916,31 @@ const COMMANDS: Command[] = [
     },
   },
 
+  // hypothesis (inspector, not a right-click target)
+  {
+    id: 'hypothesis.setPrediction',
+    label: 'Set prediction',
+    group: 'edit',
+    needsArg: true,
+    when: every(needDoc, (ctx) => {
+      const h = selectedHypothesis(ctx);
+      if (!h) return 'Select a hypothesis first';
+      return h.lockedAt ? 'Prediction locked at first run' : true;
+    }),
+    run: (ctx, arg) => {
+      const h = selectedHypothesis(ctx);
+      if (!h || h.lockedAt) return;
+      const a = arg as { low?: unknown; high?: unknown } | null;
+      const low = num(a?.low);
+      const high = num(a?.high);
+      if (a !== null && (low == null || high == null || low > high)) return;
+      ctx.document.edit('Set prediction', (d) => {
+        const x = d.hypotheses.find((y) => y.key === h.key);
+        if (x) x.prediction = a === null ? null : { low: low as number, high: high as number };
+      });
+    },
+  },
+
   // area
   {
     id: 'area.setTop',
@@ -916,10 +978,48 @@ const COMMANDS: Command[] = [
   },
 ];
 
+/** Right-click order per target: the rows of the spec section 8 table, left to right. */
+export const MENU_ORDER: Readonly<Partial<Record<AssetKind, readonly string[]>>> = {
+  map: [
+    ...ADD_HERE.map((c) => c.id),
+    'map.pasteHere',
+    'map.measureFrom',
+    'time.setHere',
+    'view.fit',
+  ],
+  threat: [
+    'threat.addWaypointHere',
+    'threat.changeType',
+    'threat.setSpeed',
+    'threat.setAltitudeAll',
+    'threat.reverse',
+    'edit.duplicate',
+    'edit.delete',
+  ],
+  waypoint: ['waypoint.hold30', 'waypoint.insertAfter', 'waypoint.setAltitude', 'edit.delete'],
+  sensor: [
+    'system.makeSector',
+    'system.makeOmni',
+    'system.setRange',
+    'edit.duplicate',
+    'edit.delete',
+  ],
+  effector: [
+    'system.makeSector',
+    'system.makeOmni',
+    'system.setRange',
+    'edit.duplicate',
+    'edit.delete',
+  ],
+  area: ['area.setTop', 'area.addVertexHere', 'edit.duplicate', 'edit.delete'],
+  timeline: ['time.setHere', 'time.loopFrom'],
+};
+
 /** Register every command once. Safe to call again. */
 export function registerCommands(): void {
   if (get('help.palette')) return;
   for (const c of COMMANDS) register(c);
+  setMenuOrder(MENU_ORDER);
 }
 
 /** The target kinds of spec section 8's right-click table. */

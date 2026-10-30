@@ -2,7 +2,7 @@ import { testVignette } from '../engine/testVignette';
 import { useDocument } from '../state/document';
 import { useRuns } from '../state/runs';
 import { UI_DEFAULTS, useUi } from '../state/ui';
-import { MENU_TARGETS } from './commands';
+import { DEFAULT_THREAT_TYPE, MENU_TARGETS } from './commands';
 import { all, byShortcut, currentContext, execute, forTarget, shortcutLabel } from './registry';
 
 /** Spec section 8, Keys, in canonical form. */
@@ -106,6 +106,24 @@ describe('command registry', () => {
     for (const k of MENU_TARGETS) for (const c of forTarget(k)) expect(c.kinds).toContain(k);
   });
 
+  it('orders each menu by the spec table', () => {
+    const map = forTarget('map').map((c) => c.label);
+    const addHere = forTarget('map').filter((c) => c.submenu?.startsWith('Add here')).length;
+    expect(map.slice(0, addHere).every((l) => l.startsWith('Add '))).toBe(true);
+    expect(map.slice(addHere)).toEqual(SPEC_MENUS.map);
+    for (const kind of ['threat', 'waypoint', 'sensor', 'area', 'timeline'])
+      expect(forTarget(kind as never).map((c) => c.label)).toEqual(SPEC_MENUS[kind]);
+  });
+
+  it('Add threat here lists the 13 archetypes by UAS group', () => {
+    const cmd = forTarget('map').find((c) => c.id === 'map.add.threat')!;
+    expect(cmd.options).toHaveLength(13);
+    expect(new Set(cmd.options!.map((o) => o.group))).toEqual(
+      new Set(['Group 1', 'Group 2', 'Group 3']),
+    );
+    expect(cmd.options![0]!.value).toBe(DEFAULT_THREAT_TYPE);
+  });
+
   it('labels shortcuts per platform', () => {
     const redo = byShortcut('Shift+Mod+Z')!;
     expect(shortcutLabel(redo, true)).toBe('Shift+Cmd+Z');
@@ -134,6 +152,75 @@ describe('commands edit the document', () => {
     expect(useDocument.getState().canUndo).toBe(false);
     execute('system.setRange', currentContext(), 1234);
     expect(useDocument.getState().doc!.sensors[0]!.rangeM).toBe(1234);
+  });
+
+  it('Add threat here uses the archetype arg, else the default', () => {
+    execute('map.add.threat', currentContext({ x: 0, y: 0 }), 'g3-jet-owa');
+    expect(useDocument.getState().doc!.threats.at(-1)!.type).toBe('g3-jet-owa');
+    execute('map.add.threat', currentContext({ x: 0, y: 0 }));
+    expect(useDocument.getState().doc!.threats.at(-1)!.type).toBe(DEFAULT_THREAT_TYPE);
+  });
+
+  it('delete refuses to leave a path under two waypoints', () => {
+    const t = useDocument.getState().doc!.threats[0]!;
+    useDocument.getState().edit('trim', (d) => {
+      d.threats[0]!.path = d.threats[0]!.path.slice(0, 2);
+    });
+    const [a, b] = useDocument.getState().doc!.threats[0]!.path;
+    useUi.getState().setSelection([a!.key]);
+    expect(execute('edit.delete', currentContext())).toBe('A flight path needs two waypoints');
+    useUi.getState().setSelection([a!.key, b!.key, t.key]);
+    expect(execute('edit.delete', currentContext())).toBe(true);
+  });
+
+  it('delete removes a TSPI node from the truth station keys', () => {
+    const node = { key: 'n1', id: 'TSPI-1', kind: 'tspi' as const, x: 0, y: 0, z: 0, rangeM: 0 };
+    useDocument.getState().edit('add', (d) => {
+      d.nodes.push(node);
+      d.report.truth.stationKeys = ['n1', 'other'];
+    });
+    useUi.getState().setSelection(['n1']);
+    expect(execute('edit.delete', currentContext())).toBe(true);
+    expect(useDocument.getState().doc!.report.truth.stationKeys).toEqual(['other']);
+  });
+
+  it('only one of Make sector and Make omni is active for one system', () => {
+    const s = useDocument.getState().doc!.sensors[0]!;
+    useDocument.getState().edit('sector', (d) => {
+      d.sensors[0]!.fovDeg = 90;
+    });
+    useUi.getState().setSelection([s.key]);
+    expect(execute('system.makeSector', currentContext())).toBe('Already a sector');
+    expect(execute('system.makeOmni', currentContext())).toBe(true);
+    expect(execute('system.makeOmni', currentContext())).toBe('Already omni');
+    expect(execute('system.makeSector', currentContext())).toBe(true);
+    expect(execute('system.makeSector', currentContext())).toBe('Already a sector');
+  });
+
+  it('a locked prediction cannot be edited', () => {
+    useDocument.getState().edit('add', (d) => {
+      d.hypotheses.push({
+        key: 'h1',
+        id: 'H-01',
+        question: '',
+        measure: '1.1.2',
+        op: '>=',
+        value: 0.9,
+        prediction: null,
+        lockedAt: null,
+      });
+    });
+    useUi.getState().setSelection(['h1']);
+    expect(execute('hypothesis.setPrediction', currentContext(), { low: 0.7, high: 0.9 })).toBe(
+      true,
+    );
+    expect(useDocument.getState().doc!.hypotheses[0]!.prediction).toEqual({ low: 0.7, high: 0.9 });
+    useDocument.getState().apply('Lock', (d) => {
+      d.hypotheses[0]!.lockedAt = '2026-10-30T00:00:00Z';
+    });
+    expect(execute('hypothesis.setPrediction', currentContext(), { low: 0, high: 1 })).toBe(
+      'Prediction locked at first run',
+    );
   });
 
   it('delete removes the selection and duplicate copies it', () => {

@@ -48,11 +48,41 @@ describe('key dispatch', () => {
     expect(useDocument.getState().doc!.threats).toHaveLength(1);
   });
 
-  it('Escape and Cmd+K still work inside an input', () => {
+  it('Cmd+K works inside an input; Escape there only blurs it', () => {
+    const t = useDocument.getState().doc!.threats[0]!;
+    useUi.getState().setSelection([t.key]);
     const input = document.createElement('textarea');
+    document.body.append(input);
+    input.focus();
     expect(dispatchKey(key('k', { metaKey: true }, input), undefined, true)).toBe('help.palette');
-    expect(dispatchKey(key('Escape', {}, input), undefined, true)).toBe('edit.escape');
+    expect(useUi.getState().paletteOpen).toBe(true);
+    expect(dispatchKey(key('Escape', {}, input), undefined, true)).toBeNull();
+    expect(document.activeElement).not.toBe(input);
+    expect(useUi.getState().selectedKeys).toEqual([t.key]);
+    input.remove();
+  });
+
+  it('skips an event a handler already took', () => {
+    const t = useDocument.getState().doc!.threats[0]!;
+    useUi.getState().setSelection([t.key]);
+    expect(dispatchKey(key('Escape', { defaultPrevented: true }), undefined, true)).toBeNull();
+    expect(useUi.getState().selectedKeys).toEqual([t.key]);
+    expect(dispatchKey(key('Escape'), undefined, true)).toBe('edit.escape');
+    expect(useUi.getState().selectedKeys).toEqual([]);
+  });
+
+  it('a held key repeats time steps and undo, not toggles', () => {
+    expect(dispatchKey(key(' ', { repeat: true }), undefined, true)).toBeNull();
+    expect(dispatchKey(key('u', { repeat: true }), undefined, true)).toBeNull();
+    expect(dispatchKey(key('k', { metaKey: true, repeat: true }), undefined, true)).toBeNull();
     expect(useUi.getState().paletteOpen).toBe(false);
+    expect(dispatchKey(key('ArrowRight', { repeat: true }), undefined, true)).toBe('time.forward1');
+    useDocument.getState().edit('Rename', (d) => {
+      d.name = 'x';
+    });
+    expect(dispatchKey(key('z', { metaKey: true, repeat: true }), undefined, true)).toBe(
+      'edit.undo',
+    );
   });
 
   it('normalises symbols and space', () => {

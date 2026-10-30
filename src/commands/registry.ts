@@ -5,6 +5,8 @@ import { useUi } from '../state/ui';
 import type { AssetKind, Command, CommandContext, Pointer } from './types';
 
 const commands = new Map<string, Command>();
+/** Command ids in right-click menu order, per target (spec section 8 table). */
+let menuOrder: Partial<Record<AssetKind, readonly string[]>> = {};
 
 export function register(cmd: Command): Command {
   if (commands.has(cmd.id)) throw new Error(`Command ${cmd.id} is already registered`);
@@ -24,9 +26,22 @@ export function all(): Command[] {
   return [...commands.values()];
 }
 
-/** Commands for a right-click on this kind of target, in registration order. */
+/** Set the right-click order per target. Commands not listed follow, in registration order. */
+export function setMenuOrder(order: Partial<Record<AssetKind, readonly string[]>>): void {
+  menuOrder = order;
+}
+
+/** Commands for a right-click on this kind of target, in the spec table order. */
 export function forTarget(kind: AssetKind): Command[] {
-  return all().filter((c) => c.kinds?.includes(kind));
+  const order = menuOrder[kind] ?? [];
+  const rank = (c: Command) => {
+    const i = order.indexOf(c.id);
+    return i < 0 ? order.length : i;
+  };
+  // Array.prototype.sort is stable, so ties keep registration order.
+  return all()
+    .filter((c) => c.kinds?.includes(kind))
+    .sort((a, b) => rank(a) - rank(b));
 }
 
 export function byShortcut(shortcut: string): Command | undefined {
@@ -37,6 +52,7 @@ export function byShortcut(shortcut: string): Command | undefined {
 /** Remove every command, for tests. */
 export function clearRegistry(): void {
   commands.clear();
+  menuOrder = {};
 }
 
 export function isMac(): boolean {

@@ -1,8 +1,11 @@
 // Runs in the sim worker. A finished run is stored in memory and appended to the document as a
-// RunSummary (one undo step, 'Run'). The first run locks every hypothesis with a prediction.
+// RunSummary. At run start every hypothesis with a prediction is locked and its prediction is
+// snapshotted into the RunEntry. The lock and the RunSummary are system edits
+// (`useDocument.apply`), outside undo history, so undo can neither unlock a prediction nor remove
+// a run.
 import { create } from 'zustand';
 import { newKey } from '../domain/ids';
-import type { RunSummary } from '../domain/types';
+import type { Hypothesis, RunSummary } from '../domain/types';
 import type { Factor, Sweep } from '../engine/sweep';
 import { runInWorker, sweepInWorker, type RunInWorker } from '../workers/simClient';
 import { useDocument } from './document';
@@ -15,6 +18,22 @@ export const MAX_COMPARE = 4;
 export type RunStatus = 'running' | 'done' | 'cancelled' | 'error';
 export type RunProgress = { done: number; total: number };
 
+/** A hypothesis prediction as it stood at run start. Results evaluate against this. */
+export type PredictionSnapshot = {
+  /** Hypothesis key. */
+  hypothesis: string;
+  measure: string;
+  op: Hypothesis['op'];
+  value: number;
+  low: number;
+  high: number;
+};
+
+/** Shown in RunEntry.error when the worker fails. The raw text goes to RunEntry.detail. */
+export const RUN_FAILED = 'The simulation failed. Try again or reduce the replicate count.';
+export const EDITED_DURING_RUN = 'Vignette edited during the run';
+export const CLOSED_DURING_RUN = 'Vignette closed during the run. The result was not stored.';
+
 export type RunEntry = {
   key: string;
   n: number;
@@ -22,7 +41,17 @@ export type RunEntry = {
   status: RunStatus;
   progress: RunProgress;
   result: RunInWorker | null;
+  /** A sentence for the user. */
   error: string | null;
+  /** The raw worker error, for the console and bug reports. */
+  detail: string | null;
+  /** Predictions locked at run start. */
+  predictions: PredictionSnapshot[];
+  /** The vignette the run scored: its id and its `updated` stamp at run start. */
+  docId: string;
+  docUpdated: string;
+  /** Set when the vignette changed or closed while the run was in flight. */
+  note: string | null;
 };
 
 export type SweepEntry = {
@@ -93,14 +122,29 @@ export const useRuns = create<RunsState>()((set, get) => {
     sweep: null,
 
     startRun: async (n, seed) => {
+      if (isRunning(get())) return null; // one run at a time (review N-01)
       const docStore = useDocument.getState();
-      if (!docStore.doc) return null;
-      if (docStore.doc.runs.length === 0) {
-        const at = new Date().toISOString();
-        docStore.edit('Lock predictions', (d) => {
-          for (const h of d.hypotheses) if (h.prediction && !h.lockedAt) h.lockedAt = at;
-        });
-      }
+      const before = docStore.doc;
+      if (!before) return null;
+      const predictions: PredictionSnapshot[] = before.hypotheses.flatMap((h) =>
+        h.prediction
+          ? [
+              {
+                hypothesis: h.key,
+                measure: h.measure,
+                op: h.op,
+                value: h.value,
+                low: h.prediction.low,
+                high: h.prediction.high,
+              },
+            ]
+          : [],
+      );
+      const at = new Date().toISOString();
+      docStore.apply('Lock predictions', (d) => {
+        for (const h of d.hypotheses) if (h.prediction && !h.lockedAt) h.lockedAt = at;
+      });
+      // The run scores this snapshot, and its result is stored against the snapshot's id.
       const doc = useDocument.getState().doc;
       if (!doc) return null;
       const key = newKey();
@@ -112,6 +156,11 @@ export const useRuns = create<RunsState>()((set, get) => {
         progress: { done: 0, total: n },
         result: null,
         error: null,
+        detail: null,
+        predictions,
+        docId: doc.id,
+        docUpdated: doc.updated,
+        note: null,
       };
       set((s) => ({
         results: { ...s.results, [key]: entry },
@@ -125,8 +174,16 @@ export const useRuns = create<RunsState>()((set, get) => {
           if (live()) patch(key, { progress: { done, total } });
         });
         if (!live()) return key;
-        patch(key, { status: 'done', result, progress: { done: n, total: n } });
-        useDocument.getState().edit('Run', (d) => {
+        const now = useDocument.getState().doc;
+        const note =
+          now?.id !== doc.id
+            ? CLOSED_DURING_RUN
+            : now !== doc // any change replaces the reference; `updated` can repeat within 1 ms
+              ? EDITED_DURING_RUN
+              : null;
+        patch(key, { status: 'done', result, progress: { done: n, total: n }, note });
+        if (now?.id !== doc.id) return key;
+        useDocument.getState().apply('Run', (d) => {
           const summary: RunSummary = {
             key,
             id: runId(d.runs),
@@ -138,13 +195,19 @@ export const useRuns = create<RunsState>()((set, get) => {
           d.runs.unshift(summary); // newest first
         });
       } catch (err) {
-        if (live()) patch(key, { status: 'error', error: (err as Error).message });
+        if (live())
+          patch(key, {
+            status: 'error',
+            error: RUN_FAILED,
+            detail: err instanceof Error ? err.message : String(err),
+          });
       }
       return key;
     },
 
     cancel: () => {
       const key = get().activeKey;
+      // TODO(lane 2.F): call the simClient cancel handle here so the worker stops.
       if (key && get().results[key]?.status === 'running') patch(key, { status: 'cancelled' });
     },
 

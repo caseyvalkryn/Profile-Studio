@@ -65,14 +65,7 @@ export function exportJson(v: Vignette): string {
   return JSON.stringify(v, null, 2);
 }
 
-/** Parse a v5 vignette or a legacy v4 profile, chosen by its `schema` field. Throws a readable Error. */
-export function importJson(text: string): Vignette {
-  let data: unknown;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    throw new Error('This file is not JSON.');
-  }
+function importRecord(data: unknown): Vignette {
   const schema =
     typeof data === 'object' && data !== null ? (data as { schema?: unknown }).schema : undefined;
   if (schema === SCHEMA) return parseVignette(data);
@@ -83,26 +76,92 @@ export function importJson(text: string): Vignette {
 }
 
 /**
+ * Parse an import file into vignettes. Accepts a single v5 vignette, a single legacy v4 record, the
+ * legacy library export `{schema: 'profile-studio/4', library: [...]}`, or a plain array of
+ * records (the shapes the legacy `P.parse` accepts). All or nothing: one bad record fails the
+ * import, and the error names its position. Throws a readable Error.
+ */
+export function importJson(text: string): Vignette[] {
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error('This file is not JSON.');
+  }
+  const library =
+    typeof data === 'object' && data !== null && !Array.isArray(data)
+      ? (data as { library?: unknown }).library
+      : undefined;
+  const items = Array.isArray(data) ? data : Array.isArray(library) ? library : null;
+  if (!items) return [importRecord(data)];
+  if (items.length === 0) throw new Error('This file has no records.');
+  return items.map((item, i) => {
+    try {
+      return importRecord(item);
+    } catch (err) {
+      throw new Error(`Record ${i + 1} of ${items.length}: ${(err as Error).message}`, {
+        cause: err,
+      });
+    }
+  });
+}
+
+/** True when a vignette with this id is in the database. */
+async function isStored(id: string): Promise<boolean> {
+  return (await loadVignette(id)) !== null;
+}
+
+/**
  * Save the open document 500 ms after its last change. Returns a function that stops autosave.
- * `save` defaults to saveVignette; save errors go to `onError`.
+ * A pending save is written at once, not dropped, when another vignette opens, when the document
+ * closes, when autosave stops, and on `pagehide`. Opening a vignette writes nothing unless it is
+ * new (`isSaved` says it is not stored yet). `save` defaults to saveVignette; save errors go to
+ * `onError`.
  */
 export function startAutosave(
   save: (v: Vignette) => Promise<void> = saveVignette,
   onError: (err: unknown) => void = (err) => console.error('Autosave failed', err),
   delayMs = AUTOSAVE_MS,
+  isSaved: (id: string) => Promise<boolean> = isStored,
 ): () => void {
   let timer: ReturnType<typeof setTimeout> | null = null;
+  let pending: Vignette | null = null;
+
+  const flush = () => {
+    if (timer) clearTimeout(timer);
+    timer = null;
+    const v = pending;
+    pending = null;
+    if (v) save(v).catch(onError);
+  };
+
   const unsub = useDocument.subscribe((s, prev) => {
-    if (s.doc === prev.doc || !s.doc) return;
+    if (s.doc === prev.doc) return;
     const doc = s.doc;
+    if (!doc || !prev.doc || doc.id !== prev.doc.id) {
+      // A switch: write the previous document's pending edit first.
+      flush();
+      if (!doc) return;
+      isSaved(doc.id)
+        .then((saved) => {
+          // A new vignette is written once. An edit since then already has a save pending.
+          if (saved || pending || useDocument.getState().doc !== doc) return;
+          return save(doc);
+        })
+        .catch(onError);
+      return;
+    }
+    pending = doc;
     if (timer) clearTimeout(timer);
-    timer = setTimeout(() => {
-      timer = null;
-      save(doc).catch(onError);
-    }, delayMs);
+    timer = setTimeout(flush, delayMs);
   });
+
+  const win = typeof window === 'undefined' ? null : window;
+  win?.addEventListener('pagehide', flush);
+
   return () => {
-    if (timer) clearTimeout(timer);
+    flush();
     unsub();
+    win?.removeEventListener('pagehide', flush);
   };
 }

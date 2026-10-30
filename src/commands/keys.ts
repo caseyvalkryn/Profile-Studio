@@ -1,13 +1,23 @@
-// Key events to commands. While an input has focus only Escape and Cmd+K pass.
+// Key events to commands. While a text input has focus only Cmd+K passes; Escape there blurs the
+// input and does nothing else. An event a handler already took (defaultPrevented) is skipped, so
+// one Escape closes one layer. Held keys repeat only the time steps, undo and redo.
 import { byShortcut, currentContext, isMac } from './registry';
 import type { CommandContext } from './types';
 
 type KeyLike = Pick<
   KeyboardEvent,
   'key' | 'shiftKey' | 'altKey' | 'metaKey' | 'ctrlKey' | 'target'
-> & { preventDefault?: () => void };
+> & { preventDefault?: () => void; defaultPrevented?: boolean; repeat?: boolean };
 
-const ALWAYS = new Set(['Escape', 'Mod+K']);
+/** Commands a held key may repeat. Every other command fires once per press. */
+export const REPEATABLE = new Set([
+  'time.back1',
+  'time.forward1',
+  'time.back10',
+  'time.forward10',
+  'edit.undo',
+  'edit.redo',
+]);
 
 function keyName(key: string): string {
   if (key === ' ' || key === 'Spacebar') return 'Space';
@@ -52,10 +62,15 @@ export function dispatchKey(
   ctx: () => CommandContext = () => currentContext(),
   mac = isMac(),
 ): string | null {
+  if (e.defaultPrevented) return null;
   const shortcut = shortcutOf(e, mac);
-  if (isTextInput(e.target) && !ALWAYS.has(shortcut)) return null;
+  if (isTextInput(e.target) && shortcut !== 'Mod+K') {
+    if (shortcut === 'Escape') (e.target as HTMLElement).blur?.();
+    return null;
+  }
   const cmd = byShortcut(shortcut);
   if (!cmd) return null;
+  if (e.repeat && !REPEATABLE.has(cmd.id)) return null;
   const c = ctx();
   if (cmd.when(c) !== true) return null;
   e.preventDefault?.();

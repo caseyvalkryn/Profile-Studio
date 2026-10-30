@@ -32,7 +32,7 @@ vi.mock('../workers/simClient', () => ({
 }));
 
 const { useDocument } = await import('./document');
-const { useRuns } = await import('./runs');
+const { useRuns, RUN_FAILED, EDITED_DURING_RUN, CLOSED_DURING_RUN } = await import('./runs');
 const { runInWorker } = await import('../workers/simClient');
 
 const withHypotheses = () =>
@@ -68,7 +68,7 @@ beforeEach(() => {
 });
 
 describe('runs store', () => {
-  it('posts progress, stores the result and appends a RunSummary as one undo step', async () => {
+  it('posts progress, stores the result and appends a RunSummary outside undo history', async () => {
     const seen: number[] = [];
     const unsub = useRuns.subscribe((s) => {
       const e = s.activeKey ? s.results[s.activeKey] : undefined;
@@ -84,7 +84,8 @@ describe('runs store', () => {
     expect(entry.progress).toEqual({ done: 10, total: 10 });
     const doc = useDocument.getState().doc!;
     expect(doc.runs[0]).toMatchObject({ key, id: 'R-1', n: 10, seed: 7, rows });
-    expect(useDocument.getState().history.at(-1)).toBe('Run');
+    expect(useDocument.getState().history).toEqual([]);
+    expect(entry.note).toBeNull();
     expect(runInWorker).toHaveBeenCalledTimes(1);
   });
 
@@ -97,8 +98,60 @@ describe('runs store', () => {
     await new Promise((r) => setTimeout(r, 5));
     await useRuns.getState().startRun(5, 2);
     expect(useDocument.getState().doc!.hypotheses[0]!.lockedAt).toBe(lockedAt);
-    expect(useDocument.getState().history.filter((l) => l === 'Lock predictions')).toHaveLength(1);
+    expect(useDocument.getState().history).toEqual([]);
     expect(useDocument.getState().doc!.runs.map((r) => r.id)).toEqual(['R-2', 'R-1']);
+  });
+
+  it('undo after a run leaves the lock, the snapshot and the run in place', async () => {
+    useDocument.getState().edit('Rename', (d) => {
+      d.name = 'renamed';
+    });
+    const key = await useRuns.getState().startRun(5, 1);
+    useDocument.getState().undo();
+    useDocument.getState().undo();
+    const doc = useDocument.getState().doc!;
+    expect(doc.name).toBe('test vignette');
+    expect(doc.hypotheses[0]!.lockedAt).not.toBeNull();
+    expect(doc.runs.map((r) => r.key)).toEqual([key]);
+    expect(useRuns.getState().results[key!]!.predictions).toEqual([
+      { hypothesis: 'h1', measure: '1.1.2', op: '>=', value: 0.9, low: 0.8, high: 0.95 },
+    ]);
+  });
+
+  it('stores a run on a vignette edited mid-run with a note, and skips a closed one', async () => {
+    let release: () => void = () => {};
+    vi.mocked(runInWorker).mockImplementationOnce(
+      () => new Promise((res) => (release = () => res({ rows, trace: [], scores: [] }))),
+    );
+    const p = useRuns.getState().startRun(5, 1);
+    await Promise.resolve();
+    expect(await useRuns.getState().startRun(5, 9)).toBeNull();
+    useDocument.getState().edit('Rename', (d) => {
+      d.name = 'mid-run';
+    });
+    release();
+    const key = await p;
+    expect(useRuns.getState().results[key!]!.note).toBe(EDITED_DURING_RUN);
+    expect(useDocument.getState().doc!.runs).toHaveLength(1);
+
+    vi.mocked(runInWorker).mockImplementationOnce(
+      () => new Promise((res) => (release = () => res({ rows, trace: [], scores: [] }))),
+    );
+    const q = useRuns.getState().startRun(5, 2);
+    await Promise.resolve();
+    useDocument.getState().open(testVignette({ id: 'other' }));
+    release();
+    const key2 = await q;
+    expect(useRuns.getState().results[key2!]!.note).toBe(CLOSED_DURING_RUN);
+    expect(useDocument.getState().doc!.runs).toHaveLength(0);
+  });
+
+  it('maps a worker failure to a user sentence and keeps the raw text', async () => {
+    vi.mocked(runInWorker).mockRejectedValueOnce(new Error('sim worker failed'));
+    const key = await useRuns.getState().startRun(5, 1);
+    const e = useRuns.getState().results[key!]!;
+    expect(e).toMatchObject({ status: 'error', error: RUN_FAILED, detail: 'sim worker failed' });
+    expect(useDocument.getState().doc!.runs).toHaveLength(0);
   });
 
   it('drops the result of a cancelled run', async () => {

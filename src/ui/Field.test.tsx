@@ -8,7 +8,7 @@ describe('Field', () => {
       <Field label="Speed" value={25} unit="m/s" source="Entered by planner" onCommit={() => {}} />,
     );
     expect(screen.getByText('m/s')).toBeInTheDocument();
-    expect(screen.getByLabelText('Speed')).toHaveAccessibleDescription('Entered by planner');
+    expect(screen.getByLabelText('Speed')).toHaveAccessibleDescription('m/s Entered by planner');
   });
 
   it('commits on Enter and reverts on Escape', () => {
@@ -20,10 +20,17 @@ describe('Field', () => {
     expect(onCommit).toHaveBeenCalledWith(30);
 
     fireEvent.change(input, { target: { value: '99' } });
-    fireEvent.keyDown(input, { key: 'Escape' });
+    const esc = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    fireEvent(input, esc);
     expect(input).toHaveValue('25');
+    expect(esc.defaultPrevented).toBe(true);
     fireEvent.blur(input);
     expect(onCommit).toHaveBeenCalledTimes(1);
+  });
+
+  it('puts the unit in the accessible description', () => {
+    render(<Field label="Range" value={5} unit="m" onCommit={() => {}} />);
+    expect(screen.getByLabelText('Range')).toHaveAccessibleDescription('m');
   });
 
   it('steps with arrows, Shift by 10 times, and rejects non-numbers', () => {
