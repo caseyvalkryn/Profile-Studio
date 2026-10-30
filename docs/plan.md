@@ -185,11 +185,13 @@ The orchestrator updates this table at each merge.
 | 2.3a | done | rebuild/mvp | 687b842 | 59 files, 16.1k lines, logic unchanged (only `!` for noUncheckedIndexedAccess); seed 4821 `runTrial` byte-identical to rangeboard 87a6579, frozen in `src/engine/sim/__fixtures__`; 19 of 44 rangeboard tests copied, 25 dropped (deps outside the closure: seed.ts, store, persist); headless Node run OK |
 | 2.2 | done | rebuild/mvp | c38ec67 | Parity on 4 seeds (windows, first, vols, daEntry, timed, splits); 17 ms median at 40x15; 48 tests. For 2.R: Assess = max(engage+tte, effector window start) with no clip (follows legacy source, not legacy-app.md); Engage without a Target falls back to first effector reach; group membership via `opts.groupKeys` since migrate keeps path groups only as notes |
 | 2.3b | done | rebuild/mvp | c2aaeaf | adapter, run (RunRow + RunTrace), score (Wilson, seeded bootstrap), sweep (5 factors), worker and client; 224 tests, engine suite 1.1 s. Null with note: 2.1.1, 3a.2 (no classify stage), 2.1.4 (identified_ok never false), 5.3, 5.8 (no inputs). Logistic width lost for non-radar (hard threshold at r50); waypoint holds not modelled; worker untested in a browser; nothing in `src/engine/sim` was unreachable |
-| 2.R | next | | | |
+| 2.R | done | rebuild/mvp | 3705e18 | `reviews/phase-2.md`: 2 blockers (F-01 Identify from rangeboard proximity ladder, not dwell+pCorrectId; F-02 3.1.3 and 5.1 use shot range, not defeat range), 2 majors (F-03 5 s undeclared link latency in Target; F-04 RF/acoustic-only never pass track), 8 minors. Fix lane 2.F |
+| 2.F | running | lane/2.F | | Fixes F-01 to F-12 |
 | 3.1 | done | rebuild/mvp | 5b1cdcd | document (patch undo, drag as one step), ui, runs, persist, 51 commands, 29 tests. Open for 3.R: hypothesis lock is an undo step (undo unlocks); cancel does not terminate the worker (`simClient` needs AbortSignal); IndexedDB untested (no fake-indexeddb); `AssetKind` lives in `commands/types.ts` |
 | 3.2 | done | rebuild/mvp | 6669667 | 9 primitives + Showcase, 12 tests. Open: mount `TooltipProvider` once in App.tsx (phase 4); keyframes live in `src/ui/motion.css`; disabled menu item reason is a tooltip, keyboard cannot reach it; not yet seen in a browser |
-| 3.R | next | | | |
-| 4.1 to 7.3 | not started | | | |
+| 3.R | running | lane/3.R | | |
+| 4.1 to 4.4 | running | lane/4.x | | parallel |
+| 4.5, 4.R to 7.3 | not started | | | 4.5 = Build workspace wiring lane (App.tsx, TooltipProvider, bindKeys, autosave, registry to palette), added by the orchestrator |
 
 ## 8. Handoff
 
