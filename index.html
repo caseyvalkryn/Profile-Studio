@@ -1,112 +1,12 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>Profile Studio</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="css/tokens.css">
-<link rel="stylesheet" href="css/board.css">
-<link rel="stylesheet" href="css/app.css">
-<div id="app">
-  <div id="slot-topbar"></div>
-  <div id="storage-bar" role="status" hidden></div>
-  <div id="root">
-    <div id="mode-build" hidden>
-      <div class="cols">
-        <div id="slot-rail"></div>
-        <div class="centre">
-          <div id="slot-board"></div>
-          <div id="strip-host-build"></div>
-        </div>
-        <div class="right">
-          <div id="slot-readout"></div>
-          <div id="slot-inspector"></div>
-        </div>
-      </div>
-    </div>
-    <div id="mode-brief" hidden>
-      <div class="cols">
-        <div id="slot-cards"></div>
-        <div class="centre">
-          <div id="slot-stage"></div>
-          <div id="strip-host-brief"></div>
-        </div>
-        <div class="right">
-          <div id="slot-notes"></div>
-        </div>
-      </div>
-    </div>
-    <div id="mode-collect" hidden>
-      <div id="slot-collect"></div>
-    </div>
-  </div>
-  <div id="strip">
-    <div id="slot-timeline"></div>
-    <div id="slot-chart"></div>
-    <div id="slot-ladder"></div>
-    <div class="strip-tabs"></div>
-  </div>
-  <div id="overlay">
-    <div id="slot-palette"></div>
-    <div id="slot-menu"></div>
-    <div id="slot-tip"></div>
-    <div id="slot-help"></div>
-    <div id="slot-dialog"></div>
-  </div>
-  <div id="sheet"></div>
-</div>
-<script src="js/00-ns.js"></script>
-<script src="js/10-catalog.js"></script>
-<script src="js/11-schema.js"></script>
-<script src="js/12-seed.js"></script>
-<script src="js/20-geo.js"></script>
-<script src="js/21-derive.js"></script>
-<script src="js/30-store.js"></script>
-<script src="js/31-bus.js"></script>
-<script src="js/32-select.js"></script>
-<script src="js/33-persist.js"></script>
-<script src="js/34-time.js"></script>
-<script src="js/40-cameras.js"></script>
-<script src="js/41-symbols.js"></script>
-<script src="js/42-layers.js"></script>
-<script src="js/43-layer-grid.js"></script>
-<script src="js/43-layer-volumes.js"></script>
-<script src="js/43-layer-planes.js"></script>
-<script src="js/43-layer-reach.js"></script>
-<script src="js/43-layer-systems.js"></script>
-<script src="js/43-layer-envelopes.js"></script>
-<script src="js/43-layer-paths.js"></script>
-<script src="js/43-layer-telemetry.js"></script>
-<script src="js/43-layer-events.js"></script>
-<script src="js/43-layer-tracks.js"></script>
-<script src="js/43-layer-handles.js"></script>
-<script src="js/43-layer-labels.js"></script>
-<script src="js/44-render.js"></script>
-<script src="js/45-tools.js"></script>
-<script src="js/46-keys.js"></script>
-<script src="js/50-panels.js"></script>
-<script src="js/51-panel-topbar.js"></script>
-<script src="js/51-panel-rail.js"></script>
-<script src="js/51-panel-board.js"></script>
-<script src="js/51-panel-palette.js"></script>
-<script src="js/51-panel-menu.js"></script>
-<script src="js/51-panel-tip.js"></script>
-<script src="js/51-panel-timeline.js"></script>
-<script src="js/51-panel-chart.js"></script>
-<script src="js/51-panel-ladder.js"></script>
-<script src="js/51-panel-readout.js"></script>
-<script src="js/51-panel-inspector.js"></script>
-<script src="js/51-panel-cards.js"></script>
-<script src="js/51-panel-stage.js"></script>
-<script src="js/51-panel-notes.js"></script>
-<script src="js/51-panel-collect.js"></script>
-<script src="js/51-panel-dialog.js"></script>
-<script src="js/51-panel-help.js"></script>
-<script src="js/90-app.js"></script>
-<script>
-  (function () {
-    var st = null;
-    try { st = window.localStorage; } catch (e) { st = null; }
-    PS.app.boot(document, st, window);
-  })();
-</script>
-
-</body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile Studio</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,1319 @@
+{
+  "derived": {
+    "crossings": {
+      "T1": [
+        {
+          "kind": "in",
+          "r": 1315.294644,
+          "system": "RDR-1",
+          "t": 0
+        },
+        {
+          "kind": "in",
+          "r": 640.312424,
+          "system": "TM-1",
+          "t": 0
+        },
+        {
+          "kind": "out",
+          "r": 1315.294644,
+          "system": "RDR-1",
+          "t": 221.122917
+        },
+        {
+          "kind": "out",
+          "r": 640.312424,
+          "system": "TM-1",
+          "t": 221.122917
+        }
+      ]
+    },
+    "dLink": {
+      "auto": true,
+      "value": null
+    },
+    "daEntry": {
+      "T1": null
+    },
+    "emitsRf": {
+      "T1": true
+    },
+    "first": {
+      "T1": {
+        "RDR-1": {
+          "pos": {
+            "x": 1000,
+            "y": -800,
+            "z": 300
+          },
+          "r": 1315.294644,
+          "t": 0
+        },
+        "RTK": null,
+        "TM-1": {
+          "pos": {
+            "x": 1000,
+            "y": -800,
+            "z": 300
+          },
+          "r": 640.312424,
+          "t": 0
+        }
+      }
+    },
+    "firstEffector": {
+      "T1": null
+    },
+    "firstSensor": {
+      "T1": {
+        "system": "RDR-1",
+        "t": 0
+      }
+    },
+    "flown": {},
+    "groupOf": {
+      "T1": ""
+    },
+    "ladder": {
+      "T1": {
+        "detect": {
+          "event": null,
+          "planning": false,
+          "r": 1280.624847,
+          "source": "geometry",
+          "system": "RDR-1",
+          "t": 0,
+          "tGeo": 0,
+          "warn": false,
+          "warnText": ""
+        },
+        "effect": {
+          "event": null,
+          "planning": false,
+          "r": null,
+          "source": null,
+          "system": null,
+          "t": null,
+          "tGeo": null,
+          "warn": false,
+          "warnText": ""
+        },
+        "engage": {
+          "event": null,
+          "planning": false,
+          "r": null,
+          "source": null,
+          "system": null,
+          "t": null,
+          "tGeo": null,
+          "warn": false,
+          "warnText": ""
+        },
+        "id": {
+          "event": null,
+          "planning": false,
+          "r": null,
+          "source": null,
+          "system": null,
+          "t": null,
+          "tGeo": null,
+          "warn": false,
+          "warnText": ""
+        },
+        "track": {
+          "event": null,
+          "planning": true,
+          "r": 1359.338442,
+          "source": "geometry",
+          "system": "RDR-1",
+          "t": 3,
+          "tGeo": 3,
+          "warn": false,
+          "warnText": ""
+        }
+      }
+    },
+    "last": {
+      "T1": {
+        "RDR-1": {
+          "r": 1315.294644,
+          "t": 221.122917
+        },
+        "RTK": null,
+        "TM-1": {
+          "r": 640.312424,
+          "t": 221.122917
+        }
+      }
+    },
+    "origin": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "speeds": {
+      "T1": 33
+    },
+    "splits": [],
+    "timed": {
+      "T1": [
+        {
+          "t0": 0,
+          "t1": 0,
+          "x": 1000,
+          "y": -800,
+          "z": 300
+        },
+        {
+          "t0": 54.545455,
+          "t1": 54.545455,
+          "x": 2800,
+          "y": -800,
+          "z": 300
+        },
+        {
+          "t0": 67.401941,
+          "t1": 67.401941,
+          "x": 3100,
+          "y": -500,
+          "z": 300
+        },
+        {
+          "t0": 97.704972,
+          "t1": 97.704972,
+          "x": 3100,
+          "y": 500,
+          "z": 300
+        },
+        {
+          "t0": 110.561459,
+          "t1": 110.561459,
+          "x": 2800,
+          "y": 800,
+          "z": 300
+        },
+        {
+          "t0": 165.106913,
+          "t1": 165.106913,
+          "x": 1000,
+          "y": 800,
+          "z": 300
+        },
+        {
+          "t0": 177.9634,
+          "t1": 177.9634,
+          "x": 700,
+          "y": 500,
+          "z": 300
+        },
+        {
+          "t0": 208.26643,
+          "t1": 208.26643,
+          "x": 700,
+          "y": -500,
+          "z": 300
+        },
+        {
+          "t0": 221.122917,
+          "t1": 221.122917,
+          "x": 1000,
+          "y": -800,
+          "z": 300
+        }
+      ]
+    },
+    "tmax": 221.122917,
+    "trackLine": {
+      "T1": [
+        {
+          "state": "pending",
+          "t0": 0,
+          "t1": 3
+        },
+        {
+          "state": "unknown",
+          "t0": 3,
+          "t1": 221.122917
+        }
+      ]
+    },
+    "vols": {
+      "RT": {
+        "T1": [
+          {
+            "tIn": 0,
+            "tOut": 54.477273
+          },
+          {
+            "tIn": 165.162731,
+            "tOut": 221.122917
+          }
+        ]
+      }
+    },
+    "warnings": [],
+    "window": {
+      "T1": {
+        "detectT": 0,
+        "engageT": null,
+        "geometric": null,
+        "latest": null,
+        "margin": null,
+        "planned": null,
+        "rangeAtEngage": null,
+        "tDA": null
+      }
+    },
+    "windows": {
+      "RDR-1": {
+        "T1": [
+          {
+            "rIn": 1315.294644,
+            "rOut": 1315.294644,
+            "tIn": 0,
+            "tOut": 221.122917
+          }
+        ]
+      },
+      "RTK": {
+        "T1": []
+      },
+      "TM-1": {
+        "T1": [
+          {
+            "rIn": 640.312424,
+            "rOut": 640.312424,
+            "tIn": 0,
+            "tOut": 221.122917
+          }
+        ]
+      }
+    },
+    "windowsRing": {
+      "RDR-1": {
+        "T1": [
+          {
+            "tIn": 0,
+            "tOut": 221.122917
+          }
+        ]
+      },
+      "RTK": {
+        "T1": []
+      },
+      "TM-1": {
+        "T1": [
+          {
+            "tIn": 0,
+            "tOut": 221.122917
+          }
+        ]
+      }
+    }
+  },
+  "input": {
+    "cards": [
+      {
+        "cam": {
+          "pitch": 55,
+          "proj": "plan",
+          "ref": "asset",
+          "yaw": -35
+        },
+        "caption": "A surrogate flies a fixed racetrack at 300 m with RTK truth. The pattern is the yardstick for every track metric.",
+        "clip": null,
+        "displays": {
+          "chart": false,
+          "readout": false,
+          "timeline": true
+        },
+        "focus": [
+          "RT"
+        ],
+        "id": "c1",
+        "layers": {
+          "envelopes": false,
+          "events": false,
+          "labels": true,
+          "reach": false,
+          "rings": false,
+          "target": true,
+          "telemetry": true,
+          "tracks": true
+        },
+        "name": "The yardstick",
+        "notes": "This is the telemetry chapter. The same layer applies to any profile in the collection.",
+        "t": null
+      },
+      {
+        "cam": {
+          "pitch": 45,
+          "proj": "axon",
+          "ref": "asset",
+          "yaw": -30
+        },
+        "caption": "Truth samples every 10 s. Two truth stations hold the aircraft at the far turn.",
+        "clip": null,
+        "displays": {
+          "chart": false,
+          "readout": false,
+          "timeline": true
+        },
+        "focus": [],
+        "id": "c2",
+        "layers": {
+          "envelopes": false,
+          "events": true,
+          "labels": true,
+          "reach": false,
+          "rings": false,
+          "target": true,
+          "telemetry": true,
+          "tracks": true
+        },
+        "name": "Truth at altitude",
+        "notes": "Height block shown by the reference plane.",
+        "t": 98
+      }
+    ],
+    "cls": "Surrogate",
+    "collection": "Reference",
+    "data": [
+      "RTK GPS truth, 20 Hz",
+      "Radar track, 1 Hz, with covariance",
+      "Telemetry link margin and packet loss",
+      "Time sync log, PTP"
+    ],
+    "events": [
+      {
+        "id": "e1",
+        "label": "Lap start",
+        "path": "T1",
+        "system": null,
+        "t": 0,
+        "type": "checkpoint"
+      },
+      {
+        "id": "e2",
+        "label": "Straight 1 end",
+        "path": "T1",
+        "system": null,
+        "t": 55,
+        "type": "checkpoint"
+      },
+      {
+        "id": "e3",
+        "label": "Far turn",
+        "path": "T1",
+        "system": null,
+        "t": 98,
+        "type": "checkpoint"
+      },
+      {
+        "id": "e4",
+        "label": "Straight 2 end",
+        "path": "T1",
+        "system": null,
+        "t": 165,
+        "type": "checkpoint"
+      },
+      {
+        "id": "e5",
+        "label": "Lap complete",
+        "path": "T1",
+        "system": null,
+        "t": 220,
+        "type": "checkpoint"
+      }
+    ],
+    "id": "SURR-001",
+    "meta": {
+      "created": null,
+      "updated": null
+    },
+    "metricsCfg": {
+      "dLink": null
+    },
+    "mop": [
+      "Track position error, 90th percentile, at most 15 m",
+      "Track latency at most 1.0 s",
+      "Telemetry packet loss at most 0.5 percent",
+      "Time sync error at most 10 ms"
+    ],
+    "name": "Group 3 surrogate racetrack with truth",
+    "purpose": "How accurate is the sensor track against truth on a known pattern?",
+    "scene": {
+      "aircraft": [
+        {
+          "arch": "g3-target-piston",
+          "cruise": null,
+          "id": "T1"
+        }
+      ],
+      "paths": [
+        {
+          "aircraft": "T1",
+          "group": "",
+          "id": "T1",
+          "identity": "neutral",
+          "pts": [
+            {
+              "hold": 0,
+              "x": 1000,
+              "y": -800,
+              "z": 300
+            },
+            {
+              "hold": 0,
+              "x": 2800,
+              "y": -800,
+              "z": 300
+            },
+            {
+              "hold": 0,
+              "x": 3100,
+              "y": -500,
+              "z": 300
+            },
+            {
+              "hold": 0,
+              "x": 3100,
+              "y": 500,
+              "z": 300
+            },
+            {
+              "hold": 0,
+              "x": 2800,
+              "y": 800,
+              "z": 300
+            },
+            {
+              "hold": 0,
+              "x": 1000,
+              "y": 800,
+              "z": 300
+            },
+            {
+              "hold": 0,
+              "x": 700,
+              "y": 500,
+              "z": 300
+            },
+            {
+              "hold": 0,
+              "x": 700,
+              "y": -500,
+              "z": 300
+            },
+            {
+              "hold": 0,
+              "x": 1000,
+              "y": -800,
+              "z": 300
+            }
+          ],
+          "speed": null
+        }
+      ],
+      "planes": [
+        {
+          "id": "P1",
+          "label": "300 m block",
+          "z": 300
+        }
+      ],
+      "systems": [
+        {
+          "bearing": 0,
+          "elMax": 90,
+          "elMin": -90,
+          "fov": 360,
+          "id": "RDR-1",
+          "kind": "radar",
+          "range": 4000,
+          "rmin": 0,
+          "status": "active",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "zmax": null,
+          "zmin": 0
+        },
+        {
+          "bearing": 0,
+          "elMax": 90,
+          "elMin": -90,
+          "fov": 360,
+          "id": "TM-1",
+          "kind": "tspi",
+          "range": 3500,
+          "rmin": 0,
+          "status": "active",
+          "x": 600,
+          "y": -400,
+          "z": 0,
+          "zmax": null,
+          "zmin": 0
+        },
+        {
+          "bearing": 0,
+          "elMax": 90,
+          "elMin": -90,
+          "fov": 0,
+          "id": "RTK",
+          "kind": "tspi",
+          "range": 0,
+          "rmin": 0,
+          "status": "active",
+          "x": -500,
+          "y": -300,
+          "z": 0,
+          "zmax": null,
+          "zmin": 0
+        }
+      ],
+      "volumes": [
+        {
+          "id": "RT",
+          "kind": "ref",
+          "label": "Reference racetrack",
+          "pts": [
+            [
+              1000,
+              -800
+            ],
+            [
+              2800,
+              -800
+            ],
+            [
+              3100,
+              -500
+            ],
+            [
+              3100,
+              500
+            ],
+            [
+              2800,
+              800
+            ],
+            [
+              1000,
+              800
+            ],
+            [
+              700,
+              500
+            ],
+            [
+              700,
+              -500
+            ]
+          ],
+          "zmax": 0,
+          "zmin": 0
+        }
+      ]
+    },
+    "schema": "profile-studio/4",
+    "site": {
+      "datum": "AGL",
+      "elev": 0,
+      "name": ""
+    },
+    "snapshots": [],
+    "telemetry": {
+      "interval": 10,
+      "stations": [
+        "TM-1",
+        "RTK"
+      ],
+      "tspi": "RTK GPS, 20 Hz, cm class"
+    },
+    "units": "nav",
+    "v": 1
+  },
+  "samples": {
+    "at": {
+      "T1": [
+        {
+          "brg": 128.659808,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 90,
+          "margin": null,
+          "r": 1280.624847,
+          "spd": 33,
+          "tta": null,
+          "vc": -25.768671,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 1000,
+          "y": -800,
+          "z": 300
+        },
+        {
+          "brg": 121.027067,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 90,
+          "margin": null,
+          "r": 1552.063143,
+          "spd": 33,
+          "tta": null,
+          "vc": -28.278489,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 1330,
+          "y": -800,
+          "z": 300
+        },
+        {
+          "brg": 115.730706,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 90,
+          "margin": null,
+          "r": 1842.715388,
+          "spd": 33,
+          "tta": null,
+          "vc": -29.727868,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 1660,
+          "y": -800,
+          "z": 300
+        },
+        {
+          "brg": 111.900623,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 90,
+          "margin": null,
+          "r": 2144.784371,
+          "spd": 33,
+          "tta": null,
+          "vc": -30.618463,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 1990,
+          "y": -800,
+          "z": 300
+        },
+        {
+          "brg": 109.025606,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 90,
+          "margin": null,
+          "r": 2454.057864,
+          "spd": 33,
+          "tta": null,
+          "vc": -31.197308,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 2320,
+          "y": -800,
+          "z": 300
+        },
+        {
+          "brg": 106.798372,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 90,
+          "margin": null,
+          "r": 2768.122107,
+          "spd": 33,
+          "tta": null,
+          "vc": -31.591814,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 2650,
+          "y": -800,
+          "z": 300
+        },
+        {
+          "brg": 102.942476,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 45,
+          "margin": null,
+          "r": 3003.584006,
+          "spd": 33,
+          "tta": null,
+          "vc": -17.515424,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 2927.279221,
+          "y": -672.720779,
+          "z": 300
+        },
+        {
+          "brg": 97.611545,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 0,
+          "margin": null,
+          "r": 3127.557309,
+          "spd": 33,
+          "tta": null,
+          "vc": 4.371052,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 3100,
+          "y": -414.264069,
+          "z": 300
+        },
+        {
+          "brg": 91.557028,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 0,
+          "margin": null,
+          "r": 3101.14502,
+          "spd": 33,
+          "tta": null,
+          "vc": 0.896673,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 3100,
+          "y": -84.264069,
+          "z": 300
+        },
+        {
+          "brg": 85.467661,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 0,
+          "margin": null,
+          "r": 3109.724449,
+          "spd": 33,
+          "tta": null,
+          "vc": -2.607718,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 3100,
+          "y": 245.735931,
+          "z": 300
+        },
+        {
+          "brg": 79.701453,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 315,
+          "margin": null,
+          "r": 3096.329811,
+          "spd": 33,
+          "tta": null,
+          "vc": 18.786912,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 3046.446609,
+          "y": 553.553391,
+          "z": 300
+        },
+        {
+          "brg": 74.372293,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 315,
+          "margin": null,
+          "r": 2921.086917,
+          "spd": 33,
+          "tta": null,
+          "vc": 16.185919,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 2813.101372,
+          "y": 786.898628,
+          "z": 300
+        },
+        {
+          "brg": 72.178691,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 270,
+          "margin": null,
+          "r": 2613.957209,
+          "spd": 33,
+          "tta": null,
+          "vc": 31.416516,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 2488.528137,
+          "y": 800,
+          "z": 300
+        },
+        {
+          "brg": 69.66414,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 270,
+          "margin": null,
+          "r": 2302.008627,
+          "spd": 33,
+          "tta": null,
+          "vc": 30.943163,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 2158.528137,
+          "y": 800,
+          "z": 300
+        },
+        {
+          "brg": 66.370124,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 270,
+          "margin": null,
+          "r": 1995.874532,
+          "spd": 33,
+          "tta": null,
+          "vc": 30.233077,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 1828.528137,
+          "y": 800,
+          "z": 300
+        },
+        {
+          "brg": 61.904151,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 270,
+          "margin": null,
+          "r": 1698.701439,
+          "spd": 33,
+          "tta": null,
+          "vc": 29.111313,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 1498.528137,
+          "y": 800,
+          "z": 300
+        },
+        {
+          "brg": 55.603603,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 270,
+          "margin": null,
+          "r": 1416.141945,
+          "spd": 33,
+          "tta": null,
+          "vc": 27.229918,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 1168.528137,
+          "y": 800,
+          "z": 300
+        },
+        {
+          "brg": 52.25221,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 225,
+          "margin": null,
+          "r": 1120.282512,
+          "spd": 33,
+          "tta": null,
+          "vc": 32.736003,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 885.822151,
+          "y": 685.822151,
+          "z": 300
+        },
+        {
+          "brg": 58.272552,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 180,
+          "margin": null,
+          "r": 822.987906,
+          "spd": 33,
+          "tta": null,
+          "vc": 17.354013,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 700,
+          "y": 432.792206,
+          "z": 300
+        },
+        {
+          "brg": 81.64605,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 180,
+          "margin": null,
+          "r": 707.507058,
+          "spd": 33,
+          "tta": null,
+          "vc": 4.7945,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 700,
+          "y": 102.792206,
+          "z": 300
+        },
+        {
+          "brg": 107.982526,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 180,
+          "margin": null,
+          "r": 735.950665,
+          "spd": 33,
+          "tta": null,
+          "vc": -10.187989,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 700,
+          "y": -227.207794,
+          "z": 300
+        },
+        {
+          "brg": 126.125509,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 135,
+          "margin": null,
+          "r": 916.710193,
+          "spd": 33,
+          "tta": null,
+          "vc": -32.604945,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 740.452019,
+          "y": -540.452019,
+          "z": 300
+        },
+        {
+          "brg": 128.471301,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 135,
+          "margin": null,
+          "r": 1243.80195,
+          "spd": 33,
+          "tta": null,
+          "vc": -32.785996,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 973.797257,
+          "y": -773.797257,
+          "z": 300
+        },
+        {
+          "brg": 128.659808,
+          "covering": [
+            "RDR-1",
+            "TM-1"
+          ],
+          "hdg": 135,
+          "margin": null,
+          "r": 1280.624847,
+          "spd": 33,
+          "tta": null,
+          "vc": -32.798163,
+          "window": {
+            "detectT": 0,
+            "engageT": null,
+            "geometric": null,
+            "latest": null,
+            "margin": null,
+            "planned": null,
+            "rangeAtEngage": null,
+            "tDA": null
+          },
+          "x": 1000,
+          "y": -800,
+          "z": 300
+        }
+      ]
+    },
+    "envelopesAt": [
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      []
+    ],
+    "t": [
+      0,
+      10,
+      20,
+      30,
+      40,
+      50,
+      60,
+      70,
+      80,
+      90,
+      100,
+      110,
+      120,
+      130,
+      140,
+      150,
+      160,
+      170,
+      180,
+      190,
+      200,
+      210,
+      220,
+      221.122917
+    ]
+  }
+}

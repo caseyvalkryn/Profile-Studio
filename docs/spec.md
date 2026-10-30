@@ -132,7 +132,9 @@ Pure TypeScript in `src/engine/`. No React, DOM or store imports. A lint rule en
    sensor and threat, first detection, the F2T2EA stage times, area entry times. It runs on every
    edit. Budget: 100 ms for 40 threats and 15 sensors. Port the legacy derive logic
    (`docs/reference/legacy-app.md`) and replace its `splitTimes` loop with an incremental method.
-2. **Run.** `run(v: Vignette, n: number, seed: number): RunRow[]`. Monte Carlo replicates in a
+2. **Run.** `run(v: Vignette, n: number, seed: number): { rows: RunRow[]; trace: RunTrace[] }`.
+   `RunRow` holds only DroneScore fields; `RunTrace` carries the stage times and positions for
+   the timeline, including the Target time. Monte Carlo replicates in a
    Web Worker, seeded and repeatable. Transfer and modify the rangeboard engine
    (`docs/reference/rangeboard-parts.md`). Models for the MVP:
    - Radar Pd by Swerling case against signal to noise ratio over range.

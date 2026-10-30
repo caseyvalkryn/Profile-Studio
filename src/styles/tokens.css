@@ -1,0 +1,65 @@
+/* Design tokens. Source: docs/design-principles.md section 5.
+   Four surfaces, one accent, two radii, mono for data, sans for UI. */
+
+:root {
+  --surface-0: #f6f7f8; /* app background */
+  --surface-1: #ffffff; /* panels, top bar */
+  --surface-2: #eceef1; /* raised controls, hover */
+  --surface-3: #dde1e6; /* borders, dividers */
+  --text: #1b1f24;
+  --text-muted: #5b6470;
+  --accent: #2563eb; /* selection and current time only */
+  --accent-text: #ffffff;
+  --state-covered: #15803d; /* a reach that holds a threat at the current time */
+  --state-warning: #b45309; /* a value that needs attention, such as a missing source note */
+  --state-hostile: #c81e1e; /* a hostile track or threat */
+  --state-meets: #0ca30c; /* evaluation states, dataviz status palette */
+  --state-not-meet: #d03b3b;
+  --state-inconclusive: #b07d00;
+  --chart-mark: #2a78d6;
+  --chart-band: rgba(42, 120, 214, 0.16);
+  --chart-grid: var(--surface-3);
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --surface-0: #0f1115;
+    --surface-1: #161a20;
+    --surface-2: #1e232b;
+    --surface-3: #2b313b;
+    --text: #e6e9ee;
+    --text-muted: #9aa3af;
+    --accent: #4f8cff;
+    --accent-text: #0f1115;
+    --state-covered: #4ade80;
+    --state-warning: #fbbf24;
+    --state-hostile: #f87171;
+    --state-inconclusive: #fab219;
+    --chart-mark: #3987e5;
+    --chart-band: rgba(57, 135, 229, 0.22);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --surface-0: #0f1115;
+  --surface-1: #161a20;
+  --surface-2: #1e232b;
+  --surface-3: #2b313b;
+  --text: #e6e9ee;
+  --text-muted: #9aa3af;
+  --accent: #4f8cff;
+  --accent-text: #0f1115;
+  --state-covered: #4ade80;
+  --state-warning: #fbbf24;
+  --state-hostile: #f87171;
+  --state-inconclusive: #fab219;
+  --chart-mark: #3987e5;
+  --chart-band: rgba(57, 135, 229, 0.22);
+  color-scheme: dark;
+}
