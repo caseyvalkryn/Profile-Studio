@@ -92,7 +92,7 @@ describe('AssetsPanel', () => {
 
   it('filter narrows by label, role and group', () => {
     render(<AssetsPanel />);
-    const box = screen.getByRole('searchbox', { name: 'Filter assets' });
+    const box = screen.getByRole('searchbox', { name: 'Search assets' });
     fireEvent.change(box, { target: { value: 'radar' } });
     expect(rows(document.body)).toHaveLength(1);
     fireEvent.change(box, { target: { value: 'decoy' } });
