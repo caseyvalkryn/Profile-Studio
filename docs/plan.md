@@ -181,9 +181,10 @@ The orchestrator updates this table at each merge.
 | 0.2 | done | rebuild/mvp | 189a6c0 | Legacy app in `legacy/`; smoke green |
 | 0.3 | done | rebuild/mvp | 6d81756 | 9 fixtures; `golden.js --check` green; `Date` fixed to 2026-01-01Z in the vm; templates have no paths, so parity rests on the 4 seeds |
 | 1.1 | done | rebuild/mvp | f147f73 | Gate green; bundle 59 kB gzip; root stays CommonJS for the legacy smoke, so Vite and Playwright configs are `.mts`; Tailwind 4.3.3, zod 4.x |
-| 2.1 | next | | | |
-| 2.3a | next | | | |
-| 2.2, 2.3b, 2.R to 7.3 | not started | | | |
+| 2.1 | done | rebuild/mvp | a7bae7f | 67 measure rows; 4 seeds and 5 templates import and validate; 24 tests. Open: site lat/lon import as 0 (legacy has no origin); MOP text goes to a question note, not to measure ids; sensor model planning defaults in `catalog.ts` need review by 2.2 and 2.3b |
+| 2.3a | running | lane/2.3a | | |
+| 2.2 | next | | | |
+| 2.3b, 2.R to 7.3 | not started | | | |
 
 ## 8. Handoff
 
