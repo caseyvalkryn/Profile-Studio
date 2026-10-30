@@ -1,0 +1,1476 @@
+{
+  "derived": {
+    "crossings": {
+      "T1": [
+        {
+          "kind": "in",
+          "r": 8999.838459,
+          "system": "RDR-1",
+          "t": 72.375
+        },
+        {
+          "kind": "in",
+          "r": 4998.798552,
+          "system": "EO-1",
+          "t": 158.1875
+        },
+        {
+          "kind": "in",
+          "r": 2997.162757,
+          "system": "KIN-1",
+          "t": 203
+        },
+        {
+          "kind": "out",
+          "r": 456.906866,
+          "system": "EO-1",
+          "t": 257.5
+        },
+        {
+          "kind": "out",
+          "r": 157.480157,
+          "system": "RDR-1",
+          "t": 264.772368
+        },
+        {
+          "kind": "out",
+          "r": 157.480157,
+          "system": "KIN-1",
+          "t": 264.772368
+        }
+      ]
+    },
+    "dLink": {
+      "auto": true,
+      "value": null
+    },
+    "daEntry": {
+      "T1": 259.5
+    },
+    "emitsRf": {
+      "T1": false
+    },
+    "first": {
+      "T1": {
+        "EO-1": {
+          "pos": {
+            "x": -3792.170361,
+            "y": -3331.535319,
+            "z": 281.418006
+          },
+          "r": 4998.798552,
+          "t": 158.1875
+        },
+        "KIN-1": {
+          "pos": {
+            "x": -2247.178989,
+            "y": -1967.555124,
+            "z": 248.793126
+          },
+          "r": 2997.162757,
+          "t": 203
+        },
+        "RDR-1": {
+          "pos": {
+            "x": -6731.242007,
+            "y": -5966.361816,
+            "z": 300
+          },
+          "r": 8999.838459,
+          "t": 72.375
+        }
+      }
+    },
+    "firstEffector": {
+      "T1": {
+        "system": "KIN-1",
+        "t": 203
+      }
+    },
+    "firstSensor": {
+      "T1": {
+        "system": "RDR-1",
+        "t": 72.375
+      }
+    },
+    "flown": {},
+    "groupOf": {
+      "T1": ""
+    },
+    "ladder": {
+      "T1": {
+        "detect": {
+          "event": "e1",
+          "planning": false,
+          "r": 10484.020421,
+          "source": "event",
+          "system": "RDR-1",
+          "t": 40,
+          "tGeo": 72.375,
+          "warn": true,
+          "warnText": "e1 is 32 s early. RDR-1 can detect T1 at t+1:12."
+        },
+        "effect": {
+          "event": "e5",
+          "planning": false,
+          "r": 3124.605702,
+          "source": "event",
+          "system": "KIN-1",
+          "t": 200,
+          "tGeo": 203,
+          "warn": false,
+          "warnText": ""
+        },
+        "engage": {
+          "event": "e4",
+          "planning": false,
+          "r": 4274.422141,
+          "source": "event",
+          "system": "KIN-1",
+          "t": 175,
+          "tGeo": 203,
+          "warn": false,
+          "warnText": ""
+        },
+        "id": {
+          "event": "e3",
+          "planning": true,
+          "r": 5827.204885,
+          "source": "event",
+          "system": "EO-1",
+          "t": 140,
+          "tGeo": 163.1875,
+          "warn": true,
+          "warnText": "e3 is 23 s early. EO-1 can identify T1 at t+2:43."
+        },
+        "track": {
+          "event": "e2",
+          "planning": true,
+          "r": 9472.063371,
+          "source": "event",
+          "system": "RDR-1",
+          "t": 62,
+          "tGeo": 75.375,
+          "warn": true,
+          "warnText": "e2 is 13 s early. RDR-1 can track T1 at t+1:15."
+        }
+      }
+    },
+    "last": {
+      "T1": {
+        "EO-1": {
+          "r": 456.906866,
+          "t": 257.5
+        },
+        "KIN-1": {
+          "r": 157.480157,
+          "t": 264.772368
+        },
+        "RDR-1": {
+          "r": 157.480157,
+          "t": 264.772368
+        }
+      }
+    },
+    "origin": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "speeds": {
+      "T1": 46
+    },
+    "splits": [],
+    "timed": {
+      "T1": [
+        {
+          "t0": 0,
+          "t1": 0,
+          "x": -9200,
+          "y": -8200,
+          "z": 300
+        },
+        {
+          "t0": 123.128715,
+          "t1": 123.128715,
+          "x": -5000,
+          "y": -4400,
+          "z": 300
+        },
+        {
+          "t0": 198.597008,
+          "t1": 198.597008,
+          "x": -2400,
+          "y": -2100,
+          "z": 260
+        },
+        {
+          "t0": 241.814158,
+          "t1": 241.814158,
+          "x": -900,
+          "y": -800,
+          "z": 150
+        },
+        {
+          "t0": 264.772368,
+          "t1": 264.772368,
+          "x": -120,
+          "y": -100,
+          "z": 20
+        }
+      ]
+    },
+    "tmax": 264.772368,
+    "trackLine": {
+      "T1": [
+        {
+          "state": "pending",
+          "t0": 40,
+          "t1": 62
+        },
+        {
+          "state": "unknown",
+          "t0": 62,
+          "t1": 140
+        },
+        {
+          "state": "identity",
+          "t0": 140,
+          "t1": 264.772368
+        }
+      ]
+    },
+    "vols": {
+      "DA": {
+        "T1": [
+          {
+            "tIn": 259.5,
+            "tOut": 264.772368
+          }
+        ]
+      },
+      "WEZ": {
+        "T1": [
+          {
+            "tIn": 181.1875,
+            "tOut": 258.1875
+          }
+        ]
+      }
+    },
+    "warnings": [
+      {
+        "delta": 32.375,
+        "eventId": "e1",
+        "id": "e1",
+        "kind": "event",
+        "rangeAtA": 10484.020421,
+        "rung": "detect",
+        "system": "RDR-1",
+        "tA": 40,
+        "tGeo": 72.375,
+        "text": "e1 is 32 s early. RDR-1 can detect T1 at t+1:12."
+      },
+      {
+        "delta": 13.375,
+        "eventId": "e2",
+        "id": "e2",
+        "kind": "event",
+        "rangeAtA": 9472.063371,
+        "rung": "track",
+        "system": "RDR-1",
+        "tA": 62,
+        "tGeo": 75.375,
+        "text": "e2 is 13 s early. RDR-1 can track T1 at t+1:15."
+      },
+      {
+        "delta": 23.1875,
+        "eventId": "e3",
+        "id": "e3",
+        "kind": "event",
+        "rangeAtA": 5827.204885,
+        "rung": "id",
+        "system": "EO-1",
+        "tA": 140,
+        "tGeo": 163.1875,
+        "text": "e3 is 23 s early. EO-1 can identify T1 at t+2:43."
+      }
+    ],
+    "window": {
+      "T1": {
+        "detectT": 40,
+        "engageT": 175,
+        "geometric": 130.625,
+        "latest": 251.5,
+        "margin": 76.5,
+        "planned": 135,
+        "rangeAtEngage": 4274.422141,
+        "tDA": 259.5
+      }
+    },
+    "windows": {
+      "EO-1": {
+        "T1": [
+          {
+            "rIn": 4998.798552,
+            "rOut": 456.906866,
+            "tIn": 158.1875,
+            "tOut": 257.5
+          }
+        ]
+      },
+      "KIN-1": {
+        "T1": [
+          {
+            "rIn": 2997.162757,
+            "rOut": 157.480157,
+            "tIn": 203,
+            "tOut": 264.772368
+          }
+        ]
+      },
+      "RDR-1": {
+        "T1": [
+          {
+            "rIn": 8999.838459,
+            "rOut": 157.480157,
+            "tIn": 72.375,
+            "tOut": 264.772368
+          }
+        ]
+      }
+    },
+    "windowsRing": {
+      "EO-1": {
+        "T1": [
+          {
+            "tIn": 158.1875,
+            "tOut": 264.772368
+          }
+        ]
+      },
+      "KIN-1": {
+        "T1": [
+          {
+            "tIn": 203,
+            "tOut": 264.772368
+          }
+        ]
+      },
+      "RDR-1": {
+        "T1": [
+          {
+            "tIn": 72.375,
+            "tOut": 264.772368
+          }
+        ]
+      }
+    }
+  },
+  "input": {
+    "cards": [
+      {
+        "cam": {
+          "pitch": 55,
+          "proj": "plan",
+          "ref": "asset",
+          "yaw": -35
+        },
+        "caption": "A piston delta wing from 12 km out, low cruise at 300 m, into the south west engagement zone.",
+        "clip": null,
+        "displays": {
+          "chart": false,
+          "readout": false,
+          "timeline": true
+        },
+        "focus": [],
+        "id": "c1",
+        "layers": {
+          "envelopes": false,
+          "events": true,
+          "labels": true,
+          "reach": true,
+          "rings": false,
+          "target": true,
+          "telemetry": false,
+          "tracks": true
+        },
+        "name": "Overview",
+        "notes": "Scale matters here: the radar ring is 9 km. Let the empty space do the work.",
+        "t": null
+      },
+      {
+        "cam": {
+          "pitch": 55,
+          "proj": "elev",
+          "ref": "asset",
+          "yaw": -35
+        },
+        "caption": "Elevation carries the story. Level at 300 m, then the terminal dive from 2.4 km out.",
+        "clip": null,
+        "displays": {
+          "chart": false,
+          "readout": false,
+          "timeline": true
+        },
+        "focus": [
+          "e4",
+          "e5"
+        ],
+        "id": "c2",
+        "layers": {
+          "envelopes": false,
+          "events": true,
+          "labels": true,
+          "reach": true,
+          "rings": false,
+          "target": true,
+          "telemetry": false,
+          "tracks": true
+        },
+        "name": "The dive",
+        "notes": "Point at the engage event and the vertical kinetic reach line. The decision window is the gap between them.",
+        "t": null
+      },
+      {
+        "cam": {
+          "pitch": 40,
+          "proj": "axon",
+          "ref": "asset",
+          "yaw": -125
+        },
+        "caption": "The engagement zone as a volume to 1,200 m. The aircraft is inside it at t+180 s.",
+        "clip": null,
+        "displays": {
+          "chart": false,
+          "readout": false,
+          "timeline": true
+        },
+        "focus": [
+          "WEZ"
+        ],
+        "id": "c3",
+        "layers": {
+          "envelopes": false,
+          "events": true,
+          "labels": true,
+          "reach": false,
+          "rings": false,
+          "target": true,
+          "telemetry": false,
+          "tracks": true
+        },
+        "name": "Engagement volume",
+        "notes": "3D only because height matters here. Return to plan for the close.",
+        "t": 180
+      }
+    ],
+    "cls": "One-way attack",
+    "collection": "Toughstump",
+    "data": [
+      "Radar plots and tracks, 2 Hz",
+      "EO/IR video with KLV metadata",
+      "Effector fire log with time of flight"
+    ],
+    "events": [
+      {
+        "id": "e1",
+        "label": "Radar detect",
+        "path": "T1",
+        "system": null,
+        "t": 40,
+        "type": "detect"
+      },
+      {
+        "id": "e2",
+        "label": "Track init",
+        "path": "T1",
+        "system": null,
+        "t": 62,
+        "type": "track"
+      },
+      {
+        "id": "e3",
+        "label": "EO identify",
+        "path": "T1",
+        "system": null,
+        "t": 140,
+        "type": "id"
+      },
+      {
+        "id": "e4",
+        "label": "Kinetic engage",
+        "path": "T1",
+        "system": null,
+        "t": 175,
+        "type": "engage"
+      },
+      {
+        "id": "e5",
+        "label": "Terminal dive",
+        "path": "T1",
+        "system": null,
+        "t": 200,
+        "type": "terminal"
+      }
+    ],
+    "id": "OWA-001",
+    "meta": {
+      "created": null,
+      "updated": null
+    },
+    "metricsCfg": {
+      "dLink": null
+    },
+    "mop": [
+      "Initial detection range at or above 8.0 km",
+      "Track quality at or above 0.8 through terminal phase",
+      "Engage decision at or above 2.5 km",
+      "Time from engage to effect at most 15 s"
+    ],
+    "name": "Group 3 delta wing, low ingress, terminal dive",
+    "purpose": "Where in the geometry does the engage decision have to happen for a 46 m/s one way attack?",
+    "scene": {
+      "aircraft": [
+        {
+          "arch": "g3-delta-owa",
+          "cruise": null,
+          "id": "T1"
+        }
+      ],
+      "paths": [
+        {
+          "aircraft": "T1",
+          "group": "",
+          "id": "T1",
+          "identity": "hostile",
+          "pts": [
+            {
+              "hold": 0,
+              "x": -9200,
+              "y": -8200,
+              "z": 300
+            },
+            {
+              "hold": 0,
+              "x": -5000,
+              "y": -4400,
+              "z": 300
+            },
+            {
+              "hold": 0,
+              "x": -2400,
+              "y": -2100,
+              "z": 260
+            },
+            {
+              "hold": 0,
+              "x": -900,
+              "y": -800,
+              "z": 150
+            },
+            {
+              "hold": 0,
+              "x": -120,
+              "y": -100,
+              "z": 20
+            }
+          ],
+          "speed": null
+        }
+      ],
+      "planes": [
+        {
+          "id": "P1",
+          "label": "300 m cruise",
+          "z": 300
+        }
+      ],
+      "systems": [
+        {
+          "bearing": 0,
+          "elMax": 90,
+          "elMin": -90,
+          "fov": 360,
+          "id": "RDR-1",
+          "kind": "radar",
+          "range": 9000,
+          "rmin": 0,
+          "status": "active",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "zmax": null,
+          "zmin": 0
+        },
+        {
+          "bearing": 225,
+          "elMax": 90,
+          "elMin": -90,
+          "fov": 30,
+          "id": "EO-1",
+          "kind": "eoir",
+          "range": 5000,
+          "rmin": 0,
+          "status": "active",
+          "x": -140,
+          "y": 70,
+          "z": 0,
+          "zmax": null,
+          "zmin": 0
+        },
+        {
+          "bearing": 0,
+          "elMax": 90,
+          "elMin": -90,
+          "fov": 360,
+          "id": "KIN-1",
+          "kind": "kinetic",
+          "range": 3000,
+          "rmin": 0,
+          "status": "active",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "zmax": null,
+          "zmin": 0
+        }
+      ],
+      "volumes": [
+        {
+          "id": "DA",
+          "kind": "asset",
+          "label": "Defended asset",
+          "pts": [
+            [
+              -300,
+              -300
+            ],
+            [
+              300,
+              -300
+            ],
+            [
+              300,
+              300
+            ],
+            [
+              -300,
+              300
+            ]
+          ],
+          "zmax": 0,
+          "zmin": 0
+        },
+        {
+          "id": "WEZ",
+          "kind": "wez",
+          "label": "Engagement zone",
+          "pts": [
+            [
+              -3000,
+              -3000
+            ],
+            [
+              -300,
+              -3000
+            ],
+            [
+              -300,
+              -300
+            ],
+            [
+              -3000,
+              -300
+            ]
+          ],
+          "zmax": 1200,
+          "zmin": 0
+        }
+      ]
+    },
+    "schema": "profile-studio/4",
+    "site": {
+      "datum": "AGL",
+      "elev": 0,
+      "name": ""
+    },
+    "snapshots": [],
+    "telemetry": {
+      "interval": 20,
+      "stations": [
+        "RDR-1"
+      ],
+      "tspi": "Platform GPS and IMU, 20 Hz"
+    },
+    "units": "nav",
+    "v": 2
+  },
+  "samples": {
+    "at": {
+      "T1": [
+        {
+          "brg": 228.289243,
+          "covering": [],
+          "hdg": 47.862405,
+          "margin": 76.5,
+          "r": 12323.960402,
+          "spd": 46,
+          "tta": 259.5,
+          "vc": 45.998724,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -9200,
+          "y": -8200,
+          "z": 300
+        },
+        {
+          "brg": 228.305792,
+          "covering": [],
+          "hdg": 47.862405,
+          "margin": 76.5,
+          "r": 11863.973662,
+          "spd": 46,
+          "tta": 249.5,
+          "vc": 45.998623,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -8858.893542,
+          "y": -7891.379871,
+          "z": 300
+        },
+        {
+          "brg": 228.323677,
+          "covering": [],
+          "hdg": 47.862405,
+          "margin": 76.5,
+          "r": 11403.987991,
+          "spd": 46,
+          "tta": 239.5,
+          "vc": 45.998509,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -8517.787083,
+          "y": -7582.759742,
+          "z": 300
+        },
+        {
+          "brg": 228.343065,
+          "covering": [],
+          "hdg": 47.862405,
+          "margin": 76.5,
+          "r": 10944.003525,
+          "spd": 46,
+          "tta": 229.5,
+          "vc": 45.998381,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -8176.680625,
+          "y": -7274.139613,
+          "z": 300
+        },
+        {
+          "brg": 228.364154,
+          "covering": [],
+          "hdg": 47.862405,
+          "margin": 76.5,
+          "r": 10484.020421,
+          "spd": 46,
+          "tta": 219.5,
+          "vc": 45.998236,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -7835.574166,
+          "y": -6965.519484,
+          "z": 300
+        },
+        {
+          "brg": 228.387179,
+          "covering": [],
+          "hdg": 47.862405,
+          "margin": 76.5,
+          "r": 10024.038869,
+          "spd": 46,
+          "tta": 209.5,
+          "vc": 45.998071,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -7494.467708,
+          "y": -6656.899355,
+          "z": 300
+        },
+        {
+          "brg": 228.412419,
+          "covering": [],
+          "hdg": 47.862405,
+          "margin": 76.5,
+          "r": 9564.059091,
+          "spd": 46,
+          "tta": 199.5,
+          "vc": 45.997881,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -7153.36125,
+          "y": -6348.279226,
+          "z": 300
+        },
+        {
+          "brg": 228.440209,
+          "covering": [],
+          "hdg": 47.862405,
+          "margin": 76.5,
+          "r": 9104.081357,
+          "spd": 46,
+          "tta": 189.5,
+          "vc": 45.997661,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -6812.254791,
+          "y": -6039.659097,
+          "z": 300
+        },
+        {
+          "brg": 228.470956,
+          "covering": [
+            "RDR-1"
+          ],
+          "hdg": 47.862405,
+          "margin": 76.5,
+          "r": 8644.105992,
+          "spd": 46,
+          "tta": 179.5,
+          "vc": 45.997405,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -6471.148333,
+          "y": -5731.038968,
+          "z": 300
+        },
+        {
+          "brg": 228.50516,
+          "covering": [
+            "RDR-1"
+          ],
+          "hdg": 47.862405,
+          "margin": 76.5,
+          "r": 8184.133396,
+          "spd": 46,
+          "tta": 169.5,
+          "vc": 45.997106,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -6130.041874,
+          "y": -5422.418839,
+          "z": 300
+        },
+        {
+          "brg": 228.543437,
+          "covering": [
+            "RDR-1"
+          ],
+          "hdg": 47.862405,
+          "margin": 76.5,
+          "r": 7724.164064,
+          "spd": 46,
+          "tta": 159.5,
+          "vc": 45.996751,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -5788.935416,
+          "y": -5113.79871,
+          "z": 300
+        },
+        {
+          "brg": 228.586562,
+          "covering": [
+            "RDR-1"
+          ],
+          "hdg": 47.862405,
+          "margin": 76.5,
+          "r": 7264.198617,
+          "spd": 46,
+          "tta": 149.5,
+          "vc": 45.996326,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -5447.828958,
+          "y": -4805.178581,
+          "z": 300
+        },
+        {
+          "brg": 228.635517,
+          "covering": [
+            "RDR-1"
+          ],
+          "hdg": 47.862405,
+          "margin": 76.5,
+          "r": 6804.237841,
+          "spd": 46,
+          "tta": 139.5,
+          "vc": 45.995812,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -5106.722499,
+          "y": -4496.558452,
+          "z": 300
+        },
+        {
+          "brg": 228.65963,
+          "covering": [
+            "RDR-1"
+          ],
+          "hdg": 48.503532,
+          "margin": 76.5,
+          "r": 6344.273325,
+          "spd": 45.996946,
+          "tta": 129.5,
+          "vc": 45.996776,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -4763.273559,
+          "y": -4190.588148,
+          "z": 296.358055
+        },
+        {
+          "brg": 228.671832,
+          "covering": [
+            "RDR-1"
+          ],
+          "hdg": 48.503532,
+          "margin": 76.5,
+          "r": 5884.305702,
+          "spd": 45.996946,
+          "tta": 119.5,
+          "vc": 45.996748,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -4418.758012,
+          "y": -3885.824395,
+          "z": 291.057816
+        },
+        {
+          "brg": 228.686104,
+          "covering": [
+            "RDR-1"
+          ],
+          "hdg": 48.503532,
+          "margin": 76.5,
+          "r": 5424.338391,
+          "spd": 45.996946,
+          "tta": 109.5,
+          "vc": 45.996713,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -4074.242465,
+          "y": -3581.060642,
+          "z": 285.757576
+        },
+        {
+          "brg": 228.70302,
+          "covering": [
+            "RDR-1",
+            "EO-1"
+          ],
+          "hdg": 48.503532,
+          "margin": 76.5,
+          "r": 4964.371479,
+          "spd": 45.996946,
+          "tta": 99.5,
+          "vc": 45.996668,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -3729.726918,
+          "y": -3276.296889,
+          "z": 280.457337
+        },
+        {
+          "brg": 228.723391,
+          "covering": [
+            "RDR-1",
+            "EO-1"
+          ],
+          "hdg": 48.503532,
+          "margin": 76.5,
+          "r": 4504.405088,
+          "spd": 45.996946,
+          "tta": 89.5,
+          "vc": 45.996608,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -3385.211371,
+          "y": -2971.533135,
+          "z": 275.157098
+        },
+        {
+          "brg": 228.748395,
+          "covering": [
+            "RDR-1",
+            "EO-1"
+          ],
+          "hdg": 48.503532,
+          "margin": 76.5,
+          "r": 4044.439396,
+          "spd": 45.996946,
+          "tta": 79.5,
+          "vc": 45.996526,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -3040.695823,
+          "y": -2666.769382,
+          "z": 269.856859
+        },
+        {
+          "brg": 228.779816,
+          "covering": [
+            "RDR-1",
+            "EO-1"
+          ],
+          "hdg": 48.503532,
+          "margin": 76.5,
+          "r": 3584.474672,
+          "spd": 45.996946,
+          "tta": 69.5,
+          "vc": 45.996412,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -2696.180276,
+          "y": -2362.005629,
+          "z": 264.55662
+        },
+        {
+          "brg": 228.808475,
+          "covering": [
+            "RDR-1",
+            "EO-1"
+          ],
+          "hdg": 49.085617,
+          "margin": 76.5,
+          "r": 3124.605702,
+          "spd": 45.929528,
+          "tta": 59.5,
+          "vc": 45.92899,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -2351.304317,
+          "y": -2057.797075,
+          "z": 256.428983
+        },
+        {
+          "brg": 228.760717,
+          "covering": [
+            "RDR-1",
+            "EO-1",
+            "KIN-1"
+          ],
+          "hdg": 49.085617,
+          "margin": 76.5,
+          "r": 2665.316724,
+          "spd": 45.929528,
+          "tta": 49.5,
+          "vc": 45.928789,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -2004.21989,
+          "y": -1756.990572,
+          "z": 230.976125
+        },
+        {
+          "brg": 228.693073,
+          "covering": [
+            "RDR-1",
+            "EO-1",
+            "KIN-1"
+          ],
+          "hdg": 49.085617,
+          "margin": 76.5,
+          "r": 2206.030368,
+          "spd": 45.929528,
+          "tta": 39.5,
+          "vc": 45.92845,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -1657.135463,
+          "y": -1456.184068,
+          "z": 205.523267
+        },
+        {
+          "brg": 228.589858,
+          "covering": [
+            "RDR-1",
+            "EO-1",
+            "KIN-1"
+          ],
+          "hdg": 49.085617,
+          "margin": 76.5,
+          "r": 1746.748704,
+          "spd": 45.929528,
+          "tta": 29.5,
+          "vc": 45.927808,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -1310.051036,
+          "y": -1155.377565,
+          "z": 180.070409
+        },
+        {
+          "brg": 228.413002,
+          "covering": [
+            "RDR-1",
+            "EO-1",
+            "KIN-1"
+          ],
+          "hdg": 49.085617,
+          "margin": 76.5,
+          "r": 1287.476753,
+          "spd": 45.929528,
+          "tta": 19.5,
+          "vc": 45.926363,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -962.966609,
+          "y": -854.571061,
+          "z": 154.617551
+        },
+        {
+          "brg": 228.489031,
+          "covering": [
+            "RDR-1",
+            "EO-1",
+            "KIN-1"
+          ],
+          "hdg": 48.094058,
+          "margin": 76.5,
+          "r": 830.48065,
+          "spd": 45.650154,
+          "tta": 9.5,
+          "vc": 45.649069,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -621.887874,
+          "y": -550.412194,
+          "z": 103.647979
+        },
+        {
+          "brg": 228.97113,
+          "covering": [
+            "RDR-1",
+            "KIN-1"
+          ],
+          "hdg": 48.094058,
+          "margin": 76.5,
+          "r": 374.003201,
+          "spd": 45.650154,
+          "tta": 0,
+          "vc": 45.644805,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -282.140128,
+          "y": -245.510372,
+          "z": 47.023355
+        },
+        {
+          "brg": 230.194429,
+          "covering": [
+            "RDR-1",
+            "KIN-1"
+          ],
+          "hdg": 48.094058,
+          "margin": 76.5,
+          "r": 156.204994,
+          "spd": 45.650154,
+          "tta": 0,
+          "vc": 45.619484,
+          "window": {
+            "detectT": 40,
+            "engageT": 175,
+            "geometric": 130.625,
+            "latest": 251.5,
+            "margin": 76.5,
+            "planned": 135,
+            "rangeAtEngage": 4274.422141,
+            "tDA": 259.5
+          },
+          "x": -120,
+          "y": -100,
+          "z": 20
+        }
+      ]
+    },
+    "envelopesAt": [
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      []
+    ],
+    "t": [
+      0,
+      10,
+      20,
+      30,
+      40,
+      50,
+      60,
+      70,
+      80,
+      90,
+      100,
+      110,
+      120,
+      130,
+      140,
+      150,
+      160,
+      170,
+      180,
+      190,
+      200,
+      210,
+      220,
+      230,
+      240,
+      250,
+      260,
+      264.772368
+    ]
+  }
+}

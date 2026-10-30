@@ -1,0 +1,178 @@
+{
+  "derived": {
+    "crossings": {},
+    "dLink": {
+      "auto": true,
+      "value": null
+    },
+    "daEntry": {},
+    "emitsRf": {},
+    "first": {},
+    "firstEffector": {},
+    "firstSensor": {},
+    "flown": {},
+    "groupOf": {},
+    "ladder": {},
+    "last": {},
+    "origin": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "speeds": {},
+    "splits": [],
+    "timed": {},
+    "tmax": 60,
+    "trackLine": {},
+    "vols": {
+      "DA": {}
+    },
+    "warnings": [],
+    "window": {},
+    "windows": {
+      "EW-1": {},
+      "RDR-1": {},
+      "RF-1": {}
+    },
+    "windowsRing": {
+      "EW-1": {},
+      "RDR-1": {},
+      "RF-1": {}
+    }
+  },
+  "input": {
+    "cards": [],
+    "cls": "Counter-UAS",
+    "collection": "",
+    "data": [],
+    "events": [],
+    "id": "point-defence",
+    "meta": {
+      "created": "2026-01-01T00:00:00.000Z",
+      "updated": "2026-01-01T00:00:00.000Z"
+    },
+    "metricsCfg": {
+      "dLink": null
+    },
+    "mop": [],
+    "name": "Point defence",
+    "purpose": "",
+    "scene": {
+      "aircraft": [],
+      "paths": [],
+      "planes": [],
+      "systems": [
+        {
+          "bearing": 0,
+          "elMax": 90,
+          "elMin": -90,
+          "fov": 360,
+          "id": "RDR-1",
+          "kind": "radar",
+          "range": 4000,
+          "rmin": 0,
+          "status": "active",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "zmax": null,
+          "zmin": 0
+        },
+        {
+          "bearing": 0,
+          "elMax": 90,
+          "elMin": -90,
+          "fov": 360,
+          "id": "RF-1",
+          "kind": "rf",
+          "range": 3000,
+          "rmin": 0,
+          "status": "active",
+          "x": 180,
+          "y": -90,
+          "z": 0,
+          "zmax": null,
+          "zmin": 0
+        },
+        {
+          "bearing": 0,
+          "elMax": 90,
+          "elMin": -90,
+          "fov": 360,
+          "id": "EW-1",
+          "kind": "ew",
+          "range": 1500,
+          "rmin": 0,
+          "status": "active",
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "zmax": null,
+          "zmin": 0
+        }
+      ],
+      "volumes": [
+        {
+          "id": "DA",
+          "kind": "asset",
+          "label": "Defended asset",
+          "pts": [
+            [
+              -250,
+              -250
+            ],
+            [
+              250,
+              -250
+            ],
+            [
+              250,
+              250
+            ],
+            [
+              -250,
+              250
+            ]
+          ],
+          "zmax": 0,
+          "zmin": 0
+        }
+      ]
+    },
+    "schema": "profile-studio/4",
+    "site": {
+      "datum": "AGL",
+      "elev": 0,
+      "name": ""
+    },
+    "snapshots": [],
+    "telemetry": {
+      "interval": 20,
+      "stations": [],
+      "tspi": ""
+    },
+    "units": "nav",
+    "v": 1
+  },
+  "samples": {
+    "at": {},
+    "envelopesAt": [
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      []
+    ],
+    "t": [
+      0,
+      10,
+      20,
+      30,
+      40,
+      50,
+      60
+    ]
+  }
+}

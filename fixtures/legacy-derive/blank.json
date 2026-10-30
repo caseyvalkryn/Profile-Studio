@@ -1,0 +1,121 @@
+{
+  "derived": {
+    "crossings": {},
+    "dLink": {
+      "auto": true,
+      "value": null
+    },
+    "daEntry": {},
+    "emitsRf": {},
+    "first": {},
+    "firstEffector": {},
+    "firstSensor": {},
+    "flown": {},
+    "groupOf": {},
+    "ladder": {},
+    "last": {},
+    "origin": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "speeds": {},
+    "splits": [],
+    "timed": {},
+    "tmax": 60,
+    "trackLine": {},
+    "vols": {
+      "DA": {}
+    },
+    "warnings": [],
+    "window": {},
+    "windows": {},
+    "windowsRing": {}
+  },
+  "input": {
+    "cards": [],
+    "cls": "Custom",
+    "collection": "",
+    "data": [],
+    "events": [],
+    "id": "blank",
+    "meta": {
+      "created": "2026-01-01T00:00:00.000Z",
+      "updated": "2026-01-01T00:00:00.000Z"
+    },
+    "metricsCfg": {
+      "dLink": null
+    },
+    "mop": [],
+    "name": "New profile",
+    "purpose": "",
+    "scene": {
+      "aircraft": [],
+      "paths": [],
+      "planes": [],
+      "systems": [],
+      "volumes": [
+        {
+          "id": "DA",
+          "kind": "asset",
+          "label": "Defended asset",
+          "pts": [
+            [
+              -200,
+              -200
+            ],
+            [
+              200,
+              -200
+            ],
+            [
+              200,
+              200
+            ],
+            [
+              -200,
+              200
+            ]
+          ],
+          "zmax": 0,
+          "zmin": 0
+        }
+      ]
+    },
+    "schema": "profile-studio/4",
+    "site": {
+      "datum": "AGL",
+      "elev": 0,
+      "name": ""
+    },
+    "snapshots": [],
+    "telemetry": {
+      "interval": 20,
+      "stations": [],
+      "tspi": ""
+    },
+    "units": "nav",
+    "v": 1
+  },
+  "samples": {
+    "at": {},
+    "envelopesAt": [
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      []
+    ],
+    "t": [
+      0,
+      10,
+      20,
+      30,
+      40,
+      50,
+      60
+    ]
+  }
+}
