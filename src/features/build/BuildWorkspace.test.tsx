@@ -10,7 +10,8 @@ import { useDocument } from '../../state/document';
 import { useRuns } from '../../state/runs';
 import { UI_DEFAULTS, useUi } from '../../state/ui';
 import { M_PER_NM } from '../shared/units';
-import BuildWorkspace from './BuildWorkspace';
+import BuildWorkspace, { RUN_DONE_MS } from './BuildWorkspace';
+import type { RunEntry } from '../../state/runs';
 
 vi.mock('maplibre-gl', () => import('./map/__mocks__/maplibre-gl'));
 
@@ -77,11 +78,11 @@ describe('Build workspace', () => {
       useUi.getState().setSelection(['k-S-01']);
     });
     render(<BuildWorkspace />);
-    const nm = String(Math.round((5000 / M_PER_NM) * 1000) / 1000);
-    expect(screen.getByLabelText('Range')).toHaveValue(nm);
+    // Unfocused fields show readout precision (F-09): 5000 m is 2.70 nm.
+    expect(screen.getByLabelText('Range')).toHaveValue((5000 / M_PER_NM).toFixed(2));
     fireEvent.click(screen.getByRole('button', { name: 'nm · ft · kt' }));
     expect(useUi.getState().units).toBe('si');
-    expect(screen.getByLabelText('Range')).toHaveValue('5');
+    expect(screen.getByLabelText('Range')).toHaveValue('5.00');
   });
 });
 
@@ -133,5 +134,42 @@ describe('Escape order (edit.escape)', () => {
 
     esc();
     expect(useUi.getState().loop).toBeNull();
+  });
+});
+
+describe('run feedback (F-08)', () => {
+  beforeEach(reset);
+  afterEach(() => vi.useRealTimers());
+
+  it('says the run finished and links to Results, then clears', () => {
+    vi.useFakeTimers();
+    act(() => {
+      useDocument.getState().open(testVignette());
+      useDocument.getState().edit('Run', (d) => {
+        d.runs.unshift({ key: 'run-a', id: 'R-1', createdAt: '', n: 10, seed: 1, rows: [] });
+      });
+    });
+    render(
+      <MemoryRouter initialEntries={['/build']}>
+        <BuildWorkspace />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByText(/done/)).toBeNull();
+    act(() =>
+      useRuns.setState({
+        activeKey: 'run-a',
+        results: {
+          'run-a': {
+            key: 'run-a',
+            status: 'done',
+            progress: { done: 10, total: 10 },
+          } as RunEntry,
+        },
+      }),
+    );
+    expect(screen.getByText('Run R-1 done')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View results' })).toHaveAttribute('href', '/results');
+    act(() => vi.advanceTimersByTime(RUN_DONE_MS + 10));
+    expect(screen.queryByText('Run R-1 done')).toBeNull();
   });
 });

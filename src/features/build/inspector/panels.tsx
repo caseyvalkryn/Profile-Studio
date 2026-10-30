@@ -11,14 +11,22 @@ import { useUi } from '../../../state/ui';
 import { EnteredSection } from './Entered';
 import { IdField } from './IdField';
 import { editRecord } from './edit';
-import { Grid, Hint, Readout, Section, Select, UnitField } from './fields';
-import { fieldValue, formatBearing, fromDisplay, round, unitOf } from '../../shared/units';
+import { Grid, Hint, Note, Readout, Section, Select, UnitField } from './fields';
+import {
+  fieldValue,
+  formatBearing,
+  formatSci,
+  fromDisplay,
+  readout,
+  round,
+  unitOf,
+} from '../../shared/units';
 
 type Pos = { x: number; y: number; z: number };
 
 function Position({ value, onSet }: { value: Pos; onSet: (axis: keyof Pos, m: number) => void }) {
   return (
-    <Grid cols={3}>
+    <Grid cols={2}>
       <UnitField label="East (x)" q="range" stored={value.x} onCommit={(m) => onSet('x', m)} />
       <UnitField label="North (y)" q="range" stored={value.y} onCommit={(m) => onSet('y', m)} />
       <UnitField label="Height AGL" q="altitude" stored={value.z} onCommit={(m) => onSet('z', m)} />
@@ -90,11 +98,11 @@ export function ThreatPanel({ t, activeKey }: { t: Threat; activeKey?: string })
           onChange={(type) => ed('Set type', (r) => void (r.type = type))}
         />
         <Field
-          label="Speed"
+          label="Speed (blank: cruise)"
           unit={spd}
           allowBlank
           value={t.speedMs === undefined ? undefined : fieldValue('speed', t.speedMs, units)}
-          placeholder={`${fieldValue('speed', cruise, units)} cruise`}
+          placeholder={String(fieldValue('speed', cruise, units))}
           onCommit={(v) =>
             ed('Set speed', (r) => {
               if (v === undefined) delete r.speedMs;
@@ -105,10 +113,18 @@ export function ThreatPanel({ t, activeKey }: { t: Threat; activeKey?: string })
         <Readout label="Waypoints" value={String(t.path.length)} />
         <Readout
           label="Path length"
-          value={String(fieldValue('range', lengthM, units))}
+          value={readout('range', lengthM, units)}
           unit={unitOf('range', units)}
         />
         <Readout label="Path time" value={mss(timeS)} unit="m:ss" />
+        {arch?.src ? (
+          <Note>
+            Source:{' '}
+            <a href={arch.src} target="_blank" rel="noreferrer" className="break-all underline">
+              {arch.src}
+            </a>
+          </Note>
+        ) : null}
       </Section>
       <Section title="Waypoints">
         {t.path.map((w, i) => (
@@ -133,7 +149,7 @@ export function ThreatPanel({ t, activeKey }: { t: Threat; activeKey?: string })
                 Delete
               </Button>
             </div>
-            <Grid cols={4}>
+            <Grid cols={2}>
               {(['x', 'y', 'z'] as const).map((axis) => (
                 <UnitField
                   key={axis}
@@ -318,6 +334,7 @@ export function SensorPanel({ s }: { s: Sensor }) {
                   min={0}
                   max={1}
                   value={pd.pfa}
+                  format={formatSci}
                   onCommit={(v) =>
                     ed(
                       'Set Pfa',
@@ -513,16 +530,8 @@ export function AreaPanel({ a }: { a: Area }) {
       <Readout label="Vertices" value={String(a.pts.length)} />
       {circle ? (
         <>
-          <Readout
-            label="Centre east"
-            value={String(fieldValue('range', circle.cx, units))}
-            unit={rng}
-          />
-          <Readout
-            label="Centre north"
-            value={String(fieldValue('range', circle.cy, units))}
-            unit={rng}
-          />
+          <Readout label="Centre east" value={readout('range', circle.cx, units)} unit={rng} />
+          <Readout label="Centre north" value={readout('range', circle.cy, units)} unit={rng} />
           <UnitField
             label="Radius"
             q="range"

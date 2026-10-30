@@ -23,7 +23,7 @@ import type {
   Pointer,
 } from '../../commands/types';
 import type { MenuItem, PaletteItem } from '../../ui/types';
-import { fromDisplay, toDisplay, unitOf, type Quantity } from '../shared/units';
+import { fromDisplay, round, toDisplay, unitOf, type Quantity } from '../shared/units';
 
 registerCommands();
 
@@ -102,7 +102,7 @@ function argRequest(cmd: Command, ctx: CommandContext, pointer: Pointer | null):
     title: cmd.label,
     label: q === 'speed' ? 'Speed' : q === 'range' ? 'Range' : 'Altitude',
     unit: unitOf(q, units),
-    value: Number(toDisplay(q, currentValue(cmd.id, ctx), units).toFixed(2)),
+    value: round(toDisplay(q, currentValue(cmd.id, ctx), units), 2),
     submit: (v) => execute(cmd.id, currentContext(pointer), fromDisplay(q, v, units)),
   };
 }

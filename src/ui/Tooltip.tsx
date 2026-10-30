@@ -38,7 +38,7 @@ export function Tooltip({ content, shortcut, side = 'top', children }: TooltipPr
           sideOffset={6}
           collisionPadding={8}
           avoidCollisions
-          className={`z-50 flex items-center gap-2 whitespace-nowrap rounded-sm border border-surface-3 bg-surface-1 px-2 py-1 text-xs text-text shadow-sm ${popIn}`}
+          className={`z-50 flex max-w-72 items-center gap-2 rounded-sm border border-surface-3 bg-surface-1 px-2 py-1 text-xs text-text shadow-sm ${popIn}`}
         >
           <span>{content}</span>
           {shortcut ? <Kbd shortcut={shortcut} /> : null}

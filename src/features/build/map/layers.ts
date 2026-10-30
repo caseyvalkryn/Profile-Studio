@@ -14,10 +14,10 @@ export type Colors = {
   covered: string;
 };
 
-/** Fallback state colours. `covered` comes from --state-covered; hostile has no token yet. */
+/** Fallback state colours, used only when --state-hostile and --state-covered are unset. */
 const STATE = {
-  light: { hostile: '#c2410c', covered: '#15803d' },
-  dark: { hostile: '#fb923c', covered: '#4ade80' },
+  light: { hostile: '#c81e1e', covered: '#15803d' },
+  dark: { hostile: '#f87171', covered: '#4ade80' },
 };
 
 const FALLBACK: Colors = {
@@ -50,7 +50,7 @@ export function readColors(el: Element = document.documentElement): Colors {
     line: v('--surface-3', FALLBACK.line),
     panel: v('--surface-1', FALLBACK.panel),
     accent: v('--accent', FALLBACK.accent),
-    ...(isDark(bg) ? STATE.dark : STATE.light),
+    hostile: v('--state-hostile', (isDark(bg) ? STATE.dark : STATE.light).hostile),
     covered: v('--state-covered', (isDark(bg) ? STATE.dark : STATE.light).covered),
   };
 }

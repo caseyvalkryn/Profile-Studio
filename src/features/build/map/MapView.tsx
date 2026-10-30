@@ -1,11 +1,10 @@
 // The Build map (spec section 7, Build; section 8, Interaction). Fills its container and reads
 // the stores itself. MapLibre runs in MapController; React holds only the menu and the prompt.
-import 'maplibre-gl/dist/maplibre-gl.css';
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
-import { ContextMenu } from '../../../ui/ContextMenu';
+import { useEffect, useRef, useState } from 'react';
+import { Menu } from '../../../ui/Menu';
 import { PromptNumber } from '../../../ui/PromptNumber';
 import type { MenuItem } from '../../../ui/types';
-import { MapController } from './controller';
+import { MapController, type MenuRequest } from './controller';
 import { menuItemsFor, type ArgRequest } from '../../commands/adapter';
 
 export default function MapView() {
@@ -13,12 +12,17 @@ export default function MapView() {
   const overlayEl = useRef<HTMLDivElement>(null);
   const tipEl = useRef<HTMLDivElement>(null);
   const ctl = useRef<MapController | null>(null);
-  const [items, setItems] = useState<MenuItem[]>([]);
+  const [menu, setMenu] = useState<{ items: MenuItem[]; at: MenuRequest['at'] } | null>(null);
   const [arg, setArg] = useState<ArgRequest | null>(null);
 
   useEffect(() => {
     if (!mapEl.current || !overlayEl.current || !tipEl.current) return;
-    const c = new MapController(mapEl.current, overlayEl.current, tipEl.current);
+    const onMenu = (req: MenuRequest) =>
+      setMenu({
+        items: menuItemsFor(req.kind, { pointer: req.pointer, onArg: setArg }),
+        at: req.at,
+      });
+    const c = new MapController(mapEl.current, overlayEl.current, tipEl.current, onMenu);
     ctl.current = c;
     return () => {
       c.destroy();
@@ -26,20 +30,9 @@ export default function MapView() {
     };
   }, []);
 
-  const onContextMenu = (e: MouseEvent) => {
-    const target = ctl.current?.menuAt(e.clientX, e.clientY);
-    if (!target) {
-      e.preventDefault();
-      return;
-    }
-    setItems(menuItemsFor(target.kind, { pointer: target.pointer, onArg: setArg }));
-  };
-
   return (
     <div className="relative h-full w-full overflow-hidden bg-surface-0" data-testid="map-view">
-      <ContextMenu items={items}>
-        <div ref={mapEl} className="absolute inset-0" onContextMenu={onContextMenu} />
-      </ContextMenu>
+      <div ref={mapEl} className="absolute inset-0" data-testid="map-canvas" />
       <div ref={overlayEl} className="pointer-events-none absolute inset-0" aria-hidden />
       <div
         ref={tipEl}
@@ -47,6 +40,24 @@ export default function MapView() {
         role="status"
         className="pointer-events-none absolute left-0 top-0 rounded-sm bg-surface-1 px-1.5 py-0.5 font-mono text-[11px] text-text shadow-sm"
       />
+      {menu ? (
+        <Menu
+          key={`${menu.at.x},${menu.at.y}`}
+          open
+          onOpenChange={(open) => {
+            if (!open) setMenu(null);
+          }}
+          items={menu.items}
+          trigger={
+            <span
+              aria-hidden
+              data-testid="map-menu-anchor"
+              className="pointer-events-none absolute size-0"
+              style={{ left: menu.at.x, top: menu.at.y }}
+            />
+          }
+        />
+      ) : null}
       {arg ? (
         <PromptNumber
           open

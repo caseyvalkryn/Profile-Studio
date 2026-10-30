@@ -105,4 +105,14 @@ describe('grid', () => {
     expect(gridStep(1)).toBe(100);
     expect(gridStep(100)).toBe(5000);
   });
+
+  it('steps and labels in nm when the units are nav (F-04)', () => {
+    expect(gridStep(20, 'nav')).toBeCloseTo(926, 6);
+    const g = gridFeatures(f, [-2000, -2000, 2000, 2000], 20, 'nav');
+    const texts = g.labels.map((l) => l.text);
+    expect(texts).toContain('1 nm E');
+    expect(texts).toContain('0 nm');
+    expect(texts.some((t) => t.includes('km'))).toBe(false);
+    expect(g.lines.features.filter((l) => l.properties.origin)).toHaveLength(2);
+  });
 });

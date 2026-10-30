@@ -5,6 +5,7 @@ import { bindKeys } from '../../../commands/keys';
 import { UI_DEFAULTS, useUi } from '../../../state/ui';
 import AssetsPanel from './AssetsPanel';
 import { ASSET_MIME, readAssetDrag } from './dnd';
+import { LIBRARY, itemSummary, itemTip, sourceName } from './library';
 import { compactAltitude as formatAltitude, compactSpeed as formatSpeed } from '../../shared/units';
 
 const rows = (el: HTMLElement) => el.querySelectorAll('[draggable="true"]');
@@ -124,5 +125,23 @@ describe('format', () => {
     expect(formatSpeed(10, 'si')).toBe('10 m/s');
     expect(formatAltitude(1000, 'nav')).toBe('3,281 ft');
     expect(formatAltitude(1000, 'si')).toBe('1,000 m');
+  });
+});
+
+describe('library values and tooltips', () => {
+  const items = (g: string) => LIBRARY.find((x) => x.id === g)!.items;
+
+  it('shows range and FOV under sensors and effectors in the display unit (F-13)', () => {
+    for (const g of ['sensors', 'effectors']) {
+      for (const i of items(g)) {
+        expect(itemSummary(i, 'nav')).toMatch(/^\d+(\.\d)? nm · \d+°$/);
+        expect(itemSummary(i, 'si')).toMatch(/ km · /);
+      }
+    }
+  });
+
+  it('names a threat source by its site, never its full URL (F-11)', () => {
+    expect(sourceName('https://www.janes.com/')).toBe('janes.com');
+    for (const i of items('threats')) expect(itemTip(i, 'nav')).not.toMatch(/https?:\/\//);
   });
 });

@@ -11,7 +11,7 @@ import {
   itemTip,
   LIBRARY,
   sameArmed,
-  threatSummary,
+  itemSummary,
   type GroupId,
   type LibraryItem,
 } from './library';
@@ -76,6 +76,7 @@ function AssetRow({ item }: { item: LibraryItem }) {
   };
   const onDragStart = (e: DragEvent) => startAssetDrag(e.dataTransfer, item.payload, item.chip);
   const a = item.threat;
+  const summary = itemSummary(item, units);
 
   return (
     <Tooltip content={itemTip(item, units)} side="right">
@@ -105,9 +106,7 @@ function AssetRow({ item }: { item: LibraryItem }) {
             </span>
           ) : null}
         </span>
-        {a ? (
-          <span className="font-mono text-[11px] text-muted">{threatSummary(a, units)}</span>
-        ) : null}
+        {summary ? <span className="font-mono text-[11px] text-muted">{summary}</span> : null}
       </div>
     </Tooltip>
   );

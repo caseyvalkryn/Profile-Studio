@@ -1,7 +1,8 @@
 // The Build workspace (spec section 7, Build). A thin top bar, the asset library on the left, the
 // map (or the profile) in the centre, the inspector on the right and the timeline along the
 // bottom. The map takes all the space the panels leave (principle 5.1).
-import { lazy, Suspense, useId, useState, type KeyboardEvent } from 'react';
+import { lazy, Suspense, useEffect, useId, useState, type KeyboardEvent } from 'react';
+import { Link, useInRouterContext } from 'react-router-dom';
 import { currentContext, execute, get, shortcutLabel } from '../../commands/registry';
 import { useDocument } from '../../state/document';
 import { useActiveRun, useRuns } from '../../state/runs';
@@ -133,6 +134,40 @@ function RunProgress() {
   );
 }
 
+/** How long the "run done" note stays in the top bar. */
+export const RUN_DONE_MS = 6000;
+
+/** After a run ends, says so for a few seconds and links to Results (review F-08). */
+function RunDone() {
+  const run = useActiveRun();
+  const runId = useDocument((s) => s.doc?.runs.find((r) => r.key === run?.key)?.id);
+  const inRouter = useInRouterContext();
+  const doneKey = run?.status === 'done' ? run.key : null;
+  const [shown, setShown] = useState<string | null>(null);
+  const [seen, setSeen] = useState<string | null>(null);
+  if (doneKey !== seen) {
+    setSeen(doneKey);
+    setShown(doneKey);
+  }
+  useEffect(() => {
+    if (!shown) return;
+    const t = setTimeout(() => setShown(null), RUN_DONE_MS);
+    return () => clearTimeout(t);
+  }, [shown]);
+  if (!shown || shown !== doneKey) return null;
+  const label = `${runId ? `Run ${runId}` : 'Run'} done`;
+  return (
+    <span className="flex items-center gap-1.5 text-xs text-muted" role="status">
+      {label}
+      {inRouter ? (
+        <Link to="/results" className={`rounded-sm text-text underline ${focusRing}`}>
+          View results
+        </Link>
+      ) : null}
+    </span>
+  );
+}
+
 function BuildBar() {
   const question = useDocument((s) => s.doc?.questions.find((q) => q.text.trim())?.text);
   const units = useUi((s) => s.units);
@@ -148,6 +183,7 @@ function BuildBar() {
         <span className="flex-1" />
       )}
       <RunProgress />
+      <RunDone />
       <CommandButton id="run.start" label="Run" variant="accent" />
       <CommandButton id="view.units" label={units === 'nav' ? 'nm · ft · kt' : 'km · m · m/s'} />
       <div className="flex items-center gap-0.5" role="group" aria-label="View">
