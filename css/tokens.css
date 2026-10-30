@@ -1,0 +1,154 @@
+/* Profile Studio v4 colour and layout tokens. The only file with literal colours. */
+
+:root {
+  --board: #eeebe4;
+  --panel: #f7f5f0;
+  --sunken: #e4e0d8;
+  --raised: #fbfaf7;
+  --rule: #d8d3c9;
+  --rule-strong: #b0aa9e;
+  --t1: #212220;
+  --t2: #4e504b;
+  --t3: #7b7d73;
+  --accent: #2862b0;
+  --accent-ink: #eeebe4;
+  --hostile: #b8382a;
+  --unknown: #98691b;
+  --friend: #2862b0;
+  --ew: #227f8c;
+  --control: #3a3c38;
+  --select: #2862b0;
+  --datablock: #4e504b;
+  --link: #8a8d86;
+  --notrack: #9a9d94;
+  --ghost: #767d84;
+  --killx: #4e504b;
+  --warn: #a86e00;
+  --nominal: #378154;
+  --grid: #e2ded5;
+  --elev: 0 8px 24px rgba(33,34,32,.12);
+  --tint-cover: color-mix(in srgb, var(--friend) 8%, transparent);
+  --tint-wez: color-mix(in srgb, var(--hostile) 7%, transparent);
+  --tint-window: color-mix(in srgb, var(--nominal) 10%, transparent);
+  --w1: 0.75px;
+  --w2: 1.25px;
+  --w3: 2.25px;
+  --col-list: 232px;
+  --col-right: 320px;
+  --top: 48px;
+  --strip: 112px;
+  --lane: 14px;
+  --ladder-row: 22px;
+  --hit: 14px;
+  /* type: families */
+  --ui: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* type: five sizes with their line heights */
+  --fs-1: 11px; --lh-1: 14px;   /* micro: uppercase labels, keys, sub lines, ticks */
+  --fs-2: 12px; --lh-2: 16px;   /* data: mono numbers, ids, table cells, secondary text */
+  --fs-3: 13px; --lh-3: 18px;   /* body: row names, controls, inputs, menu, prose in panels */
+  --fs-4: 14px; --lh-4: 20px;   /* title: panel and dialog heads, brand, card names, caption */
+  --fs-5: 17px; --lh-5: 24px;   /* display: full-stage caption only */
+  /* type: weights, tracking, figures */
+  --fw: 400; --fw-med: 500;
+  --ls-caps: .06em;
+  --tnum: tabular-nums;
+  /* controls and rows */
+  --ctl: 28px;        /* buttons, inputs, selects, chips row */
+  --ctl-dense: 24px;  /* inspector inputs, table cell inputs, chips */
+  --ctl-mini: 22px;   /* .mini */
+  --row: 24px;        /* one-line list row */
+  --row-2: 40px;      /* two-line list row */
+  --row-px: 8px;      /* row side padding */
+  --col-data: 96px;   /* default data column width; panels override */
+  --col-id: 56px;     /* id column width */
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --board: #121313;
+    --panel: #191a1a;
+    --sunken: #0e0f0f;
+    --raised: #202121;
+    --rule: #2a2c2b;
+    --rule-strong: #454846;
+    --t1: #ebe9e3;
+    --t2: #a9a9a3;
+    --t3: #8c8e88;
+    --accent: #7ba7e8;
+    --accent-ink: #121313;
+    --hostile: #e46f62;
+    --unknown: #e6cf5a;
+    --friend: #7fbfe6;
+    --ew: #5ad1e0;
+    --control: #ebe9e3;
+    --select: #ebe9e3;
+    --datablock: #b7bdb2;
+    --link: #8a9199;
+    --notrack: #82887e;
+    --ghost: #6a7178;
+    --killx: #cfd4cc;
+    --warn: #e6cf5a;
+    --nominal: #7fc39a;
+    --grid: #1d1f1e;
+    --elev: 0 8px 24px rgba(0,0,0,.45);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --board: #121313;
+  --panel: #191a1a;
+  --sunken: #0e0f0f;
+  --raised: #202121;
+  --rule: #2a2c2b;
+  --rule-strong: #454846;
+  --t1: #ebe9e3;
+  --t2: #a9a9a3;
+  --t3: #8c8e88;
+  --accent: #7ba7e8;
+  --accent-ink: #121313;
+  --hostile: #e46f62;
+  --unknown: #e6cf5a;
+  --friend: #7fbfe6;
+  --ew: #5ad1e0;
+  --control: #ebe9e3;
+  --select: #ebe9e3;
+  --datablock: #b7bdb2;
+  --link: #8a9199;
+  --notrack: #82887e;
+  --ghost: #6a7178;
+  --killx: #cfd4cc;
+  --warn: #e6cf5a;
+  --nominal: #7fc39a;
+  --grid: #1d1f1e;
+  --elev: 0 8px 24px rgba(0,0,0,.45);
+  color-scheme: dark;
+}
+
+@media (pointer: coarse) {
+  :root { --hit: 28px; --row: 44px; --row-2: 52px; --ctl: 44px; --ctl-dense: 36px; --ctl-mini: 28px; }
+}
+
+@media (max-width: 600px) {
+  :root { --strip: 64px; --lane: 10px; --row: 44px; --row-2: 52px; --ctl: 36px; --ctl-dense: 32px; --ctl-mini: 28px; }
+}
+
+/* full stage: the type scale grows on the stage scope only */
+#slot-stage.st-full { --fs-1: 14px; --lh-1: 18px; --fs-2: 15px; --lh-2: 20px; --fs-3: 16px; --lh-3: 22px; --fs-4: 18px; --lh-4: 24px; --fs-5: 22px; --lh-5: 30px; }
+
+body {
+  margin: 0;
+  background: var(--board);
+  color: var(--t1);
+  font: var(--fw) var(--fs-3)/var(--lh-3) var(--ui);
+}
+
+/* outer wrapper: side gutters with the safe-area insets */
+#app {
+  box-sizing: border-box;
+  max-width: 100%;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}

@@ -1,0 +1,180 @@
+# Profile Studio MVP build plan
+
+Date: 2026-10-30. This plan takes Profile Studio from the legacy ES5 app to the MVP in
+`docs/spec.md`. An orchestrator can pick it up cold. Read in this order: `CLAUDE.md`,
+`docs/design-principles.md`, `docs/spec.md`, this file, then the reference file each lane names.
+
+## 1. Decisions
+
+These are settled. Do not reopen them without the user.
+
+| Decision | Choice | Reason |
+| --- | --- | --- |
+| Measures | DroneScore rows only | User: the gold standard |
+| Kill chain display | F2T2EA over `stage_reached` | User confirmed 2026-10-30 |
+| Design | First principles. rangeboard is a source of parts | User, 2026-10-30 |
+| Product form | Installed production MVP, not a static page | User, 2026-10-30 |
+| vos | Port after the MVP | `docs/reference/vos.md` |
+| Sources | Local only, `~/Desktop/MASTER/VALKRYN` | User: no internet downloads |
+| Engine | rangeboard engine transferred and modified into `src/engine` | Working C-UAS Monte Carlo; no shared package |
+
+## 2. Stack
+
+Chosen to match vos majors, so the later port stays medium effort.
+
+| Need | Choice |
+| --- | --- |
+| UI | React 18.3, TypeScript, Vite |
+| State | Zustand 5 with Immer patches for undo |
+| Validation | zod |
+| Map | MapLibre GL, with a no-tile grid mode as the default |
+| Menus, tooltips, dialogs | Radix primitives |
+| Command palette | cmdk |
+| Charts | Recharts, at the major vos uses |
+| Styling | Tailwind 4 with tokens as CSS custom properties in `src/styles/tokens.css` |
+| Storage | IndexedDB through `idb`, plus JSON import and export |
+| Tests | Vitest for unit and engine, Playwright for end-to-end by user action |
+| Lint and format | ESLint flat config and Prettier |
+
+Check each version against `docs/reference/vos.md` at scaffold time and pin exact versions.
+
+## 3. Layout
+
+```text
+legacy/            frozen ES5 app, runnable, the parity reference
+fixtures/          golden outputs from legacy, seeds, test vignettes
+src/engine/        pure TS: geo, preview, sim, pd, score, stats, sweep (no DOM, no React)
+src/domain/        types, schema, catalog, templates, behaviors, migrate
+src/workers/       sim.worker.ts
+src/state/         stores: document (undo), ui, runs; persistence
+src/commands/      the command registry
+src/ui/            primitives: Button, Field, Kbd, Tooltip, Menu, ContextMenu, Palette, Dialog
+src/features/      library/, build/{map,assets,inspector,timeline,profile}/, results/, report/
+src/styles/        tokens.css, base.css
+e2e/               Playwright suites, one per acceptance item in spec section 12
+```
+
+## 4. Gate
+
+`npm run gate` runs typecheck, lint, unit tests and build. From phase 4, `npm run e2e` runs the
+end-to-end suite. Phase 0 keeps `node legacy/test/smoke.js` green.
+
+## 5. Orchestration rules
+
+1. One agent per lane per round. A send-back is a new agent with the review file as input.
+2. Lanes in one phase own disjoint files. Launch them in one message.
+3. Every brief states: working directory, owned files, gate command, report shape, time budget.
+4. A worker report is a claim. The orchestrator runs the gate and reads `git diff --stat`
+   before it marks a lane done.
+5. Each lane works on branch `lane/<id>` from `rebuild/mvp`. The orchestrator merges in plan
+   order, then runs the gate once on `rebuild/mvp`.
+6. After each phase, one review lane (`opus-high`) reviews the phase diff against the spec and
+   the principles. Findings go to `reviews/<phase>.md`. Fixes are a new lane.
+7. Screenshots and browser checks go to a worker. The orchestrator reads the report.
+8. Commit, push and merge to `main` only with user approval.
+
+Worker types are in `~/.claude/rules/delegation.md`. Default: `opus-medium`.
+
+## 6. Phases and lanes
+
+### Phase 0. Baseline (orchestrator, needs user approval)
+
+- **0.1 Baseline commit.** Commit the current tree to `main` as the legacy v4 baseline. Branch
+  `rebuild/mvp`.
+- **0.2 Move legacy.** Move `index.html`, `js/`, `css/`, `test/` to `legacy/`. Fix the test path.
+  Gate: `node legacy/test/smoke.js`.
+- **0.3 Golden fixtures** (`opus-medium`, 600 s). Write `legacy/test/golden.js`. It writes the
+  derive output of the 4 seeds and 5 templates to `fixtures/legacy-derive/*.json`. Owned:
+  that script and `fixtures/legacy-derive/`.
+
+### Phase 1. Scaffold (`opus-medium`, 1200 s)
+
+- **1.1** Vite, React, TypeScript, Tailwind, ESLint, Prettier, Vitest, Playwright, `npm run gate`.
+  `src/styles/tokens.css` from the principles: four surfaces, one accent, two radii, mono for
+  data, light and dark. App shell with the four workspaces as empty routes. ESLint fence: no
+  `react`, `react-dom`, `window` or `document` in `src/engine/`. Owned: root config files,
+  `src/main.tsx`, `src/App.tsx`, `src/styles/`. Gate: `npm run gate`.
+
+### Phase 2. Domain and engine
+
+- **2.1 Domain** (`opus-medium`, 1200 s, first). `src/domain/`: types and zod schema from spec
+  section 5, catalog from legacy (`docs/reference/legacy-app.md` section 3), DroneScore measure
+  table as data with source classes from spec section 4, legacy v4 import. Tests: every legacy
+  seed imports and validates. Gate: `npm run gate`.
+- **2.2 Preview** (`fable-medium`, 1800 s, after 2.1). `src/engine/geo.ts`, `preview.ts`. Port
+  legacy geo and derive. Parity test against `fixtures/legacy-derive/` for coverage windows,
+  first detection and area entry. Replace `splitTimes` with an incremental method. Perf test:
+  40 threats and 15 sensors under 100 ms. Reference: `docs/reference/legacy-app.md` section 5.
+- **2.3a Engine transfer** (`opus-high`, 2400 s, parallel with 2.1). Copy the 59-file headless
+  trial closure (about 16,300 lines) listed in `docs/reference/rangeboard-parts.md` section 2 into
+  `src/engine/sim/`. Keep the logic as it is. Fix imports and types to compile under the fence.
+  Copy the rangeboard tests for those files. Gate: `npm run gate` and one seeded `runTrial` in
+  Node gives the same result as in rangeboard.
+- **2.3b Run and score** (`fable-medium`, 2400 s, after 2.1 and 2.3a, parallel with 2.2).
+  `src/engine/adapter.ts` (vignette to rangeboard scenario), `src/engine/run.ts`, `score.ts`,
+  `sweep.ts`, `src/workers/sim.worker.ts`. Emit `RunRow` per spec section 5 from the rangeboard
+  gates (detect, track, identify, target, engage, effect; `src/analysis/requirements.ts`). The
+  rangeboard `target` gate gives the F2T2EA Target time; `RunRow` stores only DroneScore fields.
+  Range and altitude at each stage are new logic. Score per spec section 6. Fixed-seed tests.
+  Remove transferred code that nothing reaches.
+- **2.R Review** (`fable-high`, 1200 s). Adversarial review of engine semantics: stage
+  definitions against DroneScore, interval math, determinism. Output `reviews/phase-2.md`.
+
+### Phase 3. State, commands, primitives
+
+- **3.1 State and commands** (`opus-medium`, 1500 s). `src/state/`, `src/commands/`. Document
+  store with patch undo, a drag as one step. UI store. Runs store calling the worker. IndexedDB
+  persistence. Command registry per spec section 8 with tests that every command has a label,
+  a reason when disabled, and no shortcut collision.
+- **3.2 UI primitives** (`opus-medium`, 1500 s, parallel). `src/ui/`. Tooltip timing per spec
+  section 8, menus and context menu showing shortcuts and disabled reasons, command palette
+  reading the registry (stub registry until 3.1 merges), Field with unit suffix, Kbd.
+
+### Phase 4. Build workspace
+
+All lanes parallel. Each owns one folder under `src/features/build/`.
+
+- **4.1 Map** (`opus-high`, 2400 s). MapLibre surface, grid mode, layers for areas, reach rings
+  and sectors, flight paths, threats at time t, labels. Handles per spec section 8. Right-click
+  menus from the registry. 60 fps drag test.
+- **4.2 Assets** (`opus-medium`, 1500 s). Asset library panel, drag ghost, drop at cursor, armed
+  click placement, path drawing.
+- **4.3 Inspector** (`opus-medium`, 1500 s). Fields per kind with units and entered-value source
+  notes.
+- **4.4 Timeline and profile** (`opus-medium`, 1800 s). F2T2EA lanes, play, scrub, loop. Profile
+  view along the selected path.
+- **4.R Review** (`opus-high`). Also one browser check worker for spec acceptance items 2 to 4.
+
+### Phase 5. Results and report
+
+- **5.1 Results** (`opus-medium`, 1800 s). `src/features/results/`. Scorecard by F2T2EA, source
+  class, interval, evaluation. Run compare. Sweep charts. Chart frame with PNG and SVG export.
+- **5.2 Report** (`opus-medium`, 1800 s). `src/features/report/`. AAR sections in spec order,
+  hypothesis lock at first run, print stylesheet, CSV and JSON export.
+
+### Phase 6. Library and templates
+
+- **6.1 Library screen** (`opus-medium`, 1200 s). `src/features/library/`.
+- **6.2 Templates and behaviors** (`fable-medium`, 1800 s). `src/domain/templates/`,
+  `src/domain/behaviors.ts`. The templates in spec section 9, each ready to run, each with a
+  test that it runs and scores its main measures.
+
+### Phase 7. Acceptance
+
+- **7.1 End-to-end** (`opus-medium`, 1800 s). One Playwright suite per spec section 12 item.
+- **7.2 First-use audit** (`opus-medium` with browser, 1200 s). A first-time-user walk of the
+  first-use goal in spec section 1. Report friction ranked. Fixes are new lanes.
+- **7.3 Budgets** (`opus-medium`, 900 s). Measure every spec section 11 budget. Report numbers.
+
+### Phase 8. vos port (after the MVP, separate plan)
+
+Plan from `docs/reference/vos.md` once the MVP passes phase 7.
+
+## 7. Status
+
+The orchestrator updates this table at each merge.
+
+| Lane | Status | Branch | Head | Notes |
+| --- | --- | --- | --- | --- |
+| 0.1 | waiting for user approval | | | |
+| 0.2 to 7.3 | not started | | | |
