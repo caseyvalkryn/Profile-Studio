@@ -111,7 +111,8 @@ describe('TEMPLATES', () => {
   it('Hover track hold states that the run does not fly the hover (review 6 F-18)', () => {
     const v = templateById('hover-track-hold')!.make();
     expect(v.report.sections?.scope).toBe(HOVER_SCOPE);
-    expect(HOVER_SCOPE).toMatch(/does not fly waypoint holds/);
+    expect(HOVER_SCOPE).toMatch(/does not stop at the hover point/);
+    expect(HOVER_SCOPE).not.toMatch(/Monte Carlo|waypoint/);
   });
 
   it('Swarm 2.3 Track Quantity scores Meets from the entered value 6 (review 6 F-05)', () => {

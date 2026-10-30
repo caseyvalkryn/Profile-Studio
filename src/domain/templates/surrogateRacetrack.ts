@@ -1,6 +1,8 @@
 // Surrogate racetrack with truth (spec section 9, row 6). Legacy SURR-001: a piston target drone
 // flies the reference racetrack at 300 m with RTK truth; two TSPI stations. Radar only, so the
 // preview reaches Find and Fix. 1.2.3 is the mean ground-plane track error over the pattern.
+// Laydown (build.ts rule): TSPI stations south of the radar, clear of the reference pattern's
+// corners; the defended asset north west of the radar, off the datum.
 import { racetrack } from '../behaviors';
 import type { Template } from './types';
 import {
@@ -28,8 +30,8 @@ const RT: [number, number][] = [
 
 const q = () =>
   question(
-    'How accurate is the radar track against RTK truth on a known racetrack at 300 m?',
-    'Legacy MOP: track position error, 90th percentile, at most 15 m. The score is the mean error over the pattern (ground plane; the simulated track carries no altitude).',
+    'How accurate is the radar track against RTK truth on a known racetrack flown at one altitude?',
+    'The threshold on 1.2.3 Track Accuracy is in the measure row. The score is the mean error over the pattern (ground plane; the simulated track carries no altitude).',
   );
 
 export const surrogateRacetrack: Template = {
@@ -41,7 +43,7 @@ export const surrogateRacetrack: Template = {
   make: () => {
     const Q = q();
     const m = setting('1.2.3', '<=', 15, 'm');
-    const tm1 = node('TM-1', 'tspi', 600, -400, 3500);
+    const tm1 = node('TM-1', 'tspi', 400, -900, 3500);
     const rtk = node('TM-2', 'tspi', -500, -300, 0);
     return vignette({
       name: 'Surrogate racetrack with truth',
@@ -52,7 +54,10 @@ export const surrogateRacetrack: Template = {
       ],
       sensors: [sensor('RDR-1', 'radar', 0, 0, 4000)],
       nodes: [tm1, rtk],
-      areas: [defendedAsset(250), area('REF-1', 'ref', 'Reference racetrack', RT)],
+      areas: [
+        defendedAsset(250, { x: -600, y: 500 }),
+        area('REF-1', 'ref', 'Reference racetrack', RT),
+      ],
       measures: [m],
       report: {
         summary: '',
