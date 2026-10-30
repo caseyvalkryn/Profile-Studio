@@ -23,6 +23,7 @@ import {
   M_PER_NM,
   OP_TEXT,
   canonicalThreshold,
+  decimalsFor,
   fmt,
   measureScale,
 } from '../shared/units';
@@ -163,8 +164,11 @@ export function SweepChart({ sweep, units, width = 640, height = 260 }: SweepCha
         level: factorLevel(units, f0.kind, c.levels[0]!).v,
         value: sc?.value == null ? null : sc.value * s.factor,
         band: sc?.interval ? [sc.interval.low * s.factor, sc.interval.high * s.factor] : null,
+        decimals: decimalsFor(s, sc?.interval, sc?.value),
       };
     });
+    const rowDecimals = (item: unknown) =>
+      (item as { payload?: { decimals?: number } } | undefined)?.payload?.decimals ?? s.decimals;
     return (
       <div>
         {picker}
@@ -177,7 +181,7 @@ export function SweepChart({ sweep, units, width = 640, height = 260 }: SweepCha
             width={width}
             height={height}
             data={data}
-            margin={{ top: 8, right: 16, bottom: 20, left: 0 }}
+            margin={{ top: 8, right: 16, bottom: 20, left: 4 }}
           >
             <CartesianGrid stroke="var(--chart-grid)" vertical={false} />
             <XAxis
@@ -199,14 +203,23 @@ export function SweepChart({ sweep, units, width = 640, height = 260 }: SweepCha
               stroke="var(--text-muted)"
               tick={{ fontSize: 11, fontFamily: 'var(--font-mono)', fill: 'var(--text-muted)' }}
               tickFormatter={(v: number) => fmt(v, s.decimals)}
-              width={52}
+              width={64}
+              label={{
+                value: `${id}, ${s.unit}`,
+                angle: -90,
+                position: 'insideLeft',
+                offset: 8,
+                style: { textAnchor: 'middle' },
+                ...TICK,
+              }}
             />
             <ChartTooltip
-              formatter={(v: unknown) =>
-                Array.isArray(v)
-                  ? `[${fmt(Number(v[0]), s.decimals)}, ${fmt(Number(v[1]), s.decimals)}] ${s.unit}`
-                  : `${fmt(Number(v), s.decimals)} ${s.unit}`
-              }
+              formatter={(v: unknown, _name: unknown, item: unknown) => {
+                const d = rowDecimals(item);
+                return Array.isArray(v)
+                  ? `[${fmt(Number(v[0]), d)}, ${fmt(Number(v[1]), d)}] ${s.unit}`
+                  : `${fmt(Number(v), d)} ${s.unit}`;
+              }}
               labelFormatter={(v: unknown) =>
                 `${FACTOR_WORD[f0.kind]} ${fmt(Number(v), levelDecimals(f0.kind))} ${factorLevel(units, f0.kind, 0).unit}`
               }

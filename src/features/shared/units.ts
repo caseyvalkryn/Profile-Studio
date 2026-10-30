@@ -188,29 +188,30 @@ export function fmt(n: number, decimals: number): string {
   return n.toFixed(decimals);
 }
 
-/** Decimals added at most beyond the scale's own, so a narrow interval still shows its width. */
-const MAX_EXTRA_DECIMALS = 4;
+/** Display decimals never exceed this, so a narrow interval still shows its width (FR-06). */
+const MAX_DECIMALS = 4;
 
 type Interval = { low: number; high: number };
 
 /**
- * Display decimals for a value and its interval (review 6 F-07). Starts at the scale's decimals
- * and adds one while the interval bounds print the same though they differ, or while a
- * percentage below 100 (above 0) prints as 100 (0). An interval prints as a point only when it is
- * one.
+ * Display decimals for a value and its interval (review 6 F-07, first-use FR-06). Starts at the
+ * scale's decimals and adds one, to at most 4, while two of value, low and high print the same
+ * though they differ, or while a percentage below 100 (above 0) prints as 100 (0). Numbers that
+ * are equal in the data may print the same.
  */
 export function decimalsFor(s: Scale, interval?: Interval | null, value?: number | null): number {
   const show = (v: number, d: number) => fmt(v * s.factor, d);
+  const same = (a: number, b: number, d: number) => a !== b && show(a, d) === show(b, d);
   const collides = (d: number) =>
     (interval != null &&
-      interval.low !== interval.high &&
-      show(interval.low, d) === show(interval.high, d)) ||
+      (same(interval.low, interval.high, d) ||
+        (value != null && (same(value, interval.low, d) || same(value, interval.high, d))))) ||
     (s.unit === '%' &&
       value != null &&
       ((value < 100 && Number(show(value, d)) >= 100) ||
         (value > 0 && Number(show(value, d)) <= 0)));
   let d = s.decimals;
-  while (d < s.decimals + MAX_EXTRA_DECIMALS && collides(d)) d++;
+  while (d < Math.max(s.decimals, MAX_DECIMALS) && collides(d)) d++;
   return d;
 }
 
