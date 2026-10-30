@@ -190,7 +190,8 @@ The orchestrator updates this table at each merge.
 | 3.1 | done | rebuild/mvp | 5b1cdcd | document (patch undo, drag as one step), ui, runs, persist, 51 commands, 29 tests. Open for 3.R: hypothesis lock is an undo step (undo unlocks); cancel does not terminate the worker (`simClient` needs AbortSignal); IndexedDB untested (no fake-indexeddb); `AssetKind` lives in `commands/types.ts` |
 | 3.2 | done | rebuild/mvp | 6669667 | 9 primitives + Showcase, 12 tests. Open: mount `TooltipProvider` once in App.tsx (phase 4); keyframes live in `src/ui/motion.css`; disabled menu item reason is a tooltip, keyboard cannot reach it; not yet seen in a browser |
 | 3.R | running | lane/3.R | | |
-| 4.1 to 4.4 | running | lane/4.x | | parallel |
+| 4.1, 4.3, 4.4 | running | lane/4.x | | parallel |
+| 4.2 | done | rebuild/mvp | ef6d3b1 | AssetsPanel, `dnd.ts` (MIME `application/x-profile-studio-asset`, payload `{kind, type}`; `type` is the sub-kind for non-threats), 9 tests. For 4.5: dedupe MIME constant with map `dnd.ts`; one Escape owner; lift `format.ts` |
 | 4.5, 4.R to 7.3 | not started | | | 4.5 = Build workspace wiring lane (App.tsx, TooltipProvider, bindKeys, autosave, registry to palette), added by the orchestrator |
 
 ## 8. Handoff
