@@ -235,10 +235,10 @@ merge. Open items live in section 8, not here.
 State on 2026-10-30, end of the third orchestration session. Phases 0 to 7, the eight 7.2 fix
 lanes (7.4 to 7.11), the review 7.R and its fix lane 7.F are merged on `rebuild/mvp` with the
 gate green (69 unit test files, 526 tests, 12 Playwright specs on `vite preview`, build). The
-spec section 12 acceptance suite passes, which is the MVP definition of done. `main` and
-`origin/rebuild/mvp` are at the second session's merge (152b43f on `rebuild/mvp`); nothing was
-pushed or merged to `main` in the third session. The tree is clean; no lane is in flight; no
-worktree exists.
+spec section 12 acceptance suite passes, which is the MVP definition of done. The user approved
+a push and a merge to `main` at the end of the third session (2026-10-30): `main` is at that
+merge and both branches are on `origin`. The tree is clean; no lane is in flight; no worktree
+exists.
 
 **Orchestrator prompt.** Paste this to start the next session:
 
@@ -262,16 +262,14 @@ Ask me before any download, any push, and any merge to main.
 **Start here.** Read `CLAUDE.md`, this file (sections 5 to 8), the two phase 7 reviews, then the
 "Open items" below. Run `npm run gate` once to confirm the baseline (69 unit files, 526 tests, 12 e2e). Then:
 
-1. Ask the user whether to push `rebuild/mvp` and merge it to `main` (the third session's work
-   is local only).
-2. If the user wants the 7.F follow-ups closed, run them as one lane (7.G) with a browser
+1. If the user wants the 7.F follow-ups closed, run them as one lane (7.G) with a browser
    re-check; they are listed under "Open items" below.
-3. Phase 8 (vos port) is a separate plan, after the user accepts the MVP.
+2. Phase 8 (vos port) is a separate plan, after the user accepts the MVP.
 
 **Approvals on record.** The user approved the phase 0 commits, the first phase 1 commit, one
-merge to `main` with a push, and the Playwright Chromium download, all on 2026-10-30. The third
-session asked for no approval: no download, push or merge to `main` happened. Each later push or
-merge to `main` needs its own approval.
+merge to `main` with a push, and the Playwright Chromium download, all on 2026-10-30. At the
+end of the third session the user approved a second push and merge to `main` (2026-10-30). Each
+later push or merge to `main` needs its own approval.
 
 **How to run a lane.** `git worktree add .worktrees/<id> -b lane/<id> rebuild/mvp`, then
 `npm ci` there. Parallel lanes each run the full gate with their own preview port:
