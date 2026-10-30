@@ -1,0 +1,65 @@
+/* Results: evaluation state colours and the print rule. No --state-* tokens exist in
+   src/styles/tokens.css, so the state colours are defined here (dataviz status palette). */
+
+:root {
+  --state-meets: #0ca30c;
+  --state-not-meet: #d03b3b;
+  --state-inconclusive: #b07d00;
+  --chart-mark: #2a78d6;
+  --chart-band: rgba(42, 120, 214, 0.16);
+  --chart-grid: var(--surface-3);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --state-inconclusive: #fab219;
+    --chart-mark: #3987e5;
+    --chart-band: rgba(57, 135, 229, 0.22);
+  }
+}
+
+:root[data-theme='dark'] {
+  --state-inconclusive: #fab219;
+  --chart-mark: #3987e5;
+  --chart-band: rgba(57, 135, 229, 0.22);
+}
+
+/* Print uses the light theme (principle 6.2). */
+@media print {
+  :root,
+  :root[data-theme='dark'],
+  :root:not([data-theme='light']) {
+    --surface-0: #f6f7f8 !important;
+    --surface-1: #ffffff !important;
+    --surface-2: #eceef1 !important;
+    --surface-3: #dde1e6 !important;
+    --text: #1b1f24 !important;
+    --text-muted: #5b6470 !important;
+    --accent: #2563eb !important;
+    --accent-text: #ffffff !important;
+    --state-inconclusive: #b07d00 !important;
+    --chart-mark: #2a78d6 !important;
+    --chart-band: rgba(42, 120, 214, 0.16) !important;
+    color-scheme: light !important;
+  }
+  .results-no-print {
+    display: none !important;
+  }
+}
+
+.results-state-meets {
+  --state: var(--state-meets);
+}
+.results-state-does-not-meet {
+  --state: var(--state-not-meet);
+}
+.results-state-inconclusive {
+  --state: var(--state-inconclusive);
+}
+.results-state-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--state);
+}
