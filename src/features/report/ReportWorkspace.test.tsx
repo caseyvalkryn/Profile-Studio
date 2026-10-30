@@ -7,7 +7,7 @@ import { useDocument } from '../../state/document';
 import { useRuns } from '../../state/runs';
 import { UI_DEFAULTS, useUi } from '../../state/ui';
 import { SECTIONS } from './draft';
-import ReportWorkspace, { NO_RUN, SCOPE_LEAD } from './ReportWorkspace';
+import ReportWorkspace, { LIMITS_LEAD, NO_RUN, SCOPE_LEAD } from './ReportWorkspace';
 
 const LOCKED = '2026-10-30T14:05:00.000Z';
 const doc = () => useDocument.getState().doc!;
@@ -154,6 +154,21 @@ describe('ReportWorkspace', () => {
       expect(items.some((t) => t.includes(a.id))).toBe(true);
     expect(items.some((t) => t.includes('decision 5 s, assignment 3 s'))).toBe(true);
     expect(items.some((t) => t.includes('n 10, seed 7'))).toBe(true);
+    expect(items.some((t) => t.includes('S-02') && t.includes('E, 0.00 nm N of the site'))).toBe(
+      true,
+    );
+    expect(within(scope).queryByText(LIMITS_LEAD)).toBeNull();
+  });
+
+  it('states a hold the runs do not fly in the scope of inference', () => {
+    const v = withRun();
+    v.threats[0]!.path[0]!.holdS = 60;
+    useDocument.getState().open(v);
+    render(<ReportWorkspace />);
+    const scope = screen.getByRole('region', { name: '6. Scope of inference' });
+    expect(within(scope).getByText(LIMITS_LEAD)).toBeInTheDocument();
+    const limits = within(scope).getByRole('list', { name: 'Simulation limits' });
+    expect(limits).toHaveTextContent('T-01 holds 60 s at waypoint 1.');
   });
 
   it('shows the lock time when a run exists', () => {
