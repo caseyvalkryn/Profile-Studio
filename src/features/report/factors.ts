@@ -16,6 +16,18 @@ export type FactorRow = {
 
 export type RunInfo = { n: number; seed: number } | null;
 
+/** One offset from the site origin: "1.19 nm E". A value that rounds to zero takes the positive letter. */
+function offset(m: number, pos: string, neg: string, units: Units): string {
+  const shown = range(Math.abs(m), units);
+  const zero = Number(shown.value.replace(/,/g, '')) === 0;
+  return `${text(shown)} ${m < 0 && !zero ? neg : pos}`;
+}
+
+/** A position in the site frame (x east, y north): "1.19 nm E, 0.94 nm S of the site". */
+export function sitePosition(x: number, y: number, units: Units): string {
+  return `${offset(x, 'E', 'W', units)}, ${offset(y, 'N', 'S', units)} of the site`;
+}
+
 export function factorRows(v: Vignette, run: RunInfo, units: Units): FactorRow[] {
   const elev = text(elevation(v.site.elevM, units));
   const rows: FactorRow[] = [
@@ -41,7 +53,7 @@ export function factorRows(v: Vignette, run: RunInfo, units: Units): FactorRow[]
       factor: 'Sensor',
       id: s.id,
       type: SYSTEM_LABELS[s.kind],
-      setting: `range ${text(range(s.rangeM, units))}, sector ${sector(s.fovDeg, s.bearingDeg)}`,
+      setting: `${sitePosition(s.x, s.y, units)}; range ${text(range(s.rangeM, units))}, sector ${sector(s.fovDeg, s.bearingDeg)}`,
     });
   for (const e of v.effectors)
     rows.push({
@@ -49,7 +61,17 @@ export function factorRows(v: Vignette, run: RunInfo, units: Units): FactorRow[]
       factor: 'Effector',
       id: e.id,
       type: SYSTEM_LABELS[e.kind],
-      setting: `range ${text(range(e.rangeM, units))}, sector ${sector(e.fovDeg, e.bearingDeg)}`,
+      setting: `${sitePosition(e.x, e.y, units)}; range ${text(range(e.rangeM, units))}, sector ${sector(e.fovDeg, e.bearingDeg)}`,
+    });
+  for (const n of v.nodes)
+    rows.push({
+      key: n.key,
+      factor: 'Node',
+      id: n.id,
+      type: SYSTEM_LABELS[n.kind],
+      setting:
+        sitePosition(n.x, n.y, units) +
+        (n.rangeM > 0 ? `; range ${text(range(n.rangeM, units))}` : ''),
     });
   rows.push({
     key: 'chain',
