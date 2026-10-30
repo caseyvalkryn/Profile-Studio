@@ -5,3 +5,6 @@ playwright-report/
 test-results/
 .worktrees/
 e2e/__results__/
+
+# TypeScript incremental build state
+*.tsbuildinfo
