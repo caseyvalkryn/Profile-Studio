@@ -20,6 +20,15 @@ export type CommandContext = {
   pointer: Pointer | null;
 };
 
+/** One choice for a command that takes `arg` from a fixed list, such as a threat archetype. */
+export type CommandOption = {
+  /** Passed to `run` as `arg`. */
+  value: string;
+  label: string;
+  /** Submenu group, such as 'Group 1'. */
+  group?: string;
+};
+
 export type Command = {
   id: string;
   label: string;
@@ -34,6 +43,8 @@ export type Command = {
   needsPointer?: boolean;
   /** True when the UI must collect `arg` first (set speed, set range, set altitude). */
   needsArg?: boolean;
+  /** The fixed choices for `arg`, in menu order. A menu builds one child item per option. */
+  options?: readonly CommandOption[];
   /** True when enabled, else the reason it is disabled. */
   when: (ctx: CommandContext) => true | string;
   run: (ctx: CommandContext, arg?: unknown) => void;

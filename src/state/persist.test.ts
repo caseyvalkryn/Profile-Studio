@@ -31,20 +31,40 @@ function mockDb(): VignetteDb {
 
 afterEach(() => setDb(null));
 
+const v4 = (name: string) => ({
+  schema: 'profile-studio/4',
+  id: name,
+  name,
+  scene: { aircraft: [], paths: [], systems: [], volumes: [] },
+});
+
 describe('JSON import and export', () => {
   it('round-trips a v5 vignette', () => {
     const v = testVignette();
-    expect(importJson(exportJson(v))).toEqual(v);
+    expect(importJson(exportJson(v))).toEqual([v]);
   });
 
-  it('imports a legacy v4 record by its schema field', () => {
-    const v4 = {
-      schema: 'profile-studio/4',
-      name: 'old',
-      scene: { aircraft: [], paths: [], systems: [], volumes: [] },
-    };
-    const v = importJson(JSON.stringify(v4));
-    expect(v.schema).toBe('profile-studio/5');
+  it('imports a single legacy v4 record by its schema field', () => {
+    const out = importJson(JSON.stringify(v4('old')));
+    expect(out).toHaveLength(1);
+    expect(out[0]!.schema).toBe('profile-studio/5');
+    expect(out[0]!.name).toBe('old');
+  });
+
+  it('imports every record of the legacy library export', () => {
+    const lib = { schema: 'profile-studio/4', library: [v4('a'), v4('b'), v4('c')] };
+    expect(importJson(JSON.stringify(lib)).map((v) => v.name)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('imports a plain array of v4 and v5 records', () => {
+    const out = importJson(JSON.stringify([v4('a'), testVignette({ name: 'five' })]));
+    expect(out.map((v) => v.name)).toEqual(['a', 'five']);
+  });
+
+  it('fails the whole library import on one bad record and names its position', () => {
+    const lib = { schema: 'profile-studio/4', library: [v4('a'), { schema: 'x' }, v4('c')] };
+    expect(() => importJson(JSON.stringify(lib))).toThrow(/^Record 2 of 3: Unknown record stamp/);
+    expect(() => importJson('[]')).toThrow(/no records/);
   });
 
   it('rejects an unknown stamp and bad JSON with a readable error', () => {
@@ -89,5 +109,58 @@ describe('autosave', () => {
     });
     vi.advanceTimersByTime(1000);
     expect(save).toHaveBeenCalledTimes(1);
+  });
+
+  const names = (save: { mock: { calls: unknown[][] } }) =>
+    save.mock.calls.map((c) => `${(c[0] as Vignette).id}:${(c[0] as Vignette).name}`);
+
+  it('saves the pending edit when another vignette opens within 500 ms', async () => {
+    const save = vi.fn<(v: Vignette) => Promise<void>>(async () => {});
+    useDocument.getState().open(testVignette({ id: 'A' }));
+    const stop = startAutosave(save, undefined, undefined, async () => true);
+    useDocument.getState().edit('Rename', (d) => {
+      d.name = 'A-edited';
+    });
+    vi.advanceTimersByTime(100);
+    useDocument.getState().open(testVignette({ id: 'B' }));
+    expect(names(save)).toEqual(['A:A-edited']);
+    useDocument.getState().edit('Rename', (d) => {
+      d.name = 'B-edited';
+    });
+    vi.advanceTimersByTime(600);
+    await Promise.resolve();
+    expect(names(save)).toEqual(['A:A-edited', 'B:B-edited']);
+    stop();
+  });
+
+  it('stop and pagehide write a pending save; opening a stored vignette writes nothing', async () => {
+    const save = vi.fn<(v: Vignette) => Promise<void>>(async () => {});
+    useDocument.getState().open(testVignette({ id: 'A' }));
+    const stop = startAutosave(save, undefined, undefined, async () => true);
+    useDocument.getState().open(testVignette({ id: 'B' }));
+    await Promise.resolve();
+    expect(save).not.toHaveBeenCalled();
+    useDocument.getState().edit('Rename', (d) => {
+      d.name = 'paged';
+    });
+    window.dispatchEvent(new Event('pagehide'));
+    expect(names(save)).toEqual(['B:paged']);
+    useDocument.getState().edit('Rename', (d) => {
+      d.name = 'stopped';
+    });
+    stop();
+    expect(names(save)).toEqual(['B:paged', 'B:stopped']);
+    window.dispatchEvent(new Event('pagehide'));
+    vi.advanceTimersByTime(1000);
+    expect(save).toHaveBeenCalledTimes(2);
+  });
+
+  it('writes a new vignette once on open', async () => {
+    const save = vi.fn<(v: Vignette) => Promise<void>>(async () => {});
+    useDocument.getState().close();
+    const stop = startAutosave(save, undefined, undefined, async () => false);
+    useDocument.getState().open(testVignette({ id: 'N' }));
+    await vi.waitFor(() => expect(names(save)).toEqual(['N:test vignette']));
+    stop();
   });
 });

@@ -77,6 +77,8 @@ export function Field(props: FieldProps) {
     if (e.key === 'Enter') {
       commit();
     } else if (e.key === 'Escape') {
+      // Revert only: the window key handler skips a prevented Escape, so selection stays.
+      e.preventDefault();
       setDraft(shown);
     } else if (props.kind !== 'text' && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
       e.preventDefault();
@@ -90,6 +92,9 @@ export function Field(props: FieldProps) {
   };
 
   const sourceId = source ? `${id}-source` : undefined;
+  const unitId = unit ? `${id}-unit` : undefined;
+  // The unit is part of the description, so assistive technology reads "Range, m".
+  const describedBy = [unitId, sourceId].filter(Boolean).join(' ') || undefined;
   const numeric = props.kind !== 'text';
 
   return (
@@ -108,7 +113,7 @@ export function Field(props: FieldProps) {
           inputMode={numeric ? 'decimal' : undefined}
           value={draft}
           disabled={disabled}
-          aria-describedby={sourceId}
+          aria-describedby={describedBy}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commit}
           onKeyDown={onKeyDown}
@@ -117,7 +122,7 @@ export function Field(props: FieldProps) {
           } ${focusRing} focus-visible:ring-0`}
         />
         {unit ? (
-          <span className="pr-2 font-mono text-xs text-muted select-none" aria-hidden>
+          <span id={unitId} className="pr-2 font-mono text-xs text-muted select-none">
             {unit}
           </span>
         ) : null}
