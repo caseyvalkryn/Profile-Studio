@@ -25,6 +25,7 @@ function useWhen(id: string): true | string {
   useDocument((s) => s.doc);
   useUi((s) => s.selectedKeys);
   useRuns((s) => s.results);
+  useRuns((s) => s.sweep);
   const cmd = get(id);
   return cmd ? cmd.when(currentContext()) : `No command ${id}`;
 }
@@ -140,9 +141,11 @@ export const RUN_DONE_MS = 6000;
 /** After a run ends, says so for a few seconds and links to Results (review F-08). */
 function RunDone() {
   const run = useActiveRun();
+  const docId = useDocument((s) => s.doc?.id);
   const runId = useDocument((s) => s.doc?.runs.find((r) => r.key === run?.key)?.id);
   const inRouter = useInRouterContext();
-  const doneKey = run?.status === 'done' ? run.key : null;
+  // Only for a run of the open vignette (review 6 F-08).
+  const doneKey = run?.status === 'done' && run.docId === docId ? run.key : null;
   const [shown, setShown] = useState<string | null>(null);
   const [seen, setSeen] = useState<string | null>(null);
   if (doneKey !== seen) {
@@ -168,8 +171,34 @@ function RunDone() {
   );
 }
 
+/** Sweep state for the open vignette, with a link to Results when it is done (review 6 F-02). */
+function SweepStatus() {
+  const sweep = useRuns((s) => s.sweep);
+  const docId = useDocument((s) => s.doc?.id);
+  const inRouter = useInRouterContext();
+  if (!sweep || sweep.docId !== docId) return null;
+  if (sweep.status === 'running')
+    return (
+      <span className="text-xs text-muted" role="status">
+        Sweep running
+      </span>
+    );
+  if (sweep.status !== 'done') return null;
+  return (
+    <span className="flex items-center gap-1.5 text-xs text-muted" role="status">
+      Sweep done
+      {inRouter ? (
+        <Link to="/results" className={`rounded-sm text-text underline ${focusRing}`}>
+          View results
+        </Link>
+      ) : null}
+    </span>
+  );
+}
+
 function BuildBar() {
   const question = useDocument((s) => s.doc?.questions.find((q) => q.text.trim())?.text);
+  const hasSweep = useDocument((s) => (s.doc?.sweep?.factors.length ?? 0) > 0);
   const units = useUi((s) => s.units);
   const view = useUi((s) => s.view);
   return (
@@ -185,6 +214,12 @@ function BuildBar() {
       <RunProgress />
       <RunDone />
       <CommandButton id="run.start" label="Run" variant="accent" />
+      {hasSweep ? (
+        <>
+          <SweepStatus />
+          <CommandButton id="run.sweep" label="Run sweep" />
+        </>
+      ) : null}
       <CommandButton id="view.units" label={units === 'nav' ? 'nm · ft · kt' : 'km · m · m/s'} />
       <div className="flex items-center gap-0.5" role="group" aria-label="View">
         <CommandButton id="view.plan" label="Plan" pressed={view === 'plan'} />

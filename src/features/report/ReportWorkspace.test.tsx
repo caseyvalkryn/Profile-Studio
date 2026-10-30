@@ -122,7 +122,7 @@ describe('ReportWorkspace', () => {
     useDocument.getState().open(v);
     render(<ReportWorkspace />);
     const evaluation = screen.getByRole('region', { name: '5. Evaluation' });
-    expect(within(evaluation).getByText('80.0 to 100.0 %')).toBeInTheDocument();
+    expect(within(evaluation).getByText('80 to 100 %')).toBeInTheDocument();
   });
 
   it('toggles a picked chart and renders it through renderChart', () => {

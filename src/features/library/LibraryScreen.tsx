@@ -240,7 +240,7 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
           ) : null}
           <Button
             variant="default"
-            tooltip="Import a v5 or legacy v4 JSON file. You can also drop it here."
+            tooltip="Import a profile-studio/5 or legacy profile-studio/4 JSON file. You can also drop it here."
             onClick={() => fileRef.current?.click()}
           >
             Import JSON

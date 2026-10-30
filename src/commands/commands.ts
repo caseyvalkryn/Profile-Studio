@@ -611,6 +611,32 @@ const COMMANDS: Command[] = [
     },
   },
   {
+    // Spec section 6.4 and acceptance 12.7: the vignette's stored sweep factor and levels.
+    id: 'run.sweep',
+    label: 'Run sweep',
+    group: 'run',
+    when: every(
+      needDoc,
+      (ctx) => (docOf(ctx)?.sweep?.factors.length ? true : 'This vignette has no sweep factor'),
+      (ctx) => (docOf(ctx)?.threats.length ? true : 'Add a threat first'),
+      (ctx) => (docOf(ctx)?.sensors.length ? true : 'Add a sensor first'),
+      (ctx) => (ctx.runs.sweep?.status === 'running' ? 'A sweep is in progress' : true),
+    ),
+    run: (ctx, arg) => {
+      const doc = docOf(ctx);
+      const factors = doc?.sweep?.factors;
+      if (!doc || !factors?.length) return;
+      const a = (arg ?? {}) as { n?: unknown; seed?: unknown };
+      const n = num(a.n) ?? DEFAULT_RUN_N;
+      const seed = num(a.seed) ?? doc.runs.length + 1;
+      void ctx.runs.startSweep(
+        factors.map((f) => ({ ...f, levels: [...f.levels] })),
+        n,
+        seed,
+      );
+    },
+  },
+  {
     id: 'view.fit',
     label: 'Fit view',
     group: 'view',

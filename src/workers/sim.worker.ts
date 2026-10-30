@@ -3,7 +3,7 @@
 import type { Vignette } from '../domain/types';
 import { run } from '../engine/run';
 import type { RunResult } from '../engine/run';
-import { score } from '../engine/score';
+import { enteredValues, score } from '../engine/score';
 import type { Score } from '../engine/score';
 import { sweep } from '../engine/sweep';
 import type { Factor, Sweep } from '../engine/sweep';
@@ -35,7 +35,10 @@ ctx.onmessage = (ev: MessageEvent<SimRequest>) => {
         type: 'done',
         rows,
         trace,
-        scores: score(rows, req.vignette.measures, { seed: req.seed }),
+        scores: score(rows, req.vignette.measures, {
+          seed: req.seed,
+          entered: enteredValues(req.vignette),
+        }),
       });
     } else if (req.type === 'sweep') {
       post({ type: 'done', sweep: sweep(req.vignette, req.factors, req.n, req.seed) });

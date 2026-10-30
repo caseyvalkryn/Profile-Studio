@@ -14,6 +14,7 @@ import {
   formatInterval,
   formatThreshold,
   formatValue,
+  noValueText,
 } from '../shared/units';
 
 export function EvaluationBadge({ evaluation }: { evaluation: Evaluation }) {
@@ -141,15 +142,15 @@ export function Scorecard({ scores, units, chainTime, selectedId, onSelect }: Sc
                     <td className="py-1 pr-2">{m?.name ?? s.id}</td>
                     {s.value == null ? (
                       <td colSpan={2} className="py-1 pr-2 text-xs text-muted" data-testid="note">
-                        {s.note}
+                        {noValueText(s)}
                       </td>
                     ) : (
                       <>
                         <td className="py-1 pr-2 text-right font-mono whitespace-nowrap">
-                          {formatValue(units, s.id, s.value)}
+                          {formatValue(units, s.id, s.value, s.interval)}
                         </td>
                         <td className="py-1 pr-2 font-mono whitespace-nowrap">
-                          {s.interval ? formatInterval(units, s.id, s.interval) : '–'}
+                          {s.interval ? formatInterval(units, s.id, s.interval, s.value) : '–'}
                         </td>
                       </>
                     )}

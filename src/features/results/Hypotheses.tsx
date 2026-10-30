@@ -7,7 +7,7 @@ import type { Evaluation, Score } from '../../engine/score';
 import type { PredictionSnapshot } from '../../state/runs';
 import type { Units } from '../../state/ui';
 import { EvaluationBadge } from './Scorecard';
-import { OP_TEXT, formatInterval, formatValue } from '../shared/units';
+import { OP_TEXT, formatInterval, formatValue, utc } from '../shared/units';
 
 export type HypothesisResult = {
   evaluation: Evaluation | null;
@@ -35,11 +35,6 @@ export function hypothesisResult(
   return { evaluation, locked: snap != null, insidePrediction };
 }
 
-function formatLocked(iso: string): string {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString();
-}
-
 export function Hypotheses({
   hypotheses,
   scores,
@@ -56,7 +51,13 @@ export function Hypotheses({
   return (
     <ul className="m-0 flex list-none flex-col gap-1 p-0" aria-label="Hypotheses">
       {hypotheses.map((h) => {
-        const m = measureById(h.measure);
+        // The statement and prediction as locked for this run (review 6 F-12), else the live ones.
+        const snap = predictions.find((p) => p.hypothesis === h.key);
+        const measure = snap?.measure ?? h.measure;
+        const op = snap?.op ?? h.op;
+        const value = snap?.value ?? h.value;
+        const prediction = snap ? { low: snap.low, high: snap.high } : h.prediction;
+        const m = measureById(measure);
         const r = hypothesisResult(h, scores, predictions);
         return (
           <li
@@ -66,15 +67,15 @@ export function Hypotheses({
           >
             <span className="font-mono font-semibold">{h.id}</span>
             <span>
-              <span className="font-mono">{h.measure}</span> {m?.name ?? ''}{' '}
+              <span className="font-mono">{measure}</span> {m?.name ?? ''}{' '}
               <span className="font-mono">
-                {OP_TEXT[h.op]} {formatValue(units, h.measure, h.value)}
+                {OP_TEXT[op]} {formatValue(units, measure, value)}
               </span>
             </span>
             <span className="text-xs text-muted">
               Prediction{' '}
               <span className="font-mono">
-                {h.prediction ? formatInterval(units, h.measure, h.prediction) : 'none'}
+                {prediction ? formatInterval(units, measure, prediction) : 'none'}
               </span>
               {r.insidePrediction == null
                 ? ''
@@ -83,7 +84,7 @@ export function Hypotheses({
                   : ', result outside'}
             </span>
             <span className="text-xs text-muted">
-              {h.lockedAt ? `Locked ${formatLocked(h.lockedAt)}` : 'Not locked'}
+              {h.lockedAt ? `Locked ${utc(h.lockedAt)}` : 'Not locked'}
               {h.lockedAt && !r.locked ? ' (after this run)' : ''}
             </span>
             <span className="ml-auto">

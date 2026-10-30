@@ -5,7 +5,7 @@
 import { measureById } from '../../domain/measures';
 import type { SourceClass, Step } from '../../domain/measures';
 import type { Evaluation, Score } from '../../engine/score';
-import { thresholdInCanonical } from '../../engine/score';
+import { MEASURE_FORMULAS, thresholdInCanonical } from '../../engine/score';
 import type { Units } from '../../state/ui';
 
 /** `elevation` is a height above mean sea level (a site datum); `altitude` is above ground. */
@@ -188,16 +188,91 @@ export function fmt(n: number, decimals: number): string {
   return n.toFixed(decimals);
 }
 
-/** A canonical value as display text with its unit, e.g. "1.62 nm". */
-export function formatValue(units: Units, id: string, v: number): string {
-  const s = measureScale(units, id);
-  return `${fmt(v * s.factor, s.decimals)} ${s.unit}`;
+/** Decimals added at most beyond the scale's own, so a narrow interval still shows its width. */
+const MAX_EXTRA_DECIMALS = 4;
+
+type Interval = { low: number; high: number };
+
+/**
+ * Display decimals for a value and its interval (review 6 F-07). Starts at the scale's decimals
+ * and adds one while the interval bounds print the same though they differ, or while a
+ * percentage below 100 (above 0) prints as 100 (0). An interval prints as a point only when it is
+ * one.
+ */
+export function decimalsFor(s: Scale, interval?: Interval | null, value?: number | null): number {
+  const show = (v: number, d: number) => fmt(v * s.factor, d);
+  const collides = (d: number) =>
+    (interval != null &&
+      interval.low !== interval.high &&
+      show(interval.low, d) === show(interval.high, d)) ||
+    (s.unit === '%' &&
+      value != null &&
+      ((value < 100 && Number(show(value, d)) >= 100) ||
+        (value > 0 && Number(show(value, d)) <= 0)));
+  let d = s.decimals;
+  while (d < s.decimals + MAX_EXTRA_DECIMALS && collides(d)) d++;
+  return d;
 }
 
-/** An interval in display units, e.g. "[84, 99]". */
-export function formatInterval(units: Units, id: string, i: { low: number; high: number }): string {
+/**
+ * A canonical value as display text with its unit, e.g. "1.62 nm". Pass the value's interval so
+ * the value prints at the interval's decimals.
+ */
+export function formatValue(
+  units: Units,
+  id: string,
+  v: number,
+  interval?: Interval | null,
+): string {
   const s = measureScale(units, id);
-  return `[${fmt(i.low * s.factor, s.decimals)}, ${fmt(i.high * s.factor, s.decimals)}]`;
+  return `${fmt(v * s.factor, decimalsFor(s, interval, v))} ${s.unit}`;
+}
+
+/** An interval in display units, e.g. "[84, 99]", at decimals that keep its bounds apart. */
+export function formatInterval(
+  units: Units,
+  id: string,
+  i: Interval,
+  value?: number | null,
+): string {
+  const s = measureScale(units, id);
+  const d = decimalsFor(s, i, value);
+  return `[${fmt(i.low * s.factor, d)}, ${fmt(i.high * s.factor, d)}]`;
+}
+
+/** A canonical value in the measure's display unit, not rounded (inspector fields). */
+export function measureToDisplay(units: Units, id: string, v: number): number {
+  return v * measureScale(units, id).factor;
+}
+
+/** A display number in the measure's display unit back to its canonical value. */
+export function measureFromDisplay(units: Units, id: string, v: number): number {
+  return v / measureScale(units, id).factor;
+}
+
+/** Plain text for a null formula, by DroneScore id. Engine notes name internal fields. */
+const NOT_MODELLED: Record<string, string> = {
+  '2.1.1': 'Not simulated. The model has no classification step apart from identification.',
+  '3a.2': 'Not simulated. The model has no classification step apart from identification.',
+  '2.1.4': 'Not simulated. The model does not produce a wrong identification.',
+  '5.3': 'Not computed. Needs reload time and engagement time per launcher.',
+  '5.8': 'Not computed. Needs unit cost and the number of interceptors used.',
+};
+
+/**
+ * Why a score has no value, in a test engineer's words (review 6 F-06, principle 5.6). The
+ * engine note stays on the Score for tests and bug reports.
+ */
+export function noValueText(sc: Pick<Score, 'id' | 'sourceClass' | 'value'>): string {
+  const m = measureById(sc.id);
+  if (!m) return 'Not a DroneScore measure.';
+  if (sc.sourceClass === 'entered')
+    return `Not simulated. Enter a value on the ${m.area === 3 ? 'effector' : 'sensor'}.`;
+  if (sc.sourceClass === 'not-simulated')
+    return `Not simulated. Needs ${m.collectedBy.toLowerCase()}.`;
+  const f = MEASURE_FORMULAS[sc.id];
+  if (!f || f.kind === 'null') return NOT_MODELLED[sc.id] ?? 'Not simulated.';
+  return 'No replicate reached the step that produces this value.';
 }
 
 /** The score's threshold in the measure's canonical unit, or null when it cannot convert. */
@@ -243,9 +318,9 @@ export const STEP_WORD: Record<Step, string> = {
 /** One sentence of result: "Meets: 95 % [84, 99] against ≥ 80 %". */
 export function resultSentence(units: Units, sc: Score): string {
   const word = EVALUATION_WORD[sc.evaluation];
-  if (sc.value == null) return `${word}: no value. ${sc.note ?? ''}`.trim();
-  const interval = sc.interval ? ` ${formatInterval(units, sc.id, sc.interval)}` : '';
-  return `${word}: ${formatValue(units, sc.id, sc.value)}${interval} against ${formatThreshold(units, sc)}`;
+  if (sc.value == null) return `${word}: no value. ${noValueText(sc)}`;
+  const interval = sc.interval ? ` ${formatInterval(units, sc.id, sc.interval, sc.value)}` : '';
+  return `${word}: ${formatValue(units, sc.id, sc.value, sc.interval)}${interval} against ${formatThreshold(units, sc)}`;
 }
 
 // Report: values split into number and unit so the unit can sit apart in a table cell.

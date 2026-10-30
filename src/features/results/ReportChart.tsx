@@ -2,7 +2,7 @@
 // when it is there, else the stored RunSummary rows, scored as the Report scores them.
 import { useMemo } from 'react';
 import { measureById } from '../../domain/measures';
-import { score } from '../../engine/score';
+import { enteredValues, score } from '../../engine/score';
 import { useDocument } from '../../state/document';
 import { useRun } from '../../state/runs';
 import { useUi } from '../../state/ui';
@@ -18,7 +18,13 @@ export default function ReportChart({ measureId, runKey }: { measureId: string; 
     if (entry?.result) return { rows: entry.result.rows, scores: entry.result.scores };
     const stored = doc?.runs.find((r) => r.key === runKey);
     if (!doc || !stored) return null;
-    return { rows: stored.rows, scores: score(stored.rows, doc.measures, { seed: stored.seed }) };
+    return {
+      rows: stored.rows,
+      scores: score(stored.rows, doc.measures, {
+        seed: stored.seed,
+        entered: enteredValues(doc),
+      }),
+    };
   }, [doc, entry, runKey]);
   const s = data?.scores.find((x) => x.id === measureId);
   if (!data || !s)

@@ -1,7 +1,7 @@
 // Results test data: a real run of the engine test vignette at a fixed seed. Not a test file.
 import type { Hypothesis, Vignette } from '../../domain/types';
 import { run } from '../../engine/run';
-import { score } from '../../engine/score';
+import { enteredValues, score } from '../../engine/score';
 import type { Score } from '../../engine/score';
 import { testVignette } from '../../engine/testVignette';
 import type { RunEntry } from '../../state/runs';
@@ -38,7 +38,7 @@ export function resultsVignette(): Vignette {
 
 export function entry(key: string, v: Vignette, seed: number, scoresOverride?: Score[]): RunEntry {
   const r = run(v, N, seed);
-  const scores = scoresOverride ?? score(r.rows, v.measures, { seed });
+  const scores = scoresOverride ?? score(r.rows, v.measures, { seed, entered: enteredValues(v) });
   return {
     key,
     n: N,

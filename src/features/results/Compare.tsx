@@ -4,7 +4,14 @@ import { measureById } from '../../domain/measures';
 import type { Score } from '../../engine/score';
 import type { Units } from '../../state/ui';
 import { EvaluationBadge } from './Scorecard';
-import { fmt, formatInterval, formatValue, measureScale } from '../shared/units';
+import {
+  decimalsFor,
+  fmt,
+  formatInterval,
+  formatValue,
+  measureScale,
+  noValueText,
+} from '../shared/units';
 
 export type CompareRun = { key: string; label: string; scores: Score[] };
 
@@ -19,6 +26,10 @@ function difference(units: Units, first: Score | undefined, other: Score | undef
   if (!first || !other || first.value == null || other.value == null) return '–';
   const s = measureScale(units, first.id);
   const d = (other.value - first.value) * s.factor;
+  const decimals = Math.max(
+    decimalsFor(s, first.interval, first.value),
+    decimalsFor(s, other.interval, other.value),
+  );
   const sign = d > 0 ? '+' : d < 0 ? '−' : '±';
   const overlap =
     first.interval && other.interval
@@ -26,7 +37,7 @@ function difference(units: Units, first: Score | undefined, other: Score | undef
         ? 'intervals overlap'
         : 'intervals do not overlap'
       : 'no interval';
-  return `${sign}${fmt(Math.abs(d), s.decimals)} ${s.unit}, ${overlap}`;
+  return `${sign}${fmt(Math.abs(d), decimals)} ${s.unit}, ${overlap}`;
 }
 
 export function Compare({ runs, units }: { runs: CompareRun[]; units: Units }) {
@@ -67,13 +78,15 @@ export function Compare({ runs, units }: { runs: CompareRun[]; units: Units }) {
                     {s && s.value != null ? (
                       <div className="flex flex-col">
                         <span className="font-mono whitespace-nowrap">
-                          {formatValue(units, id, s.value)}{' '}
-                          {s.interval ? formatInterval(units, id, s.interval) : ''}
+                          {formatValue(units, id, s.value, s.interval)}{' '}
+                          {s.interval ? formatInterval(units, id, s.interval, s.value) : ''}
                         </span>
                         <EvaluationBadge evaluation={s.evaluation} />
                       </div>
                     ) : (
-                      <span className="text-xs text-muted">{s ? s.note : 'Not scored'}</span>
+                      <span className="text-xs text-muted">
+                        {s ? noValueText(s) : 'Not scored'}
+                      </span>
                     )}
                   </td>
                 );

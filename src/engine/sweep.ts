@@ -3,25 +3,22 @@
  * copy of the vignette, runs n replicates at the same seed and scores the vignette's
  * measures. Pure and deterministic: the same inputs give the same cells.
  */
-import type { Sensor, Threat, Vignette, Waypoint } from '../domain/types';
+import type {
+  Sensor,
+  SweepFactor,
+  SweepFactorKind,
+  Threat,
+  Vignette,
+  Waypoint,
+} from '../domain/types';
 import { run } from './run';
-import { score } from './score';
+import { enteredValues, score } from './score';
 import type { Score, ScoreOptions } from './score';
 
-export type FactorKind =
-  | 'threat-speed'
-  | 'threat-altitude'
-  | 'approach-bearing'
-  | 'sensor-range'
-  | 'sensor-position-offset';
+export type FactorKind = SweepFactorKind;
 
-export type Factor = {
-  kind: FactorKind;
-  /** Levels in the factor's unit: m/s, m AGL, degrees, m, m. */
-  levels: number[];
-  /** Threat or sensor id the factor applies to; every one of that kind when absent. */
-  target?: string;
-};
+/** One sweep factor; the vignette stores the same shape (`Vignette.sweep`). */
+export type Factor = SweepFactor;
 
 export type SweepCell = { levels: number[]; scores: Score[] };
 
@@ -115,7 +112,10 @@ export function sweep(
       cell = applyFactor(cell, f, levels[i]!);
     });
     const { rows } = run(cell, n, seed);
-    cells.push({ levels, scores: score(rows, cell.measures, { seed, ...opts }) });
+    cells.push({
+      levels,
+      scores: score(rows, cell.measures, { seed, entered: enteredValues(cell), ...opts }),
+    });
   }
   return { factors, cells };
 }

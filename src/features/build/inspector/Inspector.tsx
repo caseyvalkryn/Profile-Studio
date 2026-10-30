@@ -6,7 +6,10 @@ import { measureById } from '../../../domain/measures';
 import type { Vignette } from '../../../domain/types';
 import { useDocument } from '../../../state/document';
 import { useUi } from '../../../state/ui';
+import { focusRing } from '../../../ui/focus';
+import { formatThreshold } from '../../shared/units';
 import { Grid, Note, Section, UnitField } from './fields';
+import { HypothesisFields } from './Hypothesis';
 import { AreaPanel, EffectorPanel, NodePanel, SensorPanel, ThreatPanel } from './panels';
 
 export const INSPECTOR_WIDTH = 280;
@@ -57,6 +60,9 @@ export default function Inspector() {
 
 function VignetteHeader({ v }: { v: Vignette }) {
   const edit = useDocument((s) => s.edit);
+  const units = useUi((s) => s.units);
+  const keys = useUi((s) => s.selectedKeys);
+  const setSelection = useUi((s) => s.setSelection);
   const qById = new Map(v.questions.map((q) => [q.key, q.id]));
   return (
     <>
@@ -112,12 +118,31 @@ function VignetteHeader({ v }: { v: Vignette }) {
           ))}
           {v.hypotheses.map((h) => {
             const m = measureById(h.measure);
-            const unit = m?.unit ?? '';
-            const line = `${m ? `${m.id} ${m.name}` : h.measure} ${h.op} ${h.value} ${unit}`;
+            // Stored in the measure's DroneScore unit; shown in the display units (review 6 F-10).
+            const threshold = formatThreshold(units, {
+              id: h.measure,
+              op: h.op,
+              threshold: h.value,
+              unit: '',
+            });
+            const line = `${m ? `${m.id} ${m.name}` : h.measure} ${threshold}`;
+            const isSel = keys.length === 1 && keys[0] === h.key;
             return (
-              <li key={h.key} className="truncate" title={line}>
-                <span className="font-mono text-muted">{h.id}</span>{' '}
-                <span className="font-mono text-muted">{qById.get(h.question) ?? ''}</span> {line}
+              <li key={h.key} className="flex flex-col gap-1">
+                <button
+                  type="button"
+                  aria-pressed={isSel}
+                  aria-label={`${h.id} ${line}`}
+                  title={line}
+                  onClick={() => setSelection(isSel ? [] : [h.key])}
+                  className={`truncate rounded-sm px-1 py-0.5 text-left hover:bg-surface-2 ${
+                    isSel ? 'bg-surface-2 shadow-[inset_2px_0_0_var(--accent)]' : ''
+                  } ${focusRing}`}
+                >
+                  <span className="font-mono text-muted">{h.id}</span>{' '}
+                  <span className="font-mono text-muted">{qById.get(h.question) ?? ''}</span> {line}
+                </button>
+                {isSel ? <HypothesisFields v={v} h={h} /> : null}
               </li>
             );
           })}

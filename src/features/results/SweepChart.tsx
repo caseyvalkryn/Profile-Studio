@@ -59,9 +59,33 @@ function factorLabel(units: Units, f: Factor): string {
   return `${FACTOR_WORD[f.kind]}${f.target ? ` (${f.target})` : ''}, ${factorLevel(units, f.kind, 0).unit}`;
 }
 
+/** Decimals for a level in display units: whole ft, kt, m and degrees; ranges to 0.01. */
+function levelDecimals(kind: FactorKind): number {
+  return kind === 'sensor-range' || kind === 'sensor-position-offset' ? 2 : 0;
+}
+
 function levelText(units: Units, f: Factor, level: number): string {
-  const d = factorLevel(units, f.kind, level);
-  return fmt(d.v, Number.isInteger(d.v) ? 0 : 1);
+  return fmt(factorLevel(units, f.kind, level).v, levelDecimals(f.kind));
+}
+
+const TICK = { fontSize: 11, fontFamily: 'var(--font-mono)', fill: 'var(--text-muted)' };
+
+/** An x tick whose first and last labels anchor inward, so no label leaves the chart (F-11). */
+function LevelTick(props: {
+  x?: number;
+  y?: number;
+  index?: number;
+  count: number;
+  payload?: { value: number };
+  decimals: number;
+}) {
+  const { x = 0, y = 0, index = 0, count, payload, decimals } = props;
+  const anchor = index === 0 ? 'start' : index === count - 1 ? 'end' : 'middle';
+  return (
+    <text x={x} y={y + 12} textAnchor={anchor} {...TICK}>
+      {payload ? fmt(payload.value, decimals) : ''}
+    </text>
+  );
 }
 
 const BLUE_RAMP = [
@@ -153,7 +177,7 @@ export function SweepChart({ sweep, units, width = 640, height = 260 }: SweepCha
             width={width}
             height={height}
             data={data}
-            margin={{ top: 8, right: 16, bottom: 8, left: 0 }}
+            margin={{ top: 8, right: 16, bottom: 20, left: 0 }}
           >
             <CartesianGrid stroke="var(--chart-grid)" vertical={false} />
             <XAxis
@@ -161,9 +185,15 @@ export function SweepChart({ sweep, units, width = 640, height = 260 }: SweepCha
               type="number"
               domain={['dataMin', 'dataMax']}
               ticks={data.map((d) => d.level)}
-              tickFormatter={(v: number) => fmt(v, Number.isInteger(v) ? 0 : 1)}
               stroke="var(--text-muted)"
-              tick={{ fontSize: 11, fontFamily: 'var(--font-mono)', fill: 'var(--text-muted)' }}
+              tick={<LevelTick count={data.length} decimals={levelDecimals(f0.kind)} />}
+              interval={0}
+              label={{
+                value: factorLabel(units, f0),
+                position: 'insideBottom',
+                offset: -14,
+                ...TICK,
+              }}
             />
             <YAxis
               stroke="var(--text-muted)"
@@ -177,7 +207,9 @@ export function SweepChart({ sweep, units, width = 640, height = 260 }: SweepCha
                   ? `[${fmt(Number(v[0]), s.decimals)}, ${fmt(Number(v[1]), s.decimals)}] ${s.unit}`
                   : `${fmt(Number(v), s.decimals)} ${s.unit}`
               }
-              labelFormatter={(v: unknown) => `${FACTOR_WORD[f0.kind]} ${fmt(Number(v), 1)}`}
+              labelFormatter={(v: unknown) =>
+                `${FACTOR_WORD[f0.kind]} ${fmt(Number(v), levelDecimals(f0.kind))} ${factorLevel(units, f0.kind, 0).unit}`
+              }
             />
             <Area
               dataKey="band"

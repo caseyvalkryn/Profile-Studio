@@ -109,6 +109,44 @@ describe('document store', () => {
     expect(doc().doc!.sensors[0]!.rangeM).toBe(4321);
   });
 
+  it('undo keeps a locked prediction as locked (review 6 F-04)', () => {
+    doc().edit('Add hypothesis', (d) => {
+      d.hypotheses.push({
+        key: 'h1',
+        id: 'H-01',
+        question: '',
+        measure: '1.1.1',
+        op: '>=',
+        value: 80,
+        prediction: { low: 90, high: 100 },
+        lockedAt: null,
+      });
+    });
+    doc().edit('Set prediction', (d) => {
+      d.hypotheses[0]!.prediction = { low: 97, high: 100 };
+    });
+    doc().apply('Lock predictions', (d) => {
+      d.hypotheses[0]!.lockedAt = '2026-10-30T17:40:00Z';
+    });
+    doc().edit('Rename', (d) => {
+      d.name = 'x';
+    });
+    doc().undo();
+    doc().undo();
+    doc().undo();
+    expect(doc().doc!.name).toBe('test vignette');
+    expect(doc().doc!.hypotheses).toEqual([
+      expect.objectContaining({
+        key: 'h1',
+        prediction: { low: 97, high: 100 },
+        lockedAt: '2026-10-30T17:40:00Z',
+      }),
+    ]);
+    doc().redo();
+    doc().redo();
+    expect(doc().doc!.hypotheses[0]!.prediction).toEqual({ low: 97, high: 100 });
+  });
+
   it('memoises the preview on the document reference', () => {
     const v = doc().doc!;
     expect(previewOf(v)).toBe(previewOf(v));
