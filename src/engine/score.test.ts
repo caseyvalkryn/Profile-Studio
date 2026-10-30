@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RunRow } from '../domain/types';
 import { MEASURES } from '../domain/measures';
-import { bootstrap, evaluate, MEASURE_FORMULAS, score } from './score';
+import { bootstrap, evaluate, MEASURE_FORMULAS, MIN_INTERVAL_N, score } from './score';
 import { wilson } from './sim/analysis/stats';
 
 function row(over: Partial<RunRow>): RunRow {
@@ -104,5 +104,40 @@ describe('score', () => {
         MEASURES.some((m) => m.id === id),
         id,
       ).toBe(true);
+  });
+
+  // F-08: a degenerate interval is never decisive.
+  it('a sample below MIN_INTERVAL_N rows is inconclusive with a note', () => {
+    expect(MIN_INTERVAL_N).toBe(2);
+    const [one] = score([detected(3000)], [{ id: '1.1.2', op: '>=', threshold: 1000, unit: 'm' }]);
+    expect(one!.n).toBe(1);
+    expect(one!.value).toBe(3000);
+    expect(one!.evaluation).toBe('inconclusive');
+    expect(one!.note).toMatch(/at least 2/);
+    const [two] = score(
+      [detected(3000), detected(3200)],
+      [{ id: '1.1.2', op: '>=', threshold: 1000, unit: 'm' }],
+    );
+    expect(two!.evaluation).toBe('meets');
+  });
+
+  // F-09: the threshold is converted into the row's canonical unit.
+  it('converts the threshold by the setting unit', () => {
+    const rows = Array(10)
+      .fill(0)
+      .map(() => detected(3000));
+    const [km] = score(rows, [{ id: '1.1.2', op: '>=', threshold: 4, unit: 'km' }]);
+    expect(km!.evaluation).toBe('does-not-meet');
+    expect(km!.threshold).toBe(4);
+    const [kmOk] = score(rows, [{ id: '1.1.2', op: '>=', threshold: 2.5, unit: 'km' }]);
+    expect(kmOk!.evaluation).toBe('meets');
+    const [m] = score(rows, [{ id: '1.1', op: '>=', threshold: 2500, unit: 'm' }]);
+    expect(m!.value).toBe(3);
+    expect(m!.evaluation).toBe('meets');
+    const [prop] = score(rows, [{ id: '1.1.1', op: '>=', threshold: 0.5, unit: 'proportion' }]);
+    expect(prop!.evaluation).toBe('meets');
+    const [unknown] = score(rows, [{ id: '1.1.2', op: '>=', threshold: 3, unit: 'furlongs' }]);
+    expect(unknown!.evaluation).toBe('inconclusive');
+    expect(unknown!.note).toMatch(/furlongs/);
   });
 });

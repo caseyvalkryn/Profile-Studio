@@ -28,6 +28,30 @@ export type Score = {
   note?: string;
 };
 
+/** Fewest qualifying rows for a sample interval; below it the bootstrap degenerates to a point. */
+export const MIN_INTERVAL_N = 2;
+
+/**
+ * Threshold conversion from the setting's unit into the row's canonical unit (measures.ts).
+ * An empty setting unit means the canonical unit. Returns null for a pair it cannot convert.
+ */
+export function thresholdInCanonical(
+  threshold: number,
+  unit: string,
+  canonical: string,
+): number | null {
+  const u = unit.trim().toLowerCase();
+  const c = canonical.trim().toLowerCase();
+  if (u === '' || u === c) return threshold;
+  if (u === 'km' && c === 'm') return threshold * 1000;
+  if (u === 'm' && c === 'km') return threshold / 1000;
+  if (c === '%' && (u === 'proportion' || u === 'fraction' || u === 'ratio'))
+    return threshold * 100;
+  if (u === '%' && (c === 'proportion' || c === 'fraction' || c === 'ratio'))
+    return threshold / 100;
+  return null;
+}
+
 export type ScoreOptions = {
   /** Bootstrap resamples for mean rows. */
   bootstrapN?: number;
@@ -213,6 +237,8 @@ export function scoreOne(rows: RunRow[], s: MeasureSetting, opts: ScoreOptions =
   const f = MEASURE_FORMULAS[s.id];
   if (!f) return nullScore(s, sourceClass, 0, `${sourceClass}: no simulated formula`);
   if (f.kind === 'null') return nullScore(s, sourceClass, 0, f.note);
+  // The threshold is compared in the row's canonical unit; the Score keeps the setting's.
+  const threshold = thresholdInCanonical(s.threshold, s.unit, measure.unit);
   if (f.kind === 'proportion') {
     const pop = rows.filter(f.inPopulation);
     const n = pop.length;
@@ -228,10 +254,12 @@ export function scoreOne(rows: RunRow[], s: MeasureSetting, opts: ScoreOptions =
       threshold: s.threshold,
       op: s.op,
       unit: s.unit,
-      evaluation: evaluate(interval, s.op, s.threshold),
+      evaluation: threshold == null ? 'inconclusive' : evaluate(interval, s.op, threshold),
       sourceClass,
     };
-    if (f.note) score.note = f.note;
+    if (threshold == null)
+      score.note = `threshold unit "${s.unit}" cannot be converted to ${measure.unit}`;
+    else if (f.note) score.note = f.note;
     return score;
   }
   const xs = rows.map(f.value).filter((v): v is number => v != null && Number.isFinite(v));
@@ -247,10 +275,17 @@ export function scoreOne(rows: RunRow[], s: MeasureSetting, opts: ScoreOptions =
     threshold: s.threshold,
     op: s.op,
     unit: s.unit,
-    evaluation: evaluate(interval, s.op, s.threshold),
+    evaluation:
+      threshold == null || xs.length < MIN_INTERVAL_N
+        ? 'inconclusive'
+        : evaluate(interval, s.op, threshold),
     sourceClass,
   };
-  if (f.note) score.note = f.note;
+  if (threshold == null)
+    score.note = `threshold unit "${s.unit}" cannot be converted to ${measure.unit}`;
+  else if (xs.length < MIN_INTERVAL_N)
+    score.note = `${xs.length} qualifying row; an interval needs at least ${MIN_INTERVAL_N}`;
+  else if (f.note) score.note = f.note;
   return score;
 }
 

@@ -17,6 +17,7 @@ import type {
   AreaKind,
   Effector,
   EffectorKind,
+  MeasureSetting,
   Node,
   Question,
   Sensor,
@@ -37,6 +38,21 @@ const numOrNull = (v: unknown): number | null =>
   typeof v === 'number' && Number.isFinite(v) ? v : null;
 
 const AREA_KINDS: readonly string[] = ['asset', 'wez', 'nfz', 'ref'];
+
+/**
+ * Measures an imported vignette scores until the user edits them: one row per F2T2EA step
+ * the run can produce, with planning thresholds (spec section 8: templates open with
+ * thresholds as planning values). Units are the DroneScore canonical units (measures.ts).
+ */
+export const DEFAULT_MEASURES: readonly MeasureSetting[] = [
+  { id: '1.1.1', op: '>=', threshold: 90, unit: '%' }, // Probability of Detection
+  { id: '1.1.2', op: '>=', threshold: 3000, unit: 'm' }, // Detection Range (ground)
+  { id: '2.1.2', op: '>=', threshold: 80, unit: '%' }, // Probability of Correct Identification
+  { id: '3.1.2', op: '>=', threshold: 70, unit: '%' }, // Probability of Kill
+];
+
+/** Legacy v4 has no Target chain time; the import leaves 0/0 and says so in report.notes. */
+export const TARGET_TIME_NOTE = 'Target time not set: decisionS and assignS are 0.';
 
 /** Import a legacy `profile-studio/4` record. Throws a readable Error if it is not one. */
 export function importLegacyV4(doc: unknown): Vignette {
@@ -160,6 +176,8 @@ export function importLegacyV4(doc: unknown): Vignette {
 
   const site = isObj(doc.site) ? doc.site : {};
   if (str(site.datum) === 'MSL') note('Site datum', 'MSL');
+  notes.push(TARGET_TIME_NOTE);
+  notes.push('Site origin not set: lat 0, lon 0.');
   const tele = isObj(doc.telemetry) ? doc.telemetry : {};
   const meta = isObj(doc.meta) ? doc.meta : {};
 
@@ -177,7 +195,7 @@ export function importLegacyV4(doc: unknown): Vignette {
     nodes,
     areas,
     chainTime: { decisionS: 0, assignS: 0 },
-    measures: [],
+    measures: DEFAULT_MEASURES.map((m) => ({ ...m })),
     runs: [],
     report: {
       summary: '',
