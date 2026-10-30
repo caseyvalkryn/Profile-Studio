@@ -92,17 +92,22 @@ export function startRun(
   );
 }
 
-/** Sweep with a cancel handle. `sweepInWorker` is the same call typed as a plain promise. */
+/** Sweep with a cancel handle. `onProgress` reports test points (cells) done of total. `sweepInWorker` is the same call typed as a plain promise. */
 export function startSweep(
   v: Vignette,
   factors: Factor[],
   n: number,
   seed: number,
+  onProgress?: Progress,
 ): WorkerHandle<Sweep> {
-  return call({ type: 'sweep', vignette: v, factors, n, seed }, (m) => {
-    if (!('sweep' in m)) throw new Error('sim worker: sweep returned no cells');
-    return m.sweep;
-  });
+  return call(
+    { type: 'sweep', vignette: v, factors, n, seed },
+    (m) => {
+      if (!('sweep' in m)) throw new Error('sim worker: sweep returned no cells');
+      return m.sweep;
+    },
+    onProgress,
+  );
 }
 
 /** Plain-promise form kept for callers that await; the value is in fact a `WorkerHandle`. */

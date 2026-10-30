@@ -47,6 +47,22 @@ describe('simClient', () => {
     expect(w.terminated).toBe(true);
   });
 
+  it('forwards sweep progress before the result', async () => {
+    const seen: [number, number][] = [];
+    const h = startSweep(
+      testVignette(),
+      [{ kind: 'threat-speed', levels: [10, 20] }],
+      2,
+      1,
+      (d, t) => seen.push([d, t]),
+    );
+    const w = FakeWorker.last!;
+    w.onmessage!({ data: { type: 'progress', done: 1, total: 2 } });
+    w.onmessage!({ data: { type: 'done', sweep: { factors: [], cells: [] } } });
+    await expect(h).resolves.toEqual({ factors: [], cells: [] });
+    expect(seen).toEqual([[1, 2]]);
+  });
+
   it('cancel terminates the worker and rejects with CancelledError', async () => {
     const h = startSweep(testVignette(), [{ kind: 'threat-speed', levels: [10, 20] }], 2, 1);
     const w = FakeWorker.last!;

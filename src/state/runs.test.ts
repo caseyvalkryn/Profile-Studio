@@ -90,6 +90,7 @@ beforeEach(() => {
     sweep: null,
     runHandle: null,
     sweepHandle: null,
+    doneNoteKey: null,
   });
   vi.mocked(runInWorker).mockClear();
 });
@@ -214,6 +215,52 @@ describe('runs store', () => {
     expect(h.cancel).toHaveBeenCalledOnce();
     expect(useRuns.getState().sweep).toMatchObject({ status: 'cancelled', error: null });
     expect(useRuns.getState().sweepHandle).toBeNull();
+  });
+
+  it('posts sweep progress as test points done of total, then the result', async () => {
+    let release: () => void = () => {};
+    let report: (d: number, t: number) => void = () => {};
+    vi.mocked(startSweep).mockImplementationOnce((_v, _f, _n, _s, onProgress) => {
+      report = onProgress!;
+      return handle(
+        new Promise((res) => (release = () => res({ factors: [], cells: [] }))),
+        CancelledError,
+      ) as unknown as ReturnType<typeof startSweep>;
+    });
+    const factors = [
+      { kind: 'threat-speed' as const, levels: [10, 20] },
+      { kind: 'threat-altitude' as const, levels: [50, 100, 150] },
+    ];
+    const p = useRuns.getState().startSweep(factors, 5, 1);
+    expect(useRuns.getState().sweep).toMatchObject({
+      status: 'running',
+      progress: { done: 0, total: 6 },
+    });
+    report(2, 6);
+    expect(useRuns.getState().sweep!.progress).toEqual({ done: 2, total: 6 });
+    release();
+    await p;
+    expect(useRuns.getState().sweep!.status).toBe('done');
+    // A late report after the sweep ends changes nothing.
+    report(3, 6);
+    expect(useRuns.getState().sweep!.progress).toEqual({ done: 2, total: 6 });
+  });
+
+  it('keeps the run-done note until a user edit, not a system edit', async () => {
+    const key = await useRuns.getState().startRun(5, 1);
+    expect(useRuns.getState().doneNoteKey).toBe(key);
+    useDocument.getState().apply('System', (d) => {
+      d.name = 'system';
+    });
+    expect(useRuns.getState().doneNoteKey).toBe(key);
+    useDocument.getState().edit('Rename', (d) => {
+      d.name = 'user';
+    });
+    expect(useRuns.getState().doneNoteKey).toBeNull();
+    const key2 = await useRuns.getState().startRun(5, 2);
+    expect(useRuns.getState().doneNoteKey).toBe(key2);
+    useRuns.getState().dismissDoneNote();
+    expect(useRuns.getState().doneNoteKey).toBeNull();
   });
 
   it('compares at most four runs', () => {

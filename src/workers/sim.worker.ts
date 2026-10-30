@@ -41,7 +41,10 @@ ctx.onmessage = (ev: MessageEvent<SimRequest>) => {
         }),
       });
     } else if (req.type === 'sweep') {
-      post({ type: 'done', sweep: sweep(req.vignette, req.factors, req.n, req.seed) });
+      const result = sweep(req.vignette, req.factors, req.n, req.seed, {}, (done, total) =>
+        post({ type: 'progress', done, total }),
+      );
+      post({ type: 'done', sweep: result });
     } else {
       post({
         type: 'error',
