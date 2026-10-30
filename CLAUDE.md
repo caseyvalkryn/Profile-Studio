@@ -1,8 +1,8 @@
 # Profile Studio
 
 Counter-UAS test-profile planner: build a vignette on a map, run it, score it against DroneScore
-measures, export an AAR stated as a hypothesis. Today it is plain ES5 scripts loaded by
-`index.html`. It is being rebuilt as a production MVP in React, TypeScript and Vite.
+measures, export an AAR stated as a hypothesis. The legacy app is plain ES5 scripts in `legacy/`, loaded by
+`legacy/index.html`. It is being rebuilt as a production MVP in React, TypeScript and Vite.
 
 ## The standard
 
@@ -39,6 +39,5 @@ says which lane is next. Each lane names the reference it needs:
 
 ## Gate
 
-Legacy app: `node test/smoke.js` runs every case in `test/cases/` against the scripts in
-`index.html` order. Plan phase 0 moves it to `node legacy/test/smoke.js`. The MVP gate is
-`npm run gate` from plan phase 1.
+Legacy app: `node legacy/test/smoke.js` runs every case in `legacy/test/cases/` against the
+scripts in `legacy/index.html` order. The MVP gate is `npm run gate` from plan phase 1.

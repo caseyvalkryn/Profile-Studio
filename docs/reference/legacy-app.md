@@ -1,5 +1,7 @@
 # Legacy app reference
 
+All file paths in this document are relative to `legacy/` (moved there on 2026-10-30, plan lane 0.2).
+
 This is an inventory of the ES5 app in `js/*.js`, for a team rebuilding it in React and
 TypeScript. It is not a design document. Read `docs/design-principles.md` for the product intent
 and `docs/reference/jiatf-401.md` for the F2T2EA mapping that replaces the kill chain described
