@@ -216,7 +216,8 @@ merge. Open items live in section 8, not here.
 | 6.3 | done | 26074c3 | Library on `/` with the 8 templates; dev vignette removed; empty state on Build, Results, Report without a document; 445 tests |
 | 6.R | done | e053836 | `reviews/phase-6.md`: 2 blockers (Results unscoped to the document, no sweep control), 3 majors, 7 minors, 6 notes; 16 screenshots |
 | 6.F | done | f5d8f5b | all 16 worked findings fixed; F-15 (labels, F2T2EA lanes) and F-17 (chunk size) stand; 7 browser screenshots; 462 tests |
-| 7.1, 7.2 | next | | parallel: 7.1 on port 5175, 7.2 on 5174 |
+| 7.2 | done | see `reviews/phase-7-first-use.md` | first-use goal met (76 s of tool time, under 10 min); 2 major and 8 minor friction items; F-15 stands; 23 screenshots |
+| 7.1 | in flight | | Playwright suite on port 5175 |
 | 7.3 | not started | | after 7.1 and 7.2, alone, for clean timings |
 
 ## 8. Handoff
@@ -338,6 +339,12 @@ Build and budgets:
   interactive in 2 s is not yet measured (7.3).
 - The root `package.json` stays CommonJS so `legacy/test/smoke.js` runs; Vite and Playwright
   configs are `.mts`.
+
+**Fix lanes proposed by 7.2** (`reviews/phase-7-first-use.md`, section "Fix lanes proposed"),
+not yet scheduled: stacked laydown at the origin and stacked-hit picking (FR-01, FR-05), sensor
+positions in the AAR factor table (FR-02), run-done note persistence (FR-03), unit-free template
+questions (FR-04), F2T2EA timeline lanes (F-15), value and limit precision (FR-06), sweep y-axis
+unit (FR-08), template copy saved on open (FR-07).
 
 **Known problems for the team.**
 
