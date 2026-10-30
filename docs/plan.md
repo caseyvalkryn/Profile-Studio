@@ -218,15 +218,15 @@ merge. Open items live in section 8, not here.
 | 6.F | done | f5d8f5b | all 16 worked findings fixed; F-15 (labels, F2T2EA lanes) and F-17 (chunk size) stand; 7 browser screenshots; 462 tests |
 | 7.2 | done | see `reviews/phase-7-first-use.md` | first-use goal met (76 s of tool time, under 10 min); 2 major and 8 minor friction items; F-15 stands; 23 screenshots |
 | 7.1 | done | 39342af | 12 Playwright specs (section 12 items 1 to 10, phase 6 F-01 and F-04) on `vite preview` port 5175; item 11 as `src/engine/headless.test.ts`; `npm run gate` now ends with `npm run e2e`; 463 unit tests |
-| 7.3 | next | | alone, for clean timings |
+| 7.3 | done | c2e6699 | `reviews/phase-7-budgets.md`: all 5 section 11 budgets pass on an M4 Pro; run 200 x 6 at 2.3 s has the least margin; perf spec in `e2e/perf/` outside the gate |
 
 ## 8. Handoff
 
-State on 2026-10-30, end of the first orchestration session. Phases 0 to 6 are merged on
-`rebuild/mvp` with the gate green (63 test files, 442 tests) and the legacy smoke green. The user
-approved a merge to `main` and a push on 2026-10-30: `main` is at that merge, and both branches
-are on the private remote `origin` (https://github.com/caseyvalkryn/profile-studio). The tree is
-clean; no lane is in flight.
+State on 2026-10-30, end of the second orchestration session. Phases 0 to 7 are merged on
+`rebuild/mvp` at c2e6699 with the gate green (65 unit test files, 463 tests, 12 Playwright specs
+on `vite preview`, build). The spec section 12 acceptance suite passes, which is the MVP
+definition of done. `rebuild/mvp` is 20 commits ahead of `main` and of `origin/rebuild/mvp`;
+nothing from this session is pushed. The tree is clean; no lane is in flight; no worktree exists.
 
 **Orchestrator prompt.** Paste this to start the next session:
 
@@ -234,34 +234,31 @@ clean; no lane is in flight.
 You are the orchestrator for Profile Studio at /Users/caseytalbot/Projects/profile-studio.
 Work on branch rebuild/mvp; main and rebuild/mvp track origin (private GitHub repo
 caseyvalkryn/profile-studio). Read CLAUDE.md, then docs/plan.md sections 5, 7 and 8, then
-reviews/phase-4.md. Run `npm run gate` to confirm the baseline: 63 files, 442 tests, build green.
+reviews/phase-7-first-use.md and reviews/phase-7-budgets.md. Run `npm run gate` to confirm the
+baseline: 65 unit files, 463 tests, 12 e2e specs, build green.
 
-Run the lanes the status table marks next, in this order: 6.3 (library wiring, remove the dev
-vignette), 6.R (review with a browser pass on port 5174, not 5173), 6.F (its fixes), then 7.1,
-7.2, 7.3. The lane text in section 6 is the brief; add the standard items from section 5 rule 3
-(working directory, owned files, gate, report shape, time budget, parallel lanes and their
-folders). One worker agent per lane in a worktree under .worktrees/<id>; workers do not commit.
-Before each merge, run the gate in the worktree and read git diff --stat. Merge with --no-ff
-into rebuild/mvp, run the gate there, remove the worktree, update the status table and the open
-items in section 8.
+The MVP acceptance suite passes. Next: the fix lanes 7.2 proposed (section 8, "Fix lanes
+proposed by 7.2"), grouped by folder so they own disjoint files; then a browser re-check. Brief
+each with the standard items from section 5 rule 3. One worker agent per lane in a worktree under
+.worktrees/<id>; workers do not commit. Before each merge, run the gate in the worktree and read
+git diff --stat. Merge with --no-ff into rebuild/mvp, run the gate there, remove the worktree,
+update the status table and the open items in section 8.
 
-Ask me before: any download (7.1 needs `npx playwright install chromium`), any push, and any
-merge to main. The MVP is done when the spec section 12 acceptance suite passes.
+Ask me before: any download, any push, and any merge to main. Ports: 5173 is taken; use 5174 for
+browser checks, 5175 is the Playwright port, 5177 the perf spec port.
 ```
 
-**Start here.** Read `CLAUDE.md`, this file (sections 5 to 8), `reviews/phase-4.md`, then the
+**Start here.** Read `CLAUDE.md`, this file (sections 5 to 8), the two phase 7 reviews, then the
 "Open items" below. Run `npm run gate` once to confirm the baseline. Then:
 
-1. Run 6.3 (wiring). Its brief is in section 6.
-2. Run 6.R with a browser pass, then 6.F.
-3. Run 7.1 to 7.3. 7.1 needs `npx playwright install chromium` (one download; ask the user first,
-   the user does not allow downloads without asking). The gate gains `npm run e2e` at that point.
-   Done 2026-10-30: Chromium 1248 installed with the user's approval; the gate includes e2e.
-4. Ask the user before any push or merge to `main`.
+1. Ask the user whether to push `rebuild/mvp` and merge it to `main` (20 commits since the last
+   push).
+2. Schedule the 7.2 fix lanes (below) as parallel lanes by folder, then one browser re-check.
+3. Phase 8 (vos port) is a separate plan, after the user accepts the MVP.
 
-**Approvals on record.** The user approved the phase 0 commits, the first phase 1 commit, and
-one merge to `main` with a push, all on 2026-10-30. Each later push or merge to `main` needs its
-own approval.
+**Approvals on record.** The user approved the phase 0 commits, the first phase 1 commit, one
+merge to `main` with a push, and the Playwright Chromium download, all on 2026-10-30. Each later
+push or merge to `main` needs its own approval.
 
 **How to run a lane.** `git worktree add .worktrees/<id> -b lane/<id> rebuild/mvp`, then
 `npm ci` there. The brief states: working directory, owned files, gate, report shape, time
@@ -336,8 +333,14 @@ Results and report (`src/features/results`, `src/features/report`):
 - Stored runs older than 5.3 have no `predictions` snapshot and show `[]`.
 
 Build and budgets:
-- Entry 169 kB gzip; MapView chunk 296 kB gzip (lazy); Vite warns on the chunk size. First-load
-  interactive in 2 s is not yet measured (7.3).
+- Measured 2026-10-30 (`reviews/phase-7-budgets.md`, M4 Pro): entry 77.8 kB gzip plus a shared
+  116.7 kB chunk loaded on `/` (211 kB before the first click); MapView 286.5 kB gzip (lazy, Vite
+  warns). First load interactive: `/` 73 ms, `/build` with 40 x 15 assets 785 ms (1.2 s at 4x CPU
+  throttle). Run 200 x 6: 2.3 s in the browser, 3.05 s headless; a machine 1.6x slower misses 5 s.
+  Likely cost: one store patch and rerender per replicate (`src/state/runs.ts:188`).
+- The Run dialog has no replicate field; Run sends `DEFAULT_RUN_N` 100 (`commands.ts:422`).
+- `e2e/perf/budgets.spec.ts` reruns the measurements: `npx playwright test -c
+  e2e/perf/playwright.perf.config.mts`, `PERF_HEADED=1` for the GPU run.
 - The root `package.json` stays CommonJS so `legacy/test/smoke.js` runs; Vite and Playwright
   configs are `.mts`.
 
@@ -350,7 +353,8 @@ unit (FR-08), template copy saved on open (FR-07).
 **Known problems for the team.**
 
 1. Ports and the browser. Port 5173 is the user's rangeboard dev server; use
-   `npm run dev -- --port 5174 --strictPort`. Local binding worked in this session. Claude in
+   `npm run dev -- --port 5174 --strictPort` for browser checks. Playwright serves `vite preview`
+   on 5175 (`playwright.config.mts`) and the perf spec on 5177. Local binding worked in this session. Claude in
    Chrome cannot drive native HTML5 drag; use click-to-arm then click, and say so in the report.
    A browser GIF export is a download and did not work.
 2. The internet. The user does not allow downloads without asking. The JIATF 401 handbook and
