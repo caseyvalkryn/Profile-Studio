@@ -106,49 +106,50 @@ export function importJson(text: string): Vignette[] {
   });
 }
 
-/** True when a vignette with this id is in the database. */
-async function isStored(id: string): Promise<boolean> {
-  return (await loadVignette(id)) !== null;
-}
-
 /**
  * Save the open document 500 ms after its last change. Returns a function that stops autosave.
  * A pending save is written at once, not dropped, when another vignette opens, when the document
- * closes, when autosave stops, and on `pagehide`. Opening a vignette writes nothing unless it is
- * new (`isSaved` says it is not stored yet). `save` defaults to saveVignette; save errors go to
- * `onError`.
+ * closes, when autosave stops, and on `pagehide`. Opening a vignette writes nothing: a template
+ * copy is first written on its first edit (FR-07), and a stored vignette keeps saving on each
+ * edit. A cancelled drag that returns the document to its state at open, with nothing written
+ * since, writes nothing either. `save` defaults to saveVignette; save errors go to `onError`.
  */
 export function startAutosave(
   save: (v: Vignette) => Promise<void> = saveVignette,
   onError: (err: unknown) => void = (err) => console.error('Autosave failed', err),
   delayMs = AUTOSAVE_MS,
-  isSaved: (id: string) => Promise<boolean> = isStored,
 ): () => void {
   let timer: ReturnType<typeof setTimeout> | null = null;
   let pending: Vignette | null = null;
+  // The document as opened, and whether anything was written for it since.
+  let opened: Vignette | null = useDocument.getState().doc;
+  let written = false;
 
   const flush = () => {
     if (timer) clearTimeout(timer);
     timer = null;
     const v = pending;
     pending = null;
-    if (v) save(v).catch(onError);
+    if (!v) return;
+    written = true;
+    save(v).catch(onError);
   };
 
   const unsub = useDocument.subscribe((s, prev) => {
     if (s.doc === prev.doc) return;
     const doc = s.doc;
     if (!doc || !prev.doc || doc.id !== prev.doc.id) {
-      // A switch: write the previous document's pending edit first.
+      // A switch: write the previous document's pending edit first. Opening writes nothing.
       flush();
-      if (!doc) return;
-      isSaved(doc.id)
-        .then((saved) => {
-          // A new vignette is written once. An edit since then already has a save pending.
-          if (saved || pending || useDocument.getState().doc !== doc) return;
-          return save(doc);
-        })
-        .catch(onError);
+      opened = doc;
+      written = false;
+      return;
+    }
+    if (doc === opened && !written) {
+      // Back to the document as opened (a cancelled drag): nothing to write.
+      if (timer) clearTimeout(timer);
+      timer = null;
+      pending = null;
       return;
     }
     pending = doc;

@@ -97,16 +97,32 @@ describe('LibraryScreen', () => {
     expect(await screen.findByText('Saved vignettes appear here.')).toBeInTheDocument();
   });
 
-  it('opens a template as a new saved copy and goes to Build', async () => {
+  it('opens a template as an unsaved copy and goes to Build', async () => {
     renderLibrary();
     fireEvent.click(screen.getByRole('button', { name: 'Open template Hover track hold' }));
     expect(await screen.findByText('Build page')).toBeInTheDocument();
-    expect(persist.saveVignette).toHaveBeenCalledTimes(1);
-    const saved = vi.mocked(persist.saveVignette).mock.calls[0]![0];
-    expect(saved.id).not.toBe('tpl-hover');
-    expect(saved.name).toBe('Hover track hold');
-    expect(useDocument.getState().doc?.id).toBe(saved.id);
+    expect(persist.saveVignette).not.toHaveBeenCalled();
+    const doc = useDocument.getState().doc!;
+    expect(doc.id).not.toBe('tpl-hover');
+    expect(doc.name).toBe('Hover track hold');
     expect(useUi.getState().workspace).toBe('build');
+  });
+
+  it('saves the template copy only after its first edit', async () => {
+    const stop = persist.startAutosave(persist.saveVignette, undefined, 10);
+    renderLibrary();
+    fireEvent.click(screen.getByRole('button', { name: 'Open template Hover track hold' }));
+    expect(await screen.findByText('Build page')).toBeInTheDocument();
+    await new Promise((r) => setTimeout(r, 30));
+    expect(store.size).toBe(0);
+    useDocument.getState().edit('Move', (d) => {
+      d.sensors[0]!.x += 100;
+    });
+    await waitFor(() => expect(store.size).toBe(1));
+    const saved = [...store.values()][0]!;
+    expect(saved.id).toBe(useDocument.getState().doc!.id);
+    expect(saved.name).toBe('Hover track hold');
+    stop();
   });
 
   it('lists saved vignettes newest first', async () => {

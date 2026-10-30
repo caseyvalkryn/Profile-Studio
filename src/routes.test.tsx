@@ -69,7 +69,7 @@ describe('routes', () => {
     fireEvent.click(screen.getByRole('button', { name: `Open template ${TEMPLATES[0]!.name}` }));
     expect(await screen.findByRole('main', { name: 'Build' })).toBeInTheDocument();
     expect(useDocument.getState().doc?.name).toBe(TEMPLATES[0]!.name);
-    expect(store.size).toBe(1);
+    expect(store.size).toBe(0); // a template copy saves after its first edit (review 7 FR-07)
   });
 
   it('/build with no vignette stored or open links to the Library', async () => {

@@ -128,14 +128,14 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
     navigate('/build');
   };
 
-  const openTemplate = async (t: Template) => {
+  // The copy is not saved here: autosave writes it on its first edit (FR-07).
+  const openTemplate = (t: Template) => {
     const v: Vignette = {
       ...t.make(),
       id: newKey(),
       name: t.name,
       updated: new Date().toISOString(),
     };
-    await saveVignette(v);
     openVignette(v);
   };
 
@@ -267,7 +267,7 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
               <button
                 type="button"
                 aria-label={`Open template ${t.name}`}
-                onClick={() => void openTemplate(t)}
+                onClick={() => openTemplate(t)}
                 className={`flex h-full w-full flex-col gap-2 rounded-md border border-surface-3 bg-surface-1 p-2 text-left hover:border-accent ${focusRing}`}
               >
                 <Thumbnail vignette={thumbs[t.id]!} title={`${t.name} map`} />
