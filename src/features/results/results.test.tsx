@@ -72,7 +72,10 @@ describe('ResultsWorkspace', () => {
     r.getByText('Simulated');
     // Target shows the decision inputs, no measure.
     screen.getByText(/decision 5 s/);
-    // A measure outside the settings is listed as unscored.
+    // A measure outside the settings is listed as unscored, behind a closed toggle.
+    expect(row('1.1.3')).toBeNull();
+    const more = within(document.querySelector<HTMLElement>('tr[data-unscored-toggle="find"]')!);
+    fireEvent.click(more.getByRole('button', { name: /^\d+ more measures?$/ }));
     expect(row('1.1.3').hasAttribute('data-unscored')).toBe(true);
   });
 

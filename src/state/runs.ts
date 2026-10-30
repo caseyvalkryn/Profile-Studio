@@ -2,12 +2,19 @@
 // RunSummary. At run start every hypothesis with a prediction is locked and its prediction is
 // snapshotted into the RunEntry. The lock and the RunSummary are system edits
 // (`useDocument.apply`), outside undo history, so undo can neither unlock a prediction nor remove
-// a run.
+// a run. Cancel terminates the worker through its `WorkerHandle`; a `CancelledError` ends the
+// entry as `cancelled`, never `error`.
 import { create } from 'zustand';
 import { newKey } from '../domain/ids';
 import type { Hypothesis, RunSummary } from '../domain/types';
 import type { Factor, Sweep } from '../engine/sweep';
-import { runInWorker, sweepInWorker, type RunInWorker } from '../workers/simClient';
+import {
+  CancelledError,
+  startRun as startRunInWorker,
+  startSweep as startSweepInWorker,
+  type RunInWorker,
+  type WorkerHandle,
+} from '../workers/simClient';
 import { useDocument } from './document';
 
 /** Result sets kept in memory. Older ones drop, except those in compareKeys. */
@@ -70,9 +77,13 @@ export type RunsState = {
   activeKey: string | null;
   compareKeys: string[];
   sweep: SweepEntry | null;
+  /** The worker of the run in flight, so cancel can stop it. */
+  runHandle: WorkerHandle<RunInWorker> | null;
+  /** The worker of the sweep in flight. */
+  sweepHandle: WorkerHandle<Sweep> | null;
   /** Starts a run on the open document. Resolves to the run key, or null if none started. */
   startRun: (n: number, seed: number) => Promise<string | null>;
-  /** Stops waiting for the active run. Its result, when it arrives, is dropped. */
+  /** Stops the active run: terminates its worker and marks it cancelled. */
   cancel: () => void;
   startSweep: (factors: Factor[], n: number, seed: number) => Promise<string | null>;
   cancelSweep: () => void;
@@ -120,6 +131,8 @@ export const useRuns = create<RunsState>()((set, get) => {
     activeKey: null,
     compareKeys: [],
     sweep: null,
+    runHandle: null,
+    sweepHandle: null,
 
     startRun: async (n, seed) => {
       if (isRunning(get())) return null; // one run at a time (review N-01)
@@ -169,10 +182,12 @@ export const useRuns = create<RunsState>()((set, get) => {
       }));
       prune();
       const live = () => get().results[key]?.status === 'running';
+      const handle = startRunInWorker(doc, n, seed, (done, total) => {
+        if (live()) patch(key, { progress: { done, total } });
+      });
+      set({ runHandle: handle });
       try {
-        const result = await runInWorker(doc, n, seed, (done, total) => {
-          if (live()) patch(key, { progress: { done, total } });
-        });
+        const result = await handle;
         if (!live()) return key;
         const now = useDocument.getState().doc;
         const note =
@@ -191,24 +206,34 @@ export const useRuns = create<RunsState>()((set, get) => {
             n,
             seed,
             rows: result.rows,
+            predictions: predictions.map((p) => ({
+              hypothesis: p.hypothesis,
+              low: p.low,
+              high: p.high,
+            })),
+            ...(note ? { note } : {}),
           };
           d.runs.unshift(summary); // newest first
         });
       } catch (err) {
-        if (live())
+        if (!live()) return key;
+        if (err instanceof CancelledError) patch(key, { status: 'cancelled' });
+        else
           patch(key, {
             status: 'error',
             error: RUN_FAILED,
             detail: err instanceof Error ? err.message : String(err),
           });
+      } finally {
+        if (get().runHandle === handle) set({ runHandle: null });
       }
       return key;
     },
 
     cancel: () => {
       const key = get().activeKey;
-      // TODO(lane 2.F): call the simClient cancel handle here so the worker stops.
       if (key && get().results[key]?.status === 'running') patch(key, { status: 'cancelled' });
+      get().runHandle?.cancel();
     },
 
     startSweep: async (factors, n, seed) => {
@@ -217,24 +242,32 @@ export const useRuns = create<RunsState>()((set, get) => {
       const key = newKey();
       set({ sweep: { key, factors, status: 'running', result: null, error: null } });
       const live = () => get().sweep?.key === key && get().sweep?.status === 'running';
+      const handle = startSweepInWorker(doc, factors, n, seed);
+      set({ sweepHandle: handle });
       try {
-        const result = await sweepInWorker(doc, factors, n, seed);
+        const result = await handle;
         if (live()) set((s) => (s.sweep ? { sweep: { ...s.sweep, status: 'done', result } } : {}));
       } catch (err) {
         if (live())
           set((s) =>
-            s.sweep
-              ? { sweep: { ...s.sweep, status: 'error', error: (err as Error).message } }
-              : {},
+            !s.sweep
+              ? {}
+              : err instanceof CancelledError
+                ? { sweep: { ...s.sweep, status: 'cancelled' } }
+                : { sweep: { ...s.sweep, status: 'error', error: (err as Error).message } },
           );
+      } finally {
+        if (get().sweepHandle === handle) set({ sweepHandle: null });
       }
       return key;
     },
 
-    cancelSweep: () =>
+    cancelSweep: () => {
       set((s) =>
         s.sweep?.status === 'running' ? { sweep: { ...s.sweep, status: 'cancelled' } } : {},
-      ),
+      );
+      get().sweepHandle?.cancel();
+    },
 
     setCompare: (keys) => set({ compareKeys: keys.slice(0, MAX_COMPARE) }),
 

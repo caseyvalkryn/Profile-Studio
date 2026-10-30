@@ -30,18 +30,8 @@
 }
 
 @media print {
-  /* Light tokens, whatever the screen theme. Custom properties inherit, so setting them on the
-     print root wins for the whole report. */
+  /* The light print tokens come from the one print rule in results/results.css. */
   [data-print-root] {
-    --surface-0: #ffffff;
-    --surface-1: #ffffff;
-    --surface-2: #eceef1;
-    --surface-3: #dde1e6;
-    --text: #1b1f24;
-    --text-muted: #5b6470;
-    --accent: #2563eb;
-    --accent-text: #ffffff;
-    color-scheme: light;
     color: var(--text);
     background: #ffffff;
   }

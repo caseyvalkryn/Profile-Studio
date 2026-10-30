@@ -7,7 +7,7 @@ import type { Evaluation, Score } from '../../engine/score';
 import type { PredictionSnapshot } from '../../state/runs';
 import type { Units } from '../../state/ui';
 import { EvaluationBadge } from './Scorecard';
-import { OP_TEXT, formatInterval, formatValue } from './format';
+import { OP_TEXT, formatInterval, formatValue } from '../shared/units';
 
 export type HypothesisResult = {
   evaluation: Evaluation | null;

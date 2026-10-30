@@ -4,7 +4,7 @@ import { archetypeById, SYSTEM_LABELS } from '../../domain/catalog';
 import type { Vignette } from '../../domain/types';
 import { threatAltitudeM, threatSpeedMs } from '../../engine/adapter';
 import type { Units } from '../../state/ui';
-import { altitude, M_PER_FT, range, sector, speed, text } from './format';
+import { altitude, M_PER_FT, range, sector, speed, text } from '../shared/units';
 
 export type FactorRow = {
   key: string;

@@ -171,6 +171,10 @@ export type RunSummary = {
   n: number;
   seed: number;
   rows: RunRow[];
+  /** Hypothesis predictions as they stood at run start, by hypothesis key. */
+  predictions?: { hypothesis: string; low: number; high: number }[];
+  /** Set when the vignette was edited while the run was in flight. */
+  note?: string;
 };
 
 /** One brief view carried into the AAR (legacy brief card text). */
@@ -182,4 +186,8 @@ export type ReportDraft = {
   dataSources: string[];
   truth: { source: string; intervalS: number; stationKeys: string[] };
   slides: ReportSlide[];
+  /** AAR section notes, by section id (report/draft.ts SECTIONS). */
+  sections?: Partial<Record<string, string>>;
+  /** Measure ids picked as AAR charts, in pick order. */
+  charts?: string[];
 };

@@ -189,6 +189,8 @@ export const runSummarySchema: z.ZodType<RunSummary> = z.object({
   n: z.number().int().min(0),
   seed: z.number().int(),
   rows: z.array(runRowSchema),
+  predictions: z.array(z.object({ hypothesis: z.string(), low: num, high: num })).optional(),
+  note: z.string().optional(),
 });
 
 export const reportDraftSchema: z.ZodType<ReportDraft> = z.object({
@@ -197,6 +199,8 @@ export const reportDraftSchema: z.ZodType<ReportDraft> = z.object({
   dataSources: z.array(z.string()),
   truth: z.object({ source: z.string(), intervalS: num.min(0), stationKeys: z.array(z.string()) }),
   slides: z.array(z.object({ key, name: z.string(), caption: z.string(), notes: z.string() })),
+  sections: z.record(z.string(), z.string()).optional(),
+  charts: z.array(z.string()).optional(),
 });
 
 export const vignetteSchema: z.ZodType<Vignette> = z.object({

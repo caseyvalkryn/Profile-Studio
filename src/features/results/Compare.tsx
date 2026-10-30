@@ -4,7 +4,7 @@ import { measureById } from '../../domain/measures';
 import type { Score } from '../../engine/score';
 import type { Units } from '../../state/ui';
 import { EvaluationBadge } from './Scorecard';
-import { fmt, formatInterval, formatValue, measureScale } from './format';
+import { fmt, formatInterval, formatValue, measureScale } from '../shared/units';
 
 export type CompareRun = { key: string; label: string; scores: Score[] };
 

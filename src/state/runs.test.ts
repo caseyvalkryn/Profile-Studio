@@ -20,20 +20,39 @@ const rows: RunRow[] = [
   },
 ];
 
-vi.mock('../workers/simClient', () => ({
-  runInWorker: vi.fn(
-    async (_v: unknown, n: number, _seed: number, onProgress?: (d: number, t: number) => void) => {
-      onProgress?.(1, n);
-      onProgress?.(n, n);
-      return { rows, trace: [], scores: [] };
-    },
-  ),
-  sweepInWorker: vi.fn(async () => ({ factors: [], cells: [] })),
-}));
+/** A WorkerHandle over `p`. `cancel` rejects with a CancelledError, as the real client does. */
+function handle<T>(p: Promise<T>, CancelledErr: new () => Error) {
+  let cancel: () => void = () => {};
+  const promise = Promise.race([
+    p,
+    new Promise<never>((_, reject) => (cancel = () => reject(new CancelledErr()))),
+  ]);
+  return Object.assign(promise, { promise, cancel: vi.fn(() => cancel()) });
+}
+
+vi.mock('../workers/simClient', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('../workers/simClient')>();
+  return {
+    ...orig,
+    startRun: vi.fn(
+      (_v: unknown, n: number, _seed: number, onProgress?: (d: number, t: number) => void) => {
+        onProgress?.(1, n);
+        onProgress?.(n, n);
+        return handle(Promise.resolve({ rows, trace: [], scores: [] }), orig.CancelledError);
+      },
+    ),
+    startSweep: vi.fn(() =>
+      handle(Promise.resolve({ factors: [], cells: [] }), orig.CancelledError),
+    ),
+  };
+});
 
 const { useDocument } = await import('./document');
 const { useRuns, RUN_FAILED, EDITED_DURING_RUN, CLOSED_DURING_RUN } = await import('./runs');
-const { runInWorker } = await import('../workers/simClient');
+const { startRun, startSweep, CancelledError } = await import('../workers/simClient');
+const runInWorker = startRun;
+const pending = <T>(p: Promise<T>) =>
+  handle(p, CancelledError) as unknown as ReturnType<typeof startRun>;
 
 const withHypotheses = () =>
   testVignette({
@@ -63,7 +82,15 @@ const withHypotheses = () =>
 
 beforeEach(() => {
   useDocument.getState().open(withHypotheses());
-  useRuns.setState({ results: {}, order: [], activeKey: null, compareKeys: [], sweep: null });
+  useRuns.setState({
+    results: {},
+    order: [],
+    activeKey: null,
+    compareKeys: [],
+    sweep: null,
+    runHandle: null,
+    sweepHandle: null,
+  });
   vi.mocked(runInWorker).mockClear();
 });
 
@@ -84,6 +111,8 @@ describe('runs store', () => {
     expect(entry.progress).toEqual({ done: 10, total: 10 });
     const doc = useDocument.getState().doc!;
     expect(doc.runs[0]).toMatchObject({ key, id: 'R-1', n: 10, seed: 7, rows });
+    expect(doc.runs[0]!.predictions).toEqual([{ hypothesis: 'h1', low: 0.8, high: 0.95 }]);
+    expect(doc.runs[0]!.note).toBeUndefined();
     expect(useDocument.getState().history).toEqual([]);
     expect(entry.note).toBeNull();
     expect(runInWorker).toHaveBeenCalledTimes(1);
@@ -120,8 +149,8 @@ describe('runs store', () => {
 
   it('stores a run on a vignette edited mid-run with a note, and skips a closed one', async () => {
     let release: () => void = () => {};
-    vi.mocked(runInWorker).mockImplementationOnce(
-      () => new Promise((res) => (release = () => res({ rows, trace: [], scores: [] }))),
+    vi.mocked(runInWorker).mockImplementationOnce(() =>
+      pending(new Promise((res) => (release = () => res({ rows, trace: [], scores: [] })))),
     );
     const p = useRuns.getState().startRun(5, 1);
     await Promise.resolve();
@@ -133,9 +162,10 @@ describe('runs store', () => {
     const key = await p;
     expect(useRuns.getState().results[key!]!.note).toBe(EDITED_DURING_RUN);
     expect(useDocument.getState().doc!.runs).toHaveLength(1);
+    expect(useDocument.getState().doc!.runs[0]!.note).toBe(EDITED_DURING_RUN);
 
-    vi.mocked(runInWorker).mockImplementationOnce(
-      () => new Promise((res) => (release = () => res({ rows, trace: [], scores: [] }))),
+    vi.mocked(runInWorker).mockImplementationOnce(() =>
+      pending(new Promise((res) => (release = () => res({ rows, trace: [], scores: [] })))),
     );
     const q = useRuns.getState().startRun(5, 2);
     await Promise.resolve();
@@ -147,25 +177,41 @@ describe('runs store', () => {
   });
 
   it('maps a worker failure to a user sentence and keeps the raw text', async () => {
-    vi.mocked(runInWorker).mockRejectedValueOnce(new Error('sim worker failed'));
+    vi.mocked(runInWorker).mockImplementationOnce(() =>
+      pending(Promise.reject(new Error('sim worker failed'))),
+    );
     const key = await useRuns.getState().startRun(5, 1);
     const e = useRuns.getState().results[key!]!;
     expect(e).toMatchObject({ status: 'error', error: RUN_FAILED, detail: 'sim worker failed' });
     expect(useDocument.getState().doc!.runs).toHaveLength(0);
   });
 
-  it('drops the result of a cancelled run', async () => {
-    let release: () => void = () => {};
-    vi.mocked(runInWorker).mockImplementationOnce(
-      () => new Promise((res) => (release = () => res({ rows, trace: [], scores: [] }))),
-    );
+  it('cancels a run through its worker handle and marks it cancelled, not failed', async () => {
+    const h = pending(new Promise<never>(() => {}));
+    vi.mocked(runInWorker).mockImplementationOnce(() => h);
     const p = useRuns.getState().startRun(5, 1);
     await Promise.resolve();
+    expect(useRuns.getState().runHandle).toBe(h);
     useRuns.getState().cancel();
-    release();
     const key = await p;
-    expect(useRuns.getState().results[key!]!.status).toBe('cancelled');
+    expect(h.cancel).toHaveBeenCalledOnce();
+    expect(useRuns.getState().results[key!]).toMatchObject({ status: 'cancelled', error: null });
+    expect(useRuns.getState().runHandle).toBeNull();
     expect(useDocument.getState().doc!.runs).toHaveLength(0);
+  });
+
+  it('cancels a sweep through its worker handle', async () => {
+    const h = handle(new Promise<never>(() => {}), CancelledError);
+    vi.mocked(startSweep).mockImplementationOnce(
+      () => h as unknown as ReturnType<typeof startSweep>,
+    );
+    const p = useRuns.getState().startSweep([], 5, 1);
+    await Promise.resolve();
+    useRuns.getState().cancelSweep();
+    await p;
+    expect(h.cancel).toHaveBeenCalledOnce();
+    expect(useRuns.getState().sweep).toMatchObject({ status: 'cancelled', error: null });
+    expect(useRuns.getState().sweepHandle).toBeNull();
   });
 
   it('compares at most four runs', () => {
