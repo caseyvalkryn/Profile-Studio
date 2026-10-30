@@ -75,6 +75,11 @@ describe('Timeline', () => {
       status: 'done',
       progress: { done: 2, total: 2 },
       error: null,
+      detail: null,
+      predictions: [],
+      docId: 'doc',
+      docUpdated: '2026-01-01T00:00:00.000Z',
+      note: null,
       result: {
         rows: [],
         scores: [],
