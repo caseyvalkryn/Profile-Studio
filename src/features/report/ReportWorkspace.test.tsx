@@ -1,5 +1,6 @@
 import '../../ui/test-utils';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { deltaWingOwa } from '../../domain/templates/deltaWingOwa';
 import { hoverTrackHold } from '../../domain/templates/hoverTrackHold';
 import type { Vignette } from '../../domain/types';
 import { run } from '../../engine/run';
@@ -158,7 +159,11 @@ describe('ReportWorkspace', () => {
     expect(items.some((t) => t.includes('S-02') && t.includes('E, 0.00 nm N of the site'))).toBe(
       true,
     );
-    expect(within(scope).queryByText(LIMITS_LEAD)).toBeNull();
+    // The only limit for this vignette is the sharp detection edge of the S-02 camera.
+    expect(within(scope).getByText(LIMITS_LEAD)).toBeInTheDocument();
+    const limits = within(scope).getByRole('list', { name: 'Simulation limits' });
+    expect(within(limits).getAllByRole('listitem')).toHaveLength(1);
+    expect(limits).toHaveTextContent('The runs give S-02 a sharp detection edge');
   });
 
   it('states a hold the runs do not fly in the scope of inference', () => {
@@ -184,6 +189,17 @@ describe('ReportWorkspace', () => {
     );
     const question = screen.getByRole('region', { name: '1. Question' });
     expect(question).not.toHaveTextContent(/stop|paus|scored run/i);
+  });
+
+  it('Delta wing: the altitude limit is stated once, in section 6 (7.F follow-up)', () => {
+    useDocument.getState().open(deltaWingOwa.make());
+    render(<ReportWorkspace />);
+    const all = (re: RegExp) => screen.queryAllByText(re, { selector: 'li, p' });
+    expect(all(/climb or a dive|ingress altitude|pop-up|profile view/)).toHaveLength(1);
+    const scope = screen.getByRole('region', { name: '6. Scope of inference' });
+    expect(within(scope).getByRole('list', { name: 'Simulation limits' })).toHaveTextContent(
+      /The runs fly T1 level at .*not cover a climb or a dive/,
+    );
   });
 
   it('shows the lock time when a run exists', () => {

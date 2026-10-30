@@ -7,8 +7,16 @@ describe('sitePosition', () => {
     expect(sitePosition(-1500, 2500, 'si')).toBe('1.50 km W, 2.50 km N of the site');
   });
 
-  it('takes E and N for an offset that rounds to zero', () => {
-    expect(sitePosition(-1, -2, 'nav')).toBe('0.00 nm E, 0.00 nm N of the site');
+  it('takes E and N for one offset that rounds to zero', () => {
+    expect(sitePosition(-1500, -2, 'nav')).toBe('0.81 nm W, 0.00 nm N of the site');
+    expect(sitePosition(-1, 2204, 'si')).toBe('0.00 km E, 2.20 km N of the site');
+  });
+
+  it('says "at the site" when both offsets round to zero (review 7.R F-19)', () => {
+    expect(sitePosition(0, 0, 'nav')).toBe('at the site');
+    expect(sitePosition(-1, -2, 'nav')).toBe('at the site');
+    expect(sitePosition(4, -4, 'si')).toBe('at the site');
+    expect(sitePosition(10, 0, 'nav')).toBe('0.01 nm E, 0.00 nm N of the site');
   });
 });
 
