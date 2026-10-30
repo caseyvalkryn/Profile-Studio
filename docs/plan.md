@@ -220,8 +220,10 @@ merge. Open items live in section 8, not here.
 ## 8. Handoff
 
 State on 2026-10-30, end of the first orchestration session. Phases 0 to 6 are merged on
-`rebuild/mvp` with the gate green (63 test files, 442 tests) and the legacy smoke green. Nothing is
-pushed. `main` holds only the legacy baseline. The tree is clean; no lane is in flight.
+`rebuild/mvp` with the gate green (63 test files, 442 tests) and the legacy smoke green. The user
+approved a merge to `main` and a push on 2026-10-30: `main` is at that merge, and both branches
+are on the private remote `origin` (https://github.com/caseyvalkryn/profile-studio). The tree is
+clean; no lane is in flight.
 
 **Orchestrator prompt.** Paste this to start the next session:
 
@@ -245,9 +247,9 @@ Ask me before any download (Playwright browsers), and before any push or merge t
    the user does not allow downloads without asking). The gate gains `npm run e2e` at that point.
 4. Ask the user before any push or merge to `main`.
 
-**Approvals on record.** The user approved the phase 0 commits and the first phase 1 commit on
-2026-10-30. Later lane commits on `rebuild/mvp` followed from that. Push and merge to `main` are
-not approved.
+**Approvals on record.** The user approved the phase 0 commits, the first phase 1 commit, and
+one merge to `main` with a push, all on 2026-10-30. Each later push or merge to `main` needs its
+own approval.
 
 **How to run a lane.** `git worktree add .worktrees/<id> -b lane/<id> rebuild/mvp`, then
 `npm ci` there. The brief states: working directory, owned files, gate, report shape, time
