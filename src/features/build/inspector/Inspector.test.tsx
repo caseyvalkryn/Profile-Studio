@@ -6,7 +6,7 @@ import { useUi, UI_DEFAULTS } from '../../../state/ui';
 import { MEASURES } from '../../../domain/measures';
 import Inspector from './Inspector';
 import { enteredRows } from './enteredRows';
-import { M_PER_FT, M_PER_NM } from './units';
+import { M_PER_FT, M_PER_NM } from '../../shared/units';
 
 const doc = () => useDocument.getState().doc!;
 

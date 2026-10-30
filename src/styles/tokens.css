@@ -10,6 +10,8 @@
   --text-muted: #5b6470;
   --accent: #2563eb; /* selection and current time only */
   --accent-text: #ffffff;
+  --state-covered: #15803d; /* a reach that holds a threat at the current time */
+  --state-warning: #b45309; /* a value that needs attention, such as a missing source note */
   --radius-sm: 4px;
   --radius-md: 8px;
   --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -27,6 +29,8 @@
     --text-muted: #9aa3af;
     --accent: #4f8cff;
     --accent-text: #0f1115;
+    --state-covered: #4ade80;
+    --state-warning: #fbbf24;
     color-scheme: dark;
   }
 }
@@ -40,5 +44,7 @@
   --text-muted: #9aa3af;
   --accent: #4f8cff;
   --accent-text: #0f1115;
+  --state-covered: #4ade80;
+  --state-warning: #fbbf24;
   color-scheme: dark;
 }

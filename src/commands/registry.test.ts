@@ -45,7 +45,8 @@ const SPEC_MENUS: Record<string, string[]> = {
   sensor: ['Make sector', 'Make omni', 'Set range', 'Duplicate', 'Delete'],
   effector: ['Make sector', 'Make omni', 'Set range', 'Duplicate', 'Delete'],
   area: ['Set top', 'Add vertex here', 'Duplicate', 'Delete'],
-  timeline: ['Set time here', 'Loop from here'],
+  // Clear loop is not a spec row; lane 4.5 adds it so the loop range can be removed.
+  timeline: ['Set time here', 'Loop from here', 'Clear loop'],
 };
 
 beforeEach(() => {

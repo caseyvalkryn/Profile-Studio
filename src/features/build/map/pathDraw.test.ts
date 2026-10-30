@@ -1,4 +1,6 @@
 import { vi } from 'vitest';
+import { registerCommands } from '../../../commands/commands';
+import { bindKeys } from '../../../commands/keys';
 import { testVignette } from '../../../engine/testVignette';
 import { useDocument } from '../../../state/document';
 import { UI_DEFAULTS, useUi } from '../../../state/ui';
@@ -27,8 +29,12 @@ describe('path drawing state machine', () => {
 describe('path drawing on the map', () => {
   let el: HTMLDivElement;
   let ctl: MapController;
+  let unbind: () => void;
 
   beforeEach(async () => {
+    // Keys reach the map through the one dispatcher (edit.escape, map.finishPath).
+    registerCommands();
+    unbind = bindKeys(window);
     useDocument.getState().open(testVignette());
     useUi.setState({ ...UI_DEFAULTS });
     el = document.createElement('div');
@@ -39,6 +45,7 @@ describe('path drawing on the map', () => {
   });
 
   afterEach(() => {
+    unbind();
     ctl.destroy();
     el.remove();
   });

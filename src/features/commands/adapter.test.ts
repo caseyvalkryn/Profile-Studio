@@ -1,8 +1,8 @@
-import { testVignette } from '../../../engine/testVignette';
-import { useDocument } from '../../../state/document';
-import { UI_DEFAULTS, useUi } from '../../../state/ui';
-import type { MenuItem } from '../../../ui/types';
-import { menuItemsFor, type ArgRequest } from './menu';
+import { testVignette } from '../../engine/testVignette';
+import { useDocument } from '../../state/document';
+import { UI_DEFAULTS, useUi } from '../../state/ui';
+import type { MenuItem } from '../../ui/types';
+import { menuItemsFor, type ArgRequest } from './adapter';
 
 const byLabel = (items: MenuItem[], label: string) => items.find((i) => i.label === label);
 

@@ -1,5 +1,5 @@
 // Asset library, the Build workspace's left panel (spec sections 7 and 8, Place).
-import { useEffect, useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react';
+import { useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react';
 import { THREAT_GROUPS, type ThreatGroup } from '../../../domain/catalog';
 import { useUi } from '../../../state/ui';
 import { Button } from '../../../ui/Button';
@@ -161,20 +161,11 @@ export default function AssetsPanel({
     ? LIBRARY.flatMap((g) => g.items).find((i) => sameArmed(armed, i.armed))?.label
     : undefined;
 
-  useEffect(() => {
-    if (!armed && !flyout) return;
-    const onKey = (e: globalThis.KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
-      setFlyout(null);
-      const ui = useUi.getState();
-      if (ui.armed) {
-        ui.setArmed(null);
-        ui.setTool('select');
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [armed, flyout]);
+  // Escape belongs to the key dispatcher (edit.escape disarms). Here it only closes the flyout,
+  // and the key still bubbles on to the dispatcher.
+  const onPanelKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && flyout) setFlyout(null);
+  };
 
   const hint = armedLabel ? (
     <div className="border-t border-surface-3 px-2 py-1.5 text-xs text-muted" role="status">
@@ -187,6 +178,7 @@ export default function AssetsPanel({
     return (
       <aside
         aria-label="Asset library"
+        onKeyDown={onPanelKey}
         className="relative flex h-full w-10 flex-col items-center gap-1 border-r border-surface-3 bg-surface-1 py-1"
       >
         <Button

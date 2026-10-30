@@ -10,25 +10,41 @@ type Common = {
   disabled?: boolean;
   id?: string;
   className?: string;
+  /** Shown in the empty box. */
+  placeholder?: string;
 };
 
-export type NumberFieldProps = Common & {
+type NumberCommon = Common & {
   kind?: 'number';
-  value: number;
-  onCommit: (value: number) => void;
   /** Arrow keys step by this; Shift steps by 10 times it. */
   step?: number;
   min?: number;
   max?: number;
+  /** Shows the value formatted (for example `045°`) until the box takes focus. */
+  format?: (value: number) => string;
+};
+
+/** With `allowBlank` the value may be unset, and clearing the box commits `undefined`. */
+export type NumberFieldProps = NumberCommon & {
+  allowBlank?: undefined;
+  value: number;
+  onCommit: (value: number) => void;
+};
+
+export type BlankNumberFieldProps = NumberCommon & {
+  allowBlank: true;
+  value: number | undefined;
+  onCommit: (value: number | undefined) => void;
 };
 
 export type TextFieldProps = Common & {
   kind: 'text';
+  allowBlank?: undefined;
   value: string;
   onCommit: (value: string) => void;
 };
 
-export type FieldProps = NumberFieldProps | TextFieldProps;
+export type FieldProps = NumberFieldProps | BlankNumberFieldProps | TextFieldProps;
 
 function decimals(n: number): number {
   const s = String(n);
@@ -50,7 +66,8 @@ export function Field(props: FieldProps) {
   const { label, unit, source, disabled, className = '' } = props;
   const autoId = useId();
   const id = props.id ?? autoId;
-  const shown = String(props.value);
+  const shown = props.value === undefined ? '' : String(props.value);
+  const [focused, setFocused] = useState(false);
   const [draft, setDraft] = useState(shown);
   const [synced, setSynced] = useState(shown);
   if (synced !== shown) {
@@ -63,14 +80,20 @@ export function Field(props: FieldProps) {
       if (draft !== props.value) props.onCommit(draft);
       return;
     }
-    const n = Number(draft.trim());
-    if (draft.trim() === '' || !Number.isFinite(n)) {
+    const t = draft.trim();
+    if (t === '') {
+      if (props.allowBlank && props.value !== undefined) props.onCommit(undefined);
+      else setDraft(shown);
+      return;
+    }
+    const n = Number(t);
+    if (!Number.isFinite(n)) {
       setDraft(shown);
       return;
     }
     const v = clamp(n, props.min, props.max);
     setDraft(String(v));
-    if (v !== props.value) props.onCommit(v);
+    if (v !== props.value) (props.onCommit as (value: number) => void)(v);
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -84,7 +107,7 @@ export function Field(props: FieldProps) {
       e.preventDefault();
       const step = props.step ?? 1;
       const base = Number(draft);
-      const from = Number.isFinite(base) ? base : props.value;
+      const from = Number.isFinite(base) && draft.trim() !== '' ? base : (props.value ?? 0);
       const delta = (e.key === 'ArrowUp' ? 1 : -1) * step * (e.shiftKey ? 10 : 1);
       const next = clamp(Number((from + delta).toFixed(decimals(step))), props.min, props.max);
       setDraft(String(next));
@@ -96,6 +119,10 @@ export function Field(props: FieldProps) {
   // The unit is part of the description, so assistive technology reads "Range, m".
   const describedBy = [unitId, sourceId].filter(Boolean).join(' ') || undefined;
   const numeric = props.kind !== 'text';
+  const display =
+    !focused && props.kind !== 'text' && props.format && props.value !== undefined
+      ? props.format(props.value)
+      : draft;
 
   return (
     <div className={`flex flex-col gap-1 ${className}`}>
@@ -111,15 +138,20 @@ export function Field(props: FieldProps) {
           id={id}
           type="text"
           inputMode={numeric ? 'decimal' : undefined}
-          value={draft}
+          value={display}
+          placeholder={props.placeholder}
           disabled={disabled}
           aria-describedby={describedBy}
+          onFocus={() => setFocused(true)}
           onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
+          onBlur={() => {
+            setFocused(false);
+            commit();
+          }}
           onKeyDown={onKeyDown}
           className={`h-full min-w-0 flex-1 rounded-sm bg-transparent px-2 text-sm text-text ${
             numeric ? 'font-mono tabular-nums' : ''
-          } ${focusRing} focus-visible:ring-0`}
+          } placeholder:text-muted ${focusRing} focus-visible:ring-0`}
         />
         {unit ? (
           <span id={unitId} className="pr-2 font-mono text-xs text-muted select-none">

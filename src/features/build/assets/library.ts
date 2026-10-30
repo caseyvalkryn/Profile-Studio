@@ -15,7 +15,7 @@ import {
 } from '../../../domain/catalog';
 import type { ArmedItem, Units } from '../../../state/ui';
 import type { AssetDragPayload } from './dnd';
-import { formatAltitude, formatSpeed } from './format';
+import { compactAltitude, compactSpeed } from '../../shared/units';
 
 export type GroupId = 'threats' | 'sensors' | 'effectors' | 'nodes' | 'areas';
 
@@ -116,7 +116,7 @@ export function sameArmed(a: ArmedItem | null, b: ArmedItem): boolean {
 /** Cruise speed and altitude band in the current units. */
 export function threatSummary(a: ThreatArchetype, units: Units): string {
   const [lo, hi] = a.altM;
-  return `${formatSpeed(a.cruiseMs, units)} · ${formatAltitude(lo, units)} to ${formatAltitude(hi, units)}`;
+  return `${compactSpeed(a.cruiseMs, units)} · ${compactAltitude(lo, units)} to ${compactAltitude(hi, units)}`;
 }
 
 const metres = (m: number) => `${m.toLocaleString('en-US')} m`;
@@ -127,7 +127,7 @@ export function itemTip(item: LibraryItem, units: Units): string {
   switch (item.group) {
     case 'threats': {
       const a = item.threat!;
-      return `Group ${a.group}, max ${formatSpeed(a.vmaxMs, units)}${a.rf ? '' : ', RF silent'}. Source: ${a.src}`;
+      return `Group ${a.group}, max ${compactSpeed(a.vmaxMs, units)}${a.rf ? '' : ', RF silent'}. Source: ${a.src}`;
     }
     case 'sensors': {
       const d = SENSOR_DEFAULTS[p as keyof typeof SENSOR_DEFAULTS];
@@ -142,7 +142,7 @@ export function itemTip(item: LibraryItem, units: Units): string {
     case 'areas': {
       const z = AREA_DEFAULTS[p as keyof typeof AREA_DEFAULTS].zMaxM;
       return z > 0
-        ? `Planning defaults: top ${formatAltitude(z, units)}`
+        ? `Planning defaults: top ${compactAltitude(z, units)}`
         : 'Planning defaults: ground level, no top';
     }
   }

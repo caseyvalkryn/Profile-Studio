@@ -1,8 +1,8 @@
 // "Vendor sheet values": the DroneScore entered rows for a sensor or effector (spec section 4).
-import { Field } from '../../../ui';
 import type { Entered } from '../../../domain/types';
 import type { Measure } from '../../../domain/measures';
-import { NumberInput, Note, Section, Select } from './fields';
+import { Field } from '../../../ui';
+import { Note, Section, Select } from './fields';
 import { enteredRows, inputOf, type EnteredGroup } from './enteredRows';
 import { editRecord } from './edit';
 
@@ -67,10 +67,10 @@ function EnteredRow({
     );
   } else {
     box = (
-      <NumberInput
+      <Field
         label={label}
         unit={m.unit}
-        blank
+        allowBlank
         value={typeof entry?.value === 'number' ? entry.value : undefined}
         onCommit={setValue}
       />

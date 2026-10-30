@@ -6,7 +6,7 @@ import { ContextMenu } from '../../../ui/ContextMenu';
 import { PromptNumber } from '../../../ui/PromptNumber';
 import type { MenuItem } from '../../../ui/types';
 import { MapController } from './controller';
-import { menuItemsFor, type ArgRequest } from './menu';
+import { menuItemsFor, type ArgRequest } from '../../commands/adapter';
 
 export default function MapView() {
   const mapEl = useRef<HTMLDivElement>(null);

@@ -10,6 +10,8 @@
   --color-muted: var(--text-muted);
   --color-accent: var(--accent);
   --color-accent-text: var(--accent-text);
+  --color-state-covered: var(--state-covered);
+  --color-state-warning: var(--state-warning);
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
   --font-sans: var(--font-sans);

@@ -7,17 +7,15 @@ import { usePreview, useDocument } from '../../../state/document';
 import { useUi } from '../../../state/ui';
 import { Tooltip } from '../../../ui';
 import {
-  altitudeUnit,
-  distanceUnit,
-  fmtAltitude,
-  fmtDistance,
   fmtTime,
+  formatAltitude,
+  formatDistance,
   niceTicks,
-  toAltitude,
-  toDistance,
-} from '../timeline/format';
+  toDisplay,
+  unitOf,
+} from '../../shared/units';
 import { STEPS } from '../timeline/steps';
-import { useSize } from '../timeline/useSize';
+import { useSize } from '../../shared/useSize';
 import { alongAt, cumulative } from './along';
 
 export type ProfileViewProps = {
@@ -73,13 +71,13 @@ export default function ProfileView({ width: fw, height: fh }: ProfileViewProps)
 
     const maxS = cum[cum.length - 1] ?? 0;
     const maxZ = Math.max(1, ...w.map((p) => p.z));
-    const xTicks = niceTicks(toDistance(maxS, units) || 1, 5);
-    const yTicks = niceTicks(toAltitude(maxZ, units), 4);
+    const xTicks = niceTicks(toDisplay('range', maxS, units) || 1, 5);
+    const yTicks = niceTicks(toDisplay('altitude', maxZ, units), 4);
     const xMax = xTicks[xTicks.length - 1] || 1;
     const yMax = yTicks[yTicks.length - 1] || 1;
-    const X = (sM: number) => M.left + (toDistance(sM, units) / xMax) * plotW;
+    const X = (sM: number) => M.left + (toDisplay('range', sM, units) / xMax) * plotW;
     const Yd = (v: number) => plotB - (v / yMax) * plotH; // v in display units
-    const Y = (zM: number) => Yd(toAltitude(zM, units));
+    const Y = (zM: number) => Yd(toDisplay('altitude', zM, units));
     const now = alongAt(w, cum, tS);
     const line = w.map((p, i) => `${i ? 'L' : 'M'} ${X(cum[i]!)} ${Y(p.z)}`).join(' ');
 
@@ -114,7 +112,7 @@ export default function ProfileView({ width: fw, height: fh }: ProfileViewProps)
             </g>
           ))}
           <text x={8} y={M.top - 10} fontSize={10} className="fill-muted">
-            Altitude ({altitudeUnit(units)})
+            Altitude ({unitOf('altitude', units)})
           </text>
         </g>
         <g data-testid="profile-x-axis">
@@ -140,7 +138,7 @@ export default function ProfileView({ width: fw, height: fh }: ProfileViewProps)
             fontSize={10}
             className="fill-muted"
           >
-            Along-track distance ({distanceUnit(units)})
+            Along-track distance ({unitOf('range', units)})
           </text>
         </g>
         <line
@@ -197,7 +195,7 @@ export default function ProfileView({ width: fw, height: fh }: ProfileViewProps)
           return (
             <g key={i}>
               <Tooltip
-                content={`Waypoint ${i + 1}, ${fmtDistance(cum[i]!, units)}, ${fmtAltitude(p.z, units)}`}
+                content={`Waypoint ${i + 1}, ${formatDistance(cum[i]!, units)}, ${formatAltitude(p.z, units)}`}
               >
                 <circle
                   data-testid="profile-waypoint"

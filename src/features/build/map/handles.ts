@@ -6,7 +6,7 @@ import type { Recipe } from '../../../state/document';
 import type { Units } from '../../../state/ui';
 import { find } from '../../../commands/select';
 import type { XY } from './frame';
-import { formatAltitude, formatAngle, formatBearing, formatRange } from './units';
+import { formatAltitude, formatAngle, formatBearing, formatRange } from '../../shared/units';
 
 export const SNAP = { gridM: 10, bearingDeg: 1, fovDeg: 5, altitudeM: 10 } as const;
 /** Altitude change per screen pixel of a Shift-drag. */

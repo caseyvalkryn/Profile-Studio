@@ -11,8 +11,8 @@ import { useUi } from '../../../state/ui';
 import { EnteredSection } from './Entered';
 import { IdField } from './IdField';
 import { editRecord } from './edit';
-import { Grid, Hint, NumberInput, Readout, Section, Select, UnitField } from './fields';
-import { formatBearing, round, toDisplay, toStored, unitOf } from './units';
+import { Grid, Hint, Readout, Section, Select, UnitField } from './fields';
+import { fieldValue, formatBearing, fromDisplay, round, unitOf } from '../../shared/units';
 
 type Pos = { x: number; y: number; z: number };
 
@@ -21,7 +21,7 @@ function Position({ value, onSet }: { value: Pos; onSet: (axis: keyof Pos, m: nu
     <Grid cols={3}>
       <UnitField label="East (x)" q="range" stored={value.x} onCommit={(m) => onSet('x', m)} />
       <UnitField label="North (y)" q="range" stored={value.y} onCommit={(m) => onSet('y', m)} />
-      <UnitField label="Height AGL" q="alt" stored={value.z} onCommit={(m) => onSet('z', m)} />
+      <UnitField label="Height AGL" q="altitude" stored={value.z} onCommit={(m) => onSet('z', m)} />
     </Grid>
   );
 }
@@ -74,7 +74,7 @@ export function ThreatPanel({ t, activeKey }: { t: Threat; activeKey?: string })
   const { lengthM, timeS } = pathStats(t, speed);
   const ed = (label: string, fn: (r: Threat) => void) =>
     editRecord(label, 'threat', t.key, (r) => fn(r as Threat));
-  const spd = unitOf(units, 'speed');
+  const spd = unitOf('speed', units);
 
   return (
     <>
@@ -89,24 +89,24 @@ export function ThreatPanel({ t, activeKey }: { t: Threat; activeKey?: string })
           }))}
           onChange={(type) => ed('Set type', (r) => void (r.type = type))}
         />
-        <NumberInput
+        <Field
           label="Speed"
           unit={spd}
-          blank
-          value={t.speedMs === undefined ? undefined : toDisplay(units, 'speed', t.speedMs)}
-          placeholder={`${toDisplay(units, 'speed', cruise)} cruise`}
+          allowBlank
+          value={t.speedMs === undefined ? undefined : fieldValue('speed', t.speedMs, units)}
+          placeholder={`${fieldValue('speed', cruise, units)} cruise`}
           onCommit={(v) =>
             ed('Set speed', (r) => {
               if (v === undefined) delete r.speedMs;
-              else r.speedMs = toStored(units, 'speed', v);
+              else r.speedMs = fromDisplay('speed', v, units);
             })
           }
         />
         <Readout label="Waypoints" value={String(t.path.length)} />
         <Readout
           label="Path length"
-          value={String(toDisplay(units, 'range', lengthM))}
-          unit={unitOf(units, 'range')}
+          value={String(fieldValue('range', lengthM, units))}
+          unit={unitOf('range', units)}
         />
         <Readout label="Path time" value={mss(timeS)} unit="m:ss" />
       </Section>
@@ -138,7 +138,7 @@ export function ThreatPanel({ t, activeKey }: { t: Threat; activeKey?: string })
                 <UnitField
                   key={axis}
                   label={`WP ${i + 1} ${axis === 'z' ? 'alt' : axis}`}
-                  q={axis === 'z' ? 'alt' : 'range'}
+                  q={axis === 'z' ? 'altitude' : 'range'}
                   stored={w[axis]}
                   onCommit={(m) =>
                     ed(axis === 'z' ? 'Set waypoint altitude' : 'Move waypoint', (r) => {
@@ -172,11 +172,11 @@ export function ThreatPanel({ t, activeKey }: { t: Threat; activeKey?: string })
 
 function Bearing({ value, onSet }: { value: number; onSet: (deg: number) => void }) {
   return (
-    <NumberInput
+    <Field
       label="Bearing"
       value={round(value, 1)}
       format={formatBearing}
-      onCommit={(v) => v !== undefined && onSet(((v % 360) + 360) % 360)}
+      onCommit={(v) => onSet(((v % 360) + 360) % 360)}
     />
   );
 }
@@ -414,7 +414,7 @@ export function SensorPanel({ s }: { s: Sensor }) {
           <Hint text={TIPS.trackErr}>
             <UnitField
               label="Track error"
-              q="alt"
+              q="altitude"
               min={0}
               stored={m.trackErrorM}
               onCommit={(v) => ed('Set track error', (r) => void (r.model.trackErrorM = v))}
@@ -499,13 +499,13 @@ export function AreaPanel({ a }: { a: Area }) {
   const ed = (label: string, fn: (r: Area) => void) =>
     editRecord(label, 'area', a.key, (r) => fn(r as Area));
   const circle = asCircle(a.pts);
-  const rng = unitOf(units, 'range');
+  const rng = unitOf('range', units);
   return (
     <Section title={AREA_LABELS[a.kind]}>
       <IdField value={a.id} onRename={(id) => ed('Rename', (r) => void (r.id = id))} />
       <UnitField
         label="Top"
-        q="alt"
+        q="altitude"
         min={0}
         stored={a.zMaxM}
         onCommit={(v) => ed('Set top', (r) => void (r.zMaxM = v))}
@@ -515,12 +515,12 @@ export function AreaPanel({ a }: { a: Area }) {
         <>
           <Readout
             label="Centre east"
-            value={String(toDisplay(units, 'range', circle.cx))}
+            value={String(fieldValue('range', circle.cx, units))}
             unit={rng}
           />
           <Readout
             label="Centre north"
-            value={String(toDisplay(units, 'range', circle.cy))}
+            value={String(fieldValue('range', circle.cy, units))}
             unit={rng}
           />
           <UnitField

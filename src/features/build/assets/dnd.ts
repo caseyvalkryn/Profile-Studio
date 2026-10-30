@@ -1,10 +1,8 @@
-// Drag payload from the asset library to the map. Lane 4.1 reads the same MIME type.
-import type { AssetKind } from '../../../commands/types';
+// Drag from the asset library. The MIME type and payload belong to the map's dnd.ts, which reads
+// them on drop. `type` is the threat archetype id for a threat, else the member kind.
+import { ASSET_MIME, type AssetDragPayload } from '../map/dnd';
 
-export const ASSET_MIME = 'application/x-profile-studio-asset';
-
-/** `type` is the threat archetype id for a threat, else the sensor, effector, node or area kind. */
-export type AssetDragPayload = { kind: AssetKind; type?: string };
+export { ASSET_MIME, type AssetDragPayload };
 
 /** Write the payload and a small label-chip ghost. */
 export function startAssetDrag(dt: DataTransfer, payload: AssetDragPayload, chip: string): void {

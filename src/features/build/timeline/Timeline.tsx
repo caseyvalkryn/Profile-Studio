@@ -3,17 +3,18 @@
 // Monte Carlo mean as a thinner mark. The accent line is the current time.
 import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import '../../../commands/commands';
-import { currentContext, execute, forTarget, get, shortcutLabel } from '../../../commands/registry';
+import { execute, get, shortcutLabel } from '../../../commands/registry';
 import { RATES } from '../../../domain/catalog';
 import { usePreview, useDocument } from '../../../state/document';
 import { useActiveRun } from '../../../state/runs';
 import { useUi } from '../../../state/ui';
 import { Button, ContextMenu, Menu, Tooltip, type MenuItem } from '../../../ui';
-import { fmtTime, timeTicks } from './format';
+import { fmtTime, timeTicks } from '../../shared/units';
 import { AXIS_H, GUTTER_W, LANE_H, ROW_H, domainS, laneY, timeOfX, xOfTime } from './layout';
 import { STEPS, runStepMeans } from './steps';
 import { usePlayback } from './usePlayback';
-import { useSize } from './useSize';
+import { useSize } from '../../shared/useSize';
+import { menuItemsFor } from '../../commands/adapter';
 
 export type TimelineProps = {
   /** Fixed width in pixels. Omit to fill the container. */
@@ -90,17 +91,8 @@ export default function Timeline({ width: fixedWidth }: TimelineProps) {
   };
 
   const menuItems: MenuItem[] = useMemo(() => {
-    const ctx = currentContext({ x: 0, y: 0, tS: menuT ?? 0 });
-    return forTarget('timeline').map((c) => {
-      const ok = c.when(ctx);
-      return {
-        id: c.id,
-        label: c.label,
-        shortcut: shortcutLabel(c) || undefined,
-        disabledReason: ok === true ? undefined : ok,
-        onSelect: () => execute(c.id, ctx),
-      };
-    });
+    // Timeline commands take no number, so the prompt callback is never called.
+    return menuItemsFor('timeline', { pointer: { x: 0, y: 0, tS: menuT ?? 0 }, onArg: () => {} });
     // Rebuilt for each right-click; the stores are read at that moment.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menuT, doc]);

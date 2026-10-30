@@ -14,7 +14,7 @@ export type Colors = {
   covered: string;
 };
 
-/** State colours with no token yet. Proposal: --state-hostile and --state-covered in tokens.css. */
+/** Fallback state colours. `covered` comes from --state-covered; hostile has no token yet. */
 const STATE = {
   light: { hostile: '#c2410c', covered: '#15803d' },
   dark: { hostile: '#fb923c', covered: '#4ade80' },
@@ -51,6 +51,7 @@ export function readColors(el: Element = document.documentElement): Colors {
     panel: v('--surface-1', FALLBACK.panel),
     accent: v('--accent', FALLBACK.accent),
     ...(isDark(bg) ? STATE.dark : STATE.light),
+    covered: v('--state-covered', (isDark(bg) ? STATE.dark : STATE.light).covered),
   };
 }
 
