@@ -26,6 +26,7 @@ const reset = () =>
       compareKeys: [],
       sweep: null,
       doneNoteKey: null,
+      sweepNoteKey: null,
     });
   });
 
@@ -250,6 +251,7 @@ describe('run feedback (F-08, FR-03)', () => {
           result: null,
           error: null,
         },
+        sweepNoteKey: 's-done',
       }),
     );
     render(
@@ -259,6 +261,12 @@ describe('run feedback (F-08, FR-03)', () => {
     );
     expect(screen.getByText('Sweep done')).toBeInTheDocument();
     act(() => useDocument.getState().edit('Move', (d) => void (d.sensors[0]!.x += 100)));
+    expect(screen.queryByText('Sweep done')).toBeNull();
+    // the sweep result is still there; only the note clears
+    expect(useRuns.getState().sweep?.status).toBe('done');
+    act(() => useRuns.setState({ sweepNoteKey: 's-done' }));
+    expect(screen.getByText('Sweep done')).toBeInTheDocument();
+    act(() => useRuns.getState().dismissDoneNote());
     expect(screen.queryByText('Sweep done')).toBeNull();
   });
 

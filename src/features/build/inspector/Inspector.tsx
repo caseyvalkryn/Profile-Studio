@@ -17,6 +17,8 @@ export const INSPECTOR_WIDTH = 280;
 export default function Inspector() {
   const doc = useDocument((s) => s.doc);
   const keys = useUi((s) => s.selectedKeys);
+  const stack = useUi((s) => s.stack);
+  const inStack = stack && keys.length === 1 && keys[0] === stack.key ? stack : null;
 
   let body;
   if (!doc) {
@@ -51,8 +53,16 @@ export default function Inspector() {
     <aside
       aria-label="Inspector"
       style={{ width: INSPECTOR_WIDTH }}
-      className="flex h-full shrink-0 flex-col overflow-y-auto border-l border-surface-3 bg-surface-1"
+      className="relative flex h-full shrink-0 flex-col overflow-y-auto border-l border-surface-3 bg-surface-1"
     >
+      {inStack ? (
+        <span
+          title="Click the same point again for the next object under it"
+          className="absolute top-3 right-3 font-mono text-xs text-muted tabular-nums"
+        >
+          {inStack.n} of {inStack.m}
+        </span>
+      ) : null}
       {body}
     </aside>
   );

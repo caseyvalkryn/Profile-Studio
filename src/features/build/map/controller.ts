@@ -29,7 +29,13 @@ import {
 } from './geojson';
 import { DRAG_LABELS, dragStep, startDrag, type DragStart } from './handles';
 import { hitAll, nextHit, pickHit, type Hit } from './hit';
-import { estimateLabelSize, placeLabels, type LabelBox, type Obstacle } from './labels';
+import {
+  areaObstacle,
+  estimateLabelSize,
+  placeLabels,
+  type LabelBox,
+  type Obstacle,
+} from './labels';
 import { PROMOTE_KEY, SOURCES, blankStyle, layers, readColors, type SourceName } from './layers';
 import { drawStep, type DrawEvent, type PathDraft } from './pathDraw';
 import { commitPath, placeItem } from './place';
@@ -41,8 +47,6 @@ export const TOL_PX = 8;
 const CLICK_PX = 4;
 /** Marker radii in pixels, stroke included (layers.ts): a label keeps clear of these. */
 const MARKER_R = { system: 7, threat: 8, waypoint: 5 };
-/** An area no wider or taller than this, in pixels, is a marker for label placement. */
-const SMALL_AREA_PX = 60;
 /** Clear space between two grid labels on one axis, pixels. */
 const GRID_GAP_PX = 6;
 /** During a drag, preview-dependent layers update at most this often (spec: 100 ms). */
@@ -182,7 +186,7 @@ export class MapController {
   private onDoc(next: Vignette | null, prev: Vignette | null) {
     this.doc = next;
     // An edit or an undo can move what lies under the last click: restart the cycle (7.R F-04).
-    this.lastClick = null;
+    this.endCycle();
     if (!this.ready) return;
     if (!next) {
       for (const n of SOURCES) this.setData(n, fc([]));
@@ -208,7 +212,7 @@ export class MapController {
     // cycle, so the next click starts at the top of the stack (review 7.R F-04).
     if (s.selectedKeys !== prev.selectedKeys && this.lastClick) {
       const k = s.selectedKeys;
-      if (k.length !== 1 || k[0] !== this.lastClick.key) this.lastClick = null;
+      if (k.length !== 1 || k[0] !== this.lastClick.key) this.endCycle();
     }
     if (s.selectedKeys !== prev.selectedKeys || s.hoverKey !== prev.hoverKey)
       this.renderHighlight();
@@ -358,13 +362,11 @@ export class MapController {
         if (a.pts.length) {
           const c = centroid(a.pts);
           want.set(a.key, { text: a.id, px: at(c.x, c.y), cls: 'area' });
-          const ps = a.pts.map((q) => at(q[0], q[1]));
-          const x0 = Math.min(...ps.map((q) => q.x));
-          const y0 = Math.min(...ps.map((q) => q.y));
-          const w = Math.max(...ps.map((q) => q.x)) - x0;
-          const h = Math.max(...ps.map((q) => q.y)) - y0;
-          if (w <= SMALL_AREA_PX && h <= SMALL_AREA_PX)
-            obstacles.push({ key: a.key, x: x0, y: y0, w, h });
+          const o = areaObstacle(
+            a.key,
+            a.pts.map((q) => at(q[0], q[1])),
+          );
+          if (o) obstacles.push(o);
         }
       for (const t of d.threats) {
         for (const w of t.path) marker(t.key, at(w.x, w.y), MARKER_R.waypoint);
@@ -555,6 +557,12 @@ export class MapController {
     this.click(pr.p, pr.hit, pr.shift, pr.px);
   };
 
+  /** End the stacked-hit cycle: the next click starts at the top, and the stack position clears. */
+  private endCycle() {
+    this.lastClick = null;
+    if (useUi.getState().stack) useUi.getState().setStack(null);
+  }
+
   private endPress() {
     this.press = null;
     window.removeEventListener('mousemove', this.onWinMove);
@@ -569,7 +577,7 @@ export class MapController {
   click(p: XY, hit: Hit | null, shift: boolean, px?: XY) {
     const ui = useUi.getState();
     const last = this.lastClick;
-    this.lastClick = null;
+    this.endCycle();
     if (this.draft) {
       this.drawEvent({ t: 'click', p, tolM: TOL_PX * this.mPerPx() });
       return;
@@ -604,7 +612,12 @@ export class MapController {
         if (next) ui.setSelection([next.key]);
       }
       const now = useUi.getState().selectedKeys;
-      if (px && now.length === 1) this.lastClick = { px, key: now[0]! };
+      if (px && now.length === 1) {
+        this.lastClick = { px, key: now[0]! };
+        const hs = this.hitsAt(p);
+        const n = hs.findIndex((h) => h.key === now[0]) + 1;
+        if (hs.length > 1 && n > 0) ui.setStack({ key: now[0]!, n, m: hs.length });
+      }
       return;
     }
     if (ui.selectedKeys.length) ui.setSelection([]);

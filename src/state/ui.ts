@@ -31,6 +31,8 @@ export type LoopRange = { startS: number; endS: number };
 export type MapPoint = { x: number; y: number };
 /** A request to the map's path drawing, numbered so the same action can repeat. */
 export type PathSignal = { seq: number; action: 'cancel' | 'finish' };
+/** The selected target's place in the stack a repeat click cycles: `n` of `m`, top-most is 1. */
+export type StackPosition = { key: string; n: number; m: number };
 
 /** Copied assets, deep copies. Paste mints new keys and ids. */
 export type Clip =
@@ -51,6 +53,8 @@ export type UiState = {
   drawing: boolean;
   /** The latest cancel or finish request for the path being drawn. The map acts on each new one. */
   pathSignal: PathSignal;
+  /** Set by the map while a repeat click can cycle a stack; null otherwise. The map is the only writer. */
+  stack: StackPosition | null;
   tS: number;
   playing: boolean;
   loop: LoopRange | null;
@@ -71,6 +75,7 @@ export type UiState = {
   setMeasureFrom: (p: MapPoint | null) => void;
   setDrawing: (drawing: boolean) => void;
   signalPath: (action: PathSignal['action']) => void;
+  setStack: (stack: StackPosition | null) => void;
   setTime: (tS: number) => void;
   setPlaying: (playing: boolean) => void;
   setLoop: (loop: LoopRange | null) => void;
@@ -93,6 +98,7 @@ export const UI_DEFAULTS = {
   measureFrom: null,
   drawing: false,
   pathSignal: { seq: 0, action: 'cancel' } as PathSignal,
+  stack: null as StackPosition | null,
   tS: 0,
   playing: false,
   loop: null,
@@ -116,6 +122,7 @@ export const useUi = create<UiState>()((set) => ({
   setMeasureFrom: (measureFrom) => set({ measureFrom }),
   setDrawing: (drawing) => set({ drawing }),
   signalPath: (action) => set((s) => ({ pathSignal: { seq: s.pathSignal.seq + 1, action } })),
+  setStack: (stack) => set({ stack }),
   setTime: (tS) => set({ tS: Math.max(0, tS) }),
   setPlaying: (playing) => set({ playing }),
   setLoop: (loop) => set({ loop }),

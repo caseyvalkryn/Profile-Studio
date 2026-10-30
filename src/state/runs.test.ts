@@ -91,6 +91,7 @@ beforeEach(() => {
     runHandle: null,
     sweepHandle: null,
     doneNoteKey: null,
+    sweepNoteKey: null,
   });
   vi.mocked(runInWorker).mockClear();
 });
@@ -261,6 +262,31 @@ describe('runs store', () => {
     expect(useRuns.getState().doneNoteKey).toBe(key2);
     useRuns.getState().dismissDoneNote();
     expect(useRuns.getState().doneNoteKey).toBeNull();
+  });
+
+  it('keeps the sweep-done note until a user edit or Results, on the run-note rule (7.R F-12)', async () => {
+    const key = await useRuns.getState().startSweep([], 5, 1);
+    expect(useRuns.getState().sweepNoteKey).toBe(key);
+    useDocument.getState().apply('System', (d) => {
+      d.name = 'system';
+    });
+    expect(useRuns.getState().sweepNoteKey).toBe(key);
+    useDocument.getState().edit('Rename', (d) => {
+      d.name = 'user';
+    });
+    expect(useRuns.getState().sweepNoteKey).toBeNull();
+    await useRuns.getState().startSweep([], 5, 2);
+    useDocument.getState().undo();
+    expect(useRuns.getState().sweepNoteKey).toBeNull();
+    await useRuns.getState().startSweep([], 5, 3);
+    useDocument.getState().redo();
+    expect(useRuns.getState().sweepNoteKey).toBeNull();
+    // Opening Results dismisses both notes.
+    const run = await useRuns.getState().startRun(5, 1);
+    const sweep = await useRuns.getState().startSweep([], 5, 4);
+    expect(useRuns.getState()).toMatchObject({ doneNoteKey: run, sweepNoteKey: sweep });
+    useRuns.getState().dismissDoneNote();
+    expect(useRuns.getState()).toMatchObject({ doneNoteKey: null, sweepNoteKey: null });
   });
 
   it('compares at most four runs', () => {

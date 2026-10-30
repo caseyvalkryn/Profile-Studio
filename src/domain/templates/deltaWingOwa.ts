@@ -26,7 +26,7 @@ const ASSET = { x: 900, y: -700 };
 const q = () =>
   question(
     'Is the engagement decision early enough to defeat a fast delta wing one-way attack outside the planned defeat range?',
-    'Planning values are the thresholds on 1.1.2 Detection Range (ground), 3.1.3 Defeat Range and 3.1.4 Defeat Engagement Time in the results table. 3.1.3 is the range at defeat, not at the engage decision; 3.1.4 counts interceptor flight time. The run flies the drawn path at the ingress altitude; the pop-up and descent show in the profile view only.',
+    'Planning values are the thresholds on 1.1.2 Detection Range (ground), 3.1.3 Defeat Range and 3.1.4 Defeat Engagement Time in the results table. 3.1.3 is the range at defeat, not at the engage decision; 3.1.4 counts interceptor flight time.',
   );
 
 export const deltaWingOwa: Template = {

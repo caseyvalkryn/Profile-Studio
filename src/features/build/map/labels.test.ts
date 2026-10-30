@@ -1,6 +1,8 @@
 import {
   LABEL_DX,
   LABEL_DY,
+  SMALL_AREA_PX,
+  areaObstacle,
   estimateLabelSize,
   placeLabels,
   type LabelBox,
@@ -113,5 +115,50 @@ describe('labels keep off markers and inside the map (review 7.R F-09)', () => {
     const at = placeLabels(items, { bounds: { w: 30, h: 24 } });
     expect(at.has('A')).toBe(true);
     expect(at.has('B')).toBe(false);
+  });
+});
+
+describe('small areas are obstacles, large areas are not (review 7.R F-09)', () => {
+  const square = (cx: number, cy: number, side: number) => [
+    { x: cx - side / 2, y: cy - side / 2 },
+    { x: cx + side / 2, y: cy - side / 2 },
+    { x: cx + side / 2, y: cy + side / 2 },
+    { x: cx - side / 2, y: cy + side / 2 },
+  ];
+  const covers = (p: { x: number; y: number }, l: LabelBox, o: Obstacle) =>
+    p.x < o.x + o.w && o.x < p.x + l.w && p.y < o.y + o.h && o.y < p.y + l.h;
+  const first = (l: LabelBox) => ({ x: l.anchor.x + LABEL_DX, y: l.anchor.y + LABEL_DY });
+
+  it('a label moves off a small area', () => {
+    // a 40 px defended asset just right of the radar, under the radar's first slot
+    const da = areaObstacle('DA', square(140, 110, 40))!;
+    expect(da).toEqual({ key: 'DA', x: 120, y: 90, w: 40, h: 40 });
+    const l = box('RDR-1', 100, 100);
+    const p = placeLabels([l], { obstacles: [da] }).get('RDR-1')!;
+    expect(p).not.toEqual(first(l));
+    expect(covers(p, l, da)).toBe(false);
+  });
+
+  it('a label may cover its own small area', () => {
+    // the area's own label anchors at its centroid, inside the box
+    const da = areaObstacle('DA', square(140, 110, 40))!;
+    const l = box('DA', 140, 110);
+    const p = placeLabels([l], { obstacles: [da] }).get('DA')!;
+    expect(p).toEqual(first(l));
+    expect(covers(p, l, da)).toBe(true);
+  });
+
+  it('a large area is not an obstacle, so labels inside it keep their first slot', () => {
+    expect(areaObstacle('DA', square(140, 110, SMALL_AREA_PX + 1))).toBeNull();
+    // wide but short is still large: either side over the limit
+    expect(
+      areaObstacle('DA', [...square(140, 110, 20), { x: 140 + SMALL_AREA_PX, y: 110 }]),
+    ).toBeNull();
+    expect(areaObstacle('DA', square(140, 110, SMALL_AREA_PX))).not.toBeNull();
+    expect(areaObstacle('DA', [])).toBeNull();
+    const big = areaObstacle('DA', square(140, 110, 400));
+    const l = box('RDR-1', 100, 100);
+    const p = placeLabels([l], { obstacles: big ? [big] : [] }).get('RDR-1')!;
+    expect(p).toEqual(first(l));
   });
 });

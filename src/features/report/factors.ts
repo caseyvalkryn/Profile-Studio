@@ -16,15 +16,22 @@ export type FactorRow = {
 
 export type RunInfo = { n: number; seed: number } | null;
 
-/** One offset from the site origin: "1.19 nm E". A value that rounds to zero takes the positive letter. */
-function offset(m: number, pos: string, neg: string, units: Units): string {
-  const shown = range(Math.abs(m), units);
-  const zero = Number(shown.value.replace(/,/g, '')) === 0;
-  return `${text(shown)} ${m < 0 && !zero ? neg : pos}`;
+/** True when `m` prints as zero at the range precision. */
+function roundsToZero(m: number, units: Units): boolean {
+  return Number(range(Math.abs(m), units).value.replace(/,/g, '')) === 0;
 }
 
-/** A position in the site frame (x east, y north): "1.19 nm E, 0.94 nm S of the site". */
+/** One offset from the site origin: "1.19 nm E". A value that rounds to zero takes the positive letter. */
+function offset(m: number, pos: string, neg: string, units: Units): string {
+  return `${text(range(Math.abs(m), units))} ${m < 0 && !roundsToZero(m, units) ? neg : pos}`;
+}
+
+/**
+ * A position in the site frame (x east, y north): "1.19 nm E, 0.94 nm S of the site", or "at the
+ * site" when both offsets print as zero (review 7.R F-19).
+ */
 export function sitePosition(x: number, y: number, units: Units): string {
+  if (roundsToZero(x, units) && roundsToZero(y, units)) return 'at the site';
   return `${offset(x, 'E', 'W', units)}, ${offset(y, 'N', 'S', units)} of the site`;
 }
 

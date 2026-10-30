@@ -170,6 +170,14 @@ describe('TEMPLATES', () => {
       for (const b of pts.slice(i + 1))
         expect(Math.hypot(a.x - b.x, a.y - b.y), `${a.id} to ${b.id}`).toBeGreaterThanOrEqual(100);
     });
+    // The six starts read apart at the default Build view: 24 px or more (build.ts rule).
+    const b = assetBounds(v)!;
+    const mPerPx = Math.max((b[2] - b[0] + 2) / (920 - 96), (b[3] - b[1] + 2) / (651 - 96));
+    const starts = v.threats.map((t) => t.path[0]!);
+    starts.forEach((a, i) => {
+      for (const o of starts.slice(i + 1))
+        expect(Math.hypot(a.x - o.x, a.y - o.y) / mPerPx).toBeGreaterThanOrEqual(24);
+    });
   });
 
   it('names every measure in template text by its DroneScore ID and name (review 7.R F-02)', () => {

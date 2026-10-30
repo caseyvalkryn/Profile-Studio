@@ -38,6 +38,19 @@ function* slots(l: LabelBox): Generator<XY> {
 /** A box a label must not cover: a marker or a small area, pixels. `key` is its object. */
 export type Obstacle = Rect & { key: string };
 
+/** An area no wider or taller than this, in pixels, is a marker for label placement. */
+export const SMALL_AREA_PX = 60;
+
+/** The pixel box of a small area, as an obstacle; null for a larger area, which labels may cross. */
+export function areaObstacle(key: string, ps: readonly XY[]): Obstacle | null {
+  if (!ps.length) return null;
+  const x = Math.min(...ps.map((q) => q.x));
+  const y = Math.min(...ps.map((q) => q.y));
+  const w = Math.max(...ps.map((q) => q.x)) - x;
+  const h = Math.max(...ps.map((q) => q.y)) - y;
+  return w <= SMALL_AREA_PX && h <= SMALL_AREA_PX ? { key, x, y, w, h } : null;
+}
+
 export type PlaceOptions = {
   /** Markers and small areas; a label never covers one, except its own object's. */
   obstacles?: readonly Obstacle[];
