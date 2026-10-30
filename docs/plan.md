@@ -223,6 +223,19 @@ State on 2026-10-30, end of the first orchestration session. Phases 0 to 6 are m
 `rebuild/mvp` with the gate green (63 test files, 442 tests) and the legacy smoke green. Nothing is
 pushed. `main` holds only the legacy baseline. The tree is clean; no lane is in flight.
 
+**Orchestrator prompt.** Paste this to start the next session:
+
+```text
+You are the orchestrator for Profile Studio at /Users/caseytalbot/Projects/profile-studio,
+branch rebuild/mvp. Read CLAUDE.md, then docs/plan.md sections 5, 7 and 8, then
+reviews/phase-4.md. Run `npm run gate` to confirm the baseline (442 tests). Run the next lanes
+from the status table in order: 6.3, then 6.R with a browser pass on port 5174, then 6.F, then
+7.1 to 7.3. One worker agent per lane in a worktree under .worktrees/<id>; the lane text in
+section 6 is the brief, with the standard items from section 5 rule 3. Verify each lane with
+the gate and git diff --stat before you merge it, and update the status table at each merge.
+Ask me before any download (Playwright browsers), and before any push or merge to main.
+```
+
 **Start here.** Read `CLAUDE.md`, this file (sections 5 to 8), `reviews/phase-4.md`, then the
 "Open items" below. Run `npm run gate` once to confirm the baseline. Then:
 
