@@ -3,7 +3,6 @@
 // bottom. The map takes all the space the panels leave (principle 5.1).
 import { lazy, Suspense, useId, useState, type KeyboardEvent } from 'react';
 import { Link, useInRouterContext } from 'react-router-dom';
-import { create } from 'zustand';
 import { currentContext, execute, get, shortcutLabel } from '../../commands/registry';
 import { useDocument } from '../../state/document';
 import { useActiveRun, useRuns } from '../../state/runs';
@@ -169,21 +168,13 @@ function RunDone() {
 }
 
 /**
- * The finished sweep whose "done" note an edit has cleared (review 7.R F-12). The note follows the
- * run-done rule: an edit, undo or redo after the sweep means the note no longer describes the
- * vignette on the map.
+ * Sweep state for the open vignette, with a link to Results when it is done (review 6 F-02). The
+ * done note follows the run-done rule in the runs store: an edit, undo or redo, or opening
+ * Results, clears it (review 7.R F-12).
  */
-const useSweepNote = create<{ clearedKey: string | null }>(() => ({ clearedKey: null }));
-useDocument.subscribe((s, prev) => {
-  if (s.history === prev.history && s.future === prev.future) return;
-  const sweep = useRuns.getState().sweep;
-  if (sweep?.status === 'done') useSweepNote.setState({ clearedKey: sweep.key });
-});
-
-/** Sweep state for the open vignette, with a link to Results when it is done (review 6 F-02). */
 function SweepStatus() {
   const sweep = useRuns((s) => s.sweep);
-  const cleared = useSweepNote((s) => s.clearedKey);
+  const noteKey = useRuns((s) => s.sweepNoteKey);
   const docId = useDocument((s) => s.doc?.id);
   const inRouter = useInRouterContext();
   if (!sweep || sweep.docId !== docId) return null;
@@ -206,7 +197,7 @@ function SweepStatus() {
         ) : null}
       </span>
     );
-  if (sweep.status !== 'done' || sweep.key === cleared) return null;
+  if (sweep.status !== 'done' || sweep.key !== noteKey) return null;
   return (
     <span className="flex items-center gap-1.5 text-xs text-muted" role="status">
       Sweep done

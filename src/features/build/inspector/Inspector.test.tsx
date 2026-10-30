@@ -22,6 +22,20 @@ beforeEach(() => {
 });
 
 describe('Inspector', () => {
+  it('shows the stack position "n of m" only while the selected target is in a cycled stack (7.R F-11)', () => {
+    useUi.setState({ selectedKeys: ['k-S-01'] });
+    render(<Inspector />);
+    expect(screen.queryByText(/\d+ of \d+/)).toBeNull();
+    act(() => useUi.getState().setStack({ key: 'k-S-01', n: 2, m: 4 }));
+    expect(screen.getByText('2 of 4')).toBeInTheDocument();
+    // a selection outside the stack hides it, as does the map clearing the stack
+    act(() => useUi.getState().setSelection(['k-E-01']));
+    expect(screen.queryByText('2 of 4')).toBeNull();
+    act(() => useUi.getState().setSelection(['k-S-01']));
+    act(() => useUi.getState().setStack(null));
+    expect(screen.queryByText('2 of 4')).toBeNull();
+  });
+
   it('shows the vignette header when nothing is selected', () => {
     render(<Inspector />);
     expect(screen.getByLabelText('Name')).toHaveValue('test vignette');

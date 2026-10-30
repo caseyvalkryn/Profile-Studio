@@ -20,8 +20,11 @@ import {
 
 const ASSET = { x: -900, y: 100 };
 const START = { x: 3200, y: 2200 };
-/** Line-abreast spacing of the six in the group, metres: each start is its own click target. */
-const FORMATION_M = 120;
+/**
+ * Line-abreast spacing of the six in the group, metres: 29 px at the default Build view
+ * (14.4 m/px), so each start reads apart and is its own click target (review 7.R F-11).
+ */
+const FORMATION_M = 420;
 /** Spacing of the three in an element after the split, metres. */
 const FAN_M = 150;
 

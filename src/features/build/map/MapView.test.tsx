@@ -170,6 +170,8 @@ describe('MapView', () => {
     // 8 px tolerance of the origin, inside the defended asset A-01.
     const order = ['k-S-01', 'k-S-02', 'k-E-01', 'k-N-01', 'k-A-01', 'k-S-01', 'k-S-02', 'k-E-01'];
     expect(order.map(() => click()[0])).toEqual(order);
+    // the inspector reads the stack position the map writes (7.R F-11)
+    expect(useUi.getState().stack).toEqual({ key: 'k-E-01', n: 3, m: 5 });
 
     // a drag from the stack moves the selected effector, not the radar on top
     fireEvent.mouseDown(map.canvas, at);
@@ -219,11 +221,13 @@ describe('MapView', () => {
     };
     expect(click()).toBe('k-S-01');
     act(() => useUi.getState().setSelection([]));
+    expect(useUi.getState().stack).toBeNull();
     expect(click()).toBe('k-S-01');
     expect(click()).toBe('k-S-02');
     // an edit then its undo end the cycle: the next click keeps the selection, then cycles
     act(() => useDocument.getState().edit('Rename', (d) => void (d.name = 'Renamed')));
     act(() => useDocument.getState().undo());
+    expect(useUi.getState().stack).toBeNull();
     expect(click()).toBe('k-S-02');
     expect(click()).toBe('k-E-01');
   });

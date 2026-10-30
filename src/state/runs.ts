@@ -90,6 +90,9 @@ export type RunsState = {
    * the user opens Results (`dismissDoneNote`) or edits the vignette (any undo-history change).
    */
   doneNoteKey: string | null;
+  /** The finished sweep whose "done" note shows in the Build top bar. Cleared as `doneNoteKey` (7.R F-12). */
+  sweepNoteKey: string | null;
+  /** Clears both done notes, the run's and the sweep's. */
   dismissDoneNote: () => void;
   /** Starts a run on the open document. Resolves to the run key, or null if none started. */
   startRun: (n: number, seed: number) => Promise<string | null>;
@@ -144,9 +147,11 @@ export const useRuns = create<RunsState>()((set, get) => {
     runHandle: null,
     sweepHandle: null,
     doneNoteKey: null,
+    sweepNoteKey: null,
 
     dismissDoneNote: () => {
-      if (get().doneNoteKey !== null) set({ doneNoteKey: null });
+      if (get().doneNoteKey !== null || get().sweepNoteKey !== null)
+        set({ doneNoteKey: null, sweepNoteKey: null });
     },
 
     startRun: async (n, seed) => {
@@ -280,7 +285,10 @@ export const useRuns = create<RunsState>()((set, get) => {
       set({ sweepHandle: handle });
       try {
         const result = await handle;
-        if (live()) set((s) => (s.sweep ? { sweep: { ...s.sweep, status: 'done', result } } : {}));
+        if (live())
+          set((s) =>
+            s.sweep ? { sweep: { ...s.sweep, status: 'done', result }, sweepNoteKey: key } : {},
+          );
       } catch (err) {
         if (live())
           set((s) =>
@@ -316,7 +324,7 @@ export const useRuns = create<RunsState>()((set, get) => {
 });
 
 // A user edit to the vignette (edit, undo, redo, open, close) changes undo history; system
-// edits such as the run result do not. Any such change clears the run-done note.
+// edits such as the run result do not. Any such change clears the run and sweep done notes.
 useDocument.subscribe((s, prev) => {
   if (s.history !== prev.history || s.future !== prev.future) useRuns.getState().dismissDoneNote();
 });
