@@ -182,9 +182,9 @@ The orchestrator updates this table at each merge.
 | 0.3 | done | rebuild/mvp | 6d81756 | 9 fixtures; `golden.js --check` green; `Date` fixed to 2026-01-01Z in the vm; templates have no paths, so parity rests on the 4 seeds |
 | 1.1 | done | rebuild/mvp | f147f73 | Gate green; bundle 59 kB gzip; root stays CommonJS for the legacy smoke, so Vite and Playwright configs are `.mts`; Tailwind 4.3.3, zod 4.x |
 | 2.1 | done | rebuild/mvp | a7bae7f | 67 measure rows; 4 seeds and 5 templates import and validate; 24 tests. Open: site lat/lon import as 0 (legacy has no origin); MOP text goes to a question note, not to measure ids; sensor model planning defaults in `catalog.ts` need review by 2.2 and 2.3b |
-| 2.3a | running | lane/2.3a | | |
+| 2.3a | done | rebuild/mvp | 687b842 | 59 files, 16.1k lines, logic unchanged (only `!` for noUncheckedIndexedAccess); seed 4821 `runTrial` byte-identical to rangeboard 87a6579, frozen in `src/engine/sim/__fixtures__`; 19 of 44 rangeboard tests copied, 25 dropped (deps outside the closure: seed.ts, store, persist); headless Node run OK |
 | 2.2 | done | rebuild/mvp | c38ec67 | Parity on 4 seeds (windows, first, vols, daEntry, timed, splits); 17 ms median at 40x15; 48 tests. For 2.R: Assess = max(engage+tte, effector window start) with no clip (follows legacy source, not legacy-app.md); Engage without a Target falls back to first effector reach; group membership via `opts.groupKeys` since migrate keeps path groups only as notes |
-| 2.3b | next, after 2.3a | | | |
+| 2.3b | next | | | |
 | 2.R to 7.3 | not started | | | |
 
 ## 8. Handoff
