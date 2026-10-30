@@ -1,8 +1,8 @@
 // Inspector field helpers on top of src/ui Field.
-import { useId, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import { Field, Tooltip } from '../../../ui';
 import { useUi } from '../../../state/ui';
-import { toDisplay, toStored, unitOf, type Quantity } from './units';
+import { fieldValue, fromDisplay, unitOf, type Quantity } from '../../shared/units';
 
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -52,91 +52,11 @@ export function UnitField(props: {
   return (
     <Field
       label={props.label}
-      unit={unitOf(units, props.q)}
-      value={toDisplay(units, props.q, props.stored)}
+      unit={unitOf(props.q, units)}
+      value={fieldValue(props.q, props.stored, units)}
       min={props.min}
-      onCommit={(v) => props.onCommit(toStored(units, props.q, v))}
+      onCommit={(v) => props.onCommit(fromDisplay(props.q, v, units))}
     />
-  );
-}
-
-/**
- * A number box that can be blank, shows a placeholder, and shows a formatted value until focused.
- * src/ui Field has no blank state or placeholder; this covers speed, bearing and entered values.
- */
-export function NumberInput(props: {
-  label: string;
-  value: number | undefined;
-  unit?: string;
-  placeholder?: string;
-  format?: (n: number) => string;
-  /** Commits `undefined` when the box is cleared, only if `blank` is set. */
-  blank?: boolean;
-  onCommit: (value: number | undefined) => void;
-  note?: ReactNode;
-}) {
-  const id = useId();
-  const shown = props.value === undefined ? '' : String(props.value);
-  const [focused, setFocused] = useState(false);
-  const [draft, setDraft] = useState(shown);
-  const [synced, setSynced] = useState(shown);
-  if (synced !== shown) {
-    setSynced(shown);
-    setDraft(shown);
-  }
-
-  const commit = () => {
-    const t = draft.trim();
-    if (t === '') {
-      if (props.blank && props.value !== undefined) props.onCommit(undefined);
-      else setDraft(shown);
-      return;
-    }
-    const n = Number(t);
-    if (!Number.isFinite(n)) {
-      setDraft(shown);
-      return;
-    }
-    if (n !== props.value) props.onCommit(n);
-  };
-
-  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') commit();
-    else if (e.key === 'Escape') setDraft(shown);
-  };
-
-  const display =
-    !focused && props.format && props.value !== undefined ? props.format(props.value) : draft;
-
-  return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-xs text-muted">
-        {props.label}
-      </label>
-      <div className="flex h-7 items-center rounded-sm border border-surface-3 bg-surface-1 focus-within:border-accent">
-        <input
-          id={id}
-          type="text"
-          inputMode="decimal"
-          value={display}
-          placeholder={props.placeholder}
-          onFocus={() => setFocused(true)}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={() => {
-            setFocused(false);
-            commit();
-          }}
-          onKeyDown={onKeyDown}
-          className="h-full min-w-0 flex-1 rounded-sm bg-transparent px-2 font-mono text-sm text-text tabular-nums outline-none placeholder:text-muted"
-        />
-        {props.unit ? (
-          <span className="pr-2 font-mono text-xs text-muted select-none" aria-hidden>
-            {props.unit}
-          </span>
-        ) : null}
-      </div>
-      {props.note}
-    </div>
   );
 }
 
@@ -176,7 +96,7 @@ export function Select<T extends string | number>(props: {
 export function Note({ children, warn }: { children: ReactNode; warn?: boolean }) {
   return (
     <p
-      className={`text-[11px] ${warn ? 'text-text' : 'text-muted'}`}
+      className={`text-[11px] ${warn ? 'text-state-warning' : 'text-muted'}`}
       role={warn ? 'status' : undefined}
     >
       {children}

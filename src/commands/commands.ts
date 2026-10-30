@@ -452,7 +452,7 @@ const COMMANDS: Command[] = [
     label: 'Delete',
     group: 'edit',
     shortcut: 'Delete',
-    kinds: ['threat', 'waypoint', 'sensor', 'effector', 'area'],
+    kinds: ['threat', 'waypoint', 'sensor', 'effector', 'node', 'area'],
     when: every(needDoc, needSel(undefined, 'something'), keepsTwoWaypoints),
     run: (ctx) => {
       const keys = new Set(selOf(ctx).map((f) => f.value.key));
@@ -477,17 +477,30 @@ const COMMANDS: Command[] = [
     group: 'edit',
     shortcut: 'Escape',
     when: () => true,
+    // The one Escape owner. Each press undoes one layer, in this order: a handle drag or the path
+    // being drawn, an open palette or sheet, an armed library item or a tool, the selection, and
+    // last the loop range. The map and the library keep no Escape listener of their own.
     run: (ctx) => {
       const ui = ctx.ui;
       if (ctx.document.drag) ctx.document.cancelDrag();
+      else if (ui.drawing) ui.signalPath('cancel');
       else if (ui.paletteOpen) ui.setPaletteOpen(false);
       else if (ui.shortcutsOpen) ui.setShortcutsOpen(false);
       else if (ui.tool !== 'select' || ui.armed || ui.measureFrom) {
         ui.setTool('select');
         ui.setArmed(null);
         ui.setMeasureFrom(null);
-      } else ui.setSelection([]);
+      } else if (ui.selectedKeys.length) ui.setSelection([]);
+      else if (ui.loop) ui.setLoop(null);
     },
+  },
+  {
+    id: 'map.finishPath',
+    label: 'Finish flight path',
+    group: 'map',
+    shortcut: 'Enter',
+    when: (ctx) => (ctx.ui.drawing ? true : 'Draw a flight path first'),
+    run: (ctx) => ctx.ui.signalPath('finish'),
   },
   {
     id: 'time.playPause',
@@ -534,7 +547,7 @@ const COMMANDS: Command[] = [
     label: 'Duplicate',
     group: 'edit',
     shortcut: 'Mod+D',
-    kinds: ['threat', 'sensor', 'effector', 'area'],
+    kinds: ['threat', 'sensor', 'effector', 'node', 'area'],
     when: every(needDoc, needSel(ASSETS, 'an asset')),
     run: (ctx) => {
       const clips = selOf(ctx, ASSETS)
@@ -719,6 +732,14 @@ const COMMANDS: Command[] = [
       ctx.ui.setLoop({ startS: t, endS: Math.max(t, end) });
     },
   },
+  {
+    id: 'time.clearLoop',
+    label: 'Clear loop',
+    group: 'time',
+    kinds: ['timeline'],
+    when: (ctx) => (ctx.ui.loop ? true : 'No loop is set'),
+    run: (ctx) => ctx.ui.setLoop(null),
+  },
 
   // threat or path
   {
@@ -750,6 +771,7 @@ const COMMANDS: Command[] = [
     group: 'map',
     kinds: ['threat'],
     needsArg: true,
+    options: THREAT_OPTIONS,
     when: every(needDoc, needSel(['threat'], 'a threat')),
     run: (ctx, arg) => {
       if (typeof arg !== 'string' || !archetypeById(arg)) return;
@@ -1012,7 +1034,10 @@ export const MENU_ORDER: Readonly<Partial<Record<AssetKind, readonly string[]>>>
     'edit.delete',
   ],
   area: ['area.setTop', 'area.addVertexHere', 'edit.duplicate', 'edit.delete'],
-  timeline: ['time.setHere', 'time.loopFrom'],
+  // The spec table has no row for C2 and TSPI nodes. Duplicate and Delete give a right-click on
+  // one a menu, in the order the other asset rows use.
+  node: ['edit.duplicate', 'edit.delete'],
+  timeline: ['time.setHere', 'time.loopFrom', 'time.clearLoop'],
 };
 
 /** Register every command once. Safe to call again. */

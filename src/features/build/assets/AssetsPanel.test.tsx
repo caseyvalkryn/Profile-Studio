@@ -1,9 +1,11 @@
 import '../../../ui/test-utils';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { registerCommands } from '../../../commands/commands';
+import { bindKeys } from '../../../commands/keys';
 import { UI_DEFAULTS, useUi } from '../../../state/ui';
 import AssetsPanel from './AssetsPanel';
 import { ASSET_MIME, readAssetDrag } from './dnd';
-import { formatAltitude, formatSpeed } from './format';
+import { compactAltitude as formatAltitude, compactSpeed as formatSpeed } from '../../shared/units';
 
 const rows = (el: HTMLElement) => el.querySelectorAll('[draggable="true"]');
 const row = (key: string) => document.querySelector(`[data-asset="${key}"]`) as HTMLElement;
@@ -74,10 +76,14 @@ describe('AssetsPanel', () => {
   });
 
   it('Escape disarms', () => {
+    // Escape reaches the panel's armed item through the one dispatcher (edit.escape).
+    registerCommands();
+    const unbind = bindKeys(window);
     render(<AssetsPanel />);
     fireEvent.click(row('area:nfz'));
     expect(useUi.getState().armed).not.toBeNull();
     fireEvent.keyDown(window, { key: 'Escape' });
+    unbind();
     expect(useUi.getState().armed).toBeNull();
     expect(useUi.getState().tool).toBe('select');
     expect(screen.queryByRole('status')).toBeNull();

@@ -1,7 +1,13 @@
 export { Button, type ButtonProps, type ButtonSize, type ButtonVariant } from './Button';
 export { ContextMenu, type ContextMenuProps } from './ContextMenu';
 export { Dialog, type DialogProps } from './Dialog';
-export { Field, type FieldProps, type NumberFieldProps, type TextFieldProps } from './Field';
+export {
+  Field,
+  type BlankNumberFieldProps,
+  type FieldProps,
+  type NumberFieldProps,
+  type TextFieldProps,
+} from './Field';
 export { Kbd, type KbdProps } from './Kbd';
 export { Menu, type MenuProps } from './Menu';
 export { Palette, type PaletteProps } from './Palette';

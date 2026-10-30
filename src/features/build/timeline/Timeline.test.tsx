@@ -5,7 +5,7 @@ import { testVignette } from '../../../engine/testVignette';
 import { previewOf, useDocument } from '../../../state/document';
 import { useRuns, type RunEntry } from '../../../state/runs';
 import { UI_DEFAULTS, useUi } from '../../../state/ui';
-import { fmtTime } from './format';
+import { fmtTime } from '../../shared/units';
 import Timeline from './Timeline';
 import { advanceTime, usePlayback } from './usePlayback';
 
@@ -110,13 +110,17 @@ describe('Timeline', () => {
     expect(runMarks[0]!.getAttribute('aria-label')).toBe('Find run mean t+0:15');
   });
 
-  it('the right-click menu lists Set time here and Loop from here', () => {
+  it('the right-click menu lists Set time here, Loop from here and Clear loop', () => {
     const p = previewOf(useDocument.getState().doc!);
     render(<Timeline width={W} />);
     const target = screen.getByTestId('timeline-svg').parentElement!;
     fireEvent.contextMenu(target, { clientX: px(30, p.tmaxS) });
     const items = screen.getAllByRole('menuitem');
-    expect(items.map((i) => i.textContent)).toEqual(['Set time here', 'Loop from here']);
+    expect(items.map((i) => i.textContent)).toEqual([
+      'Set time here',
+      'Loop from here',
+      'Clear loop',
+    ]);
     fireEvent.click(screen.getByRole('menuitem', { name: /Loop from here/ }));
     expect(useUi.getState().loop).toEqual({ startS: expect.closeTo(30, 6), endS: p.tmaxS });
     expect(screen.getByTestId('timeline-loop')).toBeInTheDocument();

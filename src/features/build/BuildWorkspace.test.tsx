@@ -1,0 +1,137 @@
+import '../../ui/test-utils';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { vi } from 'vitest';
+import { App } from '../../App';
+import { registerCommands } from '../../commands/commands';
+import { bindKeys } from '../../commands/keys';
+import { testVignette } from '../../engine/testVignette';
+import { useDocument } from '../../state/document';
+import { useRuns } from '../../state/runs';
+import { UI_DEFAULTS, useUi } from '../../state/ui';
+import { M_PER_NM } from '../shared/units';
+import BuildWorkspace from './BuildWorkspace';
+
+vi.mock('maplibre-gl', () => import('./map/__mocks__/maplibre-gl'));
+
+const reset = () =>
+  act(() => {
+    useDocument.getState().close();
+    useUi.setState({ ...UI_DEFAULTS });
+    useRuns.setState({ results: {}, order: [], activeKey: null, compareKeys: [], sweep: null });
+  });
+
+const renderApp = () =>
+  render(
+    <MemoryRouter initialEntries={['/build']}>
+      <App />
+    </MemoryRouter>,
+  );
+
+describe('Build workspace', () => {
+  beforeEach(reset);
+
+  it('renders the library, map, inspector and timeline regions', async () => {
+    act(() => useDocument.getState().open(testVignette()));
+    render(<BuildWorkspace />);
+    expect(screen.getByRole('complementary', { name: 'Asset library' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Map' })).toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: 'Inspector' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Timeline' })).toBeInTheDocument();
+    expect(await screen.findByTestId('map-view')).toBeInTheDocument();
+  });
+
+  it('Run is disabled with a reason when no vignette is open', () => {
+    render(<BuildWorkspace />);
+    const run = screen.getByRole('button', { name: /^Run/ });
+    expect(run).toHaveAttribute('aria-disabled', 'true');
+    expect(run).toHaveAccessibleDescription('Open a vignette first');
+    fireEvent.click(run);
+    expect(useRuns.getState().activeKey).toBeNull();
+  });
+
+  it('the palette opens on Cmd+K and lists Run with its shortcut', async () => {
+    renderApp();
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
+    const dialog = await screen.findByRole('dialog', { name: 'Command palette' });
+    const run = within(dialog)
+      .getAllByRole('option')
+      .find((o) => o.textContent?.startsWith('Run'))!;
+    expect(run).toBeDefined();
+    expect(within(run).getByLabelText('Shortcut Ctrl+Enter')).toBeInTheDocument();
+  });
+
+  it('the shortcut sheet opens on ? and shows the same shortcut labels', async () => {
+    renderApp();
+    fireEvent.keyDown(window, { key: '?', shiftKey: true });
+    const sheet = await screen.findByRole('dialog', { name: 'Keyboard shortcuts' });
+    const runGroup = within(sheet).getByRole('region', { name: 'Run' });
+    expect(runGroup).toHaveTextContent('Run');
+    expect(within(runGroup).getByLabelText('Shortcut Ctrl+Enter')).toBeInTheDocument();
+    expect(within(sheet).getByLabelText('Shortcut Esc')).toBeInTheDocument();
+  });
+
+  it('the units toggle changes the range shown in the inspector', () => {
+    act(() => {
+      useDocument.getState().open(testVignette());
+      useUi.getState().setSelection(['k-S-01']);
+    });
+    render(<BuildWorkspace />);
+    const nm = String(Math.round((5000 / M_PER_NM) * 1000) / 1000);
+    expect(screen.getByLabelText('Range')).toHaveValue(nm);
+    fireEvent.click(screen.getByRole('button', { name: 'nm · ft · kt' }));
+    expect(useUi.getState().units).toBe('si');
+    expect(screen.getByLabelText('Range')).toHaveValue('5');
+  });
+});
+
+describe('Escape order (edit.escape)', () => {
+  let unbind: () => void;
+  beforeEach(() => {
+    reset();
+    registerCommands();
+    unbind = bindKeys(window);
+  });
+  afterEach(() => unbind());
+
+  const esc = () => act(() => void fireEvent.keyDown(window, { key: 'Escape' }));
+
+  it('cancels a drag, then the path being drawn, then disarms, then clears selection, then the loop', () => {
+    act(() => {
+      useDocument.getState().open(testVignette());
+      const ui = useUi.getState();
+      ui.setSelection(['k-S-01']);
+      ui.setLoop({ startS: 5, endS: 20 });
+      ui.setArmed({ group: 'sensor', kind: 'radar' });
+      ui.setTool('place');
+      ui.setDrawing(true);
+      useDocument.getState().beginDrag('Set range');
+      useDocument.getState().updateDrag((d) => {
+        d.sensors[0]!.rangeM = 9000;
+      });
+    });
+
+    esc();
+    expect(useDocument.getState().drag).toBeNull();
+    expect(useDocument.getState().doc!.sensors[0]!.rangeM).toBe(5000);
+    expect(useUi.getState().pathSignal.seq).toBe(0);
+
+    esc();
+    expect(useUi.getState().pathSignal).toEqual({ seq: 1, action: 'cancel' });
+    // The map answers the signal by ending the draft.
+    act(() => useUi.getState().setDrawing(false));
+    expect(useUi.getState().armed).not.toBeNull();
+
+    esc();
+    expect(useUi.getState().armed).toBeNull();
+    expect(useUi.getState().tool).toBe('select');
+    expect(useUi.getState().selectedKeys).toEqual(['k-S-01']);
+
+    esc();
+    expect(useUi.getState().selectedKeys).toEqual([]);
+    expect(useUi.getState().loop).not.toBeNull();
+
+    esc();
+    expect(useUi.getState().loop).toBeNull();
+  });
+});

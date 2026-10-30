@@ -29,7 +29,7 @@ import { hitTest, type Hit } from './hit';
 import { PROMOTE_KEY, SOURCES, blankStyle, layers, readColors, type SourceName } from './layers';
 import { drawStep, type DrawEvent, type PathDraft } from './pathDraw';
 import { commitPath, placeItem } from './place';
-import { formatBearing, formatRange } from './units';
+import { formatBearing, formatRange } from '../../shared/units';
 
 /** Pointer tolerance for hits, screen pixels. */
 export const TOL_PX = 8;
@@ -96,10 +96,11 @@ export class MapController {
     el.addEventListener('dblclick', this.onDblClick, true);
     el.addEventListener('dragover', this.onDragOver);
     el.addEventListener('drop', this.onDrop);
-    window.addEventListener('keydown', this.onKey, true);
 
     this.unsubs.push(
       useDocument.subscribe((s, prev) => {
+        // A drag cancelled from outside (Escape runs edit.escape) ends the local drag too.
+        if (prev.drag && !s.drag && this.drag) this.dropDrag();
         if (s.doc !== prev.doc) this.onDoc(s.doc, prev.doc);
       }),
       useUi.subscribe((s, prev) => this.onUi(s, prev)),
@@ -128,7 +129,7 @@ export class MapController {
     el.removeEventListener('dblclick', this.onDblClick, true);
     el.removeEventListener('dragover', this.onDragOver);
     el.removeEventListener('drop', this.onDrop);
-    window.removeEventListener('keydown', this.onKey, true);
+    if (useUi.getState().drawing) useUi.getState().setDrawing(false);
     this.map.remove();
   }
 
@@ -184,6 +185,7 @@ export class MapController {
       this.renderHighlight();
     if (s.tS !== prev.tS) this.schedule();
     if (s.fitSeq !== prev.fitSeq) this.fit(true);
+    if (s.pathSignal !== prev.pathSignal && this.draft) this.drawEvent({ t: s.pathSignal.action });
     if (s.theme !== prev.theme) requestAnimationFrame(() => this.applyColors());
     if (s.tool !== prev.tool) this.onTool(s);
     if (s.tool !== prev.tool || s.measureFrom !== prev.measureFrom || s.armed !== prev.armed) {
@@ -497,6 +499,8 @@ export class MapController {
     if (e.t === 'start' && ui.tool !== 'path') ui.setTool('path');
     if (this.draft) this.map.doubleClickZoom?.disable();
     else this.map.doubleClickZoom?.enable();
+    const drawing = this.draft !== null;
+    if (useUi.getState().drawing !== drawing) useUi.getState().setDrawing(drawing);
     this.renderDraft();
   }
 
@@ -507,20 +511,12 @@ export class MapController {
     this.drawEvent({ t: 'finish' });
   };
 
-  private onKey = (e: KeyboardEvent) => {
-    const t = e.target as HTMLElement | null;
-    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-    if (this.drag && e.key === 'Escape') {
-      this.drag = null;
-      this.endPress();
-      useDocument.getState().cancelDrag();
-      this.hideTip();
-    } else if (this.draft && (e.key === 'Escape' || e.key === 'Enter')) {
-      this.drawEvent({ t: e.key === 'Enter' ? 'finish' : 'cancel' });
-    } else return;
-    e.stopPropagation();
-    e.preventDefault();
-  };
+  /** Forget the local drag after the document's drag was cancelled elsewhere. */
+  private dropDrag() {
+    this.drag = null;
+    this.endPress();
+    this.hideTip();
+  }
 
   private onLeave = () => {
     this.cursorPx = null;
