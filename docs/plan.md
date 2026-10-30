@@ -228,14 +228,22 @@ clean; no lane is in flight.
 **Orchestrator prompt.** Paste this to start the next session:
 
 ```text
-You are the orchestrator for Profile Studio at /Users/caseytalbot/Projects/profile-studio,
-branch rebuild/mvp. Read CLAUDE.md, then docs/plan.md sections 5, 7 and 8, then
-reviews/phase-4.md. Run `npm run gate` to confirm the baseline (442 tests). Run the next lanes
-from the status table in order: 6.3, then 6.R with a browser pass on port 5174, then 6.F, then
-7.1 to 7.3. One worker agent per lane in a worktree under .worktrees/<id>; the lane text in
-section 6 is the brief, with the standard items from section 5 rule 3. Verify each lane with
-the gate and git diff --stat before you merge it, and update the status table at each merge.
-Ask me before any download (Playwright browsers), and before any push or merge to main.
+You are the orchestrator for Profile Studio at /Users/caseytalbot/Projects/profile-studio.
+Work on branch rebuild/mvp; main and rebuild/mvp track origin (private GitHub repo
+caseyvalkryn/profile-studio). Read CLAUDE.md, then docs/plan.md sections 5, 7 and 8, then
+reviews/phase-4.md. Run `npm run gate` to confirm the baseline: 63 files, 442 tests, build green.
+
+Run the lanes the status table marks next, in this order: 6.3 (library wiring, remove the dev
+vignette), 6.R (review with a browser pass on port 5174, not 5173), 6.F (its fixes), then 7.1,
+7.2, 7.3. The lane text in section 6 is the brief; add the standard items from section 5 rule 3
+(working directory, owned files, gate, report shape, time budget, parallel lanes and their
+folders). One worker agent per lane in a worktree under .worktrees/<id>; workers do not commit.
+Before each merge, run the gate in the worktree and read git diff --stat. Merge with --no-ff
+into rebuild/mvp, run the gate there, remove the worktree, update the status table and the open
+items in section 8.
+
+Ask me before: any download (7.1 needs `npx playwright install chromium`), any push, and any
+merge to main. The MVP is done when the spec section 12 acceptance suite passes.
 ```
 
 **Start here.** Read `CLAUDE.md`, this file (sections 5 to 8), `reviews/phase-4.md`, then the
