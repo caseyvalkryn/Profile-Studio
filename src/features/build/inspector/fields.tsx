@@ -67,6 +67,7 @@ export function Select<T extends string | number>(props: {
   value: T;
   options: readonly { value: T; label: string }[];
   onChange: (value: T) => void;
+  disabled?: boolean;
 }) {
   const id = useId();
   return (
@@ -77,11 +78,12 @@ export function Select<T extends string | number>(props: {
       <select
         id={id}
         value={String(props.value)}
+        disabled={props.disabled}
         onChange={(e) => {
           const hit = props.options.find((o) => String(o.value) === e.target.value);
           if (hit) props.onChange(hit.value);
         }}
-        className="h-7 rounded-sm border border-surface-3 bg-surface-1 px-1 text-sm text-text"
+        className="h-7 rounded-sm border border-surface-3 bg-surface-1 px-1 text-sm text-text disabled:opacity-50"
       >
         {props.options.map((o) => (
           <option key={String(o.value)} value={String(o.value)}>

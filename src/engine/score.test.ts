@@ -2,7 +2,16 @@
 import { describe, expect, it } from 'vitest';
 import type { RunRow } from '../domain/types';
 import { MEASURES } from '../domain/measures';
-import { bootstrap, evaluate, MEASURE_FORMULAS, MIN_INTERVAL_N, score } from './score';
+import {
+  bootstrap,
+  enteredValues,
+  evaluate,
+  MEASURE_FORMULAS,
+  MIN_INTERVAL_N,
+  score,
+  scoreOne,
+} from './score';
+import { testVignette } from './testVignette';
 import { wilson } from './sim/analysis/stats';
 
 function row(over: Partial<RunRow>): RunRow {
@@ -139,5 +148,36 @@ describe('score', () => {
     const [unknown] = score(rows, [{ id: '1.1.2', op: '>=', threshold: 3, unit: 'furlongs' }]);
     expect(unknown!.evaluation).toBe('inconclusive');
     expect(unknown!.note).toMatch(/furlongs/);
+  });
+});
+
+describe('entered measures (review 6 F-05)', () => {
+  const s23 = { id: '2.3', op: '>=' as const, threshold: 6, unit: 'targets' };
+
+  it('2.3 Track Quantity scores from the entered value: source Entered, no interval', () => {
+    const s = scoreOne([], s23, { entered: { '2.3': 6 } });
+    expect(s).toMatchObject({
+      value: 6,
+      interval: null,
+      sourceClass: 'entered',
+      evaluation: 'meets',
+    });
+    expect(scoreOne([], { ...s23, threshold: 8 }, { entered: { '2.3': 6 } }).evaluation).toBe(
+      'does-not-meet',
+    );
+  });
+
+  it('without an entered value 2.3 has no value and is inconclusive', () => {
+    const s = scoreOne([], s23);
+    expect(s.value).toBeNull();
+    expect(s.evaluation).toBe('inconclusive');
+  });
+
+  it('enteredValues reads numbers from sensors, then effectors', () => {
+    const v = testVignette();
+    v.sensors[0]!.entered['2.3'] = { value: 6, source: 'sheet' };
+    v.sensors[0]!.entered['1.7'] = { value: true, source: 'sheet' };
+    v.effectors[0]!.entered['2.3'] = { value: 9, source: 'sheet' };
+    expect(enteredValues(v)).toEqual({ '2.3': 6 });
   });
 });

@@ -48,21 +48,24 @@ export default function ResultsWorkspace({ chartWidth = 640 }: { chartWidth?: nu
   const activeKey = useRuns((s) => s.activeKey);
   const compareKeys = useRuns((s) => s.compareKeys);
   const toggleCompare = useRuns((s) => s.toggleCompare);
-  const sweep = useRuns((s) => s.sweep);
+  const sweepEntry = useRuns((s) => s.sweep);
   const units = useUi((s) => s.units);
   const [pickedKey, setPickedKey] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const summaries = new Map((doc?.runs ?? []).map((r) => [r.key, r]));
-  const entries = order.map((k) => results[k]).filter((e): e is RunEntry => e != null);
+  // The run store holds every run of the session; Results shows the open vignette's only.
+  const ofDoc = (e: RunEntry | undefined): e is RunEntry => e != null && e.docId === doc?.id;
+  const entries = order.map((k) => results[k]).filter(ofDoc);
   const labelOf = (e: RunEntry) => runLabel(summaries.get(e.key), entries.indexOf(e));
   const key =
-    pickedKey && results[pickedKey]
+    pickedKey && ofDoc(results[pickedKey])
       ? pickedKey
-      : activeKey && results[activeKey]
+      : activeKey && ofDoc(results[activeKey])
         ? activeKey
         : (entries[entries.length - 1]?.key ?? null);
   const run = key ? results[key] : undefined;
+  const sweep = sweepEntry?.docId === doc?.id ? sweepEntry : null;
   const scores = run?.result?.scores ?? [];
   const rows = run?.result?.rows ?? [];
   const selected = scores.find((s) => s.id === selectedId);
@@ -70,7 +73,7 @@ export default function ResultsWorkspace({ chartWidth = 640 }: { chartWidth?: nu
 
   const compareRuns: CompareRun[] = compareKeys
     .map((k) => results[k])
-    .filter((e): e is RunEntry => e?.result != null)
+    .filter((e): e is RunEntry => ofDoc(e) && e.result != null)
     .map((e) => ({ key: e.key, label: labelOf(e), scores: e.result!.scores }));
 
   return (

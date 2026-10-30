@@ -118,6 +118,53 @@ describe('Inspector', () => {
   });
 });
 
+describe('Inspector hypotheses (review 6 F-03, F-10)', () => {
+  const h1 = {
+    key: 'h1',
+    id: 'H-01',
+    question: '',
+    measure: '1.1.2',
+    op: '>=' as const,
+    value: 3000,
+    prediction: null,
+    lockedAt: null,
+  };
+
+  it('lists each hypothesis in display units and sets its prediction through the fields', () => {
+    act(() =>
+      useDocument.getState().edit('Add hypothesis', (d) => {
+        d.hypotheses.push({ ...h1 });
+      }),
+    );
+    render(<Inspector />);
+    const row = screen.getByRole('button', { name: /H-01 1\.1\.2 .* ≥ 1\.62 nm/ });
+    fireEvent.click(row);
+    expect(useUi.getState().selectedKeys).toEqual(['h1']);
+    commit('Prediction low', '1.5');
+    commit('Prediction high', '2');
+    const p = doc().hypotheses[0]!.prediction!;
+    expect(p.low).toBeCloseTo(1.5 * M_PER_NM, 6);
+    expect(p.high).toBeCloseTo(2 * M_PER_NM, 6);
+  });
+
+  it('a locked hypothesis shows its fields read-only', () => {
+    act(() =>
+      useDocument.getState().edit('Add hypothesis', (d) => {
+        d.hypotheses.push({
+          ...h1,
+          prediction: { low: 2800, high: 3600 },
+          lockedAt: '2026-10-30T17:40:00Z',
+        });
+      }),
+    );
+    useUi.setState({ selectedKeys: ['h1'] });
+    render(<Inspector />);
+    expect(screen.getByLabelText('Prediction low')).toBeDisabled();
+    expect(screen.getByLabelText('Threshold')).toBeDisabled();
+    expect(screen.getByText(/Locked at the first run/)).toBeInTheDocument();
+  });
+});
+
 describe('enteredRows', () => {
   it('offers every entered row on at least one asset group, and only entered rows', () => {
     const offered = new Set(

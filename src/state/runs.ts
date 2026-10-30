@@ -63,6 +63,8 @@ export type RunEntry = {
 
 export type SweepEntry = {
   key: string;
+  /** The vignette the sweep ran on. */
+  docId: string;
   factors: Factor[];
   status: RunStatus;
   result: Sweep | null;
@@ -208,6 +210,9 @@ export const useRuns = create<RunsState>()((set, get) => {
             rows: result.rows,
             predictions: predictions.map((p) => ({
               hypothesis: p.hypothesis,
+              measure: p.measure,
+              op: p.op,
+              value: p.value,
               low: p.low,
               high: p.high,
             })),
@@ -240,7 +245,7 @@ export const useRuns = create<RunsState>()((set, get) => {
       const doc = useDocument.getState().doc;
       if (!doc) return null;
       const key = newKey();
-      set({ sweep: { key, factors, status: 'running', result: null, error: null } });
+      set({ sweep: { key, docId: doc.id, factors, status: 'running', result: null, error: null } });
       const live = () => get().sweep?.key === key && get().sweep?.status === 'running';
       const handle = startSweepInWorker(doc, factors, n, seed);
       set({ sweepHandle: handle });

@@ -28,6 +28,24 @@ export type Vignette = {
   measures: MeasureSetting[]; // the rows this vignette scores, with thresholds
   runs: RunSummary[]; // stored results, newest first
   report: ReportDraft;
+  /** The sweep the vignette is built for (spec section 6.4); absent for a single-run vignette. */
+  sweep?: { factors: SweepFactor[] };
+};
+
+/** Sweep factor kinds, spec section 6.4. */
+export type SweepFactorKind =
+  | 'threat-speed'
+  | 'threat-altitude'
+  | 'approach-bearing'
+  | 'sensor-range'
+  | 'sensor-position-offset';
+
+export type SweepFactor = {
+  kind: SweepFactorKind;
+  /** Levels in the factor's unit: m/s, m AGL, degrees, m, m. */
+  levels: number[];
+  /** Threat or sensor id the factor applies to; every one of that kind when absent. */
+  target?: string;
 };
 
 /** `Q-nn`: what the test must answer. `note` holds supporting text, such as legacy MOP lines. */
@@ -171,8 +189,18 @@ export type RunSummary = {
   n: number;
   seed: number;
   rows: RunRow[];
-  /** Hypothesis predictions as they stood at run start, by hypothesis key. */
-  predictions?: { hypothesis: string; low: number; high: number }[];
+  /**
+   * Hypothesis predictions as they stood at run start, by hypothesis key. `measure`, `op` and
+   * `value` record the hypothesis statement; runs stored before they existed lack them.
+   */
+  predictions?: {
+    hypothesis: string;
+    measure?: string;
+    op?: Op;
+    value?: number;
+    low: number;
+    high: number;
+  }[];
   /** Set when the vignette was edited while the run was in flight. */
   note?: string;
 };

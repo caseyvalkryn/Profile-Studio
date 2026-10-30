@@ -161,6 +161,7 @@ describe('run feedback (F-08)', () => {
         results: {
           'run-a': {
             key: 'run-a',
+            docId: useDocument.getState().doc!.id,
             status: 'done',
             progress: { done: 10, total: 10 },
           } as RunEntry,

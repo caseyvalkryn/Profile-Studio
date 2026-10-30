@@ -111,7 +111,9 @@ describe('runs store', () => {
     expect(entry.progress).toEqual({ done: 10, total: 10 });
     const doc = useDocument.getState().doc!;
     expect(doc.runs[0]).toMatchObject({ key, id: 'R-1', n: 10, seed: 7, rows });
-    expect(doc.runs[0]!.predictions).toEqual([{ hypothesis: 'h1', low: 0.8, high: 0.95 }]);
+    expect(doc.runs[0]!.predictions).toEqual([
+      expect.objectContaining({ hypothesis: 'h1', low: 0.8, high: 0.95 }),
+    ]);
     expect(doc.runs[0]!.note).toBeUndefined();
     expect(useDocument.getState().history).toEqual([]);
     expect(entry.note).toBeNull();

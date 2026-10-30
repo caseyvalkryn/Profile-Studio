@@ -7,6 +7,12 @@ import type { Template } from './types';
 import { effector, hypothesis, question, sensor, setting, threat, vignette } from './build';
 
 const LOITER = { x: 1060, y: 1060 }; // 1.5 km from the radar, bearing 045
+
+/** Scope of inference text for the AAR (review 6 F-18). */
+export const HOVER_SCOPE =
+  'The Monte Carlo run does not fly waypoint holds. It flies through the 60 s hover without ' +
+  'stopping, so 1.2.2 Track Continuity is measured over the orbit turn and the run-in, not over ' +
+  'a stationary hover. A finding on track hold against a hovering target needs a further test.';
 const q = () =>
   question(
     'Does the radar hold the track through a 60 s loiter at 1.5 km?',
@@ -26,7 +32,7 @@ export const hoverTrackHold: Template = {
     const loiter = orbit(LOITER, 120, 120, 1);
     const hover = hoverAndStare(LOITER, 120, 60);
     const runIn = directApproach(LOITER, { x: 60, y: 50 }, 120).slice(1);
-    return vignette({
+    const v = vignette({
       name: 'Hover track hold',
       questions: [Q],
       hypotheses: [hypothesis(Q, m, { low: 90, high: 100 })],
@@ -39,5 +45,7 @@ export const hoverTrackHold: Template = {
       effectors: [effector('EW-1', 'ew', 0, 0, 1500)],
       measures: [m],
     });
+    v.report.sections = { scope: HOVER_SCOPE };
+    return v;
   },
 };

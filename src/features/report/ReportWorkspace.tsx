@@ -1,11 +1,11 @@
 // The AAR composer (spec section 7, Report). Seven sections in fixed order (principle 6.3), each
 // with a user note. Read-only toward hypotheses: a locked prediction is shown, never edited.
 import { Fragment, useMemo, type ReactNode } from 'react';
-import { measureById, STEPS, type SourceClass, type Step } from '../../domain/measures';
+import { measureById, STEPS } from '../../domain/measures';
 import type { RunRow, RunSummary, Vignette } from '../../domain/types';
-import { score, scoreOne, type Evaluation, type Score } from '../../engine/score';
+import { enteredValues, score, scoreOne, type Score } from '../../engine/score';
 import { useDocument } from '../../state/document';
-import { useActiveRun } from '../../state/runs';
+import { useActiveRun, useRuns } from '../../state/runs';
 import { useUi, type Units } from '../../state/ui';
 import { Button } from '../../ui';
 import {
@@ -18,7 +18,18 @@ import {
 } from './draft';
 import { downloadText, fileName, rowsToCsv, vignetteJson } from './export';
 import { factorLine, factorRows, type FactorRow } from './factors';
-import { measureValue, utc, type Shown } from '../shared/units';
+import {
+  EVALUATION_WORD,
+  SOURCE_WORD,
+  STEP_WORD,
+  decimalsFor,
+  fmt,
+  formatThreshold,
+  formatValue,
+  measureScale,
+  utc,
+} from '../shared/units';
+import { SweepChart } from '../results/SweepChart';
 import '../results/results.css';
 import './report.css';
 
@@ -31,29 +42,6 @@ export type ReportWorkspaceProps = {
 
 export const NO_RUN = 'No run yet. The prediction locks at the first run.';
 export const SCOPE_LEAD = 'This result applies to the conditions tested:';
-
-const STEP_LABEL: Record<Step, string> = {
-  find: 'Find',
-  fix: 'Fix',
-  track: 'Track',
-  target: 'Target',
-  engage: 'Engage',
-  assess: 'Assess',
-  system: 'System',
-};
-
-const EVALUATION_LABEL: Record<Evaluation, string> = {
-  meets: 'Meets',
-  'does-not-meet': 'Does not meet',
-  inconclusive: 'Inconclusive',
-};
-
-const SOURCE_LABEL: Record<SourceClass, string> = {
-  simulated: 'Simulated',
-  entered: 'Entered',
-  derived: 'Derived',
-  'not-simulated': 'Not simulated',
-};
 
 /** The run the report states: the active run of this vignette, else the newest stored run. */
 type ReportRun = {
@@ -91,30 +79,25 @@ function useReportRun(doc: Vignette | null): ReportRun | null {
   }, [doc, active]);
 }
 
-function Num({ s }: { s: Shown }) {
-  return (
-    <span className="font-mono">
-      {s.value}
-      {s.unit ? ` ${s.unit}` : ''}
-    </span>
-  );
-}
-
-function canonicalUnit(id: string, fallback: string): string {
-  return measureById(id)?.unit ?? fallback;
-}
-
-/** Threshold in the setting's unit; an empty unit is the measure's own. */
-function thresholdShown(s: Score, units: Units): Shown {
-  return measureValue(s.threshold, s.unit || canonicalUnit(s.id, ''), units);
+/** "2.149 to 2.152 nm": an interval or prediction range at decimals that keep its ends apart. */
+function rangeText(
+  id: string,
+  r: { low: number; high: number },
+  units: Units,
+  value?: number | null,
+): string {
+  const sc = measureScale(units, id);
+  const d = decimalsFor(sc, r, value);
+  return `${fmt(r.low * sc.factor, d)} to ${fmt(r.high * sc.factor, d)} ${sc.unit}`.trim();
 }
 
 function intervalText(s: Score, units: Units): string {
-  if (!s.interval) return '';
-  const u = canonicalUnit(s.id, s.unit);
-  const lo = measureValue(s.interval.low, u, units);
-  const hi = measureValue(s.interval.high, u, units);
-  return `${lo.value} to ${hi.value} ${hi.unit}`.trim();
+  return s.interval ? rangeText(s.id, s.interval, units, s.value) : '';
+}
+
+/** A hypothesis statement's threshold: stored in the measure's own unit. */
+function statementText(measure: string, op: Score['op'], value: number, units: Units): string {
+  return formatThreshold(units, { id: measure, op, threshold: value, unit: '' });
 }
 
 function SectionNote({ id, title, note }: { id: SectionId; title: string; note: string }) {
@@ -238,7 +221,7 @@ function Scorecard({ doc, scores, units }: { doc: Vignette; scores: Score[]; uni
             <Fragment key={step}>
               <tr className="report-group">
                 <th colSpan={7} scope="rowgroup">
-                  {STEP_LABEL[step]}
+                  {STEP_WORD[step]}
                 </th>
               </tr>
               {rows.map((s) => {
@@ -251,16 +234,15 @@ function Scorecard({ doc, scores, units }: { doc: Vignette; scores: Score[]; uni
                       {s.value == null ? (
                         <span className="text-muted">No value</span>
                       ) : (
-                        <Num s={measureValue(s.value, m?.unit ?? s.unit, units)} />
+                        <span className="font-mono">
+                          {formatValue(units, s.id, s.value, s.interval)}
+                        </span>
                       )}
                     </td>
                     <td className="font-mono">{intervalText(s, units)}</td>
-                    <td>
-                      <span className="font-mono">{s.op} </span>
-                      <Num s={thresholdShown(s, units)} />
-                    </td>
-                    <td>{EVALUATION_LABEL[s.evaluation]}</td>
-                    <td>{SOURCE_LABEL[s.sourceClass]}</td>
+                    <td className="font-mono">{formatThreshold(units, s)}</td>
+                    <td>{EVALUATION_WORD[s.evaluation]}</td>
+                    <td>{SOURCE_WORD[s.sourceClass]}</td>
                   </tr>
                 );
               })}
@@ -273,10 +255,7 @@ function Scorecard({ doc, scores, units }: { doc: Vignette; scores: Score[]; uni
 }
 
 function predictionText(p: { low: number; high: number }, measure: string, units: Units): string {
-  const u = canonicalUnit(measure, '');
-  const lo = measureValue(p.low, u, units);
-  const hi = measureValue(p.high, u, units);
-  return `${lo.value} to ${hi.value} ${hi.unit}`.trim();
+  return rangeText(measure, p, units);
 }
 
 export default function ReportWorkspace({ renderChart, renderMap }: ReportWorkspaceProps) {
@@ -284,9 +263,14 @@ export default function ReportWorkspace({ renderChart, renderMap }: ReportWorksp
   const edit = useDocument((s) => s.edit);
   const units = useUi((s) => s.units);
   const run = useReportRun(doc);
+  const sweepEntry = useRuns((s) => s.sweep);
+  const sweep = doc && sweepEntry?.docId === doc.id ? sweepEntry.result : null;
 
   const scores = useMemo(
-    () => (doc && run ? score(run.rows, doc.measures, { seed: run.seed }) : []),
+    () =>
+      doc && run
+        ? score(run.rows, doc.measures, { seed: run.seed, entered: enteredValues(doc) })
+        : [],
     [doc, run],
   );
   const factors = useMemo(
@@ -331,22 +315,24 @@ export default function ReportWorkspace({ renderChart, renderMap }: ReportWorksp
       <div className="space-y-2 text-sm">
         {doc.hypotheses.length === 0 ? <Muted>No hypothesis recorded.</Muted> : null}
         {doc.hypotheses.map((h) => {
-          const m = measureById(h.measure);
           const snap = run?.predictions.find((p) => p.hypothesis === h.key);
+          const measure = snap?.measure ?? h.measure;
+          const m = measureById(measure);
           const pred = snap ?? h.prediction;
           return (
             <div key={h.key}>
               <p>
                 <span className="font-mono">{h.id}</span>
                 {question(h.question) ? ` (${question(h.question)?.id})` : ''}:{' '}
-                <span className="font-mono">{h.measure}</span> {m?.name ?? ''}{' '}
-                <span className="font-mono">{h.op}</span>{' '}
-                <Num s={measureValue(h.value, m?.unit ?? '', units)} />
+                <span className="font-mono">{measure}</span> {m?.name ?? ''}{' '}
+                <span className="font-mono">
+                  {statementText(measure, snap?.op ?? h.op, snap?.value ?? h.value, units)}
+                </span>
               </p>
               <p>
                 Prediction:{' '}
                 {pred ? (
-                  <span className="font-mono">{predictionText(pred, h.measure, units)}</span>
+                  <span className="font-mono">{predictionText(pred, measure, units)}</span>
                 ) : (
                   <span className="text-muted">none recorded</span>
                 )}
@@ -404,6 +390,11 @@ export default function ReportWorkspace({ renderChart, renderMap }: ReportWorksp
               </figure>
             ))
           : null}
+        {sweep ? (
+          <figure className="report-chart" data-chart="sweep" aria-label="Sweep">
+            <SweepChart sweep={sweep} units={units} />
+          </figure>
+        ) : null}
       </div>
     ),
 
@@ -426,13 +417,15 @@ export default function ReportWorkspace({ renderChart, renderMap }: ReportWorksp
         </thead>
         <tbody>
           {doc.hypotheses.map((h) => {
-            const m = measureById(h.measure);
             const snap = run.predictions.find((p) => p.hypothesis === h.key);
+            // The statement as locked for this run (review 6 F-12), else the live one.
+            const measure = snap?.measure ?? h.measure;
+            const m = measureById(measure);
             // Scored against the hypothesis statement; an empty unit is the measure's own.
             const s = scoreOne(
               run.rows,
-              { id: h.measure, op: h.op, threshold: h.value, unit: '' },
-              { seed: run.seed },
+              { id: measure, op: snap?.op ?? h.op, threshold: snap?.value ?? h.value, unit: '' },
+              { seed: run.seed, entered: enteredValues(doc) },
             );
             const held =
               !snap || s.value == null
@@ -444,20 +437,22 @@ export default function ReportWorkspace({ renderChart, renderMap }: ReportWorksp
               <tr key={h.key}>
                 <td className="font-mono">{h.id}</td>
                 <td>
-                  <span className="font-mono">{h.measure}</span> {m?.name ?? ''}
+                  <span className="font-mono">{measure}</span> {m?.name ?? ''}
                 </td>
                 <td className="font-mono">
-                  {snap ? predictionText(snap, h.measure, units) : 'None'}
+                  {snap ? predictionText(snap, measure, units) : 'None'}
                 </td>
                 <td>
                   {s.value == null ? (
                     'No value'
                   ) : (
-                    <Num s={measureValue(s.value, m?.unit ?? '', units)} />
+                    <span className="font-mono">
+                      {formatValue(units, measure, s.value, s.interval)}
+                    </span>
                   )}
                 </td>
                 <td className="font-mono">{intervalText(s, units)}</td>
-                <td>{EVALUATION_LABEL[s.evaluation]}</td>
+                <td>{EVALUATION_WORD[s.evaluation]}</td>
                 <td>{held}</td>
               </tr>
             );

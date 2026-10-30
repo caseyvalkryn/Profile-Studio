@@ -4,7 +4,7 @@
  * with a seeded percentile bootstrap. A row with no formula, or whose inputs the rows
  * cannot produce, scores null with a note. Never invent a measure.
  */
-import type { MeasureSetting, Op, RunRow } from '../domain/types';
+import type { MeasureSetting, Op, RunRow, Vignette } from '../domain/types';
 import { measureById } from '../domain/measures';
 import type { SourceClass } from '../domain/measures';
 import { wilson } from './sim/analysis/stats';
@@ -59,7 +59,25 @@ export type ScoreOptions = {
   seed?: number;
   /** Wilson z. */
   z?: number;
+  /**
+   * Entered values by DroneScore id (`enteredValues`). An Entered-class row scores from this
+   * value, with no interval, against its threshold (spec section 4).
+   */
+  entered?: Record<string, number>;
 };
+
+/**
+ * Numeric entered values by DroneScore id, from the vignette's sensors then effectors. When two
+ * assets enter the same row, the first in that order is used.
+ */
+export function enteredValues(v: Pick<Vignette, 'sensors' | 'effectors'>): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const a of [...v.sensors, ...v.effectors])
+    for (const [id, e] of Object.entries(a.entered))
+      if (!(id in out) && typeof e.value === 'number' && Number.isFinite(e.value))
+        out[id] = e.value;
+  return out;
+}
 
 /**
  * A proportion: `inPopulation` picks the denominator rows, `success` the numerator. Reported
@@ -228,12 +246,35 @@ function nullScore(s: MeasureSetting, sourceClass: SourceClass, n: number, note:
   };
 }
 
+/** An Entered-class row: the asset's entered value, no interval, evaluated as a point. */
+function enteredScore(s: MeasureSetting, canonical: string, value: number | undefined): Score {
+  if (value == null) return nullScore(s, 'entered', 0, 'entered: no value on any asset');
+  const threshold = thresholdInCanonical(s.threshold, s.unit, canonical);
+  const score: Score = {
+    id: s.id,
+    n: 0,
+    value,
+    interval: null,
+    threshold: s.threshold,
+    op: s.op,
+    unit: s.unit,
+    evaluation:
+      threshold == null ? 'inconclusive' : evaluate({ low: value, high: value }, s.op, threshold),
+    sourceClass: 'entered',
+    note: 'entered value, no interval',
+  };
+  if (threshold == null)
+    score.note = `threshold unit "${s.unit}" cannot be converted to ${canonical}`;
+  return score;
+}
+
 export function scoreOne(rows: RunRow[], s: MeasureSetting, opts: ScoreOptions = {}): Score {
   const B = opts.bootstrapN ?? 1000;
   const seed = opts.seed ?? 1;
   const measure = measureById(s.id);
   const sourceClass: SourceClass = measure?.sourceClass ?? 'not-simulated';
   if (!measure) return nullScore(s, sourceClass, 0, `unknown DroneScore id ${s.id}`);
+  if (sourceClass === 'entered') return enteredScore(s, measure.unit, opts.entered?.[s.id]);
   const f = MEASURE_FORMULAS[s.id];
   if (!f) return nullScore(s, sourceClass, 0, `${sourceClass}: no simulated formula`);
   if (f.kind === 'null') return nullScore(s, sourceClass, 0, f.note);
