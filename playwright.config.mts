@@ -3,7 +3,8 @@ import { defineConfig } from '@playwright/test';
 // End-to-end suite: one spec per acceptance item in docs/spec.md section 12. Runs against the
 // production bundle on port 5175 (5173 and 5174 belong to other servers). Playwright gives each
 // test a fresh browser context, so IndexedDB starts empty in every test.
-const PORT = 5175;
+// E2E_PORT lets parallel lane worktrees run the gate at once (one preview server each).
+const PORT = Number(process.env.E2E_PORT ?? 5175);
 
 export default defineConfig({
   testDir: './e2e',
