@@ -229,42 +229,44 @@ merge. Open items live in section 8, not here.
 | 7.11 | done | 1be3e17 | library: a template copy saves after its first edit, not on open (FR-07) |
 | 7.R | done | cabd251 | `reviews/phase-7-fixes.md`: 0 blockers, 3 majors (hover limit stated three times, non-DroneScore measure names in template text, 4-decimal float noise), 11 minors, 6 notes; 26 screenshots; FR-01 to FR-09, 1a, 3b, 3c confirmed fixed in the browser |
 | 7.F | done | 6d3ac25 | 17 fixed; F-11 (Swarm start stack, inspector header) and F-19 ("at the site" wording) partial; F-18 stands by design; 7 browser screenshots (`reviews/phase-7-fixes/after-7F-*.jpg`); 526 tests |
+| 7.G | done | bdbd9b9 | 7.F follow-ups: inspector "n of m" header while cycling a stack and Swarm starts 420 m apart (F-11); "at the site" for a zero offset (F-19); sweep note in `src/state/runs.ts` (F-12); small-area label obstacle tests; report limits state the logistic width and minimum range losses, delta wing note no longer repeats the altitude limit; 9 browser screenshots (`after-7G-*.jpg`); 536 tests |
 
 ## 8. Handoff
 
-State on 2026-10-30, end of the third orchestration session. Phases 0 to 7, the eight 7.2 fix
-lanes (7.4 to 7.11), the review 7.R and its fix lane 7.F are merged on `rebuild/mvp` with the
-gate green (69 unit test files, 526 tests, 12 Playwright specs on `vite preview`, build). The
-spec section 12 acceptance suite passes, which is the MVP definition of done. The user approved
-a push and a merge to `main` at the end of the third session (2026-10-30): `main` is at that
-merge and both branches are on `origin`. The tree is clean; no lane is in flight; no worktree
-exists.
+State on 2026-10-30, end of the fourth orchestration session. Phases 0 to 7, the eight 7.2 fix
+lanes (7.4 to 7.11), the review 7.R, its fix lane 7.F and the follow-up lane 7.G are merged on
+`rebuild/mvp` with the gate green (69 unit test files, 536 tests, 12 Playwright specs on
+`vite preview`, build). The spec section 12 acceptance suite passes, which is the MVP definition
+of done. `main` and `origin` are at the third-session merge (7f6a53a on `rebuild/mvp`); the 7.G
+merge `bdbd9b9` is local only and not pushed. The tree is clean; no lane is in flight; no
+worktree exists. No fix lane is queued: every follow-up from the phase 7 reviews is fixed,
+partial by design, or recorded under "Open items" as a proposal.
 
 **Orchestrator prompt.** Paste this to start the next session:
 
 ```text
 You are the orchestrator for Profile Studio at /Users/caseytalbot/Projects/profile-studio,
 branch rebuild/mvp (tracks origin). Read CLAUDE.md, then docs/plan.md sections 5, 7 and 8, then
-reviews/phase-7-first-use.md. Run `npm run gate` to confirm the baseline: 65 unit files, 463
+reviews/phase-7-first-use.md. Run `npm run gate` to confirm the baseline: 69 unit files, 536
 tests, 12 e2e specs, build green.
 
-The MVP acceptance suite passes and the 7.2 fix lanes, review 7.R and fix lane 7.F are merged.
-Read reviews/phase-7-fixes.md. Section 8 "Open items" lists the follow-ups 7.F left; run them
-as one small fix lane (7.G) if I ask for it, with a browser re-check on port 5174. Section 5
-rules apply: one worker per lane in a worktree under .worktrees/<id>, workers do not commit,
-gate and git diff --stat before each --no-ff merge, gate on rebuild/mvp after, worktree removed,
-status table and section 8 updated. Phase 8 (vos port) needs its own plan and my acceptance of
-the MVP first.
+The MVP acceptance suite passes and the 7.2 fix lanes, review 7.R, fix lane 7.F and follow-up
+lane 7.G are merged. No fix lane is queued. Section 8 "Open items" lists proposals and declared
+losses; run one only if I ask for it, with a browser re-check on port 5174. Section 5 rules
+apply: one worker per lane in a worktree under .worktrees/<id>, workers do not commit, gate and
+git diff --stat before each --no-ff merge, gate on rebuild/mvp after, worktree removed, status
+table and section 8 updated. Phase 8 (vos port) needs its own plan and my acceptance of the MVP
+first.
 
 Ask me before any download, any push, and any merge to main.
 ```
 
 **Start here.** Read `CLAUDE.md`, this file (sections 5 to 8), the two phase 7 reviews, then the
-"Open items" below. Run `npm run gate` once to confirm the baseline (69 unit files, 526 tests, 12 e2e). Then:
+"Open items" below. Run `npm run gate` once to confirm the baseline (69 unit files, 536 tests, 12 e2e). Then:
 
-1. If the user wants the 7.F follow-ups closed, run them as one lane (7.G) with a browser
-   re-check; they are listed under "Open items" below.
-2. Phase 8 (vos port) is a separate plan, after the user accepts the MVP.
+1. Ask the user whether to push `rebuild/mvp` and merge it to `main` (the 7.G merge is local).
+2. Phase 8 (vos port) is a separate plan, after the user accepts the MVP. Any item under "Open
+   items" runs as its own lane only when the user asks.
 
 **Approvals on record.** The user approved the phase 0 commits, the first phase 1 commit, one
 merge to `main` with a push, and the Playwright Chromium download, all on 2026-10-30. At the
@@ -335,16 +337,18 @@ Build workspace (`src/features/build`):
 - `reviews/phase-4.md` notes F-16 and F-17 stand (snap invisible at working zoom, map focus
   ring uses the accent). Label overlap and the missing F2T2EA timeline lanes (phase 6 F-15) were
   fixed by lanes 7.5, 7.6 and 7.F; `reviews/phase-7-fixes.md` records the browser evidence.
-- Map labels avoid other labels, markers and small areas (`src/features/build/map/labels.ts`),
-  but still cross sector and ring lines. The small-area obstacle code has no unit test (7.F).
+- Map labels avoid other labels, markers and small areas (`src/features/build/map/labels.ts`
+  `areaObstacle`, unit-tested in 7.G), but still cross sector and ring lines.
 - Wheel zoom drift (7.2 FR-10) did not reproduce in 7.5 or 7.R: the point under the pointer
   stayed within 1 px over 4 wheel steps. No code changed. Re-check with a physical wheel.
 - Stacked-hit cycling: a repeat plain click at the same pixel selects the next target in the
-  stack (`hit.ts` `hitAll`, `pickHit`, `nextHit`). The inspector has no "n of m" header for a
-  stack (7.R F-11, partial). Swarm starts are 120 m apart and still look stacked at the default
-  view.
-- The "Sweep done" note in the top bar uses a local store in `BuildWorkspace.tsx` (7.F F-12); it
-  should move into `src/state/runs.ts`.
+  stack (`hit.ts` `hitAll`, `pickHit`, `nextHit`). The controller writes the stack position to
+  `ui.stack` and the inspector header shows "n of m" from the first click into a stack of two
+  or more; Escape, undo and an outside selection end the cycle (7.G). Swarm starts are 420 m
+  apart (29 px at the default 1440 x 900 view, about 17 px at 1200 x 863). A Swarm start that
+  lies on the RF-1 ring still shares a stack of 3 with the ring; the cycle reaches each once.
+- The run-done and sweep-done notes both live in `src/state/runs.ts` (`sweepNoteKey`,
+  `dismissDoneNote`); one edit subscription clears both, and opening Results clears both (7.G).
 - The timeline shows six labelled F2T2EA lanes per threat row (row 64 px, gutter 96 px) with a
   sticky axis; the panel is 181 px and fits two rows.
 - The inspector hypothesis row truncates at the default inspector width; the threshold is only
@@ -366,11 +370,12 @@ Results and report (`src/features/results`, `src/features/report`):
 - Picked report charts render as nested `<figure>` elements.
 - Stored runs older than 5.3 have no `predictions` snapshot and show `[]`.
 - Factor rows carry each asset's position from the site (`src/features/report/factors.ts`);
-  an asset at the origin prints "0.00 nm E, 0.00 nm N of the site" and should read "at the
-  site" (7.R F-19, partial). The CSV and JSON exports do not carry the factor table.
-- `src/features/report/limits.ts` generates the "Simulation limits" lines from the vignette
-  (holds not flown, flat altitude). `LOSSES.logisticWidth` and `sensorMinRange` are not stated.
-  The delta wing question note repeats the altitude limit (same pattern as 7.R F-01).
+  an asset whose offsets both print as zero reads "at the site" (7.G). The CSV and JSON exports
+  do not carry the factor table.
+- `src/features/report/limits.ts` generates the "Simulation limits" lines from the vignette:
+  holds not flown, flat altitude, a sharp detection edge at r50 for each sensor with a logistic
+  Pd model, and the minimum-range filter for each sensor with `minRangeM` above 0 (7.G). A
+  radar-only vignette with no holds and no altitude change prints no limits list.
 - Value and interval decimals grow to a cap of 4 until value, low and high print apart
   (`units.ts` `decimalsFor`, 7.10 and 7.F F-03); the sweep y axis is titled `<ID>, <unit>`.
 
@@ -387,15 +392,16 @@ Build and budgets:
   configs are `.mts`.
 
 **Fix lanes proposed by 7.2**: done in the third session as lanes 7.4 to 7.11, reviewed in
-`reviews/phase-7-fixes.md` (7.R) and fixed in 7.F. Still open from that review: F-11 and F-19
-partial, F-18 stands by design, and the 7.F follow-ups listed above.
+`reviews/phase-7-fixes.md` (7.R), fixed in 7.F, and the 7.F follow-ups closed in 7.G (fourth
+session). From that review only F-18 stands, by design.
 
 **Known problems for the team.**
 
 1. Ports and the browser. Port 5173 is the user's rangeboard dev server; use
    `npm run dev -- --port 5174 --strictPort` for browser checks. Playwright serves `vite preview`
-   on 5175 (`playwright.config.mts`) and the perf spec on 5177. Local binding worked in this session. Claude in
-   Chrome cannot drive native HTML5 drag; use click-to-arm then click, and say so in the report.
+   on 5175 (`playwright.config.mts`) and the perf spec on 5177. In the fourth session a Vite dev
+   server started from the main checkout already held 5174, so the 7.G worker used 5182; check
+   `lsof -i :5174` before a browser pass. Claude in Chrome cannot drive native HTML5 drag; use click-to-arm then click, and say so in the report.
    A browser GIF export is a download and did not work.
 2. The internet. The user does not allow downloads without asking. The JIATF 401 handbook and
    the C4 criteria are local in `~/Desktop/MASTER/VALKRYN/01 - C-UAS Doctrine and Operations/`.
