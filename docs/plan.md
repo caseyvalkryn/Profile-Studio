@@ -212,7 +212,7 @@ merge. Open items live in section 8, not here.
 | 5.3 | done | 8a832c1 | Results and Report mounted; `RunSummary.predictions`; `ReportDraft.sections`; worker cancel |
 | 6.2 | done | 9a4f864 | behaviours and the 8 templates, each runs and scores (table in section 8) |
 | 4.R | done | see `reviews/phase-4.md` | browser check: 3 blockers (map height, worker 404, no right-click menu), 4 majors, 8 minors |
-| 4.F | running | | fixes F-01 to F-15 with a browser re-check |
+| 4.F | done | 405bae4 | all 15 fixed; F-01 to F-07 browser-verified (`reviews/phase-4/after-4F.png`); 442 tests |
 | 6.3 | next | | library wiring and dev-vignette removal |
 | 6.R, 6.F | not started | | |
 | 7.1 to 7.3 | not started | | |
@@ -220,18 +220,17 @@ merge. Open items live in section 8, not here.
 ## 8. Handoff
 
 State on 2026-10-30, end of the first orchestration session. Phases 0 to 6 are merged on
-`rebuild/mvp` with the gate green (63 test files, 431 tests). Nothing is pushed. `main` holds
-only the legacy baseline. The tree is clean apart from the lane in flight.
+`rebuild/mvp` with the gate green (63 test files, 442 tests) and the legacy smoke green. Nothing is
+pushed. `main` holds only the legacy baseline. The tree is clean; no lane is in flight.
 
 **Start here.** Read `CLAUDE.md`, this file (sections 5 to 8), `reviews/phase-4.md`, then the
 "Open items" below. Run `npm run gate` once to confirm the baseline. Then:
 
-1. If 4.F is still open (status table), verify it as section 5 rule 4 says and merge it.
-2. Run 6.3 (wiring). Its brief is in section 6.
-3. Run 6.R with a browser pass, then 6.F.
-4. Run 7.1 to 7.3. 7.1 needs `npx playwright install chromium` (one download; ask the user first,
+1. Run 6.3 (wiring). Its brief is in section 6.
+2. Run 6.R with a browser pass, then 6.F.
+3. Run 7.1 to 7.3. 7.1 needs `npx playwright install chromium` (one download; ask the user first,
    the user does not allow downloads without asking). The gate gains `npm run e2e` at that point.
-5. Ask the user before any push or merge to `main`.
+4. Ask the user before any push or merge to `main`.
 
 **Approvals on record.** The user approved the phase 0 commits and the first phase 1 commit on
 2026-10-30. Later lane commits on `rebuild/mvp` followed from that. Push and merge to `main` are
@@ -285,7 +284,8 @@ Build workspace (`src/features/build`):
 - Labels are an HTML overlay because a blank MapLibre style has no glyphs offline.
 - Time-dependent layers update every 100 ms during a drag (the preview budget), per frame
   otherwise.
-- `reviews/phase-4.md` F-08 to F-19 (minor and note) stand until 4.F reports.
+- `reviews/phase-4.md` notes F-16 to F-19 stand (snap invisible at working zoom, map focus ring
+  uses the accent, dev vignette hack, circle areas and timeline lanes not exercised).
 
 Results and report (`src/features/results`, `src/features/report`):
 - PNG export is untested (no canvas in jsdom); needs the 6.R browser pass.
