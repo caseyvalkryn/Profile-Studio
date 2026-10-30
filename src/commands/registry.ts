@@ -73,10 +73,19 @@ const KEY_LABELS: Record<string, string> = {
   Escape: 'Esc',
 };
 
-/** The shortcut as shown to the user: Cmd on mac, Ctrl elsewhere. Empty when there is none. */
-export function shortcutLabel(cmd: Pick<Command, 'shortcut'>, mac = isMac()): string {
-  if (!cmd.shortcut) return '';
-  return cmd.shortcut
+/**
+ * The shortcut as shown to the user: Cmd on mac, Ctrl elsewhere. A command without its own key
+ * shows the key of its `shortcutFrom` command. Empty when there is none.
+ */
+export function shortcutLabel(
+  cmd: Pick<Command, 'shortcut'> & Partial<Pick<Command, 'id' | 'shortcutFrom'>>,
+  mac = isMac(),
+): string {
+  // A copy that kept only id and shortcut still finds its hint through the registered command.
+  const from = cmd.shortcutFrom ?? (cmd.id ? get(cmd.id)?.shortcutFrom : undefined);
+  const shortcut = cmd.shortcut ?? (from ? get(from)?.shortcut : undefined);
+  if (!shortcut) return '';
+  return shortcut
     .split('+')
     .map((part) => {
       if (part === 'Mod') return mac ? 'Cmd' : 'Ctrl';

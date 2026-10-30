@@ -35,6 +35,11 @@ export type Command = {
   group: CommandGroup;
   /** Canonical form: modifiers in the order Shift, Alt, Mod, then the key. `Mod` is Cmd or Ctrl. */
   shortcut?: string;
+  /**
+   * Display only: show the shortcut of this other command id. For a menu form of a keyed action,
+   * such as "Measure from here" showing the Measure tool's M. It never binds a key.
+   */
+  shortcutFrom?: string;
   /** Right-click targets that list this command. */
   kinds?: AssetKind[];
   /** Submenu name inside a context menu, such as 'Add here > Sensors'. */
