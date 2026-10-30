@@ -191,7 +191,8 @@ The orchestrator updates this table at each merge.
 | 3.2 | done | rebuild/mvp | 6669667 | 9 primitives + Showcase, 12 tests. Open: mount `TooltipProvider` once in App.tsx (phase 4); keyframes live in `src/ui/motion.css`; disabled menu item reason is a tooltip, keyboard cannot reach it; not yet seen in a browser |
 | 3.R | done | rebuild/mvp | 6551924 | `reviews/phase-3.md`: 1 blocker (F-01 autosave drops the pending save), 4 majors (F-02 undo unlocks predictions; F-03 no-op edits are undo steps; F-04 legacy library export does not import; F-05 Escape double-fires), 8 minors; 11-item wiring list for 4.5. Fix lane 3.F |
 | 3.F | running | lane/3.F | | Fixes F-01 to F-13 |
-| 4.1, 4.4 | running | lane/4.x | | parallel |
+| 4.1 | running | lane/4.1 | | |
+| 4.4 | done | rebuild/mvp | 9e4b3d5 | Timeline (ref-counted `usePlayback`), ProfileView, 14 tests. Open for 4.5: no command clears the loop range; timeline commands have no shortcuts; `RunTrace.threat` is the display id, not the key; lift `format.ts` and `useSize.ts` |
 | 4.3 | done | rebuild/mvp | 05e573f | Inspector, 7 tests. Open: `Field` lacks placeholder, blank state and a format hook (local `NumberInput` used); `Area` has no circle field (16+ vertex guess); no warning colour token; `units.ts` to be lifted by 4.5 |
 | 4.2 | done | rebuild/mvp | ef6d3b1 | AssetsPanel, `dnd.ts` (MIME `application/x-profile-studio-asset`, payload `{kind, type}`; `type` is the sub-kind for non-threats), 9 tests. For 4.5: dedupe MIME constant with map `dnd.ts`; one Escape owner; lift `format.ts` |
 | 4.5, 4.R to 7.3 | not started | | | 4.5 = Build workspace wiring lane (App.tsx, TooltipProvider, bindKeys, autosave, registry to palette), added by the orchestrator |
