@@ -73,6 +73,13 @@ end-to-end suite. Phase 0 keeps `node legacy/test/smoke.js` green.
    the principles. Findings go to `reviews/<phase>.md`. Fixes are a new lane.
 7. Screenshots and browser checks go to a worker. The orchestrator reads the report.
 8. Commit, push and merge to `main` only with user approval.
+9. A review lane is followed by a fix lane (`<phase>.F`) that owns the files the findings cite
+   and reports per finding: fixed, partial, or declared loss.
+10. When parallel lanes build parts of one screen, a wiring lane follows them (4.5, 5.3, 6.3). It
+    owns `App.tsx`, the composed screen and the shared folders, and it dedupes what the parallel
+    lanes each wrote locally (formatters, constants).
+11. Every UI phase gets a real browser pass in its review. jsdom and the MapLibre mock passed 400
+    tests while the map had zero height, a 404 worker and no right-click menu (phase 4).
 
 Worker types are in `~/.claude/rules/delegation.md`. Default: `opus-medium`.
 
@@ -144,7 +151,11 @@ All lanes parallel. Each owns one folder under `src/features/build/`.
   notes.
 - **4.4 Timeline and profile** (`opus-medium`, 1800 s). F2T2EA lanes, play, scrub, loop. Profile
   view along the selected path.
+- **4.5 Wiring** (`opus-high`, 2400 s, after 4.1 to 4.4). `BuildWorkspace`, root wiring
+  (`TooltipProvider`, `bindKeys`, autosave, palette, shortcut sheet), one command adapter in
+  `src/features/commands/`, shared units in `src/features/shared/`, one Escape owner.
 - **4.R Review** (`opus-high`). Also one browser check worker for spec acceptance items 2 to 4.
+- **4.F Fixes** (`opus-medium`). The 4.R findings, with a browser re-check.
 
 ### Phase 5. Results and report
 
@@ -152,6 +163,8 @@ All lanes parallel. Each owns one folder under `src/features/build/`.
   class, interval, evaluation. Run compare. Sweep charts. Chart frame with PNG and SVG export.
 - **5.2 Report** (`opus-medium`, 1800 s). `src/features/report/`. AAR sections in spec order,
   hypothesis lock at first run, print stylesheet, CSV and JSON export.
+- **5.3 Wiring** (`opus-medium`, 1500 s, after 5.1 and 5.2). Mount Results and Report, inject
+  charts into the report, `RunSummary.predictions`, `ReportDraft.sections`, worker cancel handle.
 
 ### Phase 6. Library and templates
 
@@ -159,6 +172,11 @@ All lanes parallel. Each owns one folder under `src/features/build/`.
 - **6.2 Templates and behaviors** (`fable-medium`, 1800 s). `src/domain/templates/`,
   `src/domain/behaviors.ts`. The templates in spec section 9, each ready to run, each with a
   test that it runs and scores its main measures.
+- **6.3 Wiring** (`opus-medium`, 1200 s, after 6.1 and 6.2). Mount `LibraryScreen` with
+  `TEMPLATES` on `/`, remove the dev vignette hack (`src/features/build/devVignette.*`), open
+  the library when no vignette is stored, and run the `stat-te-terminology` check on all UI copy.
+- **6.R Review** (`opus-high`, with browser). Phases 5 and 6 together: scorecard numbers against
+  the engine, report sections, library flows, acceptance items 1, 5 to 9. Then **6.F**.
 
 ### Phase 7. Acceptance
 
@@ -173,66 +191,131 @@ Plan from `docs/reference/vos.md` once the MVP passes phase 7.
 
 ## 7. Status
 
-The orchestrator updates this table at each merge.
+The orchestrator updates this table at each merge. `Head` is the `rebuild/mvp` commit after the
+merge. Open items live in section 8, not here.
 
-| Lane | Status | Branch | Head | Notes |
-| --- | --- | --- | --- | --- |
-| 0.1 | done | main | a8e0331 | Legacy v4 baseline, approved by user |
-| 0.2 | done | rebuild/mvp | 189a6c0 | Legacy app in `legacy/`; smoke green |
-| 0.3 | done | rebuild/mvp | 6d81756 | 9 fixtures; `golden.js --check` green; `Date` fixed to 2026-01-01Z in the vm; templates have no paths, so parity rests on the 4 seeds |
-| 1.1 | done | rebuild/mvp | f147f73 | Gate green; bundle 59 kB gzip; root stays CommonJS for the legacy smoke, so Vite and Playwright configs are `.mts`; Tailwind 4.3.3, zod 4.x |
-| 2.1 | done | rebuild/mvp | a7bae7f | 67 measure rows; 4 seeds and 5 templates import and validate; 24 tests. Open: site lat/lon import as 0 (legacy has no origin); MOP text goes to a question note, not to measure ids; sensor model planning defaults in `catalog.ts` need review by 2.2 and 2.3b |
-| 2.3a | done | rebuild/mvp | 687b842 | 59 files, 16.1k lines, logic unchanged (only `!` for noUncheckedIndexedAccess); seed 4821 `runTrial` byte-identical to rangeboard 87a6579, frozen in `src/engine/sim/__fixtures__`; 19 of 44 rangeboard tests copied, 25 dropped (deps outside the closure: seed.ts, store, persist); headless Node run OK |
-| 2.2 | done | rebuild/mvp | c38ec67 | Parity on 4 seeds (windows, first, vols, daEntry, timed, splits); 17 ms median at 40x15; 48 tests. For 2.R: Assess = max(engage+tte, effector window start) with no clip (follows legacy source, not legacy-app.md); Engage without a Target falls back to first effector reach; group membership via `opts.groupKeys` since migrate keeps path groups only as notes |
-| 2.3b | done | rebuild/mvp | c2aaeaf | adapter, run (RunRow + RunTrace), score (Wilson, seeded bootstrap), sweep (5 factors), worker and client; 224 tests, engine suite 1.1 s. Null with note: 2.1.1, 3a.2 (no classify stage), 2.1.4 (identified_ok never false), 5.3, 5.8 (no inputs). Logistic width lost for non-radar (hard threshold at r50); waypoint holds not modelled; worker untested in a browser; nothing in `src/engine/sim` was unreachable |
-| 2.R | done | rebuild/mvp | 3705e18 | `reviews/phase-2.md`: 2 blockers (F-01 Identify from rangeboard proximity ladder, not dwell+pCorrectId; F-02 3.1.3 and 5.1 use shot range, not defeat range), 2 majors (F-03 5 s undeclared link latency in Target; F-04 RF/acoustic-only never pass track), 8 minors. Fix lane 2.F |
-| 2.F | done | rebuild/mvp | 0c8f46e | F-01 to F-05, F-08 to F-12 fixed; F-06 declared loss (rangeboard flies flat at the first waypoint altitude), F-07 row-side filter only; `LOSSES` in adapter.ts. Default vignette id_time_s 60.8 to 5.0 s; engagement range 2487 to 2221 m. `startRun`/`startSweep` return a cancel handle (runs.ts to adopt); schema rejects fov 0, elMin >= elMax, minRange > range |
-| 3.1 | done | rebuild/mvp | 5b1cdcd | document (patch undo, drag as one step), ui, runs, persist, 51 commands, 29 tests. Open for 3.R: hypothesis lock is an undo step (undo unlocks); cancel does not terminate the worker (`simClient` needs AbortSignal); IndexedDB untested (no fake-indexeddb); `AssetKind` lives in `commands/types.ts` |
-| 3.2 | done | rebuild/mvp | 6669667 | 9 primitives + Showcase, 12 tests. Open: mount `TooltipProvider` once in App.tsx (phase 4); keyframes live in `src/ui/motion.css`; disabled menu item reason is a tooltip, keyboard cannot reach it; not yet seen in a browser |
-| 3.R | done | rebuild/mvp | 6551924 | `reviews/phase-3.md`: 1 blocker (F-01 autosave drops the pending save), 4 majors (F-02 undo unlocks predictions; F-03 no-op edits are undo steps; F-04 legacy library export does not import; F-05 Escape double-fires), 8 minors; 11-item wiring list for 4.5. Fix lane 3.F |
-| 3.F | done | rebuild/mvp | 343ffcc | All 13 fixed; 296 tests. API changes: `importJson` returns `Vignette[]`; `useDocument.apply` (no undo step); `forTarget` in spec order; `map.add.threat` takes an archetype arg; `Command.options`; `hypothesis.setPrediction`; `RunEntry.predictions/docId/docUpdated/note/detail`. Open: `RunSummary` needs `predictions?` and `note?` (domain); cancel TODO waits on 2.F's simClient handle |
-| 4.1 | done | rebuild/mvp | 2c68b24 | MapView + controller, 40 tests; drag move 0.18 ms, cold build 0.07 ms at 40x15; MapView chunk about 394 kB gzip (consider lazy load). Open: nodes fall back to the empty-map menu (`forTarget('node')` empty); labels are an HTML overlay (no glyphs offline); circle areas draw as polygons; time layers update every 100 ms during a drag; state colour tokens proposed; not yet seen in a browser |
-| 4.5 | done | rebuild/mvp | f36b9a6 | BuildWorkspace, root wiring (TooltipProvider, bindKeys, autosave, palette, shortcut sheet), one command adapter in `src/features/commands/`, `src/features/shared/units.ts`, Escape owner, Field props, `--state-covered/--state-warning`, node menu, `time.clearLoop`, dev vignette (phase 6 removal). Entry 169 kB gzip, MapView chunk 296 kB. Open: `useRuns.cancel` still to adopt the 2.F handle; dev server not verified (port 5173 held by the user's rangeboard server; use 5174) |
-| 4.4 | done | rebuild/mvp | 9e4b3d5 | Timeline (ref-counted `usePlayback`), ProfileView, 14 tests. Open for 4.5: no command clears the loop range; timeline commands have no shortcuts; `RunTrace.threat` is the display id, not the key; lift `format.ts` and `useSize.ts` |
-| 4.3 | done | rebuild/mvp | 05e573f | Inspector, 7 tests. Open: `Field` lacks placeholder, blank state and a format hook (local `NumberInput` used); `Area` has no circle field (16+ vertex guess); no warning colour token; `units.ts` to be lifted by 4.5 |
-| 4.2 | done | rebuild/mvp | ef6d3b1 | AssetsPanel, `dnd.ts` (MIME `application/x-profile-studio-asset`, payload `{kind, type}`; `type` is the sub-kind for non-threats), 9 tests. For 4.5: dedupe MIME constant with map `dnd.ts`; one Escape owner; lift `format.ts` |
-| 5.1 | done | rebuild/mvp | bcc5fbd | ResultsWorkspace: scorecard, hypotheses, SVG measure charts, compare, sweep (recharts line, SVG heat map), ChartFrame export; 8 tests. Open: PNG export untested (no canvas in jsdom); `--state-*` and `--chart-*` tokens defined locally in `results.css` (lift to tokens.css); about 60 muted unscored rows (collapse per step); `Hypothesis.value` assumed in the canonical unit |
-| 5.2 | done | rebuild/mvp | f52238a | ReportWorkspace (`renderChart`, `renderMap` props), 14 tests; terminology check clean. Notes and picked charts live in `report.slides` under `aar:` keys (proposal: `ReportDraft.sections` and `.charts`); stored runs have no prediction snapshot (proposal: `RunSummary.predictions`); local `format.ts` to swap for the shared one |
-| 4.R | running | lane/4.R | | review + browser check on port 5174 |
-| 5.3 | running | lane/5.3 | | mount Results and Report, inject charts, adopt cancel handle, domain fields |
-| 6.1 | running | lane/6.1 | | |
-| 6.2 | running | lane/6.2 | | |
-| 5.R, 6.R, 7.1 to 7.3 | not started | | | |
+| Lane | Status | Head | Result |
+| --- | --- | --- | --- |
+| 0.1 to 0.3 | done | 6d81756 | Legacy baseline on `main`; legacy app in `legacy/`; 9 golden derive fixtures |
+| 1.1 | done | f147f73 | Vite, React 18.3.1, TS 5.6.3, Tailwind 4.3.3, ESLint 10, Vitest 5, Playwright; tokens; shell; engine fence; `npm run gate` |
+| 2.1 | done | a7bae7f | `src/domain`: types, zod, ids, catalog, 67-row DroneScore table, legacy v4 import |
+| 2.2 | done | c38ec67 | `src/engine/{geo,preview}.ts`: parity with the 4 legacy seeds; 17 ms at 40 threats x 15 sensors |
+| 2.3a | done | 687b842 | rangeboard 59-file trial closure in `src/engine/sim`, logic unchanged, seed 4821 byte-identical |
+| 2.3b | done | c2aaeaf | adapter, run (RunRow + RunTrace), score (Wilson, bootstrap), sweep, worker and client |
+| 2.R, 2.F | done | 0c8f46e | `reviews/phase-2.md`: 2 blockers, 2 majors, 8 minors; all fixed except two declared losses |
+| 3.1, 3.2 | done | 6669667 | document store with patch undo, ui, runs, persist, 51 commands; 9 UI primitives |
+| 3.R, 3.F | done | 343ffcc | `reviews/phase-3.md`: 1 blocker, 4 majors, 8 minors; all 13 fixed |
+| 4.1 to 4.4 | done | 2c68b24 | map, assets panel, inspector, timeline and profile |
+| 4.5 | done | f36b9a6 | Build workspace wired; one command adapter; shared units; entry 169 kB gzip, map chunk 296 kB |
+| 5.1, 5.2 | done | f52238a | results (scorecard, charts, compare, sweep, export) and report (7 AAR sections, CSV, JSON, print) |
+| 6.1 | done | 025da17 | library screen: template cards, saved vignettes, search, import, delete with undo |
+| 5.3 | done | 8a832c1 | Results and Report mounted; `RunSummary.predictions`; `ReportDraft.sections`; worker cancel |
+| 6.2 | done | 9a4f864 | behaviours and the 8 templates, each runs and scores (table in section 8) |
+| 4.R | done | see `reviews/phase-4.md` | browser check: 3 blockers (map height, worker 404, no right-click menu), 4 majors, 8 minors |
+| 4.F | running | | fixes F-01 to F-15 with a browser re-check |
+| 6.3 | next | | library wiring and dev-vignette removal |
+| 6.R, 6.F | not started | | |
+| 7.1 to 7.3 | not started | | |
 
 ## 8. Handoff
 
-State on 2026-10-30: phases 0 and 1 are done on `rebuild/mvp`. The tree is clean. Nothing is pushed.
-Lanes run in git worktrees under `.worktrees/<id>` (ignored by git, ESLint and Prettier).
+State on 2026-10-30, end of the first orchestration session. Phases 0 to 6 are merged on
+`rebuild/mvp` with the gate green (63 test files, 431 tests). Nothing is pushed. `main` holds
+only the legacy baseline. The tree is clean apart from the lane in flight.
 
-**Next action.** Run 2.1 and 2.3a in parallel. Then run 2.2 and 2.3b in
-parallel, then 2.R. The lane text in section 6 is the brief. Add the standard brief items from
-section 5 rule 3 when you launch it.
+**Start here.** Read `CLAUDE.md`, this file (sections 5 to 8), `reviews/phase-4.md`, then the
+"Open items" below. Run `npm run gate` once to confirm the baseline. Then:
 
-**Approval.** The user approved phase 0 commits. Ask the user before the first commit of phase 1,
-and before any push or merge to `main`.
+1. If 4.F is still open (status table), verify it as section 5 rule 4 says and merge it.
+2. Run 6.3 (wiring). Its brief is in section 6.
+3. Run 6.R with a browser pass, then 6.F.
+4. Run 7.1 to 7.3. 7.1 needs `npx playwright install chromium` (one download; ask the user first,
+   the user does not allow downloads without asking). The gate gains `npm run e2e` at that point.
+5. Ask the user before any push or merge to `main`.
+
+**Approvals on record.** The user approved the phase 0 commits and the first phase 1 commit on
+2026-10-30. Later lane commits on `rebuild/mvp` followed from that. Push and merge to `main` are
+not approved.
+
+**How to run a lane.** `git worktree add .worktrees/<id> -b lane/<id> rebuild/mvp`, then
+`npm ci` there. The brief states: working directory, owned files, gate, report shape, time
+budget, and the lanes running in parallel with their folders. The worker does not commit. The
+orchestrator runs `npm run gate` in the worktree, commits on the lane branch, merges with
+`--no-ff` into `rebuild/mvp`, runs the gate there, removes the worktree and deletes the branch,
+then updates section 7. Workers are picked by `~/.claude/rules/delegation.md`.
+
+**Open items.** Grouped by area. Each came from a worker report or a review; none is a guess.
+
+Engine (`src/engine`):
+- Declared losses in `adapter.ts` `LOSSES`: the Monte Carlo flies flat at the first waypoint
+  altitude; waypoint holds are not flown; non-radar sensors use a hard threshold at r50 (the
+  logistic width is lost); `minRangeM` is a row-side filter only.
+- `RunRow` has no detecting-sensor field, so the fiber FPV template's "1.1.1 by sensor" scores the
+  layer, not each sensor. Proposal: `detect_sensor: string | null` and a by-sensor split in score.
+- Null-with-note rows: 2.1.1 and 3a.2 (no classify stage), 2.1.4 (`identified_ok` never false),
+  5.3 and 5.8 (no inputs). A shot the engine releases on proximity without a declaration counts as
+  stage `track`, outcome No Attempt.
+- Preview semantics kept on review advice: Assess is unclipped (show a negative margin instead);
+  Engage without a Target falls back to first effector reach and should be labelled "geometry
+  only" in the UI.
+- `CONFIRMED_DECLARE_FACTOR` halves `decisionS` when two phenomenologies confirm; it is a
+  declared default, not shown in the UI.
+
+Domain (`src/domain`):
+- Legacy import sets site lat/lon to 0 and maps MOP text to a question note; `DEFAULT_MEASURES`
+  seeds 1.1.1, 1.1.2, 2.1.2, 3.1.2; a "Target time not set" note is appended.
+- `Area` has only `pts`; circles draw as polygons and the inspector guesses a circle at 16 or
+  more vertices. Proposal: a `circle` field.
+- `Hypothesis.value` is assumed to be in the measure's canonical unit (m, s, percent). The schema
+  does not state it.
+- Template thresholds at n 10, seed 1: point defence 1.1.2 3979 m, 2.1.3 3250 m, 3.1.2 100 %
+  inconclusive (Wilson at n 10 cannot clear 80 %); hover 1.2.2 99.6 %; swarm 1.2.1 100 %, 3.1.1
+  100 %; delta wing 1.1.2 8975 m, 3.1.3 2038 m, 3.1.4 20.6 s; fiber FPV 1.1.1 100 % inconclusive at
+  n 10; surrogate 1.2.3 9.8 m; sweep baseline 1.1.2 3972 m. Proportion thresholds of 80 to 90 %
+  need n of about 30 or more to be conclusive; the Run default is n 100.
+
+State and commands (`src/state`, `src/commands`):
+- The prediction lock and the run append go through `useDocument.apply` (no undo step).
+- `importJson` returns `Vignette[]`; records with no schema stamp are refused.
+- IndexedDB itself is untested (no `fake-indexeddb`); the persistence tests use a mock db.
+- The spec has no right-click row for C2 and TSPI nodes; Duplicate and Delete were added.
+
+Build workspace (`src/features/build`):
+- `devVignette.*` opens a legacy template at startup when nothing is stored. Remove in 6.3.
+- Labels are an HTML overlay because a blank MapLibre style has no glyphs offline.
+- Time-dependent layers update every 100 ms during a drag (the preview budget), per frame
+  otherwise.
+- `reviews/phase-4.md` F-08 to F-19 (minor and note) stand until 4.F reports.
+
+Results and report (`src/features/results`, `src/features/report`):
+- PNG export is untested (no canvas in jsdom); needs the 6.R browser pass.
+- The one `@media print` light-token rule lives in `results.css` and covers both screens; it has
+  no light values for `--state-covered` and `--state-warning`.
+- Picked report charts render as nested `<figure>` elements.
+- Stored runs older than 5.3 have no `predictions` snapshot and show `[]`.
+
+Build and budgets:
+- Entry 169 kB gzip; MapView chunk 296 kB gzip (lazy); Vite warns on the chunk size. First-load
+  interactive in 2 s is not yet measured (7.3).
+- The root `package.json` stays CommonJS so `legacy/test/smoke.js` runs; Vite and Playwright
+  configs are `.mts`.
 
 **Known problems for the team.**
 
-1. The local port and the browser. In an earlier session the sandbox blocked local port binding,
-   and Claude in Chrome could not open `file://` pages. A browser check needs `npm run dev`
-   reachable. If binding fails, the user can set `sandbox.network.allowLocalBinding: true`.
-2. The internet. The user does not allow downloads. The JIATF 401 handbook and the C4 criteria are
-   local in `~/Desktop/MASTER/VALKRYN/01 - C-UAS Doctrine and Operations/`. Plain-text copies
-   need `pdftotext`. The C4 text has broken letter spacing. Remove the spaces before you search it.
-3. DroneScore wins over C4. DroneScore leaves out some C4 rows and adds the `INT-` rows. Follow
-   DroneScore (`docs/reference/jiatf-401.md` section b). C4 prints the ID 5.5 twice. DroneScore
-   uses 5.5b for the second.
-4. The rangeboard engine. `src/playback/killChain.ts` is a sensor to C2 to effector routing graph.
-   It is not the stage ladder. The stages are in `src/analysis/requirements.ts`. One trial needs
-   59 files (`docs/reference/rangeboard-parts.md` section 2).
-5. Parity. The templates have no flight paths. Lane 2.2 parity rests on the 4 seeds.
-   `legacy/test/golden.js` fixes `Date` in its vm, because templates stamp the wall clock.
-6. vos is read-only. Its work is on the unpushed branch `casey/diu-demo-local`. Do not edit vos.
-7. Words. User-facing T&E text uses the `stat-te-terminology` skill. Run its banned-term check
-   on the UI copy and the AAR template.
-
+1. Ports and the browser. Port 5173 is the user's rangeboard dev server; use
+   `npm run dev -- --port 5174 --strictPort`. Local binding worked in this session. Claude in
+   Chrome cannot drive native HTML5 drag; use click-to-arm then click, and say so in the report.
+   A browser GIF export is a download and did not work.
+2. The internet. The user does not allow downloads without asking. The JIATF 401 handbook and
+   the C4 criteria are local in `~/Desktop/MASTER/VALKRYN/01 - C-UAS Doctrine and Operations/`.
+   Plain-text copies need `pdftotext`. The C4 text has broken letter spacing.
+3. DroneScore wins over C4. Follow DroneScore (`docs/reference/jiatf-401.md` section b). C4 prints
+   the ID 5.5 twice. DroneScore uses 5.5b for the second.
+4. The rangeboard engine is frozen in `src/engine/sim`. `playback/killChain.ts` is a routing
+   graph, not the stage ladder. `parity.test.ts` must stay green; do not edit the transfer.
+   rangeboard itself (`~/projects/rangeboard`) is read-only.
+5. vos is read-only. Its work is on the unpushed branch `casey/diu-demo-local`. Do not edit vos.
+6. Words. User-facing T&E text uses the `stat-te-terminology` skill. Lane 5.2 ran its check on
+   the report copy; 6.3 runs it on the rest.
+7. Autosave writes to IndexedDB for `localhost:5174`; a browser check leaves vignettes behind
+   that the app opens on the next load. Clear site data between checks when it matters.
