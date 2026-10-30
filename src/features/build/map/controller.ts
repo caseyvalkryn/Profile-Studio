@@ -1,6 +1,9 @@
 // The imperative side of the map. MapLibre lives here, outside React: the map and its sources
 // are created once and every store change becomes a setData on the sources that changed.
-import { Map as MlMap, type GeoJSONSource } from 'maplibre-gl';
+import { Map as MlMap, setWorkerUrl, type GeoJSONSource } from 'maplibre-gl';
+// MapLibre resolves its worker next to its own module, which Vite moves when it prebundles
+// (dev) and cannot see when it bundles (build). Point it at the emitted worker asset instead.
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import { forTarget } from '../../../commands/registry';
 import type { AssetKind } from '../../../commands/types';
 import { bearingTo, centroid } from '../../../engine/geo';
@@ -38,11 +41,17 @@ const CLICK_PX = 4;
 /** During a drag, preview-dependent layers update at most this often (spec: 100 ms). */
 const DRAG_PREVIEW_MS = 100;
 const FIT_PADDING_PX = 48;
+/** Asset labels closer than this many pixels count as co-located. */
+const LABEL_CELL_PX = 8;
+/** Line height of a stacked asset label. */
+export const LABEL_LINE_PX = 13;
 const EMPTY_BOUNDS: BoundsM = [-2000, -2000, 2000, 2000];
 
 type Press = { px: XY; p: XY; hit: Hit | null; shift: boolean };
 
 export type MenuTarget = { kind: AssetKind; pointer: XY };
+/** A right-click on the map: what was under it, and where in container pixels. */
+export type MenuRequest = MenuTarget & { at: XY };
 
 export class MapController {
   readonly map: MlMap;
@@ -69,9 +78,11 @@ export class MapController {
     private el: HTMLElement,
     private overlay: HTMLElement,
     private tip: HTMLElement,
+    private onMenu?: (req: MenuRequest) => void,
   ) {
     const doc = useDocument.getState().doc;
     this.doc = doc;
+    setWorkerUrl(workerUrl);
     this.map = new MlMap({
       container: el,
       style: blankStyle(readColors()),
@@ -94,6 +105,9 @@ export class MapController {
     el.addEventListener('mousemove', this.onHoverMove);
     el.addEventListener('mouseleave', this.onLeave);
     el.addEventListener('dblclick', this.onDblClick, true);
+    // Capture phase: MapLibre's rotate handlers call preventDefault on contextmenu, which makes
+    // a Radix context-menu trigger skip opening. The map opens its own controlled menu here.
+    el.addEventListener('contextmenu', this.onContextMenu, true);
     el.addEventListener('dragover', this.onDragOver);
     el.addEventListener('drop', this.onDrop);
 
@@ -127,6 +141,7 @@ export class MapController {
     el.removeEventListener('mousemove', this.onHoverMove);
     el.removeEventListener('mouseleave', this.onLeave);
     el.removeEventListener('dblclick', this.onDblClick, true);
+    el.removeEventListener('contextmenu', this.onContextMenu, true);
     el.removeEventListener('dragover', this.onDragOver);
     el.removeEventListener('drop', this.onDrop);
     if (useUi.getState().drawing) useUi.getState().setDrawing(false);
@@ -187,6 +202,7 @@ export class MapController {
     if (s.fitSeq !== prev.fitSeq) this.fit(true);
     if (s.pathSignal !== prev.pathSignal && this.draft) this.drawEvent({ t: s.pathSignal.action });
     if (s.theme !== prev.theme) requestAnimationFrame(() => this.applyColors());
+    if (s.units !== prev.units) this.renderGrid();
     if (s.tool !== prev.tool) this.onTool(s);
     if (s.tool !== prev.tool || s.measureFrom !== prev.measureFrom || s.armed !== prev.armed) {
       this.renderDraft();
@@ -299,7 +315,7 @@ export class MapController {
       Math.max(a.x, b.x) + sx,
       Math.max(a.y, b.y) + sy,
     ];
-    const g = gridFeatures(this.frame, bounds, this.mPerPx());
+    const g = gridFeatures(this.frame, bounds, this.mPerPx(), useUi.getState().units);
     this.setData('grid', g.lines);
     this.grid = g.labels;
     this.schedule();
@@ -314,8 +330,19 @@ export class MapController {
         const q = this.map.project(f.toLngLat(x, y));
         return { x: q.x, y: q.y };
       };
-      for (const s of [...d.sensors, ...d.effectors, ...d.nodes])
-        want.set(s.key, { text: s.id, px: at(s.x, s.y), cls: 'asset' });
+      // Co-located assets stack their labels one line apart instead of overprinting.
+      const stack = new Map<string, number>();
+      for (const s of [...d.sensors, ...d.effectors, ...d.nodes]) {
+        const px = at(s.x, s.y);
+        const cell = `${Math.round(px.x / LABEL_CELL_PX)},${Math.round(px.y / LABEL_CELL_PX)}`;
+        const n = stack.get(cell) ?? 0;
+        stack.set(cell, n + 1);
+        want.set(s.key, {
+          text: s.id,
+          px: { x: px.x, y: px.y + n * LABEL_LINE_PX },
+          cls: 'asset',
+        });
+      }
       for (const a of d.areas)
         if (a.pts.length) {
           const c = centroid(a.pts);
@@ -503,6 +530,12 @@ export class MapController {
     if (useUi.getState().drawing !== drawing) useUi.getState().setDrawing(drawing);
     this.renderDraft();
   }
+
+  private onContextMenu = (e: MouseEvent) => {
+    e.preventDefault();
+    const target = this.menuAt(e.clientX, e.clientY);
+    if (target) this.onMenu?.({ ...target, at: this.px(e) });
+  };
 
   private onDblClick = (e: MouseEvent) => {
     if (!this.draft) return;

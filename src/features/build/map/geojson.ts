@@ -5,6 +5,8 @@ import type { Area, Effector, Node, Sensor, Threat, Vignette } from '../../../do
 import type { TimedPoint } from '../../../engine/geo';
 import { posAt } from '../../../engine/geo';
 import type { Preview } from '../../../engine/preview';
+import type { Units } from '../../../state/ui';
+import { fromDisplay, round, toDisplay, unitOf } from '../../shared/units';
 import type { BoundsM, Frame, LngLat, XY } from './frame';
 
 export type Props = Record<string, string | number | boolean>;
@@ -311,51 +313,57 @@ export function handleFeatures(f: Frame, d: Vignette, selected: readonly string[
 
 // ---- grid ----
 
-const GRID_STEPS = [100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000];
+/** Grid spacings in display units (nm or km), finest first. */
+const GRID_STEPS = [0.1, 0.25, 0.5, 1, 2.5, 5, 10, 25, 50, 100];
 /** Minimum screen spacing of grid lines. */
 const GRID_MIN_PX = 28;
 
-/** Line spacing for a scale: 500 m at the working zoom, coarser or finer as the view changes. */
-export function gridStep(mPerPx: number): number {
-  for (const s of GRID_STEPS) if (s / mPerPx >= GRID_MIN_PX) return s;
-  return GRID_STEPS[GRID_STEPS.length - 1]!;
+/**
+ * Line spacing in metres for a scale. The step is a round number in the display unit: 0.5 km
+ * (500 m) or 0.5 nm at the working zoom, coarser or finer as the view changes.
+ */
+export function gridStep(mPerPx: number, units: Units = 'si'): number {
+  const mPer = fromDisplay('range', 1, units);
+  for (const s of GRID_STEPS) if ((s * mPer) / mPerPx >= GRID_MIN_PX) return s * mPer;
+  return GRID_STEPS[GRID_STEPS.length - 1]! * mPer;
 }
 
 export type GridLabel = { axis: 'x' | 'y'; value: number; text: string };
 
-/** Grid lines over the visible bounds, labels every second line (every 1 km at 500 m lines). */
-export function gridFeatures(f: Frame, b: BoundsM, mPerPx: number) {
-  const step = gridStep(mPerPx);
-  const labelStep = step * 2;
+/** Grid lines over the visible bounds, labels every second line, in the display unit. */
+export function gridFeatures(f: Frame, b: BoundsM, mPerPx: number, units: Units = 'si') {
+  const step = gridStep(mPerPx, units);
   const lines: Feature[] = [];
   const labels: GridLabel[] = [];
-  const x0 = Math.floor(b[0] / step) * step;
-  const y0 = Math.floor(b[1] / step) * step;
-  for (let x = x0; x <= b[2]; x += step) {
-    const major = Math.abs(x % labelStep) < 1e-6;
+  // Lines by integer index so float steps (0.5 nm = 926 m) never drift off the origin.
+  for (let i = Math.floor(b[0] / step); i * step <= b[2]; i++) {
+    const x = i * step;
+    const major = i % 2 === 0;
     lines.push({
       type: 'Feature',
       geometry: { type: 'LineString', coordinates: [f.toLngLat(x, b[1]), f.toLngLat(x, b[3])] },
-      properties: { major, origin: Math.abs(x) < 1e-6 },
+      properties: { major, origin: i === 0 },
     });
-    if (major) labels.push({ axis: 'x', value: x, text: gridText(x, 'E', 'W') });
+    if (major) labels.push({ axis: 'x', value: x, text: gridText(x, 'E', 'W', units) });
   }
-  for (let y = y0; y <= b[3]; y += step) {
-    const major = Math.abs(y % labelStep) < 1e-6;
+  for (let i = Math.floor(b[1] / step); i * step <= b[3]; i++) {
+    const y = i * step;
+    const major = i % 2 === 0;
     lines.push({
       type: 'Feature',
       geometry: { type: 'LineString', coordinates: [f.toLngLat(b[0], y), f.toLngLat(b[2], y)] },
-      properties: { major, origin: Math.abs(y) < 1e-6 },
+      properties: { major, origin: i === 0 },
     });
-    if (major) labels.push({ axis: 'y', value: y, text: gridText(y, 'N', 'S') });
+    if (major) labels.push({ axis: 'y', value: y, text: gridText(y, 'N', 'S', units) });
   }
   return { lines: fc(lines), labels, step };
 }
 
-function gridText(v: number, pos: string, neg: string): string {
-  if (Math.abs(v) < 1e-6) return '0 km';
-  const km = Math.abs(v) / 1000;
-  return `${Number.isInteger(km) ? km : km.toFixed(1)} km ${v > 0 ? pos : neg}`;
+function gridText(v: number, pos: string, neg: string, units: Units): string {
+  const unit = unitOf('range', units);
+  if (Math.abs(v) < 1e-6) return `0 ${unit}`;
+  const d = round(Math.abs(toDisplay('range', v, units)), 2);
+  return `${d} ${unit} ${v > 0 ? pos : neg}`;
 }
 
 /** Bounds of every asset in metres, or null when the vignette is empty. */

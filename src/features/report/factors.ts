@@ -4,7 +4,7 @@ import { archetypeById, SYSTEM_LABELS } from '../../domain/catalog';
 import type { Vignette } from '../../domain/types';
 import { threatAltitudeM, threatSpeedMs } from '../../engine/adapter';
 import type { Units } from '../../state/ui';
-import { altitude, M_PER_FT, range, sector, speed, text } from '../shared/units';
+import { altitude, elevation, latLon, range, sector, speed, text } from '../shared/units';
 
 export type FactorRow = {
   key: string;
@@ -17,17 +17,14 @@ export type FactorRow = {
 export type RunInfo = { n: number; seed: number } | null;
 
 export function factorRows(v: Vignette, run: RunInfo, units: Units): FactorRow[] {
-  const elev =
-    units === 'nav'
-      ? `${Math.round(v.site.elevM / M_PER_FT).toLocaleString('en-US')} ft MSL`
-      : `${Math.round(v.site.elevM).toLocaleString('en-US')} m MSL`;
+  const elev = text(elevation(v.site.elevM, units));
   const rows: FactorRow[] = [
     {
       key: 'site',
       factor: 'Site',
       id: v.site.name || 'Unnamed site',
       type: '',
-      setting: `${v.site.lat.toFixed(4)}°, ${v.site.lon.toFixed(4)}°, elevation ${elev}`,
+      setting: `${latLon(v.site.lat, v.site.lon)}, elevation ${elev}`,
     },
   ];
   for (const t of v.threats)

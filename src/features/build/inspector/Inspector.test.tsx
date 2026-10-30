@@ -34,13 +34,40 @@ describe('Inspector', () => {
   it('shows sensor range in nm under nav units and in km under SI', () => {
     useUi.setState({ selectedKeys: ['k-S-01'] });
     render(<Inspector />);
-    expect(screen.getByLabelText('Range')).toHaveValue(
-      String(Math.round((5000 / M_PER_NM) * 1000) / 1000),
-    );
+    // Unfocused fields show readout precision (F-09): 5000 m is 2.70 nm.
+    expect(screen.getByLabelText('Range')).toHaveValue((5000 / M_PER_NM).toFixed(2));
     expect(screen.getAllByText('nm').length).toBeGreaterThan(0);
     act(() => useUi.getState().setUnits('si'));
-    expect(screen.getByLabelText('Range')).toHaveValue('5');
+    expect(screen.getByLabelText('Range')).toHaveValue('5.00');
     expect(screen.getAllByText('km').length).toBeGreaterThan(0);
+  });
+
+  it('shows ground elevation in ft MSL, not AGL (F-06)', () => {
+    render(<Inspector />);
+    const el = screen.getByLabelText('Ground elevation');
+    expect(document.getElementById(el.getAttribute('aria-describedby')!)).toHaveTextContent(
+      'ft MSL',
+    );
+  });
+
+  it('shows Pfa in exponent notation (F-07)', () => {
+    act(() =>
+      useDocument.getState().edit('Set Pfa', (d) => {
+        const pd = d.sensors[0]!.model.pd;
+        if (pd.kind === 'swerling') pd.pfa = 1e-6;
+      }),
+    );
+    useUi.setState({ selectedKeys: ['k-S-01'] });
+    render(<Inspector />);
+    expect(screen.getByLabelText('Pfa')).toHaveValue('1e-6');
+  });
+
+  it('lays waypoint fields two to a row so values fit (F-05)', () => {
+    useUi.setState({ selectedKeys: [doc().threats[0]!.key] });
+    render(<Inspector />);
+    const grid = screen.getByLabelText('WP 1 x').closest('.grid');
+    expect(grid).toHaveClass('grid-cols-2');
+    expect(screen.getByLabelText('WP 1 x')).toHaveClass('min-w-[6ch]');
   });
 
   it('writes metres for a range commit as one labelled undo step', () => {

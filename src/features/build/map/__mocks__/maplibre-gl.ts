@@ -20,6 +20,11 @@ export class FakeSource {
 
 export const instances: Map[] = [];
 
+export let workerUrl = '';
+export function setWorkerUrl(u: string) {
+  workerUrl = u;
+}
+
 export class Map {
   center: { lng: number; lat: number };
   /** Pixels per degree of latitude. */

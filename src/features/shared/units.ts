@@ -8,32 +8,38 @@ import type { Evaluation, Score } from '../../engine/score';
 import { thresholdInCanonical } from '../../engine/score';
 import type { Units } from '../../state/ui';
 
-export type Quantity = 'range' | 'altitude' | 'speed';
+/** `elevation` is a height above mean sea level (a site datum); `altitude` is above ground. */
+export type Quantity = 'range' | 'altitude' | 'elevation' | 'speed';
 
 export const M_PER_NM = 1852;
 export const M_PER_FT = 0.3048;
 export const MS_PER_KT = M_PER_NM / 3600;
 
 const FACTOR: Record<Units, Record<Quantity, number>> = {
-  nav: { range: 1 / M_PER_NM, altitude: 1 / M_PER_FT, speed: 1 / MS_PER_KT },
-  si: { range: 1 / 1000, altitude: 1, speed: 1 },
+  nav: {
+    range: 1 / M_PER_NM,
+    altitude: 1 / M_PER_FT,
+    elevation: 1 / M_PER_FT,
+    speed: 1 / MS_PER_KT,
+  },
+  si: { range: 1 / 1000, altitude: 1, elevation: 1, speed: 1 },
 };
 
 const UNIT: Record<Units, Record<Quantity, string>> = {
-  nav: { range: 'nm', altitude: 'ft AGL', speed: 'kt' },
-  si: { range: 'km', altitude: 'm AGL', speed: 'm/s' },
+  nav: { range: 'nm', altitude: 'ft AGL', elevation: 'ft MSL', speed: 'kt' },
+  si: { range: 'km', altitude: 'm AGL', elevation: 'm MSL', speed: 'm/s' },
 };
 
 /** Decimals for a formatted readout (map labels, drag tips). */
 const DECIMALS: Record<Units, Record<Quantity, number>> = {
-  nav: { range: 2, altitude: 0, speed: 0 },
-  si: { range: 2, altitude: 0, speed: 1 },
+  nav: { range: 2, altitude: 0, elevation: 0, speed: 0 },
+  si: { range: 2, altitude: 0, elevation: 0, speed: 1 },
 };
 
 /** Decimals for an editable field value. */
 const FIELD_DECIMALS: Record<Units, Record<Quantity, number>> = {
-  nav: { range: 3, altitude: 0, speed: 1 },
-  si: { range: 3, altitude: 1, speed: 1 },
+  nav: { range: 3, altitude: 0, elevation: 0, speed: 1 },
+  si: { range: 3, altitude: 1, elevation: 1, speed: 1 },
 };
 
 export function unitOf(q: Quantity, units: Units): string {
@@ -58,6 +64,22 @@ export function round(n: number, decimals: number): number {
 /** Stored value to the number an editable field shows, rounded for the field. */
 export function fieldValue(q: Quantity, v: number, units: Units): number {
   return round(toDisplay(q, v, units), FIELD_DECIMALS[units][q]);
+}
+
+/** A display number as readout text without its unit, at readout precision: `3.01`. */
+export function displayText(q: Quantity, display: number, units: Units): string {
+  return display.toFixed(DECIMALS[units][q]);
+}
+
+/** A stored value as readout text without its unit: 3013 m shows `1.63` in nm. */
+export function readout(q: Quantity, v: number, units: Units): string {
+  return displayText(q, toDisplay(q, v, units), units);
+}
+
+/** A small probability in exponent notation: 0.000001 shows as `1e-6`. */
+export function formatSci(v: number): string {
+  if (v === 0) return '0';
+  return v.toExponential().replace('e+', 'e');
 }
 
 export function format(q: Quantity, v: number, units: Units): string {
@@ -247,6 +269,17 @@ export function altitude(m: number, units: Units): Shown {
   return units === 'nav'
     ? { value: fixed(m / M_PER_FT, 0), unit: 'ft AGL' }
     : { value: fixed(m, 0), unit: 'm AGL' };
+}
+
+export function elevation(m: number, units: Units): Shown {
+  return units === 'nav'
+    ? { value: fixed(m / M_PER_FT, 0), unit: 'ft MSL' }
+    : { value: fixed(m, 0), unit: 'm MSL' };
+}
+
+/** A site position: "35.0000°, -117.0000°". */
+export function latLon(lat: number, lon: number): string {
+  return `${lat.toFixed(4)}°, ${lon.toFixed(4)}°`;
 }
 
 export function speed(ms: number, units: Units): Shown {

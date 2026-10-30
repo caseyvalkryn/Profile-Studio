@@ -94,8 +94,8 @@ function VignetteHeader({ v }: { v: Vignette }) {
           />
         </Grid>
         <UnitField
-          label="Ground elevation MSL"
-          q="altitude"
+          label="Ground elevation"
+          q="elevation"
           stored={v.site.elevM}
           onCommit={(n) => edit('Set site elevation', (d) => void (d.site.elevM = n))}
         />

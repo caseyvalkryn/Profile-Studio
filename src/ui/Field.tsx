@@ -149,7 +149,7 @@ export function Field(props: FieldProps) {
             commit();
           }}
           onKeyDown={onKeyDown}
-          className={`h-full min-w-0 flex-1 rounded-sm bg-transparent px-2 text-sm text-text ${
+          className={`h-full min-w-[6ch] flex-1 rounded-sm bg-transparent px-2 text-sm text-text ${
             numeric ? 'font-mono tabular-nums' : ''
           } placeholder:text-muted ${focusRing} focus-visible:ring-0`}
         />

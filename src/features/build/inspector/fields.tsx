@@ -2,7 +2,7 @@
 import { useId, type ReactNode } from 'react';
 import { Field, Tooltip } from '../../../ui';
 import { useUi } from '../../../state/ui';
-import { fieldValue, fromDisplay, unitOf, type Quantity } from '../../shared/units';
+import { displayText, fieldValue, fromDisplay, unitOf, type Quantity } from '../../shared/units';
 
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -54,6 +54,7 @@ export function UnitField(props: {
       label={props.label}
       unit={unitOf(props.q, units)}
       value={fieldValue(props.q, props.stored, units)}
+      format={(v) => displayText(props.q, v, units)}
       min={props.min}
       onCommit={(v) => props.onCommit(fromDisplay(props.q, v, units))}
     />

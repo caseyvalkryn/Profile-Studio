@@ -15,7 +15,7 @@ import {
 } from '../../../domain/catalog';
 import type { ArmedItem, Units } from '../../../state/ui';
 import type { AssetDragPayload } from './dnd';
-import { compactAltitude, compactSpeed } from '../../shared/units';
+import { compactAltitude, compactSpeed, formatDistance } from '../../shared/units';
 
 export type GroupId = 'threats' | 'sensors' | 'effectors' | 'nodes' | 'areas';
 
@@ -119,7 +119,30 @@ export function threatSummary(a: ThreatArchetype, units: Units): string {
   return `${compactSpeed(a.cruiseMs, units)} · ${compactAltitude(lo, units)} to ${compactAltitude(hi, units)}`;
 }
 
-const metres = (m: number) => `${m.toLocaleString('en-US')} m`;
+/** A source URL as a short name for tooltips: `https://www.janes.com/` reads `janes.com`. */
+export function sourceName(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+}
+
+/** The values row under a library item: threats show speed and altitude, sensors and
+ * effectors show range and field of view (principle 3.3). */
+export function itemSummary(item: LibraryItem, units: Units): string | null {
+  const p = item.payload.type as string;
+  if (item.group === 'threats') return threatSummary(item.threat!, units);
+  if (item.group === 'sensors') {
+    const d = SENSOR_DEFAULTS[p as keyof typeof SENSOR_DEFAULTS];
+    return `${formatDistance(d.rangeM, units)} · ${d.fovDeg}°`;
+  }
+  if (item.group === 'effectors') {
+    const d = EFFECTOR_DEFAULTS[p as keyof typeof EFFECTOR_DEFAULTS];
+    return `${formatDistance(d.rangeM, units)} · ${d.fovDeg}°`;
+  }
+  return null;
+}
 
 /** One-line tooltip: planning defaults, and the source for a threat (principle 3.3). */
 export function itemTip(item: LibraryItem, units: Units): string {
@@ -127,15 +150,15 @@ export function itemTip(item: LibraryItem, units: Units): string {
   switch (item.group) {
     case 'threats': {
       const a = item.threat!;
-      return `Group ${a.group}, max ${compactSpeed(a.vmaxMs, units)}${a.rf ? '' : ', RF silent'}. Source: ${a.src}`;
+      return `Group ${a.group}, max ${compactSpeed(a.vmaxMs, units)}${a.rf ? '' : ', RF silent'}. Source: ${sourceName(a.src)}`;
     }
     case 'sensors': {
       const d = SENSOR_DEFAULTS[p as keyof typeof SENSOR_DEFAULTS];
-      return `Planning defaults: range ${metres(d.rangeM)}, FOV ${d.fovDeg}°, confirm ${d.confirmS} s`;
+      return `Planning defaults: range ${formatDistance(d.rangeM, units)}, FOV ${d.fovDeg}°, confirm ${d.confirmS} s`;
     }
     case 'effectors': {
       const d = EFFECTOR_DEFAULTS[p as keyof typeof EFFECTOR_DEFAULTS];
-      return `Planning defaults: range ${metres(d.rangeM)}, FOV ${d.fovDeg}°, time to effect ${d.timeToEffectS} s`;
+      return `Planning defaults: range ${formatDistance(d.rangeM, units)}, FOV ${d.fovDeg}°, time to effect ${d.timeToEffectS} s`;
     }
     case 'nodes':
       return 'Planning defaults: no detection range';
