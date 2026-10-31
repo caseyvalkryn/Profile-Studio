@@ -188,7 +188,7 @@ describe('run feedback (F-08, FR-03)', () => {
     act(() => vi.advanceTimersByTime(60_000));
     expect(screen.getByText('Run R-1 done')).toBeInTheDocument();
     act(() =>
-      useDocument.getState().edit('Rename vignette', (d) => {
+      useDocument.getState().edit('Rename profile', (d) => {
         d.name = 'edited';
       }),
     );

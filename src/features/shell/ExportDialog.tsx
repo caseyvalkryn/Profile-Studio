@@ -1,13 +1,21 @@
 // Export (legacy `51-panel-dialog.js` renderExport): the open profile's JSON, or the whole
 // library's when none is open, in a read-only box with Copy JSON, Copy whole library and Close.
-// The port adds Download, which saves the shown text as a .json file (MVP rule for the name).
+// The port adds Download, which saves the shown text as a .json file. Text, file name and download
+// come from the one export path in `src/features/library/io.ts`. Opening hides any toast.
 import { useEffect, useRef, useState } from 'react';
 import { isMac } from '../../commands/registry';
 import { useDocument } from '../../state/document';
 import { useUi } from '../../state/ui';
 import { DialogBox } from './DialogBox';
-import { download, exportLibrary, exportProfile, fileName, schemaVersion } from './exportLibrary';
-import { showToast } from './toastStore';
+import {
+  download,
+  fileName,
+  LIBRARY_FILE,
+  libraryText,
+  profileText,
+  schemaVersion,
+} from '../library/io';
+import { hideToast, showToast } from './toastStore';
 
 export const COPIED = 'Copied.';
 export const copyHint = (mac = isMac()) =>
@@ -23,15 +31,17 @@ function ExportOpen() {
   // The record is fixed when the dialog opens, as in legacy.
   const [rec] = useState(() => useDocument.getState().doc);
   const [libText, setLibText] = useState('');
-  const text = rec ? exportProfile(rec) : libText;
+  const text = rec ? profileText(rec) : libText;
   const [hint, setHint] = useState('');
   const area = useRef<HTMLTextAreaElement>(null);
   const copyBtn = useRef<HTMLButtonElement>(null);
 
+  useEffect(() => hideToast(), []);
+
   useEffect(() => {
     if (rec) return;
     let live = true;
-    void exportLibrary(null).then((t) => {
+    void libraryText(null).then((t) => {
       if (live) setLibText(t);
     });
     return () => {
@@ -89,7 +99,7 @@ function ExportOpen() {
             <button
               type="button"
               className="ps-btn"
-              onClick={() => void exportLibrary(useDocument.getState().doc).then(copy)}
+              onClick={() => void libraryText().then(copy)}
             >
               Copy whole library
             </button>
@@ -97,7 +107,7 @@ function ExportOpen() {
           <button
             type="button"
             className="ps-btn"
-            onClick={() => download(rec ? fileName(rec.name) : 'profile-library.json', text)}
+            onClick={() => download(rec ? fileName(rec.name) : LIBRARY_FILE, text)}
           >
             Download
           </button>

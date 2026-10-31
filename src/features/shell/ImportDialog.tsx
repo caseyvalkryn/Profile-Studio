@@ -1,60 +1,22 @@
 // Import (legacy `51-panel-dialog.js` renderImport and doImport): a file or pasted JSON through
-// `importJson`, stored with `saveVignette`. Problems show in the Item and Problem table; a clean
-// import closes the dialog and toasts the count. A profile with the open profile's id replaces
-// it in the editor too.
-import { useRef, useState } from 'react';
-import { useDocument } from '../../state/document';
-import { importJson, listVignettes, saveVignette } from '../../state/persist';
+// the one import path, `importText` in `src/features/library/io.ts`. Problems show in the Item and
+// Problem table; a clean import closes the dialog and toasts the count. Opening the dialog hides
+// any toast (review 9.1 F-14).
+import { useEffect, useRef, useState } from 'react';
 import { useUi } from '../../state/ui';
+import { importText } from '../library/io';
 import { DialogBox } from './DialogBox';
-import { showToast } from './toastStore';
+import { hideToast } from './toastStore';
 
-export const EMPTY_IMPORT = 'Paste a profile, or pick a file.';
 export const UNREADABLE = 'The file cannot be read.';
-
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
-/** The toast after an import (legacy text). */
-export const importedText = (n: number, replaced: number) =>
-  `Imported ${plural(n, 'profile')}${replaced ? `, ${replaced} replaced.` : '.'}`;
-
-/**
- * Import `text`. Returns the problems to show; an empty list means every record was stored.
- * `importJson` is all or nothing, so a failed import stores nothing and has one problem.
- */
-export async function importText(text: string): Promise<string[]> {
-  const t = text.trim();
-  if (!t) return [EMPTY_IMPORT];
-  let records;
-  try {
-    records = importJson(t);
-  } catch (err) {
-    return [(err as Error).message];
-  }
-  let have = new Set<string>();
-  try {
-    have = new Set((await listVignettes()).map((l) => l.id));
-  } catch {
-    // No storage: count every record as added.
-  }
-  const ids = new Set(records.map((r) => r.id));
-  const replaced = [...ids].filter((id) => have.has(id)).length;
-  try {
-    for (const r of records) await saveVignette(r);
-  } catch (err) {
-    return [(err as Error).message];
-  }
-  const open = useDocument.getState().doc;
-  const same = open ? records.find((r) => r.id === open.id) : undefined;
-  if (same) useDocument.getState().open(same);
-  showToast(importedText(records.length, replaced));
-  return [];
-}
 
 export default function ImportDialog() {
   const open = useUi((s) => s.dialog === 'import');
   const [errors, setErrors] = useState<string[]>([]);
   const paste = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (open) hideToast();
+  }, [open]);
   const close = () => {
     setErrors([]);
     useUi.getState().setDialog(null);

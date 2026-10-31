@@ -1,12 +1,18 @@
 import { testVignette } from '../../engine/testVignette';
 import { useDocument } from '../../state/document';
 import { SCHEMA } from '../../domain';
-import { exportJson } from '../../state/persist';
+import { importJson } from '../../state/persist';
 import { UI_DEFAULTS, useUi } from '../../state/ui';
 import { execute } from '../../commands/registry';
 import '../../commands/commands';
-import { libraryJson } from './exportLibrary';
-import { EMPTY_IMPORT, importedText, importText } from './ImportDialog';
+import {
+  EMPTY_IMPORT,
+  fileName,
+  importedText,
+  importText,
+  profileText,
+  schemaVersion,
+} from '../library/io';
 import { applyTheme, loadTheme, saveTheme, THEME_KEY } from './theme';
 import { hideToast, redidText, TOAST_MS, undidText, useToast } from './toastStore';
 
@@ -93,11 +99,16 @@ describe('import and export text', () => {
     expect(importedText(3, 2)).toBe('Imported 3 profiles, 2 replaced.');
   });
 
-  it('the library export carries the current schema and round-trips through import', () => {
+  it('the profile export carries the current schema and round-trips through import', () => {
     const v = testVignette();
-    const json = JSON.parse(libraryJson([v]));
+    const json = JSON.parse(profileText(v));
     expect(json.schema).toBe(SCHEMA);
-    expect(json.library).toHaveLength(1);
-    expect(JSON.parse(exportJson(v)).id).toBe(v.id);
+    expect(importJson(profileText(v))[0]!.id).toBe(v.id);
+    expect(schemaVersion()).toBe(String(SCHEMA).split('/').pop());
+  });
+
+  it('one file-name rule: unsafe characters become _', () => {
+    expect(fileName('Point defence / 1')).toBe('Point_defence_1.json');
+    expect(fileName('')).toBe('profile.json');
   });
 });

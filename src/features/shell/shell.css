@@ -1,9 +1,8 @@
 /* The shell frame, ported from legacy/css/app.css (frame, overlay host, phone tab bar and sheet,
    shared control classes) and the panel styles of 51-panel-topbar.js, 51-panel-help.js and
    51-panel-dialog.js. Legacy colour names map onto the MVP surfaces: panel and raised are
-   surface-1, sunken is surface-2, rule is surface-3, t1 is text, t2 and t3 are text-muted.
-   Layout and type tokens come from src/styles/tokens.css (lane 9.1.1); the fallbacks are the
-   legacy values for a build without them. */
+   surface-1, sunken is surface-2, rule is surface-3, t1 is text, t2 is text-muted, t3 is
+   text-subtle. Layout and type tokens come from src/styles/tokens.css (lane 9.1.1). */
 
 /* On the root, not .ps-app: dialogs and menus render in a portal outside the app frame. */
 :root {
@@ -14,10 +13,10 @@
   --ps-sunken: var(--surface-2);
   --ps-t1: var(--text);
   --ps-t2: var(--text-muted);
-  --ps-t3: var(--text-muted);
+  --ps-t3: var(--text-subtle);
   --ps-elev: 0 8px 24px rgb(0 0 0 / 0.12);
-  --ps-top: var(--top, 48px);
-  --ps-ctl: var(--ctl, 28px);
+  --ps-top: var(--top);
+  --ps-ctl: var(--ctl);
 }
 
 .ps-app {
@@ -25,26 +24,29 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  font: var(--fw, 400) var(--fs-3, 13px) / var(--lh-3, 18px) var(--ui, system-ui, sans-serif);
+  font: var(--fw) var(--fs-3) / var(--lh-3) var(--ui);
 }
 
 /* ---- frame */
+/* 48 px tall with its rule inside; 16 px gutter; the rule is inset by the gutter (legacy). */
 .ps-top {
   flex: 0 0 auto;
-  min-height: var(--ps-top);
-  border-bottom: 1px solid var(--ps-rule);
   background: var(--ps-panel);
-  padding: 0 12px;
+  padding: 0 16px;
+}
+.ps-top > .tb-bar {
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--ps-rule);
 }
 .ps-cols {
   display: flex;
   align-items: stretch;
   min-width: 0;
-  height: calc(100vh - var(--ps-top) - 1px);
+  height: calc(100vh - var(--ps-top));
 }
 .ps-rail {
-  flex: 0 0 var(--col-list, 232px);
-  width: var(--col-list, 232px);
+  flex: 0 0 var(--col-list);
+  width: var(--col-list);
   min-height: 0;
   overflow: auto;
   background: var(--ps-panel);
@@ -66,8 +68,8 @@
   flex-direction: column;
 }
 .ps-right {
-  flex: 0 0 var(--col-right, 320px);
-  width: var(--col-right, 320px);
+  flex: 0 0 var(--col-right);
+  width: var(--col-right);
   min-height: 0;
   overflow: auto;
   display: flex;
@@ -77,7 +79,7 @@
 }
 .ps-strip {
   flex: 0 0 auto;
-  min-height: var(--strip, 112px);
+  min-height: var(--strip);
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -127,7 +129,7 @@
 .ps-tabs > .ps-btn[aria-pressed='true'] {
   color: var(--ps-t1);
   background: var(--ps-sunken);
-  font-weight: var(--fw-med, 500);
+  font-weight: var(--fw-med);
 }
 .ps-sheet {
   display: none;
@@ -209,7 +211,7 @@
   height: var(--ps-ctl);
   padding: 0 10px;
   font: inherit;
-  font-size: var(--fs-3, 13px);
+  font-size: var(--fs-3);
   line-height: 1;
   white-space: nowrap;
   color: var(--ps-t1);
@@ -272,11 +274,11 @@
   color: var(--ps-t1);
   background: var(--ps-sunken);
   border-color: var(--ps-t3);
-  font-weight: var(--fw-med, 500);
+  font-weight: var(--fw-med);
 }
 .ps-input {
   font: inherit;
-  font-size: var(--fs-3, 13px);
+  font-size: var(--fs-3);
   background: var(--ps-sunken);
   color: var(--ps-t1);
   border: 1px solid var(--ps-rule-strong);
@@ -292,35 +294,35 @@ textarea.ps-input {
 
 /* text roles (legacy t-*) */
 .ps-t-title {
-  font: var(--fw-med, 500) var(--fs-4, 14px) / var(--lh-4, 20px) var(--ui, sans-serif);
+  font: var(--fw-med) var(--fs-4) / var(--lh-4) var(--ui);
   color: var(--ps-t1);
 }
 .ps-t-body {
-  font: var(--fw, 400) var(--fs-3, 13px) / var(--lh-3, 18px) var(--ui, sans-serif);
+  font: var(--fw) var(--fs-3) / var(--lh-3) var(--ui);
   color: var(--ps-t1);
 }
 .ps-t-sub {
-  font: var(--fw, 400) var(--fs-2, 12px) / var(--lh-2, 16px) var(--ui, sans-serif);
+  font: var(--fw) var(--fs-2) / var(--lh-2) var(--ui);
   color: var(--ps-t2);
 }
 .ps-t-data {
-  font: var(--fw, 400) var(--fs-2, 12px) / var(--lh-2, 16px) var(--mono, monospace);
+  font: var(--fw) var(--fs-2) / var(--lh-2) var(--mono);
   font-variant-numeric: tabular-nums;
 }
 .ps-t-id {
-  font: var(--fw-med, 500) var(--fs-2, 12px) / var(--lh-2, 16px) var(--mono, monospace);
+  font: var(--fw-med) var(--fs-2) / var(--lh-2) var(--mono);
   color: var(--ps-t1);
   white-space: nowrap;
 }
 .ps-t-label {
-  font: var(--fw-med, 500) var(--fs-1, 11px) / var(--lh-1, 14px) var(--ui, sans-serif);
-  letter-spacing: var(--ls-caps, 0.06em);
+  font: var(--fw-med) var(--fs-1) / var(--lh-1) var(--ui);
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   color: var(--ps-t3);
 }
 .ps-hint {
   margin: 0;
-  font: var(--fw, 400) var(--fs-2, 12px) / var(--lh-2, 16px) var(--ui, sans-serif);
+  font: var(--fw) var(--fs-2) / var(--lh-2) var(--ui);
   color: var(--ps-t3);
 }
 .ps-sr {
@@ -417,10 +419,10 @@ textarea.ps-input {
   z-index: 48;
   display: flex;
   flex-direction: column;
-  background: var(--ps-raised, var(--surface-1));
-  color: var(--ps-t1, var(--text));
-  border-left: 1px solid var(--ps-rule-strong, var(--surface-3));
-  box-shadow: var(--ps-elev, 0 8px 24px rgb(0 0 0 / 0.12));
+  background: var(--ps-raised);
+  color: var(--ps-t1);
+  border-left: 1px solid var(--ps-rule-strong);
+  box-shadow: var(--ps-elev);
 }
 .hp-head {
   display: flex;
@@ -428,7 +430,7 @@ textarea.ps-input {
   justify-content: space-between;
   gap: 8px;
   padding: 10px 16px;
-  border-bottom: 1px solid var(--ps-rule, var(--surface-3));
+  border-bottom: 1px solid var(--ps-rule);
 }
 .hp-head h2 {
   margin: 0;
@@ -446,17 +448,17 @@ textarea.ps-input {
 }
 .hp-tbl td {
   padding: 4px 8px 4px 0;
-  border-bottom: 1px solid var(--ps-rule, var(--surface-3));
+  border-bottom: 1px solid var(--ps-rule);
   vertical-align: top;
 }
 .hp-tbl td.hp-k {
   white-space: nowrap;
   width: 1%;
   padding-right: 16px;
-  color: var(--ps-t1, var(--text));
+  color: var(--ps-t1);
 }
 .hp-tbl td.hp-l {
-  color: var(--ps-t2, var(--text-muted));
+  color: var(--ps-t2);
 }
 @media (max-width: 600px) {
   .hp-pop {
@@ -490,7 +492,7 @@ textarea.ps-input {
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
   outline: none;
   /* The portal sits outside .ps-app, so the body text role is set here. */
-  font: var(--fw, 400) var(--fs-3, 13px) / var(--lh-3, 18px) var(--ui, system-ui, sans-serif);
+  font: var(--fw) var(--fs-3) / var(--lh-3) var(--ui);
 }
 .dl-head {
   display: flex;

@@ -1,7 +1,9 @@
 // Key events to commands. While a text input has focus only Cmd+K passes; Escape there blurs the
 // input and does nothing else. An event a handler already took (defaultPrevented) is skipped, so
 // one Escape closes one layer. Held keys repeat only the time steps, undo and redo. A key binds
-// only to the command active in the current workspace (Command.workspaces).
+// only to the command active in the current workspace (Command.workspaces). A key on a command that
+// cannot run shows the reason in the toast, as the legacy status line did (review 9.1 F-08).
+import { showToast } from '../features/shell/toastStore';
 import { byShortcut, currentContext, isMac } from './registry';
 import type { CommandContext } from './types';
 
@@ -69,9 +71,12 @@ export function isTextInput(target: EventTarget | null): boolean {
   return el.isContentEditable === true;
 }
 
+/** A disabled command's reason as toast text: one sentence with a full stop. */
+export const reasonText = (reason: string) => (/[.!?]$/.test(reason) ? reason : `${reason}.`);
+
 /**
  * Dispatch one key event. Returns the id of the command that ran, or null. A matched but disabled
- * command does nothing and returns null.
+ * command does not run: it shows its reason in the toast and returns null.
  */
 export function dispatchKey(
   e: KeyLike,
@@ -90,7 +95,11 @@ export function dispatchKey(
   // Tab cycles objects only from the page itself; on a control it moves focus (legacy tabFree).
   if ((shortcut === 'Tab' || shortcut === 'Shift+Tab') && !onPage(e.target)) return null;
   if (e.repeat && !REPEATABLE.has(cmd.id)) return null;
-  if (cmd.when(c) !== true) return null;
+  const ok = cmd.when(c);
+  if (ok !== true) {
+    showToast(reasonText(ok));
+    return null;
+  }
   e.preventDefault?.();
   cmd.run(c);
   return cmd.id;

@@ -310,6 +310,27 @@ describe('legacy v4 round trip (acceptance item 18)', () => {
     expect(asLegacy(roundTrip(v))).toEqual(legacyFields(rec));
   });
 
+  it('keeps a debrief event on an unknown system with no sensor, with a note', () => {
+    const [, base] = fixtures[0]!;
+    const rec = structuredClone(base) as L;
+    rec.debrief = {
+      tspi: {},
+      events: [{ id: 'd1', t: 30, type: 'id', path: 'T1', system: 'RDR-9' }],
+    };
+    const v = importLegacyV4(rec);
+    expect(v.debrief!.events[0]!.sensorKey).toBeNull();
+    expect(v.report.notes).toContain(
+      'A debrief event refers to system RDR-9 that does not exist; it has no sensor.',
+    );
+  });
+
+  it('imports legacy cards to cards only; report slides stay empty', () => {
+    const [, base] = fixtures[0]!;
+    const v = importLegacyV4(structuredClone(base));
+    expect(v.cards.length).toBeGreaterThan(0);
+    expect(v.report.slides).toEqual([]);
+  });
+
   it('rejects what the legacy validator rejects', () => {
     const [, base] = fixtures[0]!;
     const bad = (edit: (r: L & { cards: L[]; events: L[] }) => void) => {

@@ -446,6 +446,7 @@ const EVERYWHERE = new Set([
   'file.import',
   'profile.new',
   'profile.newFromTemplate',
+  'library.export',
   'run.start',
   'run.sweep',
 ]);
@@ -942,7 +943,8 @@ const COMMANDS: Command[] = [
     label: 'Strip: timeline, chart, readout',
     group: 'view',
     shortcut: 'R',
-    when: () => true,
+    // Build's strip has only the timeline until the chart and readout strips land.
+    when: () => 'The chart and readout strips arrive in lane 9.3.2',
     run: (ctx) => ctx.ui.setStripTab(STRIP_NEXT[ctx.ui.stripTab]),
   },
   ...PANEL_TOGGLES,
@@ -996,10 +998,10 @@ const COMMANDS: Command[] = [
     run: () => {},
   },
 
-  // file. `profile.new` and `profile.newFromTemplate` come from the Library (lane 9.1.4); the
-  // Library's `library.export` and `library.import` stay unregistered because `file.export` and
-  // `file.import` open the dialogs that cover both (dedupe in 9.1.F).
-  ...libraryCommands.filter((c) => c.id === 'profile.new' || c.id === 'profile.newFromTemplate'),
+  // file. New, New from template, Export library and the Library's `/` search come from the
+  // Library (lane 9.1.4, review 9.1 F-19, F-20). `file.export` is "Export" (the dialog);
+  // `library.export` is "Export library" (the file). Import is `file.import` only.
+  ...libraryCommands,
   {
     id: 'file.export',
     label: 'Export',

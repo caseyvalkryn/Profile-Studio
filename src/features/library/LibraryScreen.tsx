@@ -1,10 +1,11 @@
 // The Library workspace (spec section 7), a port of legacy/js/51-panel-collect.js: New first, the
 // templates in one row, saved profiles below grouped by site (newest group first, newest profile
 // first), search over id, name, site and question. Per card: Open, Brief, Duplicate, Export,
-// Delete with an inline Yes or No row, then undo for 8 s. Import and Export library.
+// Delete with an inline Yes or No row, then undo for 8 s. Import and Export library. The bar has
+// no title: the workspace segment names the screen (principle 5.1).
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { newKey } from '../../domain/ids';
+import { get, shortcutLabel } from '../../commands/registry';
 import type { Step } from '../../domain/measures';
 import type { Vignette } from '../../domain/types';
 import { useDocument } from '../../state/document';
@@ -19,11 +20,13 @@ import {
 import { Button, Menu, Tooltip } from '../../ui';
 import { focusRing } from '../../ui/focus';
 import { absoluteTime, relativeTime } from './format';
+import { SEARCH_ID } from './commands';
 import { exportLibraryFile, exportProfileFile, importText } from './io';
 import {
-  copyOf,
   newProfile,
+  nextProfileId,
   openProfile,
+  openTemplateCopy,
   templatesBlankLast,
   useLibraryRequests,
 } from './newProfile';
@@ -140,8 +143,12 @@ function SavedCard({
         {s.name}
       </h3>
       <p className="m-0 line-clamp-2 min-h-8 text-xs text-muted">{question}</p>
-      <div className="flex items-baseline justify-between gap-2 text-xs text-muted">
+      <div className="flex items-baseline gap-2 text-xs text-muted">
         <span className="truncate font-mono">{s.id}</span>
+        {v ? (
+          <span className="shrink-0 font-mono">{plural(v.cards.length, 'card', 'cards')}</span>
+        ) : null}
+        <span className="flex-1" />
         <Tooltip content={absoluteTime(s.updated)}>
           <span tabIndex={0} className={`shrink-0 font-mono ${focusRing}`}>
             {relativeTime(s.updated)}
@@ -253,7 +260,7 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
   };
 
   // The copy is not saved here: autosave writes it on its first edit (FR-07).
-  const openTemplate = (t: Template) => openProfile(copyOf(t), go);
+  const openTemplate = (t: Template) => void openTemplateCopy(t, go);
 
   const openSaved = async (id: string, path = '/build') => {
     const v = await loadVignette(id);
@@ -265,7 +272,7 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
     if (!v) return;
     const copy: Vignette = {
       ...structuredClone(v),
-      id: newKey(),
+      id: await nextProfileId(),
       name: `${v.name} copy`,
       updated: new Date().toISOString(),
     };
@@ -302,8 +309,9 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
     setPendingDelete(null);
   };
 
+  // The one import path: it refreshes this list and toasts the count; a problem shows here.
   const importFile = async (file: File | undefined) => {
-    if (file) setMessage(await importText(await file.text()));
+    if (file) setMessage((await importText(await file.text())).join(' '));
   };
 
   const onDrop = (e: DragEvent) => {
@@ -312,6 +320,9 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
     e.preventDefault();
     void importFile(file);
   };
+
+  const newCmd = get('profile.new');
+  const newShortcut = newCmd ? shortcutLabel(newCmd) : undefined;
 
   const shownTemplates = ordered.filter((t) => matches(query, t.name, t.question));
   const listed = saved.filter((s) => pending?.id !== s.id);
@@ -344,18 +355,17 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
 
   return (
     <div
-      className="h-full overflow-y-auto bg-surface-0 px-6 py-5 text-text"
+      className="h-full overflow-y-auto bg-surface-0 px-4 py-3 text-text"
       onDragOver={(e) => {
         if (e.dataTransfer?.types?.includes('Files')) e.preventDefault();
       }}
       onDrop={onDrop}
     >
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <h1 className="mr-1 text-sm font-medium">Library</h1>
         <span className="inline-flex">
           <Button
             variant="accent"
-            shortcut="⌘N"
+            shortcut={newShortcut}
             tooltip="A new profile with the default site and one defended asset"
             onClick={() => void newProfile(go)}
             className="rounded-r-none"
@@ -395,6 +405,7 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
           />
         </span>
         <input
+          id={SEARCH_ID}
           type="search"
           aria-label="Search profiles"
           placeholder="Search question, name, site"
@@ -438,7 +449,7 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
       </div>
 
       <section aria-label="Templates">
-        <h2 className="mb-2 text-xs text-muted">Templates</h2>
+        <h2 className="ps-t-label mt-0 mb-2">Templates</h2>
         <ul className="flex gap-3 overflow-x-auto pb-2">
           {shownTemplates.map((t) => (
             <li key={t.id} className="w-56 shrink-0">
@@ -492,9 +503,9 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
         ) : (
           groups.map((g) => (
             <section key={g.site} aria-label={g.site || NO_SITE} className="mb-5">
-              <h2 className="mb-2 text-xs text-muted">
+              <h2 className="ps-t-label mt-0 mb-2">
                 {g.site || NO_SITE}
-                <span className="ml-1.5 font-mono">{g.profiles.length}</span>
+                <span className="ml-1.5 font-mono tracking-normal">{g.profiles.length}</span>
               </h2>
               <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
                 {g.profiles.map((s) => (
