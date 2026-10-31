@@ -6,6 +6,7 @@
 // 2. Byte parity: the port's SVG equals the live legacy renderer's SVG (legacy scripts loaded in
 //    node, as src/engine/preview.test.ts does) over every seed, camera, time and option set.
 import { importLegacyV4 } from '../domain/migrate';
+import { derived, preview } from '../engine';
 import { cameras } from './cameras';
 import { bounds } from './geo';
 import { list } from './layers';
@@ -407,5 +408,23 @@ describe('byte parity with the legacy renderer', () => {
       { derived: d, edit: true, ghost: { rec: sc, derived: d } },
     ).svg;
     expect(gb).toBe(ga);
+  });
+});
+
+describe('the engine adapter feeds the board', () => {
+  // Derived (src/engine/derived.ts) is assignable to DerivedView, and every fixture renders in
+  // every camera from the adapter output rather than the fixture's legacy derive output.
+  it('derived(v, preview(v)) renders every fixture in plan, elev and axon', () => {
+    for (const id of FIXTURES) {
+      const v = importLegacyV4(JSON.parse(JSON.stringify(fixture(id).input)));
+      const d: DerivedView = derived(v, preview(v));
+      const sc = toScene(v);
+      for (const cam of CAMS) {
+        const out = scene(sc, { cam, t: 0 } as BoardView, SIZE, { derived: d });
+        checkSvg(out.svg, id + ' ' + cam + ' adapter');
+        if (v.threats.length)
+          expect(out.svg.indexOf('ly-tracks'), id + ' ' + cam).toBeGreaterThan(-1);
+      }
+    }
   });
 });

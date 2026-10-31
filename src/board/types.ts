@@ -125,7 +125,7 @@ export type DerivedView = {
   /** Track lifecycle spans per path id (state pending | unknown | identity | coast | lost). Read by tracks. */
   trackLine?: Record<string, TrackSpan[]>;
   /** First-see per path id, per system id. Read by events (first-see ticks). */
-  first?: Record<string, Record<string, FirstSee>>;
+  first?: Record<string, Record<string, FirstSee | null>>;
   /** First effector per path id. Read by tracks (engagement marks when the event names no system). */
   firstEffector?: Record<string, { system: string; t: number } | null>;
   /** Plan warnings; `eventId` puts a warning triangle on that bead. Read by events. */
