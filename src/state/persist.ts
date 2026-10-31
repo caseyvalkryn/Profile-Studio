@@ -52,8 +52,10 @@ export async function saveVignette(v: Vignette): Promise<void> {
 
 export async function loadVignette(id: string): Promise<Vignette | null> {
   const v = await (await getDb()).get('vignettes', id);
-  if (v) storedIds.add(v.id);
-  return v ?? null;
+  if (!v) return null;
+  storedIds.add(v.id);
+  // A record stored at v5 migrates on load (lane 9.1.2); parseVignette accepts v5 and v6.
+  return parseVignette(v);
 }
 
 /** Saved vignettes, newest first. */

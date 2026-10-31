@@ -469,6 +469,9 @@ merge. Open items live in section 8, not here.
 | 7.R | done | cabd251 | `reviews/phase-7-fixes.md`: 0 blockers, 3 majors (hover limit stated three times, non-DroneScore measure names in template text, 4-decimal float noise), 11 minors, 6 notes; 26 screenshots; FR-01 to FR-09, 1a, 3b, 3c confirmed fixed in the browser |
 | 7.F | done | 6d3ac25 | 17 fixed; F-11 (Swarm start stack, inspector header) and F-19 ("at the site" wording) partial; F-18 stands by design; 7 browser screenshots (`reviews/phase-7-fixes/after-7F-*.jpg`); 526 tests |
 | 7.G | done | bdbd9b9 | 7.F follow-ups: inspector "n of m" header while cycling a stack and Swarm starts 420 m apart (F-11); "at the site" for a zero offset (F-19); sweep note in `src/state/runs.ts` (F-12); small-area label obstacle tests; report limits state the logistic width and minimum range losses, delta wing note no longer repeats the altitude limit; 9 browser screenshots (`after-7G-*.jpg`); 536 tests |
+| 9.1.1 | done | 22c891d | Archivo and JetBrains Mono bundled from `@fontsource` (400, 500); legacy type and layout tokens in `src/styles/tokens.css` with the MVP palette kept; `src/ui/Icon.tsx` over Lucide; entry 80.8 kB gzip; 538 tests |
+| 9.1.2 | done | 0613db2 | domain v6: `planes`, `events`, `snapshots`, `cards`, `debrief`, `Threat.group`; stamp `profile-studio/6`; v5 to v6 migration inside `parseVignette`; legacy v4 import keeps planes, events, snapshots, cards, data list, debrief and collection (as `site.name` when empty); nine fixture round-trips; 552 tests |
+| 9.1.4 | done | 5c03126 | Library ported from `51-panel-collect.js`: grid by site, search, New split button (instant "Untitled profile", templates Blank last), inline delete confirm with undo, `exportLibrary`; `libraryCommands` exported, registered after 9.1.3; "profile" wording in Results, Report, runs; stored v5 records migrate on load; 564 tests |
 
 ## 8. Handoff
 
