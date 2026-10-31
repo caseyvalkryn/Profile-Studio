@@ -3,6 +3,7 @@
 import { defaultSensorModel, DEFAULT_PK, SENSOR_KINDS } from '../domain/catalog';
 import type { Effector, Sensor, Threat, Vignette } from '../domain/types';
 import { SCHEMA } from '../domain/types';
+import { derived } from './derived';
 import { preview } from './preview';
 
 // Small deterministic LCG so the vignette is the same on every run.
@@ -155,5 +156,28 @@ describe('preview performance', () => {
         `${nWindows} windows, ${warm.splits.length} splits, tmax ${warm.tmaxS.toFixed(0)} s`,
     );
     expect(median).toBeLessThan(100);
+  });
+
+  it('derived() for 40 x 15 runs under 100 ms including preview() (median of 5)', () => {
+    const v = syntheticVignette(40, 15);
+    derived(v, preview(v));
+    const times: number[] = [];
+    const parts: number[] = [];
+    for (let i = 0; i < 5; i++) {
+      const t0 = performance.now();
+      const p = preview(v);
+      const t1 = performance.now();
+      const d = derived(v, p);
+      times.push(performance.now() - t0);
+      parts.push(performance.now() - t1);
+      expect(Object.keys(d.timed)).toHaveLength(40);
+    }
+    times.sort((a, b) => a - b);
+    parts.sort((a, b) => a - b);
+    console.log(
+      `derived 40x15: median ${times[2]!.toFixed(1)} ms with preview, ${parts[2]!.toFixed(1)} ms derived alone ` +
+        `(runs ${times.map((t) => t.toFixed(1)).join(', ')})`,
+    );
+    expect(times[2]).toBeLessThan(100);
   });
 });
