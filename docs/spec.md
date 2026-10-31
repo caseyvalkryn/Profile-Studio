@@ -148,6 +148,8 @@ type Sensor = { id: string; kind: 'radar'|'rf'|'eoir'|'acoustic'; x: number; y: 
 type Effector = { id: string; kind: 'ew'|'kinetic'|'de'; x: number; y: number; z: number
   rangeM: number; fovDeg: number; bearingDeg: number; timeToEffectS: number; pk: number
   entered: Record<string, Entered> }
+type Node = { id: string; kind: 'c2'|'tspi'; x: number; y: number; z: number; rangeM: number
+  fovDeg: number /* legacy default 0; 360 or more is the full ring */; bearingDeg: number }
 type MeasureSetting = { id: string /* DroneScore ID */; op: '>='|'<='; threshold: number; unit: string }
 type Hypothesis = { id: string; question: string; measure: string; op: '>='|'<='; value: number
   prediction: { low: number; high: number } | null; lockedAt: string | null }
