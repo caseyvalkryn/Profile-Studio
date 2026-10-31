@@ -473,19 +473,18 @@ merge. Open items live in section 8, not here.
 | 9.1.2 | done | 0613db2 | domain v6: `planes`, `events`, `snapshots`, `cards`, `debrief`, `Threat.group`; stamp `profile-studio/6`; v5 to v6 migration inside `parseVignette`; legacy v4 import keeps planes, events, snapshots, cards, data list, debrief and collection (as `site.name` when empty); nine fixture round-trips; 552 tests |
 | 9.1.4 | done | 5c03126 | Library ported from `51-panel-collect.js`: grid by site, search, New split button (instant "Untitled profile", templates Blank last), inline delete confirm with undo, `exportLibrary`; `libraryCommands` exported, registered after 9.1.3; "profile" wording in Results, Report, runs; stored v5 records migrate on load; 564 tests |
 | 9.1.3 | done | 875d920 | shell ported from `app.css`, `51-panel-topbar.js`, `90-app.js`, `46-keys.js`, `51-panel-help.js`, `51-panel-dialog.js`: five workspaces, top bar with New split button and inline rename, workspace-scoped key table (spec section 8 wins over legacy keys), sheet generated from the registry, export and import dialogs, theme cycle under `profileStudio.ui`, undo toast; stubs with a reason for every later-lane key; `profile.new` and `profile.newFromTemplate` wired from the Library after merge; 584 tests |
+| 9.1.R | done | 80d15fa | `reviews/phase-9.1.md`: 1 blocker (route request never cleared, every link bounced to Build), 3 majors (name focus re-fired, dialog import did not refresh the Library, I \ R keys had no effect), 12 minors, 9 notes; 26 browser screenshots; budgets pass (entry 56 kB gzip JS) |
+| 9.1.F | done | e95557a | F-01 to F-23 fixed (F-07 and F-09 partial by decision; F-23 passed on recheck): requests consumed once, one import and export path in `library/io.ts`, Build panels bound to `ui.panels`, R a stub until 9.3.2, "profile" wording, `PROF-n` ids, Library header and caps groups, disabled-key toast, item 12 e2e; 591 tests, 13 e2e |
 
 ## 8. Handoff
 
-State on 2026-10-31, end of the sixth session (a planning session, no code lane). The MVP is
-done: phases 0 to 7 and their fix lanes are merged on `rebuild/mvp` with the gate green (69 unit
-test files, 536 tests, 12 Playwright specs on `vite preview`, build), and `main` is at the
-fourth-session merge (21e96c2) on `origin`. The fifth session (morning) wrote
-`docs/reference/artifact-study.md`, amended the spec and the principles, and drafted phase 9 as
-a retrofit of the MVP board with three.js. The sixth session (afternoon) compared both apps side
-by side and replaced that draft: phase 9 is now a one-to-one port of the legacy interface onto
-the MVP engine (section 6, phase 9; study section 5 for the reasons). The spec, the principles,
-the study, CLAUDE.md and sections 2 and 3 of this file were amended to match. No lane is in
-flight; no worktree exists. `rebuild/mvp` is ahead of `origin` until the user approves a push.
+State on 2026-10-31, end of the seventh session. Sub-phase 9.1 (Foundation) is merged on
+`rebuild/mvp` at e95557a with the gate green (73 unit test files, 591 tests, 13 Playwright specs
+on `vite preview`, build): lanes 9.1.1 to 9.1.4, the review 9.1.R (`reviews/phase-9.1.md`) and
+the fix lane 9.1.F. The user approved sub-phase 9.1 as closed on 2026-10-31 (seventh session), kept
+the legacy third text step value, and confirmed `PROF-n` ids for duplicates and template copies. `main` is at the fourth-session merge (21e96c2)
+on `origin`. No lane is in flight; no worktree exists. `rebuild/mvp` is ahead of `origin` until
+the user approves a push.
 
 **Orchestrator prompt.** Paste this to start the next session:
 
@@ -493,16 +492,14 @@ flight; no worktree exists. `rebuild/mvp` is ahead of `origin` until the user ap
 You are the orchestrator for Profile Studio at /Users/caseytalbot/Projects/profile-studio,
 branch rebuild/mvp. Read CLAUDE.md, docs/design-principles.md, docs/spec.md, then docs/plan.md
 sections 5, 6 (phase 9), 7 and 8, then docs/reference/artifact-study.md and
-docs/reference/legacy-app.md. Run `npm run gate` to confirm the baseline: 69 unit files, 536
-tests, 12 e2e specs, build green.
-If `git status` shows CLAUDE.md and the four planning docs modified, that is the sixth
-session's phase 9 rewrite: ask me, then commit it before any lane.
+docs/reference/legacy-app.md. Run `npm run gate` to confirm the baseline: 73 unit files, 591
+tests, 13 e2e specs, build green.
 
 Phase 9 is the work: a one-to-one port of the legacy interface (legacy/) onto the MVP engine,
 in five sub-phases, each ending with a review lane with a browser pass and parity pairs, a fix
-lane, and my approval before its merge to rebuild/mvp. Start with sub-phase 9.1: ask me to
-approve the npm install for 9.1.1, then launch 9.1.1, 9.1.2, 9.1.3 and 9.1.4 in one message,
-each in its own worktree. Section 5 rules apply: one worker per lane in a worktree under
+lane, and my approval before the sub-phase closes. Sub-phase 9.1 is merged and approved (section
+7). Start with sub-phase 9.2 round A: launch 9.2.1, 9.2.2, 9.2.3 and 9.2.4 in one message, each
+in its own worktree; 9.2.5 waits for 9.2.2, and 9.2.6 for 9.2.5. Section 5 rules apply: one worker per lane in a worktree under
 .worktrees/<id>, workers do not commit, gate and git diff --stat before each --no-ff merge,
 gate on rebuild/mvp after, worktree removed, status table and section 8 updated. The renderer
 contract, the owned-file rule, the parity check and the references per lane in section 6
@@ -512,21 +509,31 @@ Ask me before any download (npm install included), any push, and any merge to ma
 ```
 
 **Start here.** Read `CLAUDE.md`, the principles, the spec, this file (sections 5 to 8), the
-study and the legacy inventory. Run `npm run gate` once to confirm the baseline (69 unit files,
-536 tests, 12 e2e). Then:
+study and the legacy inventory. Run `npm run gate` once to confirm the baseline (73 unit files,
+591 tests, 13 e2e). Then:
 
-1. Sub-phase 9.1. Ask the user to approve the install for 9.1.1 (`@fontsource/archivo`,
-   `@fontsource/jetbrains-mono`, `lucide-react`). Launch the four 9.1 lanes in one message.
-   9.1.2 is pure data and conflicts with nothing. 9.1.3 owns the shell files and
-   `src/commands/`; 9.1.4 exports its commands from `src/features/library/`; 9.1.1 owns
-   `src/styles/`. Merge in order 9.1.1, 9.1.2, 9.1.4, 9.1.3, gate after each. Then 9.1.R with a
-   browser pass on port 5174 and the legacy app at `/legacy/index.html`, then 9.1.F, then the
-   user's approval.
-2. Sub-phases 9.2 to 9.5 follow the same rhythm. 9.2 has two rounds (9.2.5 waits for 9.2.2).
-   Record each merge in section 7 and each phase review in `reviews/phase-9.<n>.md`, with the
-   parity pairs under `reviews/phase-9.<n>/`.
+1. Sub-phase 9.2 round A: launch 9.2.1, 9.2.2, 9.2.3 and 9.2.4 in one message (no install is
+   needed). 9.2.1 owns `src/engine/` except `sim/`; 9.2.2 owns `src/board/`; 9.2.3 owns
+   `src/features/build/{rail,palette,menu,tip}/` and `src/ui/Palette.tsx`; 9.2.4 owns
+   `src/features/build/inspector/` and `readout/`. Merge in that order, gate after each. Round
+   B: 9.2.5 after 9.2.2 merges; then 9.2.6 (it deletes the MapLibre board and repoints the
+   e2e selectors). Then 9.2.R with a browser pass on port 5174 and the legacy app at
+   `/legacy/index.html`, then 9.2.F, then the user's approval.
+2. Sub-phases 9.3 to 9.5 follow the same rhythm. Record each merge in section 7 and each phase
+   review in `reviews/phase-9.<n>.md`, with the parity pairs under `reviews/phase-9.<n>/`.
 3. Phase 8 (vos port) is a separate plan, after phase 9. Any item under "Open items" and the
    deferred items at the end of phase 9 run as their own lane only when the user asks.
+
+**Lessons from 9.1 for the 9.2 briefs.** The derive fixtures in `fixtures/legacy-derive/` have
+the shape `{derived, input, samples}`; the legacy v4 record is `input` (name it in every parity
+brief; neither app imports the whole file). The legacy app seeds CUAS-001 by itself. Required
+fields added to `Vignette` or `Threat` break every literal outside `src/domain`: the lane that
+adds one lists the literals (`src/engine/testVignette.ts`, the perf tests, `commands.ts`
+`addThreat`, `map/place.ts`) and the orchestrator fixes them on the lane branch before the merge.
+Two lanes that both add a control with the same accessible name (Import) break the e2e
+selectors; name controls per screen. Orchestrator wiring between parallel lanes (a request
+store consumed by another lane's component) must consume each request once; 9.1.R F-01 was the
+orchestrator's own bounce bug.
 
 **Brief shape for phase 9 lanes.** Working directory (`.worktrees/<id>`); the lane text from
 section 6 verbatim; the legacy files to port, read whole before writing; the renderer contract
@@ -541,7 +548,9 @@ vocabulary and the principles' words (profile, card, clip, beat, capture, Elevat
 merge to `main` with a push, and the Playwright Chromium download, all on 2026-10-30. At the
 end of the third session the user approved a second push and merge to `main`, and at the end
 of the fourth session a third (both 2026-10-30). Each later push or merge to `main` needs its
-own approval.
+own approval. Seventh session (2026-10-31): the user approved the install of `@fontsource/archivo`,
+`@fontsource/jetbrains-mono` and `lucide-react` plus `npm ci` per worktree, and approved
+sub-phase 9.1 as closed. No push and no merge to `main` happened in the seventh session.
 
 **How to run a lane.** `git worktree add .worktrees/<id> -b lane/<id> rebuild/mvp`, then
 `npm ci` there. Parallel lanes each run the full gate with their own preview port:
@@ -554,6 +563,25 @@ orchestrator runs `npm run gate` in the worktree, commits on the lane branch, me
 then updates section 7. Workers are picked by `~/.claude/rules/delegation.md`.
 
 **Open items.** Grouped by area. Each came from a worker report or a review; none is a guess.
+
+Sub-phase 9.1 (from `reviews/phase-9.1.md` and the 9.1.F report):
+- `--text-subtle` (`--ps-t3`, the legacy third text step) is #7b7d73 on white, about 4.1:1,
+  under WCAG AA for small text. The user chose to keep the legacy value (2026-10-31).
+- Duplicate and template copies take `PROF-n` ids (F-10), confirmed by the user (2026-10-31);
+  legacy gave a duplicate `<src id>-n`.
+- `exportLibrary(current)` replaces the stored copy of the open profile but does not add an
+  open profile that was never saved (F-17).
+- At widths under about 900 px the top bar overflows and Import is clipped (seen at 703 px in
+  the built-in browser pane). Phone and narrow layouts arrive with the Brief phone stage (9.4).
+- Seeds import with `meta.updated: null` and take the import time; group order then follows
+  import order (F-21). A fixed date for the seeds is open.
+- The top bar shows no version ("v3"); the domain has no version field (spec section 5).
+- The sheet lacks the legend for the handle and the track frame until `src/board` lands (9.2).
+- The Library's `/` focuses the search (registered, scoped to Library); legacy `N` is not bound.
+- Existing MVP components (Kbd, Tooltip, the Build panels) still use Tailwind default sizes,
+  not the five-step scale; the 9.2 lanes that replace them use the scale.
+- The 9.1.3 and 9.1.4 parity pairs in `reviews/phase-9.1/` predate the merges; 9.1.R retook the
+  Library and top bar pairs (`9.1.R-*.png`) and 9.1.F added `after-9.1F-*.png`.
 
 Deferred from phase 9 (section 6): the imagery underlay for the plan camera, perspective 3D with
 terrain (three.js), and the ladder table. Each runs only when the user asks.
