@@ -1,11 +1,15 @@
 # Profile Studio design principles
 
-Profile Studio lets a counter-UAS test planner build a vignette, run it, and read the result
-against DroneScore measures. The planner then exports the result as an after action report (AAR)
-that states a hypothesis and the evidence for it.
+Profile Studio lets a counter-UAS test planner build a profile, run it, and read the result
+against DroneScore measures. The planner then briefs the result from the app and exports it as
+an after action report (AAR) that states a hypothesis and the evidence for it.
 
 Be brilliant at the basics. A small set of things that work every time beats a large set that
-works most of the time.
+works most of the time. Simple does not mean less capable. The planner gets the full capability
+of the legacy app (`docs/reference/artifact-study.md`), and the interface stays quiet because
+each capability waits out of sight until the planner asks for it.
+
+Amended 2026-10-31 from the artifact study: sections 2, 3, 5, 7 and the new section 8.
 
 ## 1. DroneScore is the standard
 
@@ -24,18 +28,25 @@ works most of the time.
 2. Right-click anything to see what you can do to it. Right-click empty map to add an asset there.
 3. Change things by touching them. Drag a ring to set range. Drag a waypoint to move it. Drag a
    sector edge to set the field of view.
-4. Every change can be undone. Nothing asks "are you sure" when undo can fix it.
+4. Every change can be undone. Nothing asks "are you sure" when undo can fix it. The undo
+   control names the change it will revert.
+5. Three views of one scene: Plan, Elevation and 3D. Plan and Elevation are for editing. 3D is
+   for seeing: it orbits, it animates, and it prints its vertical exaggeration. A drag in 3D
+   offers the editing view in one line.
+6. A drag reports its result, not only its geometry: the value under the cursor and the largest
+   change it causes downstream, such as a detection window that shrinks.
 
 ## 3. Start from something that works
 
-1. The first screen shows templates. Blank is the last choice.
+1. The first screen shows New and the templates. New opens a blank profile at once, named and
+   ready to edit. Blank is the last template.
 2. A template opens ready to run. It has a threat, a sensor laydown, a defended asset and a
    question.
 3. Library items carry real values and say where each value came from.
 
 ## 4. One question, one run, one answer
 
-1. A vignette states its question and its hypothesis before it runs. The prediction is
+1. A profile states its question and its hypothesis before it runs. The prediction is
    recorded first.
 2. A run shows each measure against its threshold: the value, pass or fail, and the interval.
 3. Two runs can sit side by side. The difference is the result.
@@ -55,6 +66,15 @@ controls stay out of the way until you need them.
 5. Motion is short and only shows a change. Nothing moves for decoration.
 6. Use the words a test engineer uses. Do not show internal names.
 7. Numbers use the mono font and always carry a unit.
+8. Progressive disclosure. The default Build screen shows the map, the timeline, the asset
+   library, the inspector and the top bar. Every other panel (layer chips, readout strip, chart
+   strip, authored events, debrief) starts hidden and opens by its key, from the palette, or
+   from a quiet toggle. A hidden panel is never a missing feature.
+9. Two typefaces: Archivo for text and JetBrains Mono for numbers, both bundled, weights 400
+   and 500 only. Five sizes, each with its line height: 11/14, 12/16, 13/18, 14/20, 17/24 px.
+   Tabular numerals. Three stroke weights: 0.75, 1.25 and 2.25 px. Nothing else.
+10. One icon set, Lucide. An icon sits beside its label. An icon alone has a tooltip. Board
+    symbols are not icons; they follow the symbology in `legacy/js/41-symbols.js`.
 
 ## 6. Graphs are findings
 
@@ -70,6 +90,20 @@ controls stay out of the way until you need them.
 1. A drag on the map stays smooth at 60 frames per second.
 2. A measure updates within 100 ms of an edit.
 3. A long simulation runs in the background with progress shown. It never blocks the map.
+4. The 3D view loads only when asked and holds 30 frames per second at the map budget.
+
+## 8. The brief is the result, told
+
+1. A card is a saved way of looking: camera, layers, time, focus. One key saves it. Opening a
+   card restores it, and leaving Brief restores Build as it was.
+2. A card shows the live scene, its timeline strip and a caption. Captions carry live values by
+   token, so the number on screen is the number at that time.
+3. A clip plays a card from one time to another at one rate and stops at each beat. The
+   presenter moves with one key: next beat, else next card.
+4. The stage reads from the back of the room: a larger type scale, the card position, the time.
+   Key hints show once and fade.
+5. A capture is a picture of the stage for the deck. It lives for the session and leaves the
+   app as PDF or PNG. The profile stores the card, never the picture.
 
 ## Sources
 

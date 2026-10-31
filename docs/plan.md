@@ -187,7 +187,171 @@ All lanes parallel. Each owns one folder under `src/features/build/`.
 
 ### Phase 8. vos port (after the MVP, separate plan)
 
-Plan from `docs/reference/vos.md` once the MVP passes phase 7.
+Plan from `docs/reference/vos.md` once the MVP passes phase 7 and phase 9.
+
+### Phase 9. Upgrade to artifact capability (drafted and committed 2026-10-31)
+
+Source: `docs/reference/artifact-study.md` (scope and decisions), `docs/spec.md` as amended on
+2026-10-31, `docs/design-principles.md` sections 2, 3, 5 and 8. The integration branch stays
+`rebuild/mvp`. Lanes branch from it as `lane/9.x.y`. Section 5 rules apply. Each sub-phase ends
+with a review lane with a browser pass, a fix lane, and the user's approval before the merge
+to `rebuild/mvp`. The user also approves each npm install (a download): 9.1.1 and 9.3.1 need one.
+
+Owned-file rule for this phase: `src/commands/commands.ts`, `src/App.tsx`,
+`src/features/build/BuildWorkspace.tsx` and `src/state/ui.ts` belong to one lane per sub-phase
+(the shell or wiring lane). Other lanes export their command definitions and panels from their
+own folder, and the wiring lane registers them.
+
+References per lane. Every brief names these, and the worker reads them before it writes:
+`docs/design-principles.md`, the spec sections the lane implements, and
+`docs/reference/artifact-study.md` section 2 for the behaviours it ports. Legacy code per lane:
+9.1.1 `legacy/css/tokens.css`; 9.1.2 and 9.1.3 `legacy/js/51-panel-topbar.js`,
+`51-panel-collect.js`, `90-app.js` (theme, undo toast); 9.1.4 `legacy/js/11-schema.js`,
+`12-seed.js`; 9.2.1 `legacy/js/43-layer-*.js`, `41-symbols.js`; 9.2.2 `legacy/js/21-derive.js`
+(`D.at`), `51-panel-readout.js`, `45-tools.js` (`LABELS`, `move`), `51-panel-chart.js`; 9.2.3
+`legacy/js/51-panel-palette.js`, `45-tools.js` (`snap`, `legText`, formation), `51-panel-menu.js`;
+9.2.4 `legacy/js/40-cameras.js` (elev), `34-time.js` (`stops`), `46-keys.js`; 9.3.1
+`legacy/js/40-cameras.js` (axon: `zx`, `hint`, `rotate`); 9.4.1 `legacy/js/51-panel-timeline.js`,
+`45-tools.js` (`snapBead`), `21-derive.js` (warnings); 9.4.2 `legacy/js/33-persist.js` (TSPI
+parse), `43-layer-telemetry.js`; 9.5.1 `legacy/js/45-tools.js` (`saveCard`, `saveClip`),
+`21-derive.js` (`D.tokens`); 9.5.2 `legacy/js/51-panel-stage.js`, `51-panel-cards.js`,
+`34-time.js` (`playTo`); 9.5.3 `legacy/js/51-panel-notes.js`.
+
+#### 9.1 Foundation
+
+- **9.1.1 Type system and icons** (`opus-medium`, 1800 s, needs install approval:
+  `@fontsource/archivo`, `@fontsource/jetbrains-mono`, `lucide-react`). `src/styles/tokens.css`:
+  the two families, the five-step scale with line heights, weights 400 and 500, tabular
+  numerals, three stroke weights, layout and control tokens, the full-stage scale, coarse-pointer
+  sizes. `src/styles/base.css` and the Tailwind theme read them. `src/ui/Icon.tsx` wraps Lucide
+  with a label slot. The print stylesheets keep the light theme. Owned: `src/styles/`,
+  `src/ui/Icon.tsx`, `index.html`. Gate: `npm run gate`; a browser screenshot of Build and
+  Results at 1440 x 900 in both themes.
+- **9.1.2 Profile word, New flow, library export** (`opus-medium`, 1800 s). Every user-facing
+  "vignette" becomes "profile" (`stat-te-terminology` check on the diff). `profile.new` (Cmd+N)
+  creates "Untitled profile" with the default site and one defended asset, opens Build and
+  focuses the name field; `profile.newFromTemplate`. Library: New button first, with a menu
+  arrow for templates; export the library as one JSON; import v6, v5 and legacy v4. Owned:
+  `src/features/library/`, `src/state/persist.ts`, `src/commands/` (this sub-phase's owner).
+  Tests: New in a fresh store, rename shows in the library, library export and import round-trip.
+- **9.1.3 Shell** (`opus-medium`, 1800 s). Five workspaces with a Brief placeholder route. Top
+  bar: New, undo and redo with the pending label and a toast, units, theme control (auto, light,
+  dark) wired to `ui.theme`, view switch Plan, Elevation, 3D (3D disabled until 9.3 with a
+  reason). `View = 'plan' | 'elevation' | '3d'`; `src/features/build/profile/` renamed
+  `elevation/`. Panel visibility in `ui`: inspector (I), both side panels (\), strip mode (R:
+  timeline, chart, readout), layer chips, readout strip, events, debrief, snapshots, all hidden
+  by default. Command scoping by workspace in the registry types. Owned: `src/App.tsx`,
+  `src/state/ui.ts`, `src/features/build/BuildWorkspace.tsx`, `src/features/build/elevation/`,
+  `src/features/commands/`.
+- **9.1.4 Domain v6** (`opus-high`, 2400 s, parallel, pure data). `src/domain/types.ts` and
+  `schema.ts` per spec section 5: `planes`, `events`, `snapshots`, `cards`, `debrief`, `Area`
+  bottom and top, `Threat.group`. Stamp `profile-studio/6`; v5 to v6 migration; legacy v4 import
+  keeps every one of those fields; export without loss. Test: each legacy seed and template in
+  `legacy/` round-trips import, export, import with deep equality on the mapped fields (spec
+  acceptance item 18 as a unit test). Owned: `src/domain/`, `fixtures/`.
+- **9.1.R Review** (`opus-high`, with browser) and **9.1.F Fixes** (`opus-medium`).
+
+#### 9.2 Board parity
+
+- **9.2.1 Layers and chips** (`opus-high`, 2400 s). One file per `LayerId` under
+  `src/features/build/map/layers/`: reach (dashed at rest, solid while covering), events (beads
+  and first-see ticks), envelopes (one hull per link cluster at t, per snapshot when time is
+  off), tracks (lifecycle frames, leaders, data blocks, sensor-to-track lines, engagement bars,
+  kill mark), telemetry (planned TSPI samples and station links), labels (one placement pass),
+  rings, target. Layer chip commands exported from the folder. Owned: `src/features/build/map/`
+  except `handles.ts`, `placement.ts` and `dragLabel.ts`.
+- **9.2.2 At time t, readout, drag labels, chart strip** (`fable-medium`, 2400 s).
+  `src/engine/at.ts` per spec section 6.5 with parity tests against `fixtures/legacy-derive/`.
+  Readout strip panel: follows selection then hover, pin a baseline, deltas in colour during a
+  drag against the pre-drag record. Drag label with the largest downstream change
+  (`src/features/build/map/dragLabel.ts`). Chart strip: range and closing speed series at t,
+  click to seek. Owned: `src/engine/at.ts`, `src/features/build/readout/`,
+  `src/features/build/map/dragLabel.ts`, `src/features/build/timeline/ChartStrip.tsx`.
+- **9.2.3 Quick-add, formation, snap, menu items** (`opus-medium`, 2400 s). The palette's Add
+  group with search, catalog values per row and shortcut hints; A, S, V, E. Formation popover
+  (Shift+F). Snap to rings, vertices and edges within 8 px, 15 degree bearings with Shift, G
+  toggle, Alt bypass, snap name and leg text on the ghost. Menu items: Set bottom, Add height
+  plane, Set height, Split here, Merge, Save card (stub that 9.5 fills). Owned:
+  `src/features/build/assets/`, `src/ui/Palette.tsx`, `src/features/build/map/handles.ts`,
+  `src/features/build/map/placement.ts`.
+- **9.2.4 Elevation modes, time keys, sheet** (`opus-medium`, 1800 s). From asset mode: every
+  path, slant arcs with elevation limits, height planes, reference origin. Keys [ ] (stops:
+  events, stage times, splits, first sees), Home, End, T, =, -, Tab. Shortcut sheet generated
+  per workspace from the registry. Owned: `src/features/build/elevation/`,
+  `src/features/commands/ShortcutSheet.tsx`, `src/features/build/timeline/stops.ts`.
+- **9.2.5 Wiring** (`opus-high`, 2400 s, after 9.2.1 to 9.2.4). Registers every exported
+  command, composes the hidden panels into `BuildWorkspace`, dedupes helpers, one Escape owner.
+  Owned: the four shell files and `src/features/shared/`.
+- **9.2.R Review** (`opus-high`, with browser; acceptance item 15) and **9.2.F Fixes**.
+
+#### 9.3 3D view
+
+- **9.3.1 Scene** (`fable-medium`, 3600 s, needs install approval: `three`, `@types/three`).
+  `src/features/build/scene3d/` as a lazy chunk: orbit, zoom, pan; ground grid and compass;
+  reach domes and sector cones with elevation limits; areas as prisms between bottom and top;
+  height planes; flight paths at altitude with drop lines; threats and track frames at t from
+  the preview; selection highlight; the exaggeration, yaw and pitch readout; the edit prompt on
+  drag. A controlled `view` prop so a card can drive it. Owned: `src/features/build/scene3d/`.
+  Test: geometry builders in Vitest; the chunk under 250 kB gzip.
+- **9.3.2 Imagery and terrain** (`opus-medium`, 1500 s, parallel). Basemap toggle with a
+  configurable tile URL and an optional DEM URL in `ui` settings, persisted; MapLibre raster
+  source when online; one-line offline message; terrain mesh for the 3D view from the DEM.
+  Owned: `src/features/build/map/basemap.ts`, `src/features/build/settings/`.
+- **9.3.3 Wiring and perf** (`opus-medium`, 1500 s, after). View switch and key 3, the
+  controlled `view` prop on `MapView` and `ElevationView` too, perf spec: 30 frames per second
+  with 40 threats and 15 sensors (`e2e/perf/`). Owned: the shell files, `e2e/perf/`.
+- **9.3.R Review** (`opus-high`, with browser; acceptance items 13 and 14) and **9.3.F Fixes**.
+
+#### 9.4 Authored events and debrief
+
+- **9.4.1 Authored events and the timeline rows** (`fable-medium`, 2400 s).
+  `src/engine/events.ts` (`checkEvents`, spec section 6.7). Timeline rows per threat: planned
+  beads with letter glyphs, simulated stage times of the latest run from `RunTrace`, flown times
+  from the debrief. Drag a bead to retime with snap to crossings within 3 s, Alt bypass, one
+  undo step. Warning triangles with the reason; Move to geometry. Inspector fields; Add event
+  here on a path and on the timeline; the hidden event list. Owned: `src/engine/events.ts`,
+  `src/features/build/timeline/`, `src/features/build/events/`, `src/features/build/inspector/`.
+- **9.4.2 Debrief** (`opus-high`, 2400 s, parallel). `src/engine/debrief.ts` (`resample`,
+  TSPI text and CSV parsers with the legacy text format). Debrief panel: paste or load, source
+  note, per-threat mapping, clear. Flown track layer on the map and a flown builder in the 3D
+  scene, both read-only data. Owned: `src/engine/debrief.ts`, `src/features/build/debrief/`,
+  `src/features/build/map/layers/flown.ts`, `src/features/build/scene3d/flown.ts`.
+- **9.4.R Review** (`opus-high`, with browser; acceptance items 16 and 17) and **9.4.F Fixes**.
+
+#### 9.5 Brief and export
+
+- **9.5.1 Cards, tokens, store** (`opus-medium`, 1800 s). Document store actions for cards
+  (save with the legacy defaults, reorder, duplicate, delete, field edits as one undo step
+  each). `src/engine/tokens.ts` per spec section 6.6 with the legacy token tests. Save card (C)
+  and the card menu items. Owned: `src/state/document.ts` (cards slice), `src/engine/tokens.ts`,
+  `src/features/brief/cards/`.
+- **9.5.2 Stage and presenter** (`fable-medium`, 3600 s, after 9.5.1). `BriefWorkspace`: card
+  strip, stage, notes column. The stage drives the controlled map, elevation or 3D view at the
+  card's view and time, the timeline strip, the caption with resolved tokens, the readout
+  strip, the head and aids. Enter and leave restore the Build view. Clip playback with beats
+  (`playTo`), Space, Right, Left, Home, End, 1 to 9, F, B, K, N, Up, Down, key hints that fade.
+  Phone layout. Owned: `src/features/brief/` except `cards/` and `notes/`,
+  `src/features/build/timeline/usePlayback.ts` (`playTo`).
+- **9.5.3 Notes, capture, attachments, export** (`opus-high`, 2400 s, parallel with 9.5.2).
+  Notes panel with live token preview and reasons, clip fields with the legacy parse rules and
+  error text. Capture: the map canvas (`preserveDrawingBuffer` on demand), the 3D renderer and
+  the elevation SVG to a PNG blob in a session store, never persisted. Attach an image file.
+  Deck PDF: `brief.css` print stylesheet, one page per card. Card PNG. Report embed of a card.
+  Owned: `src/features/brief/notes/`, `src/features/brief/capture.ts`, `src/features/brief/brief.css`,
+  `src/features/report/` (embed only).
+- **9.5.4 Wiring** (`opus-medium`, 1500 s, after). Mount Brief, scope the Brief keys, register
+  the card commands, `stat-te-terminology` check on all new copy. Owned: the shell files.
+- **9.5.R Review** (`opus-high`, with browser; acceptance item 19) and **9.5.F Fixes**.
+
+#### 9.6 Acceptance
+
+- **9.6.1 End-to-end** (`opus-medium`, 2400 s). One Playwright spec per spec section 12 item
+  12 to 19. Items 1 to 11 stay green.
+- **9.6.2 First-use re-walk** (`opus-medium` with browser, 1200 s). Item 20. Friction ranked;
+  fixes are new lanes.
+- **9.6.3 Budgets** (`opus-medium`, 900 s). Item 21: every section 11 row, with numbers in
+  `reviews/phase-9-budgets.md`.
+- **9.6.R Review** (`opus-high`): the whole upgrade against the principles, then **9.6.F**.
 
 ## 7. Status
 
@@ -233,39 +397,54 @@ merge. Open items live in section 8, not here.
 
 ## 8. Handoff
 
-State on 2026-10-30, end of the fourth orchestration session. Phases 0 to 7, the eight 7.2 fix
-lanes (7.4 to 7.11), the review 7.R, its fix lane 7.F and the follow-up lane 7.G are merged on
-`rebuild/mvp` with the gate green (69 unit test files, 536 tests, 12 Playwright specs on
-`vite preview`, build). The spec section 12 acceptance suite passes, which is the MVP definition
-of done. The user approved a push and a merge to `main` at the end of the fourth session
-(2026-10-30): `main` is at that merge (21e96c2) and both branches are on `origin`. The tree is
-clean; no lane is in flight; no worktree exists. No fix lane is queued: every follow-up from the phase 7 reviews is fixed,
-partial by design, or recorded under "Open items" as a proposal.
+State on 2026-10-31, end of the fifth session (a planning session, no code lane). The MVP is
+done: phases 0 to 7 and their fix lanes are merged on `rebuild/mvp` with the gate green (69 unit
+test files, 536 tests, 12 Playwright specs on `vite preview`, build), and `main` is at the
+fourth-session merge (21e96c2) on `origin`. The fifth session wrote `docs/reference/artifact-study.md`,
+amended `docs/spec.md` and `docs/design-principles.md` from it, and drafted phase 9 in section 6.
+The user asked for that commit and this handoff on 2026-10-31. No lane is in flight; no worktree
+exists. `rebuild/mvp` is one commit ahead of `origin` (this one) until the user approves a push.
 
 **Orchestrator prompt.** Paste this to start the next session:
 
 ```text
 You are the orchestrator for Profile Studio at /Users/caseytalbot/Projects/profile-studio,
-branch rebuild/mvp (tracks origin). Read CLAUDE.md, then docs/plan.md sections 5, 7 and 8, then
-reviews/phase-7-first-use.md. Run `npm run gate` to confirm the baseline: 69 unit files, 536
-tests, 12 e2e specs, build green.
+branch rebuild/mvp. Read CLAUDE.md, docs/design-principles.md, docs/spec.md, then docs/plan.md
+sections 5, 6 (phase 9), 7 and 8, then docs/reference/artifact-study.md. Run `npm run gate` to
+confirm the baseline: 69 unit files, 536 tests, 12 e2e specs, build green.
 
-The MVP acceptance suite passes and the 7.2 fix lanes, review 7.R, fix lane 7.F and follow-up
-lane 7.G are merged. No fix lane is queued. Section 8 "Open items" lists proposals and declared
-losses; run one only if I ask for it, with a browser re-check on port 5174. Section 5 rules
-apply: one worker per lane in a worktree under .worktrees/<id>, workers do not commit, gate and
-git diff --stat before each --no-ff merge, gate on rebuild/mvp after, worktree removed, status
-table and section 8 updated. Phase 8 (vos port) needs its own plan and my acceptance of the MVP
-first.
+Phase 9 is the work: six sub-phases, in order, each ending with a review lane with a browser
+pass, a fix lane, and my approval before its merge to rebuild/mvp. Start with sub-phase 9.1:
+ask me to approve the npm install for 9.1.1, then launch 9.1.1, 9.1.2, 9.1.3 and 9.1.4 in one
+message, each in its own worktree. Section 5 rules apply: one worker per lane in a worktree
+under .worktrees/<id>, workers do not commit, gate and git diff --stat before each --no-ff
+merge, gate on rebuild/mvp after, worktree removed, status table and section 8 updated. The
+owned-file rule and the references per lane in section 6 phase 9 go into every brief.
 
-Ask me before any download, any push, and any merge to main.
+Ask me before any download (npm install included), any push, and any merge to main.
 ```
 
-**Start here.** Read `CLAUDE.md`, this file (sections 5 to 8), the two phase 7 reviews, then the
-"Open items" below. Run `npm run gate` once to confirm the baseline (69 unit files, 536 tests, 12 e2e). Then:
+**Start here.** Read `CLAUDE.md`, the principles, the spec, this file (sections 5 to 8) and the
+study. Run `npm run gate` once to confirm the baseline (69 unit files, 536 tests, 12 e2e). Then:
 
-1. Phase 8 (vos port) is a separate plan, after the user accepts the MVP. Any item under "Open
-   items" runs as its own lane only when the user asks.
+1. Sub-phase 9.1. Ask the user to approve the install for 9.1.1 (`@fontsource/archivo`,
+   `@fontsource/jetbrains-mono`, `lucide-react`). Launch the four 9.1 lanes in one message.
+   9.1.4 is pure data and conflicts with nothing. 9.1.2 owns `src/commands/`; 9.1.3 owns the
+   shell files; 9.1.1 owns `src/styles/`. Merge in order 9.1.1, 9.1.4, 9.1.2, 9.1.3, gate after
+   each. Then 9.1.R with a browser pass on port 5174, then 9.1.F, then the user's approval.
+2. Sub-phases 9.2 to 9.6 follow the same rhythm. 9.3.1 needs an install approval (`three`,
+   `@types/three`). Record each merge in section 7 and each phase review in
+   `reviews/phase-9.<n>.md`.
+3. Phase 8 (vos port) is a separate plan, after phase 9. Any item under "Open items" runs as
+   its own lane only when the user asks.
+
+**Brief shape for phase 9 lanes.** Working directory (`.worktrees/<id>`); the lane text from
+section 6 verbatim; owned files and the files it must not touch; the references per lane; the
+spec sections and acceptance items it serves; the gate (`E2E_PORT=<port> npm run gate`); the
+report shape (what changed, tests added, what is open, screenshots for UI lanes); the time
+budget from section 6; the lanes running in parallel and their folders. Workers write user-facing
+text in the `stat-te-terminology` vocabulary and the principles' words (profile, card, clip,
+beat, capture, Elevation, 3D).
 
 **Approvals on record.** The user approved the phase 0 commits, the first phase 1 commit, one
 merge to `main` with a push, and the Playwright Chromium download, all on 2026-10-30. At the

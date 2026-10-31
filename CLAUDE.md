@@ -24,6 +24,8 @@ says which lane is next. Each lane names the reference it needs:
 - `docs/reference/rangeboard-parts.md`: engine and UI parts to transfer, with paths and APIs.
 - `docs/reference/vos.md`: vos facts and the portability rules for the MVP.
 - `docs/reference/sources.md`: the local VALKRYN library, with the top 10 for this project.
+- `docs/reference/artifact-study.md`: the upgrade scope (phase 9): what the legacy app does
+  well, the gap list with decisions, and the decisions of 2026-10-31.
 
 ## Decisions on record (2026-10-30)
 
