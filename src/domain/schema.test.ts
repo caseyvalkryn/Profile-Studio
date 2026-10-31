@@ -73,7 +73,19 @@ function small(): Vignette {
         entered: {},
       },
     ],
-    nodes: [{ key: newKey(), id: 'C2-1', kind: 'c2', x: 10, y: 10, z: 0, rangeM: 0 }],
+    nodes: [
+      {
+        key: newKey(),
+        id: 'C2-1',
+        kind: 'c2',
+        x: 10,
+        y: 10,
+        z: 0,
+        rangeM: 0,
+        fovDeg: 0,
+        bearingDeg: 0,
+      },
+    ],
     areas: [
       {
         key: newKey(),
@@ -150,6 +162,15 @@ describe('vignette schema', () => {
     const back = parseVignette(JSON.parse(JSON.stringify(v)));
     expect(back).toEqual(v);
     expect(isVignette(back)).toBe(true);
+  });
+
+  it('loads a stored v6 node without fovDeg and bearingDeg with the catalog defaults', () => {
+    const v = small();
+    const stored = JSON.parse(JSON.stringify(v)) as { nodes: Record<string, unknown>[] };
+    delete stored.nodes[0]!.fovDeg;
+    delete stored.nodes[0]!.bearingDeg;
+    expect(parseVignette(stored)).toEqual(v);
+    expect(isVignette(stored)).toBe(true);
   });
 
   it('throws a readable error', () => {

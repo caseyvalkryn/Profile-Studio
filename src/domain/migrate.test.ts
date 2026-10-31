@@ -139,6 +139,7 @@ function asLegacy(v: Vignette) {
       path: idOf.get(e.threatKey),
       system: sys(e.sensorKey),
     })),
+    nodes: v.nodes.map((n) => ({ id: n.id, fov: n.fovDeg, bearing: n.bearingDeg })),
     snapshots: v.snapshots,
     data: v.report.dataSources,
     cards: v.cards.map((c) => ({
@@ -186,6 +187,9 @@ function legacyFields(r: L) {
       path: e.path,
       system: e.system,
     })),
+    nodes: s
+      .systems!.filter((x) => ['c2', 'tspi', 'truth'].includes(x.kind as string))
+      .map((x) => ({ id: x.id, fov: x.fov ?? 0, bearing: x.bearing ?? 0 })),
     snapshots: r.snapshots,
     data: r.data,
     cards: (r.cards as L[]).map((c) => ({
@@ -218,6 +222,22 @@ describe('legacy v4 round trip (acceptance item 18)', () => {
     expect(back).toEqual(v);
     expect(JSON.stringify(back)).toBe(JSON.stringify(v));
     expect(asLegacy(back)).toEqual(legacyFields(rec));
+  });
+
+  it('SURR-001 TM-1 keeps its fov 360 and range; a node without fov gets the legacy 0', () => {
+    const rec = structuredClone(fixtures.find(([id]) => id === 'SURR-001')![1]) as L;
+    const v = importLegacyV4(rec);
+    expect(v.nodes.find((n) => n.id === 'TM-1')).toMatchObject({
+      fovDeg: 360,
+      bearingDeg: 0,
+      rangeM: 3500,
+    });
+    const rtk = (rec.scene as { systems: L[] }).systems.find((x) => x.id === 'RTK')!;
+    delete rtk.fov;
+    delete rtk.bearing;
+    const w = importLegacyV4(rec);
+    expect(w.nodes.find((n) => n.id === 'RTK')).toMatchObject({ fovDeg: 0, bearingDeg: 0 });
+    expect(asLegacy(roundTrip(w))).toEqual(legacyFields(rec));
   });
 
   it('CUAS-001 cards arrive with camera, layers, time, caption and notes', () => {

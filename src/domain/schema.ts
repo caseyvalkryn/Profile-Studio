@@ -2,7 +2,7 @@
 // TypeScript type, so the two cannot drift.
 
 import { z } from 'zod';
-import { AUTHORED_EVENT_TYPES, LAYER_IDS, RATES } from './catalog';
+import { AUTHORED_EVENT_TYPES, LAYER_IDS, NODE_DEFAULTS, RATES } from './catalog';
 import { migrateV5ToV6 } from './migrateV5';
 import type {
   Area,
@@ -17,6 +17,7 @@ import type {
   Hypothesis,
   MeasureSetting,
   Node,
+  NodeKind,
   Question,
   ReportDraft,
   RunRow,
@@ -129,15 +130,28 @@ export const effectorSchema: z.ZodType<Effector> = z.object({
   entered,
 });
 
-export const nodeSchema: z.ZodType<Node> = z.object({
-  key,
-  id: z.string(),
-  kind: z.enum(['c2', 'tspi']),
-  x: num,
-  y: num,
-  z: num,
-  rangeM: num.min(0),
-});
+// A stored v6 node from before fovDeg and bearingDeg existed gets the catalog defaults.
+// A node's fovDeg may be 0, the legacy default (a zero-width sector).
+export const nodeSchema: z.ZodType<Node> = z.preprocess(
+  (n) => {
+    if (n == null || typeof n !== 'object') return n;
+    const d = NODE_DEFAULTS[(n as { kind?: unknown }).kind as NodeKind] as
+      (typeof NODE_DEFAULTS)[NodeKind] | undefined;
+    if (!d) return n;
+    return { fovDeg: d.fovDeg, bearingDeg: d.bearingDeg, ...n };
+  },
+  z.object({
+    key,
+    id: z.string(),
+    kind: z.enum(['c2', 'tspi']),
+    x: num,
+    y: num,
+    z: num,
+    rangeM: num.min(0),
+    fovDeg: num.min(0).max(360),
+    bearingDeg: num,
+  }),
+);
 
 // zMinM may equal zMaxM: legacy footprints (asset, ref) are flat at zmax 0.
 export const areaSchema: z.ZodType<Area> = z

@@ -77,7 +77,7 @@ export function effector(
 }
 
 export function node(id: string, kind: NodeKind, x: number, y: number, rangeM = 0): Node {
-  return { key: newKey(), id, kind, x, y, z: 0, rangeM };
+  return { key: newKey(), id, kind, x, y, z: 0, rangeM, fovDeg: 0, bearingDeg: 0 };
 }
 
 /**

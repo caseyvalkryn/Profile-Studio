@@ -344,22 +344,19 @@ export function SystemForm({ v, sys }: { v: Vignette; sys: System }) {
           onCommit={(m) => set('minimum range', (r) => void (r.minRangeM = Math.max(0, num(m))))}
         />
       ) : null}
-      {sys.kind !== 'node' ? (
-        <>
-          <UnitRow
-            label="Field of view"
-            ty="deg"
-            stored={sys.value.fovDeg}
-            onCommit={(m) => set('field of view', (r) => void (r.fovDeg = num(m)))}
-          />
-          <UnitRow
-            label="Bearing"
-            ty="deg"
-            stored={sys.value.bearingDeg}
-            onCommit={(m) => set('bearing', (r) => void (r.bearingDeg = num(m)))}
-          />
-        </>
-      ) : null}
+      {/* Every system kind, nodes included (legacy 51-panel-inspector.js:211-212). */}
+      <UnitRow
+        label="Field of view"
+        ty="deg"
+        stored={s.fovDeg}
+        onCommit={(m) => set('field of view', (r) => void (r.fovDeg = num(m)))}
+      />
+      <UnitRow
+        label="Bearing"
+        ty="deg"
+        stored={s.bearingDeg}
+        onCommit={(m) => set('bearing', (r) => void (r.bearingDeg = num(m)))}
+      />
       {sys.kind === 'sensor' ? (
         <>
           <UnitRow

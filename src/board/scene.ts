@@ -5,7 +5,7 @@
 //
 // Fields v6 has no slot for come back from the report.notes lines the import writes:
 // "Threat T1: identity neutral", "System X: status inactive", "Site datum: MSL".
-import { EFFECTOR_KINDS, NODE_DEFAULTS, SENSOR_KINDS } from '../domain/catalog';
+import { EFFECTOR_KINDS, SENSOR_KINDS } from '../domain/catalog';
 import type { Vignette } from '../domain/types';
 import type {
   CamKind,
@@ -92,8 +92,8 @@ function build(v: Vignette): Scene {
       z: s.z,
       range: s.rangeM,
       rmin: 0,
-      fov: NODE_DEFAULTS[s.kind].fovDeg,
-      bearing: 0,
+      fov: s.fovDeg,
+      bearing: s.bearingDeg,
       elMin: -90,
       elMax: 90,
       status: st(s.id),

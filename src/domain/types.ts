@@ -134,6 +134,9 @@ export type Node = {
   y: number;
   z: number;
   rangeM: number;
+  /** Legacy default 0 (a zero-width sector); 360 or more is the full ring. */
+  fovDeg: number;
+  bearingDeg: number;
 };
 
 /** Defended asset, engagement zone, no-fly area or reference pattern. `pts` are [x, y] metres. */

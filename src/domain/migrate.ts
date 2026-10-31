@@ -161,7 +161,16 @@ export function importLegacyV4(doc: unknown): Vignette {
         entered: {},
       });
     } else if (kind === 'c2' || kind === 'tspi' || kind === 'truth') {
-      nodes.push({ key, id, kind: kind === 'c2' ? 'c2' : 'tspi', ...pos, rangeM });
+      nodes.push({
+        key,
+        id,
+        kind: kind === 'c2' ? 'c2' : 'tspi',
+        ...pos,
+        rangeM,
+        // A node without fov takes the legacy catalog value 0 (10-catalog.js), not 360 as sensors do.
+        fovDeg: num(s.fov, 0),
+        bearingDeg: num(s.bearing),
+      });
     } else {
       throw new Error(`${id} has the kind ${kind} that is not in the catalog.`);
     }
@@ -306,7 +315,9 @@ export function importLegacyV4(doc: unknown): Vignette {
         const sensorKey = system == null ? null : (keyOfSystem.get(system) ?? null);
         // Flown data may name a system the plan lacks: keep the event, say so in the notes.
         if (system != null && sensorKey == null)
-          notes.push(`A debrief event refers to system ${system} that does not exist; it has no sensor.`);
+          notes.push(
+            `A debrief event refers to system ${system} that does not exist; it has no sensor.`,
+          );
         return {
           tS: num(e.t, NaN),
           type: typeOf('A debrief event', str(e.type)),

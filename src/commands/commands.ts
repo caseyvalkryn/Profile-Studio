@@ -10,6 +10,7 @@ import {
   defaultSensorModel,
   EFFECTOR_DEFAULTS,
   EFFECTOR_KINDS,
+  NODE_DEFAULTS,
   NODE_KINDS,
   SENSOR_DEFAULTS,
   SENSOR_KINDS,
@@ -315,6 +316,8 @@ function addNode(d: Draft<Vignette>, kind: NodeKind, p: MapPoint): string {
     y: p.y,
     z: 0,
     rangeM: 0,
+    fovDeg: NODE_DEFAULTS[kind].fovDeg,
+    bearingDeg: NODE_DEFAULTS[kind].bearingDeg,
   };
   d.nodes.push(n);
   return n.key;

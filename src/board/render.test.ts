@@ -264,15 +264,8 @@ describe('legacy render cases on the fixtures', () => {
 describe('byte parity with the legacy renderer', () => {
   const PS = loadLegacy();
   const seeds = PS.seed.load();
-  // v6 does not store a node's fov (importLegacyV4 drops it), so copy it from the legacy record.
   function port(r: (typeof seeds)[number]): Scene {
-    const sc = structuredClone(toScene(importLegacyV4(JSON.parse(JSON.stringify(r)))));
-    const legacy = (r.scene as { systems: { id: string; fov: number }[] }).systems;
-    for (const s of sc.scene.systems) {
-      const l = legacy.find((x) => x.id === s.id);
-      if (l && (s.kind === 'c2' || s.kind === 'tspi')) s.fov = l.fov;
-    }
-    return sc;
+    return structuredClone(toScene(importLegacyV4(JSON.parse(JSON.stringify(r)))));
   }
   const W = { W: 1440, H: 900 };
 
