@@ -30,13 +30,13 @@ test('12.9 A legacy v4 JSON from the current app imports without loss of assets,
   await page.goto('/');
   const [chooser] = await Promise.all([
     page.waitForEvent('filechooser'),
-    page.getByRole('button', { name: 'Import JSON' }).click(),
+    page.getByRole('button', { name: 'Import', exact: true }).click(),
   ]);
   await chooser.setFiles(FIXTURE);
-  await expect(page.getByText('Imported 1 vignette')).toBeVisible();
+  await expect(page.getByText('Imported 1 profile')).toBeVisible();
 
-  const row = page.getByTestId('saved-row').filter({ hasText: legacy.name });
-  await row.getByRole('button', { name: legacy.name, exact: true }).click();
+  const card = page.getByTestId('saved-card').filter({ hasText: legacy.name });
+  await card.getByRole('button', { name: 'Open', exact: true }).click();
   await expect(page.getByRole('main', { name: 'Build' })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Vignette name' })).toHaveValue(legacy.name);
   await expect(page.getByRole('main', { name: 'Build' })).toContainText(legacy.purpose);

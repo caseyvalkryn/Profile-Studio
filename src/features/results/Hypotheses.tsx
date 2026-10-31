@@ -47,7 +47,7 @@ export function Hypotheses({
   units: Units;
 }) {
   if (hypotheses.length === 0)
-    return <p className="text-sm text-muted">No hypothesis stated for this vignette.</p>;
+    return <p className="text-sm text-muted">No hypothesis stated for this profile.</p>;
   return (
     <ul className="m-0 flex list-none flex-col gap-1 p-0" aria-label="Hypotheses">
       {hypotheses.map((h) => {

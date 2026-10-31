@@ -97,7 +97,7 @@ describe('ResultsWorkspace', () => {
     );
     act(() => useDocument.setState({ doc: { ...v, id: 'V-other', runs: [] } }));
     render(<ResultsWorkspace />);
-    expect(screen.getByText('No run yet. Run the vignette from Build.')).toBeInTheDocument();
+    expect(screen.getByText('No run yet. Run the profile from Build.')).toBeInTheDocument();
     expect(screen.queryByRole('table', { name: 'Scorecard' })).toBeNull();
     expect(screen.queryByText('Sweep running.')).toBeNull();
   });

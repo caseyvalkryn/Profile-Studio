@@ -281,7 +281,7 @@ export default function ReportWorkspace({ renderChart, renderMap }: ReportWorksp
   );
   const limits = useMemo(() => (doc ? simulationLimits(doc, units) : []), [doc, units]);
 
-  if (!doc) return <Muted>No vignette open.</Muted>;
+  if (!doc) return <Muted>No profile open.</Muted>;
 
   const picked = pickedCharts(doc.report);
   const notes = Object.fromEntries(SECTIONS.map((s) => [s.id, sectionNote(doc.report, s.id)]));

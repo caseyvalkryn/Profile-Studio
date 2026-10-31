@@ -61,7 +61,7 @@ export function Showcase() {
           <Button variant="default" size="sm" tooltip="Fit view" shortcut="F">
             Fit
           </Button>
-          <Button variant="accent" tooltip="Run the vignette" shortcut="⌘↵">
+          <Button variant="accent" tooltip="Run the profile" shortcut="⌘↵">
             Run
           </Button>
           <Tooltip content="Units toggle" shortcut="U">
@@ -82,7 +82,7 @@ export function Showcase() {
             source="Entered by planner"
             onCommit={setSpeed}
           />
-          <Field kind="text" label="Vignette name" value={name} onCommit={setName} />
+          <Field kind="text" label="Profile name" value={name} onCommit={setName} />
         </section>
 
         <section className="flex items-center gap-2">
@@ -115,7 +115,7 @@ export function Showcase() {
         <Dialog
           open={dialog}
           onOpenChange={setDialog}
-          title="Delete vignette"
+          title="Delete profile"
           actions={
             <>
               <Button variant="default" onClick={() => setDialog(false)}>
@@ -127,7 +127,7 @@ export function Showcase() {
             </>
           }
         >
-          <p className="text-muted">The vignette moves to the trash. Undo restores it.</p>
+          <p className="text-muted">The profile moves to the trash. Undo restores it.</p>
         </Dialog>
         <PromptNumber
           open={prompt}

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { goTo, openTemplate, POINT_DEFENCE, runOnce } from './helpers';
 
-test('F-01 Two vignettes in one session: Results for the second shows no runs of the first.', async ({
+test('F-01 Two profiles in one session: Results for the second shows no runs of the first.', async ({
   page,
 }) => {
   await openTemplate(page, POINT_DEFENCE);

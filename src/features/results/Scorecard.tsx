@@ -193,7 +193,7 @@ export function Scorecard({ scores, units, chainTime, selectedId, onSelect }: Sc
                   <td className="py-0.5 pr-2 pl-1 font-mono">{m.id}</td>
                   <td className="py-0.5 pr-2">{m.name}</td>
                   <td colSpan={4} className="py-0.5 pr-2 text-xs">
-                    Not scored in this vignette
+                    Not scored in this profile
                   </td>
                   <td className="py-0.5">
                     <SourceChip measure={m} sourceClass={m.sourceClass} />

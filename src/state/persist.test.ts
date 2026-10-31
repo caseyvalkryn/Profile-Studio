@@ -1,10 +1,11 @@
 import { vi } from 'vitest';
 import { testVignette } from '../engine/testVignette';
-import type { Vignette } from '../domain/types';
+import { SCHEMA, type Vignette } from '../domain';
 import { useDocument } from './document';
 import {
   deleteVignette,
   exportJson,
+  exportLibrary,
   flushAutosave,
   importJson,
   listVignettes,
@@ -48,7 +49,7 @@ describe('JSON import and export', () => {
   it('imports a single legacy v4 record by its schema field', () => {
     const out = importJson(JSON.stringify(v4('old')));
     expect(out).toHaveLength(1);
-    expect(out[0]!.schema).toBe('profile-studio/5');
+    expect(out[0]!.schema).toBe(SCHEMA);
     expect(out[0]!.name).toBe('old');
   });
 
@@ -83,6 +84,24 @@ describe('vignette store functions (mocked idb)', () => {
     expect((await loadVignette('a'))?.name).toBe('A');
     await deleteVignette('a');
     expect(await loadVignette('a')).toBeNull();
+  });
+
+  it('lists the site name of each profile', async () => {
+    setDb(mockDb());
+    const v = testVignette({ id: 'a' });
+    await saveVignette({ ...v, site: { ...v.site, name: 'North range' } });
+    expect((await listVignettes())[0]!.site).toBe('North range');
+  });
+
+  it('exportLibrary then importJson round-trips every stored profile', async () => {
+    setDb(mockDb());
+    const a = testVignette({ id: 'a', name: 'A', updated: '2026-01-01T00:00:00Z' });
+    const b = testVignette({ id: 'b', name: 'B', updated: '2026-02-01T00:00:00Z' });
+    await saveVignette(a);
+    await saveVignette(b);
+    const text = await exportLibrary();
+    expect(JSON.parse(text).schema).toBe(SCHEMA);
+    expect(importJson(text)).toEqual([b, a]);
   });
 });
 

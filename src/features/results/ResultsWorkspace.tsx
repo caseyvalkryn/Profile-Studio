@@ -85,7 +85,7 @@ export default function ResultsWorkspace({ chartWidth = 640 }: { chartWidth?: nu
         <h1 className="m-0 text-lg font-semibold">Results</h1>
         <Section title="Runs">
           {entries.length === 0 ? (
-            <p className="text-sm text-muted">No run yet. Run the vignette from Build.</p>
+            <p className="text-sm text-muted">No run yet. Run the profile from Build.</p>
           ) : (
             <table className="w-full border-collapse text-sm" aria-label="Runs">
               <thead>
