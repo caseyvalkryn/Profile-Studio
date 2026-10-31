@@ -1,5 +1,7 @@
 /* Design tokens. Source: docs/design-principles.md section 5.
-   Four surfaces, one accent, two radii, mono for data, sans for UI. */
+   Four surfaces, one accent, two radii, mono for data, sans for UI.
+   Type and layout tokens are ported one to one from legacy/css/tokens.css (lane 9.1.1);
+   the legacy palette is not ported (artifact study, decision 4). */
 
 :root {
   --surface-0: #f6f7f8; /* app background */
@@ -21,8 +23,48 @@
   --chart-grid: var(--surface-3);
   --radius-sm: 4px;
   --radius-md: 8px;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  /* strokes */
+  --w1: 0.75px;
+  --w2: 1.25px;
+  --w3: 2.25px;
+  /* layout */
+  --col-list: 232px;
+  --col-right: 320px;
+  --top: 48px;
+  --strip: 112px;
+  --lane: 14px;
+  --ladder-row: 22px;
+  --hit: 14px;
+  /* type: families (Archivo and JetBrains Mono, bundled from @fontsource in base.css) */
+  --ui: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --font-sans: var(--ui);
+  --font-mono: var(--mono);
+  /* type: five sizes with their line heights */
+  --fs-1: 11px; /* micro: uppercase labels, keys, sub lines, ticks */
+  --lh-1: 14px;
+  --fs-2: 12px; /* data: mono numbers, ids, table cells, secondary text */
+  --lh-2: 16px;
+  --fs-3: 13px; /* body: row names, controls, inputs, menu, prose in panels */
+  --lh-3: 18px;
+  --fs-4: 14px; /* title: panel and dialog heads, brand, card names, caption */
+  --lh-4: 20px;
+  --fs-5: 17px; /* display: full-stage caption only */
+  --lh-5: 24px;
+  /* type: weights, tracking, figures */
+  --fw: 400;
+  --fw-med: 500;
+  --ls-caps: 0.06em;
+  --tnum: tabular-nums;
+  /* controls and rows */
+  --ctl: 28px; /* buttons, inputs, selects, chips row */
+  --ctl-dense: 24px; /* inspector inputs, table cell inputs, chips */
+  --ctl-mini: 22px; /* .mini */
+  --row: 24px; /* one-line list row */
+  --row-2: 40px; /* two-line list row */
+  --row-px: 8px; /* row side padding */
+  --col-data: 96px; /* default data column width; panels override */
+  --col-id: 56px; /* id column width */
   color-scheme: light;
 }
 
@@ -62,4 +104,41 @@
   --chart-mark: #3987e5;
   --chart-band: rgba(57, 135, 229, 0.22);
   color-scheme: dark;
+}
+
+@media (pointer: coarse) {
+  :root {
+    --hit: 28px;
+    --row: 44px;
+    --row-2: 52px;
+    --ctl: 44px;
+    --ctl-dense: 36px;
+    --ctl-mini: 28px;
+  }
+}
+
+@media (max-width: 600px) {
+  :root {
+    --strip: 64px;
+    --lane: 10px;
+    --row: 44px;
+    --row-2: 52px;
+    --ctl: 36px;
+    --ctl-dense: 32px;
+    --ctl-mini: 28px;
+  }
+}
+
+/* full stage: the type scale grows on the stage scope only */
+#slot-stage.st-full {
+  --fs-1: 14px;
+  --lh-1: 18px;
+  --fs-2: 15px;
+  --lh-2: 20px;
+  --fs-3: 16px;
+  --lh-3: 22px;
+  --fs-4: 18px;
+  --lh-4: 24px;
+  --fs-5: 22px;
+  --lh-5: 30px;
 }
