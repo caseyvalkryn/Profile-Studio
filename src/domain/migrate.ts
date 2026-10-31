@@ -303,11 +303,15 @@ export function importLegacyV4(doc: unknown): Vignette {
       tspi,
       events: objs(db.events).map((e) => {
         const system = e.system == null ? null : str(e.system);
+        const sensorKey = system == null ? null : (keyOfSystem.get(system) ?? null);
+        // Flown data may name a system the plan lacks: keep the event, say so in the notes.
+        if (system != null && sensorKey == null)
+          notes.push(`A debrief event refers to system ${system} that does not exist; it has no sensor.`);
         return {
           tS: num(e.t, NaN),
           type: typeOf('A debrief event', str(e.type)),
           threatKey: threatKeyOf('A debrief event', str(e.path)),
-          sensorKey: system == null ? null : (keyOfSystem.get(system) ?? null),
+          sensorKey,
         };
       }),
     };
@@ -368,12 +372,8 @@ export function importLegacyV4(doc: unknown): Vignette {
           .map((id) => keyOfSystem.get(str(id)))
           .filter((k): k is string => k !== undefined),
       },
-      slides: objs(doc.cards).map((c) => ({
-        key: newKey(),
-        name: str(c.name),
-        caption: str(c.caption),
-        notes: str(c.notes),
-      })),
+      // Legacy cards import to `cards`; `slides` holds AAR notes only (spec section 5 rule 3).
+      slides: [],
     },
   };
   return parseVignette(v);

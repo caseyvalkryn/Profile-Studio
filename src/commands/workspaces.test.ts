@@ -2,6 +2,7 @@ import { testVignette } from '../engine/testVignette';
 import { useDocument } from '../state/document';
 import { UI_DEFAULTS, useUi, type Workspace } from '../state/ui';
 import { sheetRows } from '../features/commands/sheet';
+import { useToast } from '../features/shell/toastStore';
 import { nextTheme } from './commands';
 import { dispatchKey } from './keys';
 import { byShortcut, get, inWorkspace, register } from './registry';
@@ -78,8 +79,23 @@ describe('workspace scoping', () => {
     expect(useUi.getState().panels.inspector).toBe(true);
     dispatchKey(key('i'), undefined, true);
     expect(useUi.getState().panels.inspector).toBe(false);
-    dispatchKey(key('r'), undefined, true);
-    expect(useUi.getState().stripTab).not.toBe(UI_DEFAULTS.stripTab);
+    dispatchKey(key('\\'), undefined, true);
+    expect(useUi.getState().panels.list).toBe(false);
+  });
+
+  it('R waits for lane 9.3.2 and a disabled key toasts its reason', () => {
+    inWs('build');
+    expect(dispatchKey(key('r'), undefined, true)).toBeNull();
+    expect(useUi.getState().stripTab).toBe(UI_DEFAULTS.stripTab);
+    expect(useToast.getState()).toMatchObject({
+      text: 'The chart and readout strips arrive in lane 9.3.2.',
+      visible: true,
+    });
+  });
+
+  it('/ focuses the Library search in the Library only', () => {
+    expect(byShortcut('/', 'library')?.id).toBe('library.search');
+    expect(byShortcut('/', 'build')?.id).not.toBe('library.search');
   });
 });
 

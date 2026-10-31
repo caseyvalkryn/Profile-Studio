@@ -8,7 +8,8 @@ import { useUi } from '../../state/ui';
 import legacyText from './__fixtures__/legacy-v4-cuas-001.json?raw';
 import LibraryScreen, { UNDO_MS } from './LibraryScreen';
 import { libraryCommands } from './commands';
-import { UNTITLED, useLibraryRequests } from './newProfile';
+import { useToast } from '../shell/toastStore';
+import { nextProfileIdOf, UNTITLED, useLibraryRequests } from './newProfile';
 import type { Template } from './types';
 
 // An in-memory store behind the persist db functions. importJson and exportJson stay real.
@@ -185,7 +186,7 @@ describe('LibraryScreen', () => {
     const input = screen.getByLabelText('Import JSON file');
     const file = new File([legacyText], 'cuas-001.json', { type: 'application/json' });
     fireEvent.change(input, { target: { files: [file] } });
-    expect(await screen.findByText('Imported 1 profile')).toBeInTheDocument();
+    await waitFor(() => expect(useToast.getState().text).toBe('Imported 1 profile.'));
     expect(persist.saveVignette).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(savedNames()).toEqual(['Single Group 1 ingress with loiter']));
   });
@@ -305,20 +306,34 @@ describe('libraryCommands', () => {
       'profile.new',
       'profile.newFromTemplate',
       'library.export',
-      'library.import',
+      'library.search',
     ]);
+    const search = libraryCommands[3]!;
+    expect(search).toMatchObject({ label: 'Search the library', shortcut: '/' });
+    expect(search.workspaces).toEqual(['library']);
     const fromTpl = libraryCommands[1]!;
     expect(fromTpl.needsArg).toBe(true);
     expect(fromTpl.options!.at(-1)).toEqual({ value: 'blank', label: 'Blank' });
     expect(libraryCommands[0]!.shortcut).toBe('Mod+N');
   });
 
-  it('profile.new opens Untitled profile and asks the shell for /build and the name field', () => {
+  it('profile.new opens Untitled profile and asks the shell for /build and the name field', async () => {
+    store.clear();
+    seedSaved('Alpha', '2026-10-20T00:00:00Z');
+    store.set('PROF-1', { ...store.get('id-Alpha')!, id: 'PROF-1' });
     const before = useLibraryRequests.getState();
     libraryCommands[0]!.run({} as never);
-    expect(useDocument.getState().doc!.name).toBe(UNTITLED);
+    await waitFor(() => expect(useDocument.getState().doc?.name).toBe(UNTITLED));
+    expect(useDocument.getState().doc!.id).toBe('PROF-2');
     const after = useLibraryRequests.getState();
     expect(after.route?.path).toBe('/build');
     expect(after.nameFocus).toBe(before.nameFocus + 1);
+  });
+});
+
+describe('profile ids', () => {
+  it('a new profile takes the lowest free PROF-n', () => {
+    expect(nextProfileIdOf([])).toBe('PROF-1');
+    expect(nextProfileIdOf(['PROF-1', 'PROF-3', 'cuas-001'])).toBe('PROF-2');
   });
 });

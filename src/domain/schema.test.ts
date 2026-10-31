@@ -154,7 +154,7 @@ describe('vignette schema', () => {
 
   it('throws a readable error', () => {
     const bad = { ...small(), schema: 'profile-studio/4' };
-    expect(() => parseVignette(bad)).toThrow(/not a valid vignette[\s\S]*schema/);
+    expect(() => parseVignette(bad)).toThrow(/not a valid profile[\s\S]*schema/);
     expect(isVignette(bad)).toBe(false);
   });
 

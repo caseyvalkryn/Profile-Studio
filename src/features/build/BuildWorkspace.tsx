@@ -211,11 +211,14 @@ function BuildBar() {
 
 export default function BuildWorkspace() {
   const view = useUi((s) => s.view);
+  // I and \ show and hide the side panels through `ui.panels` (legacy, review 9.1 F-04).
+  const showList = useUi((s) => s.panels.list);
+  const showInspector = useUi((s) => s.panels.inspector);
   return (
     <main aria-label="Build" className="flex min-h-0 flex-1 flex-col">
       <BuildBar />
       <div className="flex min-h-0 flex-1">
-        <AssetsPanel />
+        {showList ? <AssetsPanel /> : null}
         <section aria-label="Map" className="relative min-w-0 flex-1 bg-surface-0">
           {view === 'elevation' ? (
             <ProfileView />
@@ -225,7 +228,7 @@ export default function BuildWorkspace() {
             </Suspense>
           )}
         </section>
-        <Inspector />
+        {showInspector ? <Inspector /> : null}
       </div>
       <section
         aria-label="Timeline"

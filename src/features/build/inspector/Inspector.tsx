@@ -22,7 +22,7 @@ export default function Inspector() {
 
   let body;
   if (!doc) {
-    body = <Note>No vignette open.</Note>;
+    body = <Note>No profile open.</Note>;
   } else {
     const found = selected(doc, keys);
     const one = found[0];
@@ -76,12 +76,12 @@ function VignetteHeader({ v }: { v: Vignette }) {
   const qById = new Map(v.questions.map((q) => [q.key, q.id]));
   return (
     <>
-      <Section title="Vignette">
+      <Section title="Profile">
         <Field
           kind="text"
           label="Name"
           value={v.name}
-          onCommit={(s) => edit('Rename vignette', (d) => void (d.name = s))}
+          onCommit={(s) => edit('Rename profile', (d) => void (d.name = s))}
         />
       </Section>
       <Section title="Site">

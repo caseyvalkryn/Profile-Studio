@@ -10,6 +10,7 @@
   --surface-3: #dde1e6; /* borders, dividers */
   --text: #1b1f24;
   --text-muted: #5b6470;
+  --text-subtle: #7b7d73; /* third text step: labels, hints, keys (legacy --t3) */
   --accent: #2563eb; /* selection and current time only */
   --accent-text: #ffffff;
   --state-covered: #15803d; /* a reach that holds a threat at the current time */
@@ -76,6 +77,7 @@
     --surface-3: #2b313b;
     --text: #e6e9ee;
     --text-muted: #9aa3af;
+    --text-subtle: #8c8e88;
     --accent: #4f8cff;
     --accent-text: #0f1115;
     --state-covered: #4ade80;
@@ -95,6 +97,7 @@
   --surface-3: #2b313b;
   --text: #e6e9ee;
   --text-muted: #9aa3af;
+  --text-subtle: #8c8e88;
   --accent: #4f8cff;
   --accent-text: #0f1115;
   --state-covered: #4ade80;

@@ -1,13 +1,15 @@
 // The top bar (legacy `51-panel-topbar.js`, spec section 7): brand, the workspace segment, the
 // New split button, the profile name with inline rename, id, undo and redo with the pending
 // label, Export, Import, the theme control, Help and the autosave status line. Every button runs
-// a registry command, so the bar, the keys and the palette do the same thing.
+// a registry command, so the bar, the keys and the palette do the same thing. On the Library
+// route the Library screen has its own New, Import and Export, so the bar leaves them out (one
+// of each per screen, review 9.1 F-20).
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { currentContext, execute, get, shortcutLabel } from '../../commands/registry';
 import { useDocument } from '../../state/document';
 import { useUi, type Theme } from '../../state/ui';
-import { useLibraryRequests } from '../library/newProfile';
+import { consumeNameFocus, consumeRoute, useLibraryRequests } from '../library/newProfile';
 import { Menu } from '../../ui/Menu';
 import { Tooltip } from '../../ui/Tooltip';
 import { toMenuItem } from '../commands/adapter';
@@ -124,14 +126,15 @@ function ProfileName() {
   const name = useDocument((s) => s.doc?.name);
   const [draft, setDraft] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
-  // New profile asks for the name field (spec section 7, New). The count rises per request.
+  // New profile asks for the name field (spec section 7, New). The request is consumed once, so
+  // a later rename or undo leaves focus where it is (review 9.1 F-02).
   const nameFocus = useLibraryRequests((s) => s.nameFocus);
   useEffect(() => {
-    if (nameFocus && name !== undefined) {
-      input.current?.focus();
-      input.current?.select();
-    }
-  }, [nameFocus, name]);
+    if (!nameFocus) return;
+    input.current?.focus();
+    input.current?.select();
+    consumeNameFocus();
+  }, [nameFocus]);
   const commit = () => {
     const v = draft?.trim();
     setDraft(null);
@@ -169,30 +172,35 @@ function ProfileName() {
   );
 }
 
+/** The id. Legacy adds "v<n>"; the v6 record has no version (spec section 5), so none shows. */
 function ProfileId() {
-  const doc = useDocument((s) => s.doc);
-  if (!doc) return null;
-  // Legacy shows "<id> v<n>"; the record has a version only once the domain carries one.
-  const v = (doc as { v?: unknown }).v;
+  const id = useDocument((s) => s.doc?.id);
+  if (id === undefined) return null;
   return (
     <span className="ps-t-id" style={{ color: 'var(--ps-t2)' }}>
-      {doc.id}
-      {typeof v === 'number' ? ` v${v}` : ''}
+      {id}
     </span>
   );
 }
 
-/** A command with no router (Cmd+N, the palette) leaves a route request; the bar follows it. */
+/**
+ * A command with no router (Cmd+N, the palette) leaves a route request; the bar takes it once and
+ * navigates (review 9.1 F-01). The effect depends on the request only: `navigate` changes with
+ * every location, and re-running on it pinned the router to the requested path.
+ */
 function useRouteRequests() {
   const navigate = useNavigate();
   const route = useLibraryRequests((s) => s.route);
   useEffect(() => {
-    if (route) navigate(route.path);
-  }, [route, navigate]);
+    const r = route && consumeRoute();
+    if (r) void navigate(r.path);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
+  }, [route]);
 }
 
 export default function TopBar({ status }: { status?: string | null }) {
   useRouteRequests();
+  const onLibrary = useLocation().pathname === '/';
   const undoLabel = useDocument((s) => s.past[s.past.length - 1]?.label);
   const redoLabel = useDocument((s) => s.future[0]?.label);
   const theme = useUi((s) => s.theme);
@@ -208,7 +216,7 @@ export default function TopBar({ status }: { status?: string | null }) {
             </NavLink>
           ))}
         </nav>
-        <NewSplit />
+        {onLibrary ? null : <NewSplit />}
         <div className="tb-prof">
           <ProfileName />
           <ProfileId />
@@ -225,12 +233,16 @@ export default function TopBar({ status }: { status?: string | null }) {
           <BarButton id="edit.redo" quiet className="tb-redo" tip={redoTitle(redoLabel)}>
             Redo
           </BarButton>
-          <BarButton id="file.export" className="tb-export">
-            Export
-          </BarButton>
-          <BarButton id="file.import" className="tb-import">
-            Import
-          </BarButton>
+          {onLibrary ? null : (
+            <>
+              <BarButton id="file.export" className="tb-export">
+                Export
+              </BarButton>
+              <BarButton id="file.import" className="tb-import">
+                Import
+              </BarButton>
+            </>
+          )}
           <BarButton id="view.theme" quiet className="tb-theme">
             {THEME_LABEL[theme]}
           </BarButton>

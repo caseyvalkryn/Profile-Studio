@@ -67,11 +67,13 @@ export async function listVignettes(): Promise<VignetteListing[]> {
     .sort((a, b) => (a.updated < b.updated ? 1 : a.updated > b.updated ? -1 : 0));
 }
 
-/** Every stored profile, newest first. */
+/** Every stored profile, newest first, parsed: a record stored at v5 comes back as v6. */
 export async function loadAllVignettes(): Promise<Vignette[]> {
   const all = await (await getDb()).getAll('vignettes');
   for (const v of all) storedIds.add(v.id);
-  return all.sort((a, b) => (a.updated < b.updated ? 1 : a.updated > b.updated ? -1 : 0));
+  return all
+    .map((v) => parseVignette(v))
+    .sort((a, b) => (a.updated < b.updated ? 1 : a.updated > b.updated ? -1 : 0));
 }
 
 export async function deleteVignette(id: string): Promise<void> {
@@ -83,9 +85,16 @@ export function exportJson(v: Vignette): string {
   return JSON.stringify(v, null, 2);
 }
 
-/** The library as one JSON: `{schema, library}` with every stored profile, newest first. */
-export async function exportLibrary(): Promise<string> {
-  return JSON.stringify({ schema: SCHEMA, library: await loadAllVignettes() }, null, 2);
+/**
+ * The library as one JSON: `{schema, library}` with every stored profile, newest first, all at
+ * the current schema. `current` (the open profile) replaces its stored copy; an unsaved one is
+ * left out.
+ */
+export async function exportLibrary(current: Vignette | null = null): Promise<string> {
+  const library = (await loadAllVignettes()).map((v) =>
+    current && v.id === current.id ? current : v,
+  );
+  return JSON.stringify({ schema: SCHEMA, library }, null, 2);
 }
 
 /**
@@ -100,7 +109,7 @@ function importRecord(data: unknown): Vignette {
   if (schema === SCHEMA || schema === STAMP_V5) return parseVignette(data);
   if (schema === 'profile-studio/4') return importLegacyV4(data);
   throw new Error(
-    `Unknown record stamp: ${String(schema)}. Expected ${SCHEMA} or profile-studio/4.`,
+    `Unknown record stamp: ${String(schema)}. Expected ${SCHEMA}, ${STAMP_V5} or profile-studio/4.`,
   );
 }
 

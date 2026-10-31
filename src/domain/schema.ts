@@ -302,7 +302,7 @@ export const reportDraftSchema: z.ZodType<ReportDraft> = z.object({
 
 export const vignetteSchema: z.ZodType<Vignette> = z.object({
   schema: z.literal(SCHEMA),
-  id: z.string().min(1, 'The vignette has no id.'),
+  id: z.string().min(1, 'The profile has no id.'),
   name: z.string(),
   updated: z.string(),
   site: z.object({
@@ -355,7 +355,7 @@ export const vignetteSchema: z.ZodType<Vignette> = z.object({
  */
 export function parseVignette(input: unknown): Vignette {
   const r = vignetteSchema.safeParse(migrateV5ToV6(input));
-  if (!r.success) throw new Error(`This is not a valid vignette.\n${z.prettifyError(r.error)}`);
+  if (!r.success) throw new Error(`This is not a valid profile.\n${z.prettifyError(r.error)}`);
   return r.data;
 }
 
