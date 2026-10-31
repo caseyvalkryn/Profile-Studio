@@ -8,5 +8,5 @@ export const blank: Template = {
   question: '',
   steps: [],
   mainMeasures: [],
-  make: () => vignette({ name: 'Untitled vignette', questions: [question('')] }),
+  make: () => vignette({ name: 'Untitled profile', questions: [question('')] }),
 };

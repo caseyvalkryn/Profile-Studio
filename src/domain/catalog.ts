@@ -1,7 +1,15 @@
 // Catalog transcribed from legacy/js/10-catalog.js as typed data.
 // Spec section 2 names: threat (legacy aircraft), sensor and effector (legacy system), area (legacy volume).
 
-import type { AreaKind, EffectorKind, NodeKind, SensorKind, SensorModel } from './types';
+import type {
+  AreaKind,
+  AuthoredEventType,
+  EffectorKind,
+  LayerId,
+  NodeKind,
+  SensorKind,
+  SensorModel,
+} from './types';
 
 export type ThreatGroup = 1 | 2 | 3;
 
@@ -397,6 +405,29 @@ export const ID_DWELL = 5;
 export const COAST_S = 10;
 /** Playback rates (legacy C.RATES). */
 export const RATES: readonly number[] = [0.25, 0.5, 1, 2, 4, 8, 16, 32];
+/** Authored event types (legacy C.EV_TYPES; legacy `id` is `identify`). */
+export const AUTHORED_EVENT_TYPES = [
+  'detect',
+  'track',
+  'identify',
+  'engage',
+  'split',
+  'merge',
+  'loiter',
+  'terminal',
+  'checkpoint',
+] as const satisfies readonly AuthoredEventType[];
+/** Card layer ids in legacy Sc.LAYER_KEYS order. */
+export const LAYER_IDS = [
+  'reach',
+  'events',
+  'envelopes',
+  'tracks',
+  'telemetry',
+  'labels',
+  'rings',
+  'target',
+] as const satisfies readonly LayerId[];
 
 // ---- MVP planning defaults. Not in legacy; the engine lanes may tune them. ----
 

@@ -43,7 +43,14 @@ function synthetic(nThreats = 40, nSensors = 15): Vignette {
         holdS: 0,
       });
     }
-    threats.push({ key: `t${i}`, id: `T${i + 1}`, type: 'g1-quad-isr', path, speedMs: 20 });
+    threats.push({
+      key: `t${i}`,
+      id: `T${i + 1}`,
+      type: 'g1-quad-isr',
+      path,
+      speedMs: 20,
+      group: '',
+    });
   }
   const sensors: Sensor[] = [];
   for (let i = 0; i < nSensors; i++) {

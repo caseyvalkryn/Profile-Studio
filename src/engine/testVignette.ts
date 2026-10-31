@@ -57,6 +57,7 @@ export function testThreat(id: string, type: string, fromM = 6000, altM = 100): 
     id,
     type,
     path: [wp(`${id}-a`, 0, fromM, altM), wp(`${id}-b`, 0, -200, altM)],
+    group: '',
   };
 }
 
@@ -93,6 +94,11 @@ export function testVignette(over: Partial<Vignette> = {}): Vignette {
         zMaxM: 500,
       },
     ],
+    planes: [],
+    events: [],
+    snapshots: [],
+    cards: [],
+    debrief: null,
     chainTime: { decisionS: 5, assignS: 3 },
     measures: [
       { id: '1.1.1', op: '>=', threshold: 90, unit: '%' },

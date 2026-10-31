@@ -45,7 +45,7 @@ export function syntheticVignette(nThreats = 40, nSensors = 15, seed = 7): Vigne
         holdS: k === 1 && rnd() < 0.3 ? between(10, 40) : 0,
       });
     }
-    threats.push({ key: `t${i}`, id: `T${i + 1}`, type, path, speedMs: speed });
+    threats.push({ key: `t${i}`, id: `T${i + 1}`, type, path, speedMs: speed, group: '' });
   }
   const sensors: Sensor[] = [];
   for (let i = 0; i < nSensors; i++) {
@@ -114,6 +114,11 @@ export function syntheticVignette(nThreats = 40, nSensors = 15, seed = 7): Vigne
         zMaxM: 0,
       },
     ],
+    planes: [],
+    events: [],
+    snapshots: [],
+    cards: [],
+    debrief: null,
     chainTime: { decisionS: 5, assignS: 3 },
     measures: [],
     runs: [],

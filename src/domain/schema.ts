@@ -2,9 +2,17 @@
 // TypeScript type, so the two cannot drift.
 
 import { z } from 'zod';
+import { AUTHORED_EVENT_TYPES, LAYER_IDS, RATES } from './catalog';
+import { migrateV5ToV6 } from './migrateV5';
 import type {
   Area,
+  AuthoredEvent,
+  Card,
+  CardView,
+  Clip,
+  Debrief,
   Effector,
+  HeightPlane,
   Entered,
   Hypothesis,
   MeasureSetting,
@@ -46,6 +54,7 @@ export const threatSchema: z.ZodType<Threat> = z.object({
   type: z.string(),
   path: z.array(waypointSchema),
   speedMs: num.positive().optional(),
+  group: z.string(),
 });
 
 export const enteredSchema: z.ZodType<Entered> = z.object({
@@ -146,6 +155,83 @@ export const areaSchema: z.ZodType<Area> = z
     path: ['zMaxM'],
   });
 
+export const heightPlaneSchema: z.ZodType<HeightPlane> = z.object({
+  key,
+  id: z.string(),
+  label: z.string(),
+  zM: num,
+});
+
+const eventType = z.enum(AUTHORED_EVENT_TYPES, {
+  message: 'The event type is not in the catalog.',
+});
+
+export const authoredEventSchema: z.ZodType<AuthoredEvent> = z.object({
+  key,
+  id: z.string(),
+  tS: num,
+  type: eventType,
+  label: z.string(),
+  threatKey: key,
+  sensorKey: key.nullable(),
+});
+
+// Legacy card rules (legacy/js/11-schema.js validate): the start before the end, a rate from the
+// rate menu, every beat inside the clip.
+export const clipSchema: z.ZodType<Clip> = z
+  .object({
+    t0S: num,
+    t1S: num,
+    rate: num.refine((r) => RATES.includes(r), 'The clip rate is not in the rate menu.'),
+    beatsS: z.array(num),
+  })
+  .refine((c) => c.t0S < c.t1S, {
+    message: 'The clip start must be before the clip end.',
+    path: ['t1S'],
+  })
+  .refine((c) => c.beatsS.every((b) => b >= c.t0S && b <= c.t1S), {
+    message: 'A beat is outside the clip.',
+    path: ['beatsS'],
+  });
+
+export const cardViewSchema: z.ZodType<CardView> = z.object({
+  kind: z.enum(['plan', 'elevation', '3d'], {
+    message: 'The view is not plan, elevation or 3D.',
+  }),
+  centre: z.object({ x: num, y: num }),
+  zoom: num.positive(),
+  yawDeg: num,
+  pitchDeg: num,
+  ref: key,
+  elevationMode: z.enum(['alongPath', 'fromAsset']),
+});
+
+export const cardSchema: z.ZodType<Card> = z.object({
+  key,
+  id: z.string(),
+  name: z.string(),
+  view: cardViewSchema,
+  layers: z.partialRecord(z.enum(LAYER_IDS), z.boolean()),
+  displays: z.object({ timeline: z.boolean(), chart: z.boolean(), readout: z.boolean() }),
+  clip: clipSchema.nullable(),
+  focus: z.array(key),
+  tS: num.nullable(),
+  caption: z.string(),
+  notes: z.string(),
+});
+
+export const debriefSchema: z.ZodType<Debrief> = z.object({
+  source: z.string(),
+  loadedAt: z.string(),
+  tspi: z.record(
+    key,
+    z.array(z.tuple([num, num, num, num], { message: 'A TSPI sample needs t, x, y and z.' })),
+  ),
+  events: z.array(
+    z.object({ tS: num, type: eventType, threatKey: key, sensorKey: key.nullable() }),
+  ),
+});
+
 export const measureSettingSchema: z.ZodType<MeasureSetting> = z.object({
   id: z.string(),
   op,
@@ -232,6 +318,11 @@ export const vignetteSchema: z.ZodType<Vignette> = z.object({
   effectors: z.array(effectorSchema),
   nodes: z.array(nodeSchema),
   areas: z.array(areaSchema),
+  planes: z.array(heightPlaneSchema),
+  events: z.array(authoredEventSchema),
+  snapshots: z.array(num),
+  cards: z.array(cardSchema),
+  debrief: debriefSchema.nullable(),
   chainTime: z.object({ decisionS: num.min(0), assignS: num.min(0) }),
   measures: z.array(measureSettingSchema),
   runs: z.array(runSummarySchema),
@@ -258,13 +349,17 @@ export const vignetteSchema: z.ZodType<Vignette> = z.object({
     .optional(),
 });
 
-/** Parse and validate a vignette. Throws an Error whose message lists each problem and its path. */
+/**
+ * Parse and validate a vignette. A `profile-studio/5` record is migrated to v6 first
+ * (migrateV5ToV6). Throws an Error whose message lists each problem and its path.
+ */
 export function parseVignette(input: unknown): Vignette {
-  const r = vignetteSchema.safeParse(input);
+  const r = vignetteSchema.safeParse(migrateV5ToV6(input));
   if (!r.success) throw new Error(`This is not a valid vignette.\n${z.prettifyError(r.error)}`);
   return r.data;
 }
 
+/** True for a valid v6 record only; a v5 record needs parseVignette to migrate it. */
 export function isVignette(input: unknown): input is Vignette {
   return vignetteSchema.safeParse(input).success;
 }

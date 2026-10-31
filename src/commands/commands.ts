@@ -347,6 +347,7 @@ function addThreat(d: Draft<Vignette>, type: string, p: MapPoint): string {
     id: nextId('threat', displayIds(d as Vignette)),
     type,
     path: [{ key: newKey(), x: p.x, y: p.y, z: arch ? arch.altM[0] : 100, holdS: 0 }],
+    group: '',
   };
   d.threats.push(t);
   return t.key;

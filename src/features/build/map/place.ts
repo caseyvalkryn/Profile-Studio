@@ -54,6 +54,7 @@ export function commitPath(draft: PathDraft): string | null {
         id: nextId('threat', displayIds(d as Vignette)),
         type: draft.type,
         path: draft.points.map((p) => ({ key: newKey(), x: p.x, y: p.y, z: z0, holdS: 0 })),
+        group: '',
       };
       d.threats.push(t);
       key = t.key;

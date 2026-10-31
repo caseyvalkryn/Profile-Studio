@@ -3,8 +3,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
-import { DEFAULT_MEASURES, importLegacyV4, TARGET_TIME_NOTE } from './migrate';
+import { DEFAULT_MEASURES, importLegacyV4, migrateV5ToV6, TARGET_TIME_NOTE } from './migrate';
 import { parseVignette } from './schema';
+import { templateById } from './templates';
+import type { Vignette } from './types';
 
 type Rec = Record<string, unknown> & {
   id: string;
@@ -105,5 +107,258 @@ describe('importLegacyV4', () => {
     expect(v.chainTime).toEqual({ decisionS: 0, assignS: 0 });
     expect(v.report.notes).toContain('Target time not set');
     expect(v.report.notes).toContain(TARGET_TIME_NOTE);
+  });
+});
+
+// Spec acceptance item 18 as a unit test, on the full v4 records in fixtures/legacy-derive.
+type L = Record<string, unknown>;
+const FIXTURES = path.resolve(__dirname, '../../fixtures/legacy-derive');
+const fixtures: [string, L][] = records.map(([id]) => [
+  id,
+  (JSON.parse(fs.readFileSync(path.join(FIXTURES, `${id}.json`), 'utf8')) as { input: L }).input,
+]);
+const PROJ = { plan: 'plan', elevation: 'elev', '3d': 'axon' } as const;
+
+// The v6 record read back into legacy ids and names, for the fields the import maps.
+function asLegacy(v: Vignette) {
+  const idOf = new Map<string, string>();
+  for (const x of [...v.planes, ...v.areas, ...v.sensors, ...v.effectors, ...v.nodes, ...v.threats])
+    idOf.set(x.key, x.id);
+  for (const e of v.events) idOf.set(e.key, e.id);
+  const ev = (type: string) => (type === 'identify' ? 'id' : type);
+  const sys = (k: string | null) => (k == null ? null : idOf.get(k));
+  return {
+    planes: v.planes.map((p) => ({ id: p.id, label: p.label, z: p.zM })),
+    volumes: v.areas.map((a) => ({ id: a.id, zmin: a.zMinM, zmax: a.zMaxM })),
+    groups: v.threats.map((t) => ({ id: t.id, group: t.group })),
+    events: v.events.map((e) => ({
+      id: e.id,
+      t: e.tS,
+      type: ev(e.type),
+      label: e.label,
+      path: idOf.get(e.threatKey),
+      system: sys(e.sensorKey),
+    })),
+    snapshots: v.snapshots,
+    data: v.report.dataSources,
+    cards: v.cards.map((c) => ({
+      id: c.id,
+      name: c.name,
+      cam: {
+        proj: PROJ[c.view.kind],
+        yaw: c.view.yawDeg,
+        pitch: c.view.pitchDeg,
+        ref: idOf.get(c.view.ref) ?? c.view.ref,
+      },
+      layers: c.layers,
+      displays: c.displays,
+      clip: c.clip && { t0: c.clip.t0S, t1: c.clip.t1S, rate: c.clip.rate, beats: c.clip.beatsS },
+      focus: c.focus.map((k) => idOf.get(k)),
+      t: c.tS,
+      caption: c.caption,
+      notes: c.notes,
+    })),
+    debrief: v.debrief && {
+      tspi: Object.fromEntries(Object.entries(v.debrief.tspi).map(([k, q]) => [idOf.get(k), q])),
+      events: v.debrief.events.map((e) => ({
+        t: e.tS,
+        type: ev(e.type),
+        path: idOf.get(e.threatKey),
+        system: sys(e.sensorKey),
+      })),
+    },
+  };
+}
+
+// The same fields as the legacy record holds them.
+function legacyFields(r: L) {
+  const s = r.scene as Record<string, L[]>;
+  const db = r.debrief as { tspi: L; events: L[] } | undefined;
+  return {
+    planes: s.planes!.map((p) => ({ id: p.id, label: p.label, z: p.z })),
+    volumes: s.volumes!.map((a) => ({ id: a.id, zmin: a.zmin, zmax: a.zmax })),
+    groups: s.paths!.map((p) => ({ id: p.id, group: p.group })),
+    events: (r.events as L[]).map((e) => ({
+      id: e.id,
+      t: e.t,
+      type: e.type,
+      label: e.label,
+      path: e.path,
+      system: e.system,
+    })),
+    snapshots: r.snapshots,
+    data: r.data,
+    cards: (r.cards as L[]).map((c) => ({
+      id: c.id,
+      name: c.name,
+      cam: c.cam,
+      layers: c.layers,
+      displays: c.displays,
+      clip: c.clip,
+      focus: c.focus,
+      t: c.t,
+      caption: c.caption,
+      notes: c.notes,
+    })),
+    debrief: db
+      ? {
+          tspi: db.tspi,
+          events: db.events.map((e) => ({ t: e.t, type: e.type, path: e.path, system: e.system })),
+        }
+      : null,
+  };
+}
+
+const roundTrip = (v: Vignette) => parseVignette(JSON.parse(JSON.stringify(v)));
+
+describe('legacy v4 round trip (acceptance item 18)', () => {
+  it.each(fixtures)('%s: import, export, import keeps every mapped field', (_id, rec) => {
+    const v = importLegacyV4(rec);
+    const back = roundTrip(v);
+    expect(back).toEqual(v);
+    expect(JSON.stringify(back)).toBe(JSON.stringify(v));
+    expect(asLegacy(back)).toEqual(legacyFields(rec));
+  });
+
+  it('CUAS-001 cards arrive with camera, layers, time, caption and notes', () => {
+    const [, rec] = fixtures[0]!;
+    const v = importLegacyV4(rec);
+    expect(v.cards.map((c) => [c.id, c.view.kind, c.tS])).toEqual([
+      ['c1', 'plan', null],
+      ['c2', '3d', 200],
+      ['c3', 'plan', 300],
+    ]);
+    const c2 = v.cards[1]!;
+    expect(c2.view).toEqual({
+      kind: '3d',
+      centre: { x: 0, y: 0 },
+      zoom: 1,
+      yawDeg: -35,
+      pitchDeg: 55,
+      ref: 'asset',
+      elevationMode: 'fromAsset',
+    });
+    expect(c2.layers).toEqual({
+      reach: false,
+      events: true,
+      envelopes: false,
+      tracks: true,
+      telemetry: false,
+      labels: true,
+      rings: false,
+      target: true,
+    });
+    expect(c2.focus).toEqual([v.events.find((e) => e.id === 'e4')!.key]);
+    expect(c2.caption).toMatch(/^At t\+200 s the aircraft is hovering/);
+    expect(c2.notes).toMatch(/^Pause here/);
+    expect(v.events.find((e) => e.id === 'e3')!.type).toBe('identify');
+    expect(v.planes).toMatchObject([{ id: 'P1', label: '120 m ceiling', zM: 120 }]);
+    expect(v.report.notes).not.toMatch(/Height plane|Event e1/);
+  });
+
+  it('keeps the collection: site name when empty, else a question note line', () => {
+    const [, base] = fixtures[0]!;
+    const v = importLegacyV4(base);
+    expect(v.site.name).toBe('Toughstump');
+    expect(v.report.notes).not.toMatch(/Collection/);
+
+    const named = structuredClone(base) as L & { site: L };
+    named.site.name = 'North range';
+    const w = importLegacyV4(named);
+    expect(w.site.name).toBe('North range');
+    expect(w.questions[0]!.note.split('\n').at(-1)).toBe('Collection: Toughstump');
+    expect(w.report.notes).not.toMatch(/Collection/);
+
+    const bare = { ...named, purpose: '', mop: [] };
+    const b = importLegacyV4(bare);
+    expect(b.questions).toEqual([]);
+    expect(b.report.notes).toMatch(/^Collection: Toughstump$/m);
+  });
+
+  it('maps a debrief, a clip and a system origin by key', () => {
+    const [, base] = fixtures[0]!;
+    const rec = structuredClone(base) as L & { cards: L[]; events: L[] };
+    rec.debrief = {
+      tspi: {
+        T1: [
+          [0, 3100, 3000, 120],
+          [10, 3000, 2970, 120],
+        ],
+      },
+      events: [{ id: 'd1', t: 30, type: 'id', path: 'T1', system: 'EO-1' }],
+    };
+    rec.events[0]!.system = 'RDR-1';
+    rec.cards[0]!.clip = { t0: 0, t1: 120, rate: 4, beats: [28, 46] };
+    (rec.cards[0]!.cam as L).ref = 'EO-1';
+    const v = importLegacyV4(rec);
+    const t1 = v.threats[0]!.key;
+    const eo = v.sensors.find((s) => s.id === 'EO-1')!.key;
+    expect(v.debrief).toEqual({
+      source: '',
+      loadedAt: '',
+      tspi: {
+        [t1]: [
+          [0, 3100, 3000, 120],
+          [10, 3000, 2970, 120],
+        ],
+      },
+      events: [{ tS: 30, type: 'identify', threatKey: t1, sensorKey: eo }],
+    });
+    expect(v.events[0]!.sensorKey).toBe(v.sensors.find((s) => s.id === 'RDR-1')!.key);
+    expect(v.cards[0]!.clip).toEqual({ t0S: 0, t1S: 120, rate: 4, beatsS: [28, 46] });
+    expect(v.cards[0]!.view.ref).toBe(eo);
+    expect(asLegacy(roundTrip(v))).toEqual(legacyFields(rec));
+  });
+
+  it('rejects what the legacy validator rejects', () => {
+    const [, base] = fixtures[0]!;
+    const bad = (edit: (r: L & { cards: L[]; events: L[] }) => void) => {
+      const r = structuredClone(base) as L & { cards: L[]; events: L[] };
+      edit(r);
+      return () => importLegacyV4(r);
+    };
+    expect(bad((r) => (r.events[0]!.path = 'T9'))).toThrow(
+      'e1 refers to path T9 that does not exist.',
+    );
+    expect(bad((r) => (r.events[0]!.system = 'X'))).toThrow(
+      'e1 refers to system X that does not exist.',
+    );
+    expect(bad((r) => (r.events[0]!.type = 'boom'))).toThrow('e1 has the type boom');
+    expect(bad((r) => ((r.cards[0]!.cam as L).proj = 'iso'))).toThrow('c1 has a camera');
+    expect(bad((r) => (r.cards[0]!.clip = { t0: 5, t1: 5, rate: 1, beats: [] }))).toThrow(
+      /clip start must be before/,
+    );
+    expect(bad((r) => (r.debrief = { tspi: { T9: [] }, events: [] }))).toThrow(
+      'Debrief refers to path T9 that does not exist.',
+    );
+    expect(bad((r) => (r.debrief = { tspi: { T1: [[0, 1, 2]] }, events: [] }))).toThrow(
+      'Debrief TSPI for T1 needs t, x, y, z samples.',
+    );
+  });
+});
+
+describe('migrateV5ToV6', () => {
+  it('gives a v5 record empty lists, a null debrief and empty threat groups', () => {
+    const v6 = templateById('swarm-split')!.make();
+    const v5 = JSON.parse(JSON.stringify(v6)) as Record<string, unknown> & {
+      threats: Record<string, unknown>[];
+      areas: Record<string, unknown>[];
+    };
+    v5.schema = 'profile-studio/5';
+    for (const k of ['planes', 'events', 'snapshots', 'cards', 'debrief']) delete v5[k];
+    for (const t of v5.threats) delete t.group;
+    v5.areas.push({ ...v5.areas[0]!, key: 'nfz-key', id: 'NFZ-1', kind: 'nfz' });
+    delete v5.areas[1]!.zMinM;
+    delete v5.areas[1]!.zMaxM;
+
+    const v = parseVignette(v5);
+    expect(v.schema).toBe('profile-studio/6');
+    expect([v.planes, v.events, v.snapshots, v.cards, v.debrief]).toEqual([[], [], [], [], null]);
+    expect(v.threats.length).toBeGreaterThan(0);
+    expect(v.threats.every((t) => t.group === '')).toBe(true);
+    expect(v.areas[0]).toEqual(v6.areas[0]);
+    expect(v.areas[1]).toMatchObject({ id: 'NFZ-1', zMinM: 0, zMaxM: 150 });
+    expect({ ...v, areas: [] }).toEqual({ ...v6, areas: [] });
+    expect(migrateV5ToV6(v6)).toBe(v6);
   });
 });
