@@ -77,7 +77,19 @@ export function testVignette(over: Partial<Vignette> = {}): Vignette {
       testSensor('S-02', 'eoir', 2500, { x: 50, y: 0, fovDeg: 360 }),
     ],
     effectors: [testEffector('E-01')],
-    nodes: [{ key: 'k-N-01', id: 'N-01', kind: 'c2', x: -30, y: -30, z: 0, rangeM: 0 }],
+    nodes: [
+      {
+        key: 'k-N-01',
+        id: 'N-01',
+        kind: 'c2',
+        x: -30,
+        y: -30,
+        z: 0,
+        rangeM: 0,
+        fovDeg: 0,
+        bearingDeg: 0,
+      },
+    ],
     areas: [
       {
         key: 'k-A-01',

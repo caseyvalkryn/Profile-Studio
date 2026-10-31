@@ -379,9 +379,12 @@ export const EFFECTOR_DEFAULTS: Record<
   de: { rangeM: 1000, fovDeg: 360, prefix: 'DE-', timeToEffectS: 6 },
 };
 
-export const NODE_DEFAULTS: Record<NodeKind, { rangeM: number; fovDeg: number; prefix: string }> = {
-  c2: { rangeM: 0, fovDeg: 0, prefix: 'C2-' },
-  tspi: { rangeM: 0, fovDeg: 0, prefix: 'TM-' },
+export const NODE_DEFAULTS: Record<
+  NodeKind,
+  { rangeM: number; fovDeg: number; bearingDeg: number; prefix: string }
+> = {
+  c2: { rangeM: 0, fovDeg: 0, bearingDeg: 0, prefix: 'C2-' },
+  tspi: { rangeM: 0, fovDeg: 0, bearingDeg: 0, prefix: 'TM-' },
 };
 
 /** Legacy C.VOL_KINDS and C.VOL_DEFAULTS. zMaxM is the default top in metres. */

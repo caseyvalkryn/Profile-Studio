@@ -204,7 +204,17 @@ describe('commands edit the document', () => {
   });
 
   it('delete removes a TSPI node from the truth station keys', () => {
-    const node = { key: 'n1', id: 'TSPI-1', kind: 'tspi' as const, x: 0, y: 0, z: 0, rangeM: 0 };
+    const node = {
+      key: 'n1',
+      id: 'TSPI-1',
+      kind: 'tspi' as const,
+      x: 0,
+      y: 0,
+      z: 0,
+      rangeM: 0,
+      fovDeg: 0,
+      bearingDeg: 0,
+    };
     useDocument.getState().edit('add', (d) => {
       d.nodes.push(node);
       d.report.truth.stationKeys = ['n1', 'other'];

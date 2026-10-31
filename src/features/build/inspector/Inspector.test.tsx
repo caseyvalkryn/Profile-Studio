@@ -90,7 +90,16 @@ describe('Inspector', () => {
       'Pk',
     ]);
     act(() => useUi.getState().setSelection(['k-N-01']));
-    expect(rows('Node')).toEqual(['Id', 'Kind', 'x nm', 'y nm', 'Height ft AGL', 'Range nm']);
+    expect(rows('Node')).toEqual([
+      'Id',
+      'Kind',
+      'x nm',
+      'y nm',
+      'Height ft AGL',
+      'Range nm',
+      'Field of view deg',
+      'Bearing deg',
+    ]);
     act(() => useUi.getState().setSelection(['k-T-01']));
     expect(rows('Threat')).toEqual(['Id', 'Type', 'Group', 'Speed kt']);
     expect(screen.getByRole('columnheader', { name: 'Height ft' })).toBeInTheDocument();
@@ -122,6 +131,16 @@ describe('Inspector', () => {
     expect(history().at(-1)).toBe('set S-01 range');
     act(() => useDocument.getState().undo());
     expect(doc().sensors[0]!.rangeM).toBe(5000);
+  });
+
+  it('sets a node field of view as one undo step (legacy 51-panel-inspector.js:211)', () => {
+    useUi.setState({ selectedKeys: ['k-N-01'] });
+    render(<Inspector />);
+    const before = history().length;
+    commit('Field of view', '360');
+    expect(doc().nodes[0]!.fovDeg).toBe(360);
+    expect(history()).toHaveLength(before + 1);
+    expect(history().at(-1)).toBe('set N-01 field of view');
   });
 
   it('shows the legacy words for a value it cannot read and writes nothing', () => {
