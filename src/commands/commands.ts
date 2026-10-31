@@ -33,6 +33,7 @@ import type {
 } from '../domain/types';
 import { previewOf } from '../state/document';
 import type { Clip, MapPoint, PanelName, StripTab, Theme, Workspace } from '../state/ui';
+import { libraryCommands } from '../features/library/commands';
 import { redidText, showToast, undidText } from '../features/shell/toastStore';
 import { find, selected, type Found } from './select';
 import { get, register, setMenuOrder } from './registry';
@@ -995,22 +996,10 @@ const COMMANDS: Command[] = [
     run: () => {},
   },
 
-  // file
-  {
-    id: 'profile.new',
-    label: 'New profile',
-    group: 'file',
-    shortcut: 'Mod+N',
-    when: () => 'Registered by lane 9.1.4 after merge',
-    run: () => {},
-  },
-  {
-    id: 'profile.newFromTemplate',
-    label: 'New from template',
-    group: 'file',
-    when: () => 'Registered by lane 9.1.4 after merge',
-    run: () => {},
-  },
+  // file. `profile.new` and `profile.newFromTemplate` come from the Library (lane 9.1.4); the
+  // Library's `library.export` and `library.import` stay unregistered because `file.export` and
+  // `file.import` open the dialogs that cover both (dedupe in 9.1.F).
+  ...libraryCommands.filter((c) => c.id === 'profile.new' || c.id === 'profile.newFromTemplate'),
   {
     id: 'file.export',
     label: 'Export',

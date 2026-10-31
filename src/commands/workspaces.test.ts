@@ -53,7 +53,7 @@ describe('workspace scoping', () => {
     const ctx = { doc: useDocument.getState().doc, ui: useUi.getState() } as never;
     expect(get('view.3d')!.when(ctx)).toMatch(/lane 9\.2\.2/);
     expect(get('brief.next')!.when(ctx)).toBe('Brief arrives in lane 9.4');
-    expect(get('profile.new')!.when(ctx)).toBe('Registered by lane 9.1.4 after merge');
+    expect(get('profile.new')!.when(ctx)).toBe(true); // live since the 9.1.4 merge
     inWs('brief');
     expect(dispatchKey(key('ArrowRight'), undefined, true)).toBeNull();
   });

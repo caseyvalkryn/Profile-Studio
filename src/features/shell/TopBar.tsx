@@ -2,11 +2,12 @@
 // New split button, the profile name with inline rename, id, undo and redo with the pending
 // label, Export, Import, the theme control, Help and the autosave status line. Every button runs
 // a registry command, so the bar, the keys and the palette do the same thing.
-import { useState, type KeyboardEvent, type ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { currentContext, execute, get, shortcutLabel } from '../../commands/registry';
 import { useDocument } from '../../state/document';
 import { useUi, type Theme } from '../../state/ui';
+import { useLibraryRequests } from '../library/newProfile';
 import { Menu } from '../../ui/Menu';
 import { Tooltip } from '../../ui/Tooltip';
 import { toMenuItem } from '../commands/adapter';
@@ -122,6 +123,15 @@ function NewSplit() {
 function ProfileName() {
   const name = useDocument((s) => s.doc?.name);
   const [draft, setDraft] = useState<string | null>(null);
+  const input = useRef<HTMLInputElement>(null);
+  // New profile asks for the name field (spec section 7, New). The count rises per request.
+  const nameFocus = useLibraryRequests((s) => s.nameFocus);
+  useEffect(() => {
+    if (nameFocus && name !== undefined) {
+      input.current?.focus();
+      input.current?.select();
+    }
+  }, [nameFocus, name]);
   const commit = () => {
     const v = draft?.trim();
     setDraft(null);
@@ -144,6 +154,7 @@ function ProfileName() {
       </label>
       <input
         id="tb-name"
+        ref={input}
         className="ps-input ps-t-title tb-name"
         type="text"
         autoComplete="off"
@@ -171,7 +182,17 @@ function ProfileId() {
   );
 }
 
+/** A command with no router (Cmd+N, the palette) leaves a route request; the bar follows it. */
+function useRouteRequests() {
+  const navigate = useNavigate();
+  const route = useLibraryRequests((s) => s.route);
+  useEffect(() => {
+    if (route) navigate(route.path);
+  }, [route, navigate]);
+}
+
 export default function TopBar({ status }: { status?: string | null }) {
+  useRouteRequests();
   const undoLabel = useDocument((s) => s.past[s.past.length - 1]?.label);
   const redoLabel = useDocument((s) => s.future[0]?.label);
   const theme = useUi((s) => s.theme);

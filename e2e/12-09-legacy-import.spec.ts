@@ -30,7 +30,8 @@ test('12.9 A legacy v4 JSON from the current app imports without loss of assets,
   await page.goto('/');
   const [chooser] = await Promise.all([
     page.waitForEvent('filechooser'),
-    page.getByRole('button', { name: 'Import', exact: true }).click(),
+    // The top bar (banner) also has an Import button since lane 9.1.3; the Library's file picker is the second one.
+    page.getByRole('button', { name: 'Import', exact: true }).last().click(),
   ]);
   await chooser.setFiles(FIXTURE);
   await expect(page.getByText('Imported 1 profile')).toBeVisible();
