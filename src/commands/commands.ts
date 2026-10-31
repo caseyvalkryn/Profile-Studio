@@ -32,7 +32,8 @@ import type {
   Waypoint,
 } from '../domain/types';
 import { previewOf } from '../state/document';
-import type { Clip, MapPoint } from '../state/ui';
+import type { Clip, MapPoint, PanelName, StripTab, Theme, Workspace } from '../state/ui';
+import { redidText, showToast, undidText } from '../features/shell/toastStore';
 import { find, selected, type Found } from './select';
 import { get, register, setMenuOrder } from './registry';
 import type { AssetKind, Command, CommandContext, CommandOption } from './types';
@@ -46,7 +47,7 @@ const docOf = (ctx: CommandContext) => ctx.document.doc;
 const selOf = (ctx: CommandContext, kinds?: readonly FoundKind[]) =>
   selected(docOf(ctx), ctx.ui.selectedKeys).filter((f) => !kinds || kinds.includes(f.kind));
 
-const needDoc: Rule = (ctx) => (docOf(ctx) ? true : 'Open a vignette first');
+const needDoc: Rule = (ctx) => (docOf(ctx) ? true : 'Open a profile first');
 const needPointer: Rule = (ctx) => (ctx.pointer ? true : 'Right-click the map first');
 const needSel =
   (kinds: readonly FoundKind[] | undefined, what: string): Rule =>
@@ -422,6 +423,134 @@ const ADD_HERE: Command[] = [
 /** Default replicates and seed for a run started from a key or the palette. */
 export const DEFAULT_RUN_N = 100;
 
+// ---- workspaces and later-lane keys ----
+
+const BUILD: readonly Workspace[] = ['build'];
+const BUILD_BRIEF: readonly Workspace[] = ['build', 'brief'];
+const BRIEF: readonly Workspace[] = ['brief'];
+
+/**
+ * Commands active in every workspace. Every other command without its own `workspaces` is a
+ * Build command; `registerCommands` scopes it so.
+ */
+const EVERYWHERE = new Set([
+  'help.palette',
+  'edit.undo',
+  'edit.redo',
+  'edit.escape',
+  'view.units',
+  'help.shortcuts',
+  'view.theme',
+  'file.export',
+  'file.import',
+  'profile.new',
+  'profile.newFromTemplate',
+  'run.start',
+  'run.sweep',
+]);
+
+const THEME_NEXT: Record<Theme, Theme> = { auto: 'light', light: 'dark', dark: 'auto' };
+/** Legacy theme cycle: auto, light, dark. */
+export const nextTheme = (t: Theme): Theme => THEME_NEXT[t];
+
+const STRIP_NEXT: Record<StripTab, StripTab> = {
+  timeline: 'chart',
+  chart: 'readout',
+  readout: 'timeline',
+};
+
+const QUICK_ADD_LATER = 'Quick-add arrives with the palette, lane 9.2.3';
+
+const needAny: Rule = (ctx) => {
+  const d = docOf(ctx);
+  return d &&
+    d.threats.length + d.sensors.length + d.effectors.length + d.nodes.length + d.areas.length
+    ? true
+    : 'Add an asset first';
+};
+
+/** Tab and Shift+Tab: the next or previous record of the selected kind; the first asset when none. */
+function cycleKind(ctx: CommandContext, dir: 1 | -1) {
+  const d = docOf(ctx);
+  if (!d) return;
+  const cur = selOf(ctx)[0];
+  const lists: Record<Exclude<FoundKind, 'waypoint'>, readonly { key: string }[]> = {
+    threat: d.threats,
+    sensor: d.sensors,
+    effector: d.effectors,
+    node: d.nodes,
+    area: d.areas,
+  };
+  if (!cur) {
+    const first = [d.threats, d.sensors, d.effectors, d.nodes, d.areas].find((l) => l.length);
+    if (first?.[0]) ctx.ui.setSelection([first[0].key]);
+    return;
+  }
+  const list = cur.kind === 'waypoint' ? cur.threat.path : lists[cur.kind];
+  const i = list.findIndex((x) => x.key === cur.value.key);
+  const next = list[(i + dir + list.length) % list.length];
+  if (next) ctx.ui.setSelection([next.key]);
+}
+
+/** Panels with no key yet; each flips its `ui.panels` field (the panel itself mounts later). */
+const PANEL_TOGGLES: Command[] = (
+  [
+    ['chips', 'Layer chips on or off'],
+    ['readout', 'Readout strip on or off'],
+    ['events', 'Events panel on or off'],
+    ['debrief', 'Debrief panel on or off'],
+    ['snapshots', 'Snapshots panel on or off'],
+  ] as const satisfies readonly (readonly [PanelName, string])[]
+).map(([name, label]) => ({
+  id: `panel.${name}`,
+  label,
+  group: 'view',
+  when: () => true,
+  run: (ctx) => ctx.ui.togglePanel(name),
+}));
+
+/** Shift+1 to Shift+8: the layer chip by number (legacy `layer.toggle`). */
+const LAYER_CHIPS: Command[] = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({
+  id: `layer.chip${n}`,
+  label: `Layer chip ${n} on or off`,
+  group: 'view',
+  shortcut: `Shift+${n}`,
+  workspaces: BUILD_BRIEF,
+  when: () => 'Layer chips arrive with the board layers, lane 9.2.2',
+  run: () => {},
+}));
+
+const BRIEF_LATER = 'Brief arrives in lane 9.4';
+const briefKey = (id: string, label: string, shortcut: string): Command => ({
+  id,
+  label,
+  group: 'view',
+  shortcut,
+  workspaces: BRIEF,
+  when: () => BRIEF_LATER,
+  run: () => {},
+});
+
+/** The Brief keys of spec section 8, in legacy order. Stubs until lane 9.4.4 wires them. */
+const BRIEF_KEYS: Command[] = [
+  briefKey('brief.next', 'Next beat of the clip, else next card', 'ArrowRight'),
+  briefKey('brief.nextPage', 'Next beat of the clip, else next card', 'PageDown'),
+  briefKey('brief.back', 'Back one beat of the clip, else previous card', 'ArrowLeft'),
+  briefKey('brief.backPage', 'Back one beat of the clip, else previous card', 'PageUp'),
+  briefKey('brief.space', 'Next card, or play when time is on', 'Space'),
+  briefKey('brief.first', 'First card', 'Home'),
+  briefKey('brief.last', 'Last card', 'End'),
+  ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) =>
+    briefKey(`brief.card${n}`, `Jump to card ${n}`, `${n}`),
+  ),
+  briefKey('brief.full', 'Full stage on or off', 'F'),
+  briefKey('brief.notes', 'Notes panel on or off', 'N'),
+  briefKey('brief.blank', 'Blank the stage', 'B'),
+  briefKey('brief.readout', 'Live readout strip on or off', 'K'),
+  briefKey('brief.focusPrev', 'Cycle the highlight through the card focus', 'ArrowUp'),
+  briefKey('brief.focusNext', 'Cycle the highlight through the card focus', 'ArrowDown'),
+];
+
 const COMMANDS: Command[] = [
   // keys table
   {
@@ -438,7 +567,11 @@ const COMMANDS: Command[] = [
     group: 'edit',
     shortcut: 'Mod+Z',
     when: (ctx) => (ctx.document.canUndo ? true : 'Nothing to undo'),
-    run: (ctx) => ctx.document.undo(),
+    run: (ctx) => {
+      const label = ctx.document.past[ctx.document.past.length - 1]?.label;
+      ctx.document.undo();
+      showToast(undidText(label));
+    },
   },
   {
     id: 'edit.redo',
@@ -446,7 +579,11 @@ const COMMANDS: Command[] = [
     group: 'edit',
     shortcut: 'Shift+Mod+Z',
     when: (ctx) => (ctx.document.canRedo ? true : 'Nothing to redo'),
-    run: (ctx) => ctx.document.redo(),
+    run: (ctx) => {
+      const label = ctx.document.future[0]?.label;
+      ctx.document.redo();
+      showToast(redidText(label));
+    },
   },
   {
     id: 'edit.delete',
@@ -479,12 +616,13 @@ const COMMANDS: Command[] = [
     shortcut: 'Escape',
     when: () => true,
     // The one Escape owner. Each press undoes one layer, in this order: a handle drag or the path
-    // being drawn, an open palette or sheet, an armed library item or a tool, the selection, and
+    // being drawn, an open export or import dialog, palette or sheet, an armed library item or a tool, the selection, and
     // last the loop range. The map and the library keep no Escape listener of their own.
     run: (ctx) => {
       const ui = ctx.ui;
       if (ctx.document.drag) ctx.document.cancelDrag();
       else if (ui.drawing) ui.signalPath('cancel');
+      else if (ui.dialog) ui.setDialog(null);
       else if (ui.paletteOpen) ui.setPaletteOpen(false);
       else if (ui.shortcutsOpen) ui.setShortcutsOpen(false);
       else if (ui.tool !== 'select' || ui.armed || ui.measureFrom) {
@@ -612,13 +750,13 @@ const COMMANDS: Command[] = [
     },
   },
   {
-    // Spec section 6.4 and acceptance 12.7: the vignette's stored sweep factor and levels.
+    // Spec section 6.4 and acceptance 12.7: the profile's stored sweep factor and levels.
     id: 'run.sweep',
     label: 'Run sweep',
     group: 'run',
     when: every(
       needDoc,
-      (ctx) => (docOf(ctx)?.sweep?.factors.length ? true : 'This vignette has no sweep factor'),
+      (ctx) => (docOf(ctx)?.sweep?.factors.length ? true : 'This profile has no sweep factor'),
       (ctx) => (docOf(ctx)?.threats.length ? true : 'Add a threat first'),
       (ctx) => (docOf(ctx)?.sensors.length ? true : 'Add a sensor first'),
       (ctx) => (ctx.runs.sweep?.status === 'running' ? 'A sweep is in progress' : true),
@@ -674,12 +812,12 @@ const COMMANDS: Command[] = [
     run: (ctx) => ctx.ui.setView('plan'),
   },
   {
-    id: 'view.profile',
-    label: 'Profile view',
+    id: 'view.elevation',
+    label: 'Elevation view',
     group: 'view',
     shortcut: '2',
     when: every(needDoc, needSel(['threat', 'waypoint'], 'a flight path')),
-    run: (ctx) => ctx.ui.setView('profile'),
+    run: (ctx) => ctx.ui.setView('elevation'),
   },
   {
     id: 'help.shortcuts',
@@ -689,6 +827,214 @@ const COMMANDS: Command[] = [
     when: () => true,
     run: (ctx) => ctx.ui.setShortcutsOpen(!ctx.ui.shortcutsOpen),
   },
+  {
+    id: 'view.3d',
+    label: '3D view',
+    group: 'view',
+    shortcut: '3',
+    when: () => 'The 3D view arrives with the board renderer, lane 9.2.2',
+    run: (ctx) => ctx.ui.setView('3d'),
+  },
+  {
+    id: 'time.start',
+    label: 'Time to start',
+    group: 'time',
+    shortcut: 'Home',
+    when: needDoc,
+    run: (ctx) => ctx.ui.setTime(0),
+  },
+  {
+    id: 'time.end',
+    label: 'Time to end',
+    group: 'time',
+    shortcut: 'End',
+    when: needDoc,
+    run: (ctx) => ctx.ui.setTime(Math.max(endTime(ctx), 0)),
+  },
+  {
+    id: 'time.cursor',
+    label: 'Time cursor on or off',
+    group: 'time',
+    shortcut: 'T',
+    workspaces: BUILD_BRIEF,
+    when: () => 'The time cursor arrives with the time engine, lane 9.3.2',
+    run: () => {},
+  },
+  {
+    id: 'time.prevEvent',
+    label: 'Previous event or derived time',
+    group: 'time',
+    shortcut: '[',
+    when: () => 'Event steps arrive with the time engine, lane 9.3.2',
+    run: () => {},
+  },
+  {
+    id: 'time.nextEvent',
+    label: 'Next event or derived time',
+    group: 'time',
+    shortcut: ']',
+    when: () => 'Event steps arrive with the time engine, lane 9.3.2',
+    run: () => {},
+  },
+  {
+    id: 'map.gridSnap',
+    label: 'Grid snap',
+    group: 'map',
+    shortcut: 'G',
+    when: () => 'Grid snap arrives with the board tools, lane 9.2.5',
+    run: () => {},
+  },
+  {
+    id: 'view.zoomIn',
+    label: 'Zoom in',
+    group: 'view',
+    shortcut: '=',
+    when: () => 'Zoom keys arrive with the board tools, lane 9.2.5',
+    run: () => {},
+  },
+  {
+    id: 'view.zoomOut',
+    label: 'Zoom out',
+    group: 'view',
+    shortcut: '-',
+    when: () => 'Zoom keys arrive with the board tools, lane 9.2.5',
+    run: () => {},
+  },
+  {
+    id: 'edit.nextOfKind',
+    label: 'Next object of the same kind',
+    group: 'edit',
+    shortcut: 'Tab',
+    when: every(needDoc, needAny),
+    run: (ctx) => cycleKind(ctx, 1),
+  },
+  {
+    id: 'edit.prevOfKind',
+    label: 'Previous object of the same kind',
+    group: 'edit',
+    shortcut: 'Shift+Tab',
+    when: every(needDoc, needAny),
+    run: (ctx) => cycleKind(ctx, -1),
+  },
+  {
+    id: 'panel.inspector',
+    label: 'Inspector open or closed',
+    group: 'view',
+    shortcut: 'I',
+    when: () => true,
+    run: (ctx) => ctx.ui.togglePanel('inspector'),
+  },
+  {
+    // Legacy `90-app.js` panel.sides: both open unless either is, then both closed.
+    id: 'panel.sides',
+    label: 'Both side panels open or closed',
+    group: 'view',
+    shortcut: '\\',
+    when: () => true,
+    run: (ctx) => {
+      const open = !(ctx.ui.panels.list || ctx.ui.panels.inspector);
+      ctx.ui.setPanels({ list: open, inspector: open });
+    },
+  },
+  {
+    id: 'view.stripCycle',
+    label: 'Strip: timeline, chart, readout',
+    group: 'view',
+    shortcut: 'R',
+    when: () => true,
+    run: (ctx) => ctx.ui.setStripTab(STRIP_NEXT[ctx.ui.stripTab]),
+  },
+  ...PANEL_TOGGLES,
+  ...LAYER_CHIPS,
+  {
+    id: 'build.quickAdd',
+    label: 'Quick-add palette',
+    group: 'map',
+    shortcut: 'A',
+    when: () => QUICK_ADD_LATER,
+    run: () => {},
+  },
+  {
+    id: 'build.addSensor',
+    label: 'Add a sensor',
+    group: 'map',
+    shortcut: 'S',
+    when: () => QUICK_ADD_LATER,
+    run: () => {},
+  },
+  {
+    id: 'build.addArea',
+    label: 'Add an area',
+    group: 'map',
+    shortcut: 'V',
+    when: () => QUICK_ADD_LATER,
+    run: () => {},
+  },
+  {
+    id: 'build.addEvent',
+    label: 'Add an event',
+    group: 'map',
+    shortcut: 'E',
+    when: () => QUICK_ADD_LATER,
+    run: () => {},
+  },
+  {
+    id: 'build.formation',
+    label: 'Formation',
+    group: 'map',
+    shortcut: 'Shift+F',
+    when: () => 'Formation arrives with the quick-add palette, lane 9.2.3',
+    run: () => {},
+  },
+  {
+    id: 'card.save',
+    label: 'Save the view as a card',
+    group: 'view',
+    shortcut: 'C',
+    when: () => 'Cards arrive in lane 9.4.1',
+    run: () => {},
+  },
+
+  // file
+  {
+    id: 'profile.new',
+    label: 'New profile',
+    group: 'file',
+    shortcut: 'Mod+N',
+    when: () => 'Registered by lane 9.1.4 after merge',
+    run: () => {},
+  },
+  {
+    id: 'profile.newFromTemplate',
+    label: 'New from template',
+    group: 'file',
+    when: () => 'Registered by lane 9.1.4 after merge',
+    run: () => {},
+  },
+  {
+    id: 'file.export',
+    label: 'Export',
+    group: 'file',
+    when: () => true,
+    run: (ctx) => ctx.ui.setDialog('export'),
+  },
+  {
+    id: 'file.import',
+    label: 'Import',
+    group: 'file',
+    when: () => true,
+    run: (ctx) => ctx.ui.setDialog('import'),
+  },
+  {
+    id: 'view.theme',
+    label: 'Theme: auto, light or dark',
+    group: 'view',
+    when: () => true,
+    run: (ctx) => ctx.ui.setTheme(nextTheme(ctx.ui.theme)),
+  },
+
+  // Brief keys (spec section 8): stubs until Brief lands
+  ...BRIEF_KEYS,
 
   // empty map
   ...ADD_HERE,
@@ -1072,7 +1418,8 @@ export const MENU_ORDER: Readonly<Partial<Record<AssetKind, readonly string[]>>>
 /** Register every command once. Safe to call again. */
 export function registerCommands(): void {
   if (get('help.palette')) return;
-  for (const c of COMMANDS) register(c);
+  for (const c of COMMANDS)
+    register(c.workspaces || EVERYWHERE.has(c.id) ? c : { ...c, workspaces: BUILD });
   setMenuOrder(MENU_ORDER);
 }
 

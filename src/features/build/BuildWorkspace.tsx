@@ -1,7 +1,7 @@
 // The Build workspace (spec section 7, Build). A thin top bar, the asset library on the left, the
-// map (or the profile) in the centre, the inspector on the right and the timeline along the
+// map (or the Elevation view) in the centre, the inspector on the right and the timeline along the
 // bottom. The map takes all the space the panels leave (principle 5.1).
-import { lazy, Suspense, useId, useState, type KeyboardEvent } from 'react';
+import { lazy, Suspense, useId } from 'react';
 import { Link, useInRouterContext } from 'react-router-dom';
 import { currentContext, execute, get, shortcutLabel } from '../../commands/registry';
 import { useDocument } from '../../state/document';
@@ -82,39 +82,6 @@ function CommandButton({
         ) : null}
       </button>
     </Tooltip>
-  );
-}
-
-/** The vignette name, edited in place. One commit is one undo step. */
-function NameField() {
-  const name = useDocument((s) => s.doc?.name);
-  const [draft, setDraft] = useState<string | null>(null);
-  if (name === undefined) return <span className="text-sm text-muted">No vignette open</span>;
-  const commit = () => {
-    const v = draft?.trim();
-    setDraft(null);
-    if (v && v !== name)
-      useDocument.getState().edit('Rename vignette', (d) => {
-        d.name = v;
-      });
-  };
-  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') e.currentTarget.blur();
-    else if (e.key === 'Escape') {
-      e.preventDefault();
-      setDraft(null);
-    }
-  };
-  return (
-    <input
-      aria-label="Vignette name"
-      value={draft ?? name}
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={commit}
-      onKeyDown={onKeyDown}
-      size={Math.max(8, Math.min(40, (draft ?? name).length + 1))}
-      className={`h-6 min-w-0 rounded-sm bg-transparent px-1 text-sm font-medium text-text hover:bg-surface-2 ${focusRing}`}
-    />
   );
 }
 
@@ -217,7 +184,6 @@ function BuildBar() {
   const view = useUi((s) => s.view);
   return (
     <div className="flex h-8 shrink-0 items-center gap-3 border-b border-surface-3 bg-surface-1 px-2">
-      <NameField />
       {question ? (
         <span className="min-w-0 flex-1 truncate text-xs text-muted" title={question}>
           {question}
@@ -237,7 +203,7 @@ function BuildBar() {
       <CommandButton id="view.units" label={units === 'nav' ? 'nm · ft · kt' : 'km · m · m/s'} />
       <div className="flex items-center gap-0.5" role="group" aria-label="View">
         <CommandButton id="view.plan" label="Plan" pressed={view === 'plan'} />
-        <CommandButton id="view.profile" label="Profile" pressed={view === 'profile'} />
+        <CommandButton id="view.elevation" label="Elevation" pressed={view === 'elevation'} />
       </div>
     </div>
   );
@@ -251,7 +217,7 @@ export default function BuildWorkspace() {
       <div className="flex min-h-0 flex-1">
         <AssetsPanel />
         <section aria-label="Map" className="relative min-w-0 flex-1 bg-surface-0">
-          {view === 'profile' ? (
+          {view === 'elevation' ? (
             <ProfileView />
           ) : (
             <Suspense fallback={<div className="h-full w-full bg-surface-0" />}>

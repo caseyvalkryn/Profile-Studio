@@ -1,0 +1,583 @@
+/* The shell frame, ported from legacy/css/app.css (frame, overlay host, phone tab bar and sheet,
+   shared control classes) and the panel styles of 51-panel-topbar.js, 51-panel-help.js and
+   51-panel-dialog.js. Legacy colour names map onto the MVP surfaces: panel and raised are
+   surface-1, sunken is surface-2, rule is surface-3, t1 is text, t2 and t3 are text-muted.
+   Layout and type tokens come from src/styles/tokens.css (lane 9.1.1); the fallbacks are the
+   legacy values for a build without them. */
+
+/* On the root, not .ps-app: dialogs and menus render in a portal outside the app frame. */
+:root {
+  --ps-rule: var(--surface-3);
+  --ps-rule-strong: color-mix(in srgb, var(--text-muted) 45%, var(--surface-3));
+  --ps-panel: var(--surface-1);
+  --ps-raised: var(--surface-1);
+  --ps-sunken: var(--surface-2);
+  --ps-t1: var(--text);
+  --ps-t2: var(--text-muted);
+  --ps-t3: var(--text-muted);
+  --ps-elev: 0 8px 24px rgb(0 0 0 / 0.12);
+  --ps-top: var(--top, 48px);
+  --ps-ctl: var(--ctl, 28px);
+}
+
+.ps-app {
+  min-height: 100vh;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  font: var(--fw, 400) var(--fs-3, 13px) / var(--lh-3, 18px) var(--ui, system-ui, sans-serif);
+}
+
+/* ---- frame */
+.ps-top {
+  flex: 0 0 auto;
+  min-height: var(--ps-top);
+  border-bottom: 1px solid var(--ps-rule);
+  background: var(--ps-panel);
+  padding: 0 12px;
+}
+.ps-cols {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  height: calc(100vh - var(--ps-top) - 1px);
+}
+.ps-rail {
+  flex: 0 0 var(--col-list, 232px);
+  width: var(--col-list, 232px);
+  min-height: 0;
+  overflow: auto;
+  background: var(--ps-panel);
+  border-right: 1px solid var(--ps-rule);
+}
+.ps-centre {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.ps-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.ps-right {
+  flex: 0 0 var(--col-right, 320px);
+  width: var(--col-right, 320px);
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--ps-panel);
+  border-left: 1px solid var(--ps-rule);
+}
+.ps-strip {
+  flex: 0 0 auto;
+  min-height: var(--strip, 112px);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--ps-panel);
+  border-top: 1px solid var(--ps-rule);
+}
+@media (min-width: 601px) {
+  .ps-strip {
+    max-height: 42vh;
+    overflow-y: auto;
+  }
+}
+
+/* ---- overlay host: popovers, menus and the tip mount here */
+.ps-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+}
+.ps-overlay > * {
+  pointer-events: auto;
+}
+
+/* ---- phone tab bar and bottom sheet */
+.ps-tabs {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48px;
+  z-index: 30;
+  background: var(--ps-panel);
+  border-top: 1px solid var(--ps-rule);
+  padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px));
+  align-items: stretch;
+}
+.ps-tabs > .ps-btn {
+  flex: 1 1 0;
+  height: 48px;
+  border-radius: 0;
+  border: 0;
+  background: none;
+  color: var(--ps-t2);
+}
+.ps-tabs > .ps-btn[aria-pressed='true'] {
+  color: var(--ps-t1);
+  background: var(--ps-sunken);
+  font-weight: var(--fw-med, 500);
+}
+.ps-sheet {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 48px;
+  height: 50vh;
+  z-index: 35;
+  background: var(--ps-raised);
+  border-top: 1px solid var(--ps-rule);
+  box-shadow: var(--ps-elev);
+  overflow: hidden;
+  flex-direction: column;
+}
+.ps-sheet.open {
+  display: flex;
+}
+.ps-sheet.full {
+  height: calc(100vh - 48px);
+}
+.ps-sheet-handle {
+  flex: 0 0 28px;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  cursor: ns-resize;
+  background: none;
+  border: 0;
+  width: 100%;
+}
+.ps-sheet-handle::before {
+  content: '';
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--ps-rule-strong);
+}
+.ps-sheet-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+@media (min-width: 601px) and (max-width: 1279px) {
+  .ps-right {
+    flex-basis: 300px;
+    width: 300px;
+  }
+}
+@media (max-width: 600px) {
+  .ps-cols {
+    display: block;
+    height: auto;
+    padding-bottom: 56px;
+  }
+  .ps-rail,
+  .ps-right {
+    display: none;
+  }
+  .ps-strip {
+    position: sticky;
+    bottom: 48px;
+    z-index: 15;
+  }
+  .ps-app[data-tabs] .ps-tabs {
+    display: flex;
+  }
+}
+
+/* ---- shared controls (legacy .btn, .seg) */
+.ps-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: var(--ps-ctl);
+  padding: 0 10px;
+  font: inherit;
+  font-size: var(--fs-3, 13px);
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--ps-t1);
+  background: var(--ps-raised);
+  border: 1px solid var(--ps-rule-strong);
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.ps-btn:hover {
+  border-color: var(--ps-t3);
+}
+.ps-btn[disabled],
+.ps-btn[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: default;
+}
+.ps-btn.primary {
+  color: var(--accent-text);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.ps-btn.quiet {
+  background: none;
+  border-width: 0;
+  padding: 1px 11px;
+  color: var(--ps-t2);
+}
+.ps-btn.quiet:not([disabled]):not([aria-disabled='true']):hover {
+  color: var(--ps-t1);
+  border: 1px solid var(--ps-rule);
+  padding: 0 10px;
+}
+.ps-btn:focus-visible,
+.ps-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.ps-seg {
+  display: inline-flex;
+  align-items: stretch;
+}
+.ps-seg > .ps-btn {
+  border-radius: 0;
+  margin-left: -1px;
+  background: var(--ps-panel);
+  color: var(--ps-t2);
+}
+.ps-seg > .ps-btn:first-child {
+  margin-left: 0;
+  border-radius: 4px 0 0 4px;
+}
+.ps-seg > .ps-btn:last-child {
+  border-radius: 0 4px 4px 0;
+}
+.ps-seg > .ps-btn[aria-pressed='true'],
+.ps-seg > .ps-btn[aria-current='page'] {
+  position: relative;
+  z-index: 1;
+  color: var(--ps-t1);
+  background: var(--ps-sunken);
+  border-color: var(--ps-t3);
+  font-weight: var(--fw-med, 500);
+}
+.ps-input {
+  font: inherit;
+  font-size: var(--fs-3, 13px);
+  background: var(--ps-sunken);
+  color: var(--ps-t1);
+  border: 1px solid var(--ps-rule-strong);
+  border-radius: 3px;
+  padding: 3px 6px;
+  min-height: var(--ps-ctl);
+  max-width: 100%;
+}
+textarea.ps-input {
+  resize: vertical;
+  line-height: 1.4;
+}
+
+/* text roles (legacy t-*) */
+.ps-t-title {
+  font: var(--fw-med, 500) var(--fs-4, 14px) / var(--lh-4, 20px) var(--ui, sans-serif);
+  color: var(--ps-t1);
+}
+.ps-t-body {
+  font: var(--fw, 400) var(--fs-3, 13px) / var(--lh-3, 18px) var(--ui, sans-serif);
+  color: var(--ps-t1);
+}
+.ps-t-sub {
+  font: var(--fw, 400) var(--fs-2, 12px) / var(--lh-2, 16px) var(--ui, sans-serif);
+  color: var(--ps-t2);
+}
+.ps-t-data {
+  font: var(--fw, 400) var(--fs-2, 12px) / var(--lh-2, 16px) var(--mono, monospace);
+  font-variant-numeric: tabular-nums;
+}
+.ps-t-id {
+  font: var(--fw-med, 500) var(--fs-2, 12px) / var(--lh-2, 16px) var(--mono, monospace);
+  color: var(--ps-t1);
+  white-space: nowrap;
+}
+.ps-t-label {
+  font: var(--fw-med, 500) var(--fs-1, 11px) / var(--lh-1, 14px) var(--ui, sans-serif);
+  letter-spacing: var(--ls-caps, 0.06em);
+  text-transform: uppercase;
+  color: var(--ps-t3);
+}
+.ps-hint {
+  margin: 0;
+  font: var(--fw, 400) var(--fs-2, 12px) / var(--lh-2, 16px) var(--ui, sans-serif);
+  color: var(--ps-t3);
+}
+.ps-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---- top bar (51-panel-topbar.js) */
+.tb-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--ps-top);
+  padding: 6px 0;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+.tb-brand {
+  white-space: nowrap;
+}
+.tb-prof {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.tb-name {
+  flex: 1 1 auto;
+  min-width: 80px;
+  max-width: 420px;
+  background: transparent;
+  border-color: transparent;
+}
+.tb-name:hover,
+.tb-name:focus {
+  background: var(--ps-sunken);
+  border-color: var(--ps-rule-strong);
+}
+.tb-acts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.tb-split {
+  display: inline-flex;
+}
+.tb-split > .ps-btn:first-child {
+  border-radius: 4px 0 0 4px;
+}
+.tb-split > .ps-btn:last-child {
+  border-radius: 0 4px 4px 0;
+  margin-left: -1px;
+  padding: 0 6px;
+}
+.tb-status {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+  .tb-bar {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .tb-prof {
+    order: 3;
+    flex: 1 1 100%;
+  }
+  .tb-acts {
+    margin-left: auto;
+  }
+  .tb-undo,
+  .tb-redo,
+  .tb-import,
+  .tb-theme {
+    display: none;
+  }
+}
+
+/* ---- cheat sheet (51-panel-help.js) */
+.hp-pop {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(560px, 100vw);
+  z-index: 48;
+  display: flex;
+  flex-direction: column;
+  background: var(--ps-raised, var(--surface-1));
+  color: var(--ps-t1, var(--text));
+  border-left: 1px solid var(--ps-rule-strong, var(--surface-3));
+  box-shadow: var(--ps-elev, 0 8px 24px rgb(0 0 0 / 0.12));
+}
+.hp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--ps-rule, var(--surface-3));
+}
+.hp-head h2 {
+  margin: 0;
+}
+.hp-body {
+  overflow-y: auto;
+  padding: 8px 16px 24px;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+.hp-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+.hp-tbl td {
+  padding: 4px 8px 4px 0;
+  border-bottom: 1px solid var(--ps-rule, var(--surface-3));
+  vertical-align: top;
+}
+.hp-tbl td.hp-k {
+  white-space: nowrap;
+  width: 1%;
+  padding-right: 16px;
+  color: var(--ps-t1, var(--text));
+}
+.hp-tbl td.hp-l {
+  color: var(--ps-t2, var(--text-muted));
+}
+@media (max-width: 600px) {
+  .hp-pop {
+    width: 100vw;
+    border-left: 0;
+  }
+}
+
+/* ---- dialogs and toast (51-panel-dialog.js) */
+.dl-back {
+  position: fixed;
+  inset: 0;
+  background: var(--text);
+  opacity: 0.28;
+  z-index: 60;
+}
+.dl-box {
+  position: fixed;
+  z-index: 61;
+  left: 50%;
+  top: 8vh;
+  transform: translateX(-50%);
+  width: min(720px, calc(100vw - 32px));
+  max-height: 84vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-1);
+  color: var(--text);
+  border: 1px solid var(--surface-3);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+  outline: none;
+  /* The portal sits outside .ps-app, so the body text role is set here. */
+  font: var(--fw, 400) var(--fs-3, 13px) / var(--lh-3, 18px) var(--ui, system-ui, sans-serif);
+}
+.dl-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--surface-3);
+}
+.dl-head h2 {
+  margin: 0;
+  flex: 1 1 auto;
+}
+.dl-body {
+  padding: 12px 16px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dl-body textarea {
+  width: 100%;
+  white-space: pre-wrap;
+}
+.dl-foot {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  padding: 12px 16px;
+  border-top: 1px solid var(--surface-3);
+}
+/* The preflight flattens the native file button; legacy shows it as a control. */
+.dl-body input[type='file']::file-selector-button {
+  margin-right: 6px;
+  padding: 1px 6px;
+  font: inherit;
+  color: var(--ps-t1);
+  background: var(--ps-raised);
+  border: 1px solid var(--ps-rule-strong);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.dl-errs {
+  width: 100%;
+  border-collapse: collapse;
+}
+.dl-errs th,
+.dl-errs td {
+  text-align: left;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--surface-3);
+  vertical-align: top;
+}
+.dl-errs td {
+  color: var(--state-warning);
+}
+.dl-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 70;
+  max-width: calc(100vw - 32px);
+  padding: 8px 14px;
+  background: var(--surface-1);
+  color: var(--text);
+  border: 1px solid var(--surface-3);
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.dl-toast[data-hidden] {
+  opacity: 0;
+  visibility: hidden;
+}
+@media (max-width: 600px) {
+  .dl-box {
+    top: 16px;
+    max-height: calc(100vh - 32px);
+  }
+  .dl-toast {
+    bottom: 64px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dl-toast {
+    transition: none;
+  }
+}
