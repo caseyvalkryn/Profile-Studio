@@ -29,6 +29,10 @@ says which lane is next. Each lane names the reference it needs:
 
 ## Decisions on record (2026-10-30)
 
+- 2026-10-31: the upgrade (plan phase 9) ports the legacy interface in `legacy/` one to one onto
+  the MVP engine, domain and state. `src/board/` is the renderer; MapLibre leaves in lane 9.2.6.
+  The legacy app is the parity oracle, served at `/legacy/index.html` on the dev server.
+
 - vos (`~/Projects/vos`): fit later. Build the standalone MVP first, then port it as a training
   sub-route that reuses the vos map and debrief views.
 - Profile Studio is designed from first principles (`docs/design-principles.md`). rangeboard

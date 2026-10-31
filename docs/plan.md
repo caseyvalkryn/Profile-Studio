@@ -27,7 +27,7 @@ Chosen to match vos majors, so the later port stays medium effort.
 | UI | React 18.3.1, TypeScript ~5.6.3, Vite ^8.0.16 |
 | State | Zustand ^5.0.2 with Immer patches for undo |
 | Validation | zod |
-| Map | maplibre-gl ^6.9.0, with a no-tile grid mode as the default |
+| Board | `src/board/`: the legacy SVG renderer ported one to one (three cameras, the layer registry). maplibre-gl was the MVP map; lane 9.2.6 removes it |
 | Menus, tooltips, dialogs | Radix primitives |
 | Command palette | cmdk |
 | Charts | recharts 2.15.2 |
@@ -50,7 +50,9 @@ src/workers/       sim.worker.ts
 src/state/         stores: document (undo), ui, runs; persistence
 src/commands/      the command registry
 src/ui/            primitives: Button, Field, Kbd, Tooltip, Menu, ContextMenu, Palette, Dialog
-src/features/      library/, build/{map,assets,inspector,timeline,profile}/, results/, report/
+src/board/         pure TS port of the legacy renderer: scene adapter, cameras, symbols, layers, render
+src/features/      shell/, library/, build/{board,rail,palette,menu,tip,inspector,readout,events,debrief}/,
+                   strip/{timeline,chart}/, brief/{cards,notes}/, results/, report/  (phase 9 layout)
 src/styles/        tokens.css, base.css
 e2e/               Playwright suites, one per acceptance item in spec section 12
 ```
@@ -189,169 +191,242 @@ All lanes parallel. Each owns one folder under `src/features/build/`.
 
 Plan from `docs/reference/vos.md` once the MVP passes phase 7 and phase 9.
 
-### Phase 9. Upgrade to artifact capability (drafted and committed 2026-10-31)
+### Phase 9. Port of the artifact interface (rewritten 2026-10-31)
 
-Source: `docs/reference/artifact-study.md` (scope and decisions), `docs/spec.md` as amended on
-2026-10-31, `docs/design-principles.md` sections 2, 3, 5 and 8. The integration branch stays
-`rebuild/mvp`. Lanes branch from it as `lane/9.x.y`. Section 5 rules apply. Each sub-phase ends
-with a review lane with a browser pass, a fix lane, and the user's approval before the merge
-to `rebuild/mvp`. The user also approves each npm install (a download): 9.1.1 and 9.3.1 need one.
+Decision of 2026-10-31 (afternoon): the upgrade ports the legacy interface one to one onto the
+MVP's engine, domain and state. It does not retrofit legacy behaviours onto the MapLibre board.
+Reasons on record in `docs/reference/artifact-study.md` section 5. The first draft of this phase
+(morning of the same day, a retrofit in six sub-phases with three.js) is replaced by this text.
 
-Owned-file rule for this phase: `src/commands/commands.ts`, `src/App.tsx`,
-`src/features/build/BuildWorkspace.tsx` and `src/state/ui.ts` belong to one lane per sub-phase
-(the shell or wiring lane). Other lanes export their command definitions and panels from their
-own folder, and the wiring lane registers them.
+Scope and decisions: `docs/reference/artifact-study.md` sections 3, 4 and 5; `docs/spec.md` as
+amended on 2026-10-31; `docs/design-principles.md`. The integration branch stays `rebuild/mvp`.
+Lanes branch from it as `lane/9.x.y`. Section 5 rules apply. Each sub-phase ends with a review
+lane with a browser pass, a fix lane, and the user's approval before the merge to `rebuild/mvp`.
+The user approves each npm install (a download): 9.1.1 needs one.
 
-References per lane. Every brief names these, and the worker reads them before it writes:
-`docs/design-principles.md`, the spec sections the lane implements, and
-`docs/reference/artifact-study.md` section 2 for the behaviours it ports. Legacy code per lane:
-9.1.1 `legacy/css/tokens.css`; 9.1.2 and 9.1.3 `legacy/js/51-panel-topbar.js`,
-`51-panel-collect.js`, `90-app.js` (theme, undo toast); 9.1.4 `legacy/js/11-schema.js`,
-`12-seed.js`; 9.2.1 `legacy/js/43-layer-*.js`, `41-symbols.js`; 9.2.2 `legacy/js/21-derive.js`
-(`D.at`), `51-panel-readout.js`, `45-tools.js` (`LABELS`, `move`), `51-panel-chart.js`; 9.2.3
-`legacy/js/51-panel-palette.js`, `45-tools.js` (`snap`, `legText`, formation), `51-panel-menu.js`;
-9.2.4 `legacy/js/40-cameras.js` (elev), `34-time.js` (`stops`), `46-keys.js`; 9.3.1
-`legacy/js/40-cameras.js` (axon: `zx`, `hint`, `rotate`); 9.4.1 `legacy/js/51-panel-timeline.js`,
-`45-tools.js` (`snapBead`), `21-derive.js` (warnings); 9.4.2 `legacy/js/33-persist.js` (TSPI
-parse), `43-layer-telemetry.js`; 9.5.1 `legacy/js/45-tools.js` (`saveCard`, `saveClip`),
-`21-derive.js` (`D.tokens`); 9.5.2 `legacy/js/51-panel-stage.js`, `51-panel-cards.js`,
-`34-time.js` (`playTo`); 9.5.3 `legacy/js/51-panel-notes.js`.
+**What stays.** `src/domain`, `src/engine` (the frozen `sim/` transfer included), `src/state`,
+`src/commands` (the registry), `src/ui`, `src/features/results`, `src/features/report`, and
+their tests. Results and Report move into the ported shell unchanged.
 
-#### 9.1 Foundation
+**What goes.** `src/features/build/{map,assets,inspector,timeline,profile}`,
+`src/features/library`, the MapLibre dependency and its mocks, and the current end-to-end
+specs' selectors. Each is deleted in the wiring lane that replaces it, never earlier.
 
-- **9.1.1 Type system and icons** (`opus-medium`, 1800 s, needs install approval:
-  `@fontsource/archivo`, `@fontsource/jetbrains-mono`, `lucide-react`). `src/styles/tokens.css`:
-  the two families, the five-step scale with line heights, weights 400 and 500, tabular
-  numerals, three stroke weights, layout and control tokens, the full-stage scale, coarse-pointer
-  sizes. `src/styles/base.css` and the Tailwind theme read them. `src/ui/Icon.tsx` wraps Lucide
-  with a label slot. The print stylesheets keep the light theme. Owned: `src/styles/`,
-  `src/ui/Icon.tsx`, `index.html`. Gate: `npm run gate`; a browser screenshot of Build and
-  Results at 1440 x 900 in both themes.
-- **9.1.2 Profile word, New flow, library export** (`opus-medium`, 1800 s). Every user-facing
-  "vignette" becomes "profile" (`stat-te-terminology` check on the diff). `profile.new` (Cmd+N)
-  creates "Untitled profile" with the default site and one defended asset, opens Build and
-  focuses the name field; `profile.newFromTemplate`. Library: New button first, with a menu
-  arrow for templates; export the library as one JSON; import v6, v5 and legacy v4. Owned:
-  `src/features/library/`, `src/state/persist.ts`, `src/commands/` (this sub-phase's owner).
-  Tests: New in a fresh store, rename shows in the library, library export and import round-trip.
-- **9.1.3 Shell** (`opus-medium`, 1800 s). Five workspaces with a Brief placeholder route. Top
-  bar: New, undo and redo with the pending label and a toast, units, theme control (auto, light,
-  dark) wired to `ui.theme`, view switch Plan, Elevation, 3D (3D disabled until 9.3 with a
-  reason). `View = 'plan' | 'elevation' | '3d'`; `src/features/build/profile/` renamed
-  `elevation/`. Panel visibility in `ui`: inspector (I), both side panels (\), strip mode (R:
-  timeline, chart, readout), layer chips, readout strip, events, debrief, snapshots, all hidden
-  by default. Command scoping by workspace in the registry types. Owned: `src/App.tsx`,
-  `src/state/ui.ts`, `src/features/build/BuildWorkspace.tsx`, `src/features/build/elevation/`,
+**The oracle.** The legacy app runs beside the port on the same dev server at
+`/legacy/index.html` (verified 2026-10-31). Every UI lane ends with a parity check: the worker
+opens the same seed profile in both apps (`CUAS-001` from `fixtures/legacy-derive/`, imported
+through `src/domain/migrate.ts`), at the same camera, zoom and time, at 1440 x 900, and saves
+the pair as `reviews/phase-9.<n>/<lane>-<view>-legacy.png` and `-port.png`. The report lists
+every visible difference and marks each one intended (cite the spec line) or a defect. The
+review lane reads the pairs; it does not retake them unless a pair is missing.
+
+**The renderer contract.** `src/board/` is a pure TypeScript port of `legacy/js/40-cameras.js`,
+`41-symbols.js`, `42-layers.js`, `43-layer-*.js` and `44-render.js`: no React, no store, no DOM.
+Layers keep the legacy signature `draw(ctx)` and return SVG fragment strings, so
+`legacy/test/cases/render.js` ports as the test. `ctx` keeps the legacy fields (`record`,
+`derived`, `cam`, `t`, `sel`, `hover`, `focus`, `origin`, `hit()`), where `record` is a `Scene`
+built by `src/board/scene.ts` from `Vignette` v6 (sensors, effectors and nodes as `systems`,
+areas as `volumes`, threats as `aircraft` and `paths`), and `derived` is `src/engine/derived.ts`
+built from `Preview`: the fields of `docs/reference/legacy-app.md` section 5 with F2T2EA stages
+in place of the five-rung ladder. The board view mounts one `<g>` per layer and rewrites only
+the layers whose inputs changed, so a time tick does not rebuild the scene (the legacy flaw in
+`artifact-study.md` section 2, "What it does badly").
+
+**Owned-file rule.** `src/commands/commands.ts`, `src/App.tsx`, `src/state/ui.ts` and the
+composed workspace files (`BuildWorkspace.tsx`, `BriefWorkspace.tsx`) belong to one lane per
+sub-phase: the shell lane in 9.1, the wiring lane after that. Other lanes export their commands
+and panels from their own folder; the wiring lane registers and mounts them.
+
+**References per lane.** Every brief names `docs/design-principles.md`, the spec sections the
+lane implements, `docs/reference/artifact-study.md` section 2 for the behaviours it ports, and
+`docs/reference/legacy-app.md` for the inventory. The legacy files to port are listed on each
+lane; the worker reads them whole before it writes. The port is one to one: same behaviours,
+same words, same numbers (delays, snap radii, clamps). A worker who changes one records it in
+the report with the reason.
+
+#### 9.1 Foundation (four lanes in parallel)
+
+- **9.1.1 Type system, tokens, icons** (`opus-medium`, 1800 s, needs install approval:
+  `@fontsource/archivo`, `@fontsource/jetbrains-mono`, `lucide-react`). Port
+  `legacy/css/tokens.css` whole into `src/styles/tokens.css`: the two families, the five-step
+  scale with line heights, weights 400 and 500, tabular numerals, caps tracking, three stroke
+  weights, layout tokens (list column 232 px, right column 320 px, top bar 48 px, strip 112 px,
+  control heights, row heights), the coarse-pointer sizes and the full-stage scale. The MVP
+  palette and the single accent stay (study decision 4). `src/styles/base.css` and the Tailwind
+  theme read the tokens; `src/ui/Icon.tsx` wraps Lucide with a label slot; the print
+  stylesheets keep the light theme. Owned: `src/styles/`, `src/ui/Icon.tsx`, `index.html`,
+  `package.json` (the install only). Gate: `npm run gate`; screenshots of Results and Report at
+  1440 x 900 in both themes.
+- **9.1.2 Domain v6** (`opus-high`, 2400 s, pure data). `src/domain/types.ts` and `schema.ts`
+  per spec section 5: `planes`, `events`, `snapshots`, `cards`, `debrief`, `Area` bottom and
+  top, `Threat.group`. Stamp `profile-studio/6`; v5 to v6 migration; the legacy v4 import keeps
+  every one of those fields; export without loss. Test: each legacy seed and template in
+  `legacy/js/12-seed.js` round-trips import, export, import with deep equality on the mapped
+  fields (spec acceptance item 18 as a unit test). Legacy: `legacy/js/11-schema.js`,
+  `12-seed.js`. Owned: `src/domain/`, `fixtures/`.
+- **9.1.3 Shell, keys, dialogs** (`opus-high`, 3000 s). Port `legacy/css/app.css` (the
+  columns: rail, centre, right; the strip; the overlay slots; the sheet),
+  `legacy/js/51-panel-topbar.js` (mode segment, name field with inline rename, id and version,
+  undo and redo with the pending label, Export, Import, theme, Help), `90-app.js` (theme cycle
+  and persistence, undo toast "Undid: set R1 range.", mode enter and leave), `46-keys.js` (the
+  full key table into the command registry with scopes per workspace, platform names),
+  `51-panel-help.js` (the cheat sheet generated from the registry) and `51-panel-dialog.js`
+  (export and import dialogs). Five workspaces: Library, Build, Results, Report, Brief; the
+  Build and Brief centres are placeholders until 9.2 and 9.4. `ui` state: `view` (`plan`,
+  `elevation`, `3d`), panel visibility (inspector I, both side panels \, strip tab R, layer
+  chips, readout strip, events, debrief, snapshots; all hidden by default except the four
+  default panels), `theme`, `units`. Results and Report mount in the new shell. Owned:
+  `src/App.tsx`, `src/state/ui.ts`, `src/features/shell/`, `src/commands/`,
   `src/features/commands/`.
-- **9.1.4 Domain v6** (`opus-high`, 2400 s, parallel, pure data). `src/domain/types.ts` and
-  `schema.ts` per spec section 5: `planes`, `events`, `snapshots`, `cards`, `debrief`, `Area`
-  bottom and top, `Threat.group`. Stamp `profile-studio/6`; v5 to v6 migration; legacy v4 import
-  keeps every one of those fields; export without loss. Test: each legacy seed and template in
-  `legacy/` round-trips import, export, import with deep equality on the mapped fields (spec
-  acceptance item 18 as a unit test). Owned: `src/domain/`, `fixtures/`.
-- **9.1.R Review** (`opus-high`, with browser) and **9.1.F Fixes** (`opus-medium`).
+- **9.1.4 Library and New** (`opus-medium`, 2400 s). Port `legacy/js/51-panel-collect.js`:
+  the grid grouped by collection, newest first; search by id, name, collection and purpose;
+  the New split button (instant "Untitled profile" with the default site and one defended
+  asset, open Build, focus the name field; the arrow offers the templates, Blank last);
+  per-card Open, Brief, Duplicate, Export, Delete with an inline confirm row and undo;
+  library-level Import (v6, v5, legacy v4) and Export as one JSON; thumbnails through
+  `src/board` once 9.2 lands (a placeholder until then). Every user-facing "vignette" becomes
+  "profile" across the app (`stat-te-terminology` check on the diff). Commands exported from
+  the folder: `profile.new`, `profile.newFromTemplate`, `library.export`, `library.import`.
+  Owned: `src/features/library/`, `src/state/persist.ts`. Tests: New in a fresh store, rename
+  shows in the library, export and import round-trip.
+- **9.1.R Review** (`opus-high`, with browser; parity pairs for Library and the top bar) and
+  **9.1.F Fixes** (`opus-medium`). Merge order: 9.1.1, 9.1.2, 9.1.4, 9.1.3.
 
-#### 9.2 Board parity
+#### 9.2 Board (round A: 9.2.1 to 9.2.4 in parallel; round B: 9.2.5; then 9.2.6)
 
-- **9.2.1 Layers and chips** (`opus-high`, 2400 s). One file per `LayerId` under
-  `src/features/build/map/layers/`: reach (dashed at rest, solid while covering), events (beads
-  and first-see ticks), envelopes (one hull per link cluster at t, per snapshot when time is
-  off), tracks (lifecycle frames, leaders, data blocks, sensor-to-track lines, engagement bars,
-  kill mark), telemetry (planned TSPI samples and station links), labels (one placement pass),
-  rings, target. Layer chip commands exported from the folder. Owned: `src/features/build/map/`
-  except `handles.ts`, `placement.ts` and `dragLabel.ts`.
-- **9.2.2 At time t, readout, drag labels, chart strip** (`fable-medium`, 2400 s).
-  `src/engine/at.ts` per spec section 6.5 with parity tests against `fixtures/legacy-derive/`.
-  Readout strip panel: follows selection then hover, pin a baseline, deltas in colour during a
-  drag against the pre-drag record. Drag label with the largest downstream change
-  (`src/features/build/map/dragLabel.ts`). Chart strip: range and closing speed series at t,
-  click to seek. Owned: `src/engine/at.ts`, `src/features/build/readout/`,
-  `src/features/build/map/dragLabel.ts`, `src/features/build/timeline/ChartStrip.tsx`.
-- **9.2.3 Quick-add, formation, snap, menu items** (`opus-medium`, 2400 s). The palette's Add
-  group with search, catalog values per row and shortcut hints; A, S, V, E. Formation popover
-  (Shift+F). Snap to rings, vertices and edges within 8 px, 15 degree bearings with Shift, G
-  toggle, Alt bypass, snap name and leg text on the ghost. Menu items: Set bottom, Add height
-  plane, Set height, Split here, Merge, Save card (stub that 9.5 fills). Owned:
-  `src/features/build/assets/`, `src/ui/Palette.tsx`, `src/features/build/map/handles.ts`,
-  `src/features/build/map/placement.ts`.
-- **9.2.4 Elevation modes, time keys, sheet** (`opus-medium`, 1800 s). From asset mode: every
-  path, slant arcs with elevation limits, height planes, reference origin. Keys [ ] (stops:
-  events, stage times, splits, first sees), Home, End, T, =, -, Tab. Shortcut sheet generated
-  per workspace from the registry. Owned: `src/features/build/elevation/`,
-  `src/features/commands/ShortcutSheet.tsx`, `src/features/build/timeline/stops.ts`.
-- **9.2.5 Wiring** (`opus-high`, 2400 s, after 9.2.1 to 9.2.4). Registers every exported
-  command, composes the hidden panels into `BuildWorkspace`, dedupes helpers, one Escape owner.
-  Owned: the four shell files and `src/features/shared/`.
-- **9.2.R Review** (`opus-high`, with browser; acceptance item 15) and **9.2.F Fixes**.
+- **9.2.1 Engine parity** (`fable-medium`, 2400 s). `src/engine/derived.ts` builds the
+  renderer's `derived` object from `Preview` (contract above). New engine files per spec
+  section 6: `at.ts` (6.5), `tokens.ts` (6.6), `envelopes.ts` (`envelopesAt`, the sticky link
+  graph and `splitTimes` where `preview.ts` lacks them), `trackLine.ts` (pending, unknown,
+  identity, coast after `COAST_S`, lost), `crossings.ts`, `stops.ts` (events, stage times,
+  splits, first sees), `rangeSeries` for the chart. Parity tests against
+  `fixtures/legacy-derive/` and the cases in `legacy/test/cases/derive.js`. Legacy:
+  `legacy/js/21-derive.js`, `20-geo.js`, `34-time.js` (`stops`). Owned: `src/engine/` except
+  `sim/`; new files, plus exports added to `preview.ts`.
+- **9.2.2 Board renderer** (`opus-high`, 3600 s). `src/board/`: `scene.ts` (the adapter),
+  `cameras.ts` (plan; elevation with the Along path and From asset modes, spec section 7;
+  axon with orbit math, the pitch clamp 8 to 86 degrees, the yaw and pitch rates, and the
+  "vertical x3 yaw -35 pitch 55" hint), `symbols.ts`, `layers.ts` (the registry and chip
+  list), one file per layer under `layers/` (grid, volumes, planes, reach, systems, envelopes,
+  paths, telemetry, events, tracks, handles, labels), `render.ts` (compose, card and thumbnail
+  render, the hit list). Tests: `legacy/test/cases/render.js` ported; a snapshot of every seed
+  in all three cameras. Legacy: `legacy/js/40-cameras.js`, `41-symbols.js`, `42-layers.js`,
+  `43-layer-*.js`, `44-render.js`. Owned: `src/board/`.
+- **9.2.3 Rail, palette, menu, tip** (`opus-high`, 3000 s). Port `legacy/js/51-panel-rail.js`
+  (the asset list by group with values, the add buttons), `51-panel-palette.js` (quick add
+  with search, group headers, catalog values per row, shortcut hints; A opens it, S, V and E
+  open it on a group; the formation popover), `51-panel-menu.js` (`actionsFor` per kind: every
+  item in `legacy-app.md` section 6, including Set top, Set bottom, Add height plane, Split
+  here, Merge, Save card as a stub until 9.4) and `51-panel-tip.js` (400 ms stable hover, id,
+  name and one or two facts, follows the pointer, flips from edges). The palette joins the
+  MVP command palette as its Add group. Commands exported from each folder. Owned:
+  `src/features/build/rail/`, `palette/`, `menu/`, `tip/`, `src/ui/Palette.tsx`.
+- **9.2.4 Inspector and readout** (`opus-high`, 3600 s). Port
+  `legacy/js/51-panel-inspector.js` (fields per kind in `legacy-app.md` section 6: threat with
+  the waypoint table, sensor and effector with every limit, area with bottom, top and the
+  vertex table, height plane, authored event with its warning, group, card; the profile block:
+  name, id, class, collection, purpose, units, datum, site elevation, link distance; the
+  telemetry block) and `51-panel-readout.js` (follows selection then hover, pin a baseline,
+  deltas in colour during a drag against the pre-drag record, "Margin +0:12 (-0:04)"). The
+  MVP's questions and hypotheses block moves into the inspector's profile section unchanged.
+  Owned: `src/features/build/inspector/` (replaced), `src/features/build/readout/`.
+- **9.2.5 Board view, gestures, tools** (`fable-medium`, 3600 s, after 9.2.2 merges). Port
+  `legacy/js/51-panel-board.js` (select, drag with the pre-drag ghost, pan by middle button,
+  Space or touch, pinch, wheel zoom at the cursor, axon orbit by drag, double-click, right-click
+  and the 500 ms long press, the ruler, rectangle placement, the drag label with the largest
+  downstream change) and `45-tools.js` (place, move, snap to grid, rings, vertices and edges
+  within 8 px, 15 degree bearings with Shift, Alt bypass, the snap name and leg text on the
+  ghost, clipboard, duplicate, reverse, formation, sector and omni, group split and merge,
+  `saveCard`), with the board keys (nudge, Tab cycle, 0 fit, zoom keys, G, M). Mounts
+  `src/board` one `<g>` per layer with memoized inputs. Hit testing through the legacy `hit`
+  list. Owned: `src/features/build/board/`, `src/board/layers/handles.ts`.
+- **9.2.6 Wiring** (`opus-high`, 2400 s, after 9.2.5). Composes `BuildWorkspace` from the
+  rail, the board, the strip host (the MVP timeline stays mounted until 9.3), the readout and
+  the inspector; registers every exported command; one Escape owner; deletes
+  `src/features/build/{map,assets,profile}` and the MVP inspector, removes `maplibre-gl` and
+  its mocks, repoints the Library thumbnails to `src/board`; updates the 12 end-to-end specs
+  to the new DOM (selectors only, behaviour unchanged) so the gate stays green. Owned: the
+  shell files, `src/features/build/BuildWorkspace.tsx`, `src/features/shared/`, `e2e/`,
+  `package.json`.
+- **9.2.R Review** (`opus-high`, with browser; parity pairs in all three views for every seed;
+  acceptance items 2, 3, 4, 13, 14, 15) and **9.2.F Fixes**.
 
-#### 9.3 3D view
+#### 9.3 Strip, events and debrief (9.3.1 to 9.3.3 in parallel; then 9.3.4)
 
-- **9.3.1 Scene** (`fable-medium`, 3600 s, needs install approval: `three`, `@types/three`).
-  `src/features/build/scene3d/` as a lazy chunk: orbit, zoom, pan; ground grid and compass;
-  reach domes and sector cones with elevation limits; areas as prisms between bottom and top;
-  height planes; flight paths at altitude with drop lines; threats and track frames at t from
-  the preview; selection highlight; the exaggeration, yaw and pitch readout; the edit prompt on
-  drag. A controlled `view` prop so a card can drive it. Owned: `src/features/build/scene3d/`.
-  Test: geometry builders in Vitest; the chunk under 250 kB gzip.
-- **9.3.2 Imagery and terrain** (`opus-medium`, 1500 s, parallel). Basemap toggle with a
-  configurable tile URL and an optional DEM URL in `ui` settings, persisted; MapLibre raster
-  source when online; one-line offline message; terrain mesh for the 3D view from the DEM.
-  Owned: `src/features/build/map/basemap.ts`, `src/features/build/settings/`.
-- **9.3.3 Wiring and perf** (`opus-medium`, 1500 s, after). View switch and key 3, the
-  controlled `view` prop on `MapView` and `ElevationView` too, perf spec: 30 frames per second
-  with 40 threats and 15 sensors (`e2e/perf/`). Owned: the shell files, `e2e/perf/`.
-- **9.3.R Review** (`opus-high`, with browser; acceptance items 13 and 14) and **9.3.F Fixes**.
+- **9.3.1 Timeline and authored events** (`fable-medium`, 3600 s). Port
+  `legacy/js/51-panel-timeline.js` (scrub on the axis, Shift-drag loop range, Ctrl-wheel time
+  zoom at the pointer, the overview bar, double-click clears the range, bead drag with
+  `snapBead` to a geometry crossing within 3 s and Alt bypass, one undo step "Move e3",
+  tooltips) onto the spec's rows: one row per threat, the six F2T2EA lanes, planned beads with
+  letter glyphs, simulated stage times from the latest run's `RunTrace`, flown times from the
+  debrief when present (a documented store field that 9.3.3 fills). `src/engine/events.ts`
+  (`checkEvents`, spec 6.7) with the legacy warning text; warning triangles; Move to geometry;
+  Add event here on a path and on the timeline; the hidden event list. Owned:
+  `src/features/strip/timeline/`, `src/features/build/events/`, `src/engine/events.ts`.
+- **9.3.2 Time engine and chart strip** (`opus-medium`, 2400 s). Port `legacy/js/34-time.js`
+  (one frame per tick, the 0.25 s clamp, the rate menu, loop, `playTo`, the time cursor T,
+  `[` and `]` through `stops`, Home and End) into `src/state/time.ts` and `usePlayback`; port
+  `51-panel-chart.js` (range and closing speed at t, click to seek, hover detail); the strip
+  tabs timeline, chart and readout with R to cycle. Owned: `src/features/strip/` except
+  `timeline/`, `src/state/time.ts`.
+- **9.3.3 Debrief** (`opus-high`, 2400 s). `src/engine/debrief.ts` (`resample`, spec 6.8; the
+  TSPI text parser from `legacy/js/33-persist.js` and a CSV parser with t, x, y, z per path).
+  The debrief panel: paste or load, source note, per-threat mapping, clear. The flown samples
+  and frame in the telemetry layer (`legacy/js/43-layer-telemetry.js`, already ported; this
+  lane adds the flown branch). The flown stage times in the store field 9.3.1 reads. Owned:
+  `src/engine/debrief.ts`, `src/features/build/debrief/`, `src/board/layers/telemetry.ts`.
+- **9.3.4 Wiring** (`opus-medium`, 1500 s). Mounts the strip, registers the commands, deletes
+  `src/features/build/timeline`, reconciles the flown field. Owned: the shell files.
+- **9.3.R Review** (`opus-high`, with browser; acceptance items 16 and 17) and **9.3.F Fixes**.
 
-#### 9.4 Authored events and debrief
+#### 9.4 Brief (9.4.1 first; then 9.4.2 and 9.4.3 in parallel; then 9.4.4)
 
-- **9.4.1 Authored events and the timeline rows** (`fable-medium`, 2400 s).
-  `src/engine/events.ts` (`checkEvents`, spec section 6.7). Timeline rows per threat: planned
-  beads with letter glyphs, simulated stage times of the latest run from `RunTrace`, flown times
-  from the debrief. Drag a bead to retime with snap to crossings within 3 s, Alt bypass, one
-  undo step. Warning triangles with the reason; Move to geometry. Inspector fields; Add event
-  here on a path and on the timeline; the hidden event list. Owned: `src/engine/events.ts`,
-  `src/features/build/timeline/`, `src/features/build/events/`, `src/features/build/inspector/`.
-- **9.4.2 Debrief** (`opus-high`, 2400 s, parallel). `src/engine/debrief.ts` (`resample`,
-  TSPI text and CSV parsers with the legacy text format). Debrief panel: paste or load, source
-  note, per-threat mapping, clear. Flown track layer on the map and a flown builder in the 3D
-  scene, both read-only data. Owned: `src/engine/debrief.ts`, `src/features/build/debrief/`,
-  `src/features/build/map/layers/flown.ts`, `src/features/build/scene3d/flown.ts`.
-- **9.4.R Review** (`opus-high`, with browser; acceptance items 16 and 17) and **9.4.F Fixes**.
-
-#### 9.5 Brief and export
-
-- **9.5.1 Cards, tokens, store** (`opus-medium`, 1800 s). Document store actions for cards
-  (save with the legacy defaults, reorder, duplicate, delete, field edits as one undo step
-  each). `src/engine/tokens.ts` per spec section 6.6 with the legacy token tests. Save card (C)
-  and the card menu items. Owned: `src/state/document.ts` (cards slice), `src/engine/tokens.ts`,
-  `src/features/brief/cards/`.
-- **9.5.2 Stage and presenter** (`fable-medium`, 3600 s, after 9.5.1). `BriefWorkspace`: card
-  strip, stage, notes column. The stage drives the controlled map, elevation or 3D view at the
-  card's view and time, the timeline strip, the caption with resolved tokens, the readout
-  strip, the head and aids. Enter and leave restore the Build view. Clip playback with beats
-  (`playTo`), Space, Right, Left, Home, End, 1 to 9, F, B, K, N, Up, Down, key hints that fade.
-  Phone layout. Owned: `src/features/brief/` except `cards/` and `notes/`,
-  `src/features/build/timeline/usePlayback.ts` (`playTo`).
-- **9.5.3 Notes, capture, attachments, export** (`opus-high`, 2400 s, parallel with 9.5.2).
-  Notes panel with live token preview and reasons, clip fields with the legacy parse rules and
-  error text. Capture: the map canvas (`preserveDrawingBuffer` on demand), the 3D renderer and
-  the elevation SVG to a PNG blob in a session store, never persisted. Attach an image file.
-  Deck PDF: `brief.css` print stylesheet, one page per card. Card PNG. Report embed of a card.
-  Owned: `src/features/brief/notes/`, `src/features/brief/capture.ts`, `src/features/brief/brief.css`,
-  `src/features/report/` (embed only).
-- **9.5.4 Wiring** (`opus-medium`, 1500 s, after). Mount Brief, scope the Brief keys, register
+- **9.4.1 Cards store and card commands** (`opus-medium`, 1800 s). The cards slice of the
+  document store: save with the legacy defaults, reorder, duplicate, delete, one undo step per
+  field edit. Save card (C) fills the 9.2.3 stub; the card menu (Apply view, Open in Brief,
+  Up, Down, Delete); card thumbnails through `src/board` `render.card`. Legacy:
+  `legacy/js/45-tools.js` (`saveCard`, `saveClip`), `30-store.js` (card reducers). Owned:
+  `src/state/document.ts` (cards slice), `src/features/brief/cards/`.
+- **9.4.2 Stage and presenter** (`fable-medium`, 3600 s, after 9.4.1). Port
+  `legacy/js/51-panel-stage.js`, `51-panel-cards.js` (`brief.begin`, `end`, `enter`, `step`)
+  and the `card.*` actions of `90-app.js`: the card strip, the stage that drives the board at
+  the card's view and time with its timeline strip, the caption with resolved tokens, the
+  readout strip (K), the head ("n. Name", "n of m", the view, `t+m:ss`), the aids (next card
+  thumbnail, elapsed clock, "Last card"), full stage (F) with the larger scale, blank stage
+  (B), hints that fade after 3 s, clip playback with beats through `playTo`, Space, Right,
+  Left, Home, End, 1 to 9, N, Up, Down, the phone layout with swipe. Enter and leave restore
+  the Build view. Owned: `src/features/brief/` except `cards/` and `notes/`.
+- **9.4.3 Notes, capture, attachments, export** (`opus-high`, 2400 s, parallel with 9.4.2).
+  Port `legacy/js/51-panel-notes.js` (notes and caption with live token preview and reasons,
+  the clip fields with the legacy parse rules and error text, the inline delete row), writing
+  every field to the store on input. Capture: the stage SVG to a PNG blob in a session store,
+  never persisted; attach an image file; `brief.css` print stylesheet, one page per card; card
+  PNG; the report embed of a card. Owned: `src/features/brief/notes/`,
+  `src/features/brief/capture.ts`, `src/features/brief/brief.css`, `src/features/report/`
+  (embed only).
+- **9.4.4 Wiring** (`opus-medium`, 1500 s). Mounts Brief, scopes the Brief keys, registers
   the card commands, `stat-te-terminology` check on all new copy. Owned: the shell files.
-- **9.5.R Review** (`opus-high`, with browser; acceptance item 19) and **9.5.F Fixes**.
+- **9.4.R Review** (`opus-high`, with browser; parity pairs for the stage with each seed's
+  cards; acceptance item 19) and **9.4.F Fixes**.
 
-#### 9.6 Acceptance
+#### 9.5 Acceptance
 
-- **9.6.1 End-to-end** (`opus-medium`, 2400 s). One Playwright spec per spec section 12 item
+- **9.5.1 End-to-end** (`opus-medium`, 2400 s). One Playwright spec per spec section 12 item
   12 to 19. Items 1 to 11 stay green.
-- **9.6.2 First-use re-walk** (`opus-medium` with browser, 1200 s). Item 20. Friction ranked;
+- **9.5.2 First-use re-walk** (`opus-medium` with browser, 1200 s). Item 20. Friction ranked;
   fixes are new lanes.
-- **9.6.3 Budgets** (`opus-medium`, 900 s). Item 21: every section 11 row, with numbers in
+- **9.5.3 Budgets** (`opus-medium`, 900 s). Item 21: every section 11 row, with numbers in
   `reviews/phase-9-budgets.md`.
-- **9.6.R Review** (`opus-high`): the whole upgrade against the principles, then **9.6.F**.
+- **9.5.R Review** (`opus-high`): the whole upgrade against the principles, with one parity
+  pair per legacy panel; then **9.5.F**.
+
+#### Deferred, not in phase 9
+
+- Imagery underlay: a raster tile image under the plan camera from a configurable URL, on when
+  online with a one-line message when not. One lane after 9.5, only when the user asks.
+- Perspective 3D with terrain (three.js): an open item. The ported axon view is the 3D view of
+  this phase. Reopen only if the user wants perspective and terrain.
+- The ladder table: out (study section 3). The scorecard by F2T2EA replaces it.
 
 ## 7. Status
 
@@ -397,54 +472,66 @@ merge. Open items live in section 8, not here.
 
 ## 8. Handoff
 
-State on 2026-10-31, end of the fifth session (a planning session, no code lane). The MVP is
+State on 2026-10-31, end of the sixth session (a planning session, no code lane). The MVP is
 done: phases 0 to 7 and their fix lanes are merged on `rebuild/mvp` with the gate green (69 unit
 test files, 536 tests, 12 Playwright specs on `vite preview`, build), and `main` is at the
-fourth-session merge (21e96c2) on `origin`. The fifth session wrote `docs/reference/artifact-study.md`,
-amended `docs/spec.md` and `docs/design-principles.md` from it, and drafted phase 9 in section 6.
-The user asked for that commit and this handoff on 2026-10-31. No lane is in flight; no worktree
-exists. `rebuild/mvp` is one commit ahead of `origin` (this one) until the user approves a push.
+fourth-session merge (21e96c2) on `origin`. The fifth session (morning) wrote
+`docs/reference/artifact-study.md`, amended the spec and the principles, and drafted phase 9 as
+a retrofit of the MVP board with three.js. The sixth session (afternoon) compared both apps side
+by side and replaced that draft: phase 9 is now a one-to-one port of the legacy interface onto
+the MVP engine (section 6, phase 9; study section 5 for the reasons). The spec, the principles,
+the study, CLAUDE.md and sections 2 and 3 of this file were amended to match. No lane is in
+flight; no worktree exists. `rebuild/mvp` is ahead of `origin` until the user approves a push.
 
 **Orchestrator prompt.** Paste this to start the next session:
 
 ```text
 You are the orchestrator for Profile Studio at /Users/caseytalbot/Projects/profile-studio,
 branch rebuild/mvp. Read CLAUDE.md, docs/design-principles.md, docs/spec.md, then docs/plan.md
-sections 5, 6 (phase 9), 7 and 8, then docs/reference/artifact-study.md. Run `npm run gate` to
-confirm the baseline: 69 unit files, 536 tests, 12 e2e specs, build green.
+sections 5, 6 (phase 9), 7 and 8, then docs/reference/artifact-study.md and
+docs/reference/legacy-app.md. Run `npm run gate` to confirm the baseline: 69 unit files, 536
+tests, 12 e2e specs, build green.
+If `git status` shows CLAUDE.md and the four planning docs modified, that is the sixth
+session's phase 9 rewrite: ask me, then commit it before any lane.
 
-Phase 9 is the work: six sub-phases, in order, each ending with a review lane with a browser
-pass, a fix lane, and my approval before its merge to rebuild/mvp. Start with sub-phase 9.1:
-ask me to approve the npm install for 9.1.1, then launch 9.1.1, 9.1.2, 9.1.3 and 9.1.4 in one
-message, each in its own worktree. Section 5 rules apply: one worker per lane in a worktree
-under .worktrees/<id>, workers do not commit, gate and git diff --stat before each --no-ff
-merge, gate on rebuild/mvp after, worktree removed, status table and section 8 updated. The
-owned-file rule and the references per lane in section 6 phase 9 go into every brief.
+Phase 9 is the work: a one-to-one port of the legacy interface (legacy/) onto the MVP engine,
+in five sub-phases, each ending with a review lane with a browser pass and parity pairs, a fix
+lane, and my approval before its merge to rebuild/mvp. Start with sub-phase 9.1: ask me to
+approve the npm install for 9.1.1, then launch 9.1.1, 9.1.2, 9.1.3 and 9.1.4 in one message,
+each in its own worktree. Section 5 rules apply: one worker per lane in a worktree under
+.worktrees/<id>, workers do not commit, gate and git diff --stat before each --no-ff merge,
+gate on rebuild/mvp after, worktree removed, status table and section 8 updated. The renderer
+contract, the owned-file rule, the parity check and the references per lane in section 6
+phase 9 go into every brief, with the legacy files the lane ports named in full.
 
 Ask me before any download (npm install included), any push, and any merge to main.
 ```
 
-**Start here.** Read `CLAUDE.md`, the principles, the spec, this file (sections 5 to 8) and the
-study. Run `npm run gate` once to confirm the baseline (69 unit files, 536 tests, 12 e2e). Then:
+**Start here.** Read `CLAUDE.md`, the principles, the spec, this file (sections 5 to 8), the
+study and the legacy inventory. Run `npm run gate` once to confirm the baseline (69 unit files,
+536 tests, 12 e2e). Then:
 
 1. Sub-phase 9.1. Ask the user to approve the install for 9.1.1 (`@fontsource/archivo`,
    `@fontsource/jetbrains-mono`, `lucide-react`). Launch the four 9.1 lanes in one message.
-   9.1.4 is pure data and conflicts with nothing. 9.1.2 owns `src/commands/`; 9.1.3 owns the
-   shell files; 9.1.1 owns `src/styles/`. Merge in order 9.1.1, 9.1.4, 9.1.2, 9.1.3, gate after
-   each. Then 9.1.R with a browser pass on port 5174, then 9.1.F, then the user's approval.
-2. Sub-phases 9.2 to 9.6 follow the same rhythm. 9.3.1 needs an install approval (`three`,
-   `@types/three`). Record each merge in section 7 and each phase review in
-   `reviews/phase-9.<n>.md`.
-3. Phase 8 (vos port) is a separate plan, after phase 9. Any item under "Open items" runs as
-   its own lane only when the user asks.
+   9.1.2 is pure data and conflicts with nothing. 9.1.3 owns the shell files and
+   `src/commands/`; 9.1.4 exports its commands from `src/features/library/`; 9.1.1 owns
+   `src/styles/`. Merge in order 9.1.1, 9.1.2, 9.1.4, 9.1.3, gate after each. Then 9.1.R with a
+   browser pass on port 5174 and the legacy app at `/legacy/index.html`, then 9.1.F, then the
+   user's approval.
+2. Sub-phases 9.2 to 9.5 follow the same rhythm. 9.2 has two rounds (9.2.5 waits for 9.2.2).
+   Record each merge in section 7 and each phase review in `reviews/phase-9.<n>.md`, with the
+   parity pairs under `reviews/phase-9.<n>/`.
+3. Phase 8 (vos port) is a separate plan, after phase 9. Any item under "Open items" and the
+   deferred items at the end of phase 9 run as their own lane only when the user asks.
 
 **Brief shape for phase 9 lanes.** Working directory (`.worktrees/<id>`); the lane text from
-section 6 verbatim; owned files and the files it must not touch; the references per lane; the
-spec sections and acceptance items it serves; the gate (`E2E_PORT=<port> npm run gate`); the
-report shape (what changed, tests added, what is open, screenshots for UI lanes); the time
-budget from section 6; the lanes running in parallel and their folders. Workers write user-facing
-text in the `stat-te-terminology` vocabulary and the principles' words (profile, card, clip,
-beat, capture, Elevation, 3D).
+section 6 verbatim; the legacy files to port, read whole before writing; the renderer contract
+and the owned-file rule; the files it must not touch; the spec sections and acceptance items
+it serves; the gate (`E2E_PORT=<port> npm run gate`); the parity check and where the pairs go;
+the report shape (what changed, every difference from the legacy behaviour with its reason,
+tests added, what is open, screenshots); the time budget from section 6; the lanes running in
+parallel and their folders. Workers write user-facing text in the `stat-te-terminology`
+vocabulary and the principles' words (profile, card, clip, beat, capture, Elevation, 3D).
 
 **Approvals on record.** The user approved the phase 0 commits, the first phase 1 commit, one
 merge to `main` with a push, and the Playwright Chromium download, all on 2026-10-30. At the
@@ -463,6 +550,9 @@ orchestrator runs `npm run gate` in the worktree, commits on the lane branch, me
 then updates section 7. Workers are picked by `~/.claude/rules/delegation.md`.
 
 **Open items.** Grouped by area. Each came from a worker report or a review; none is a guess.
+
+Deferred from phase 9 (section 6): the imagery underlay for the plan camera, perspective 3D with
+terrain (three.js), and the ladder table. Each runs only when the user asks.
 
 Engine (`src/engine`):
 - Declared losses in `adapter.ts` `LOSSES`: the Monte Carlo flies flat at the first waypoint

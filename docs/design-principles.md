@@ -90,7 +90,7 @@ controls stay out of the way until you need them.
 1. A drag on the map stays smooth at 60 frames per second.
 2. A measure updates within 100 ms of an edit.
 3. A long simulation runs in the background with progress shown. It never blocks the map.
-4. The 3D view loads only when asked and holds 30 frames per second at the map budget.
+4. The 3D view is the same board under a third camera. It holds the map drag budget.
 
 ## 8. The brief is the result, told
 

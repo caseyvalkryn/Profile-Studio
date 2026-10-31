@@ -110,8 +110,9 @@ reason it serves a test planner.
   `51-panel-board.js:459`. The upgrade keeps this rule for the 3D view and makes the switch
   one key.
 - The stage rebuilds the whole scene SVG through `innerHTML` on every store channel, including
-  each time tick in clip playback. `51-panel-stage.js:182 render`. The upgrade renders cards
-  through the React map and the 3D scene, both already frame-paced.
+  each time tick in clip playback. `51-panel-stage.js:182 render`. The port mounts one `<g>`
+  per layer and rewrites only the layers whose inputs changed (plan section 6, phase 9, the
+  renderer contract).
 - Notes save on blur, so a reload or a card switch before blur drops the edit, and the clip
   form is a separate draft lost unless saved. `51-panel-notes.js:201`, `:118`. The upgrade
   writes every field to the document store on input, one undo step per field.
@@ -137,7 +138,7 @@ and authored events flattened to notes in `src/domain/migrate.ts:165`; no web fo
 | Brief export | none in legacy | Beyond: PDF through print, PNG per card. No PPTX |
 | Captured renders and attached images | none in legacy | Beyond: session memory only, never persisted |
 | Timeline strip per card | none in legacy | Beyond: the F2T2EA strip at the card time |
-| Axon camera with orbit | `src/features/build/scene3d/` | Beyond: true 3D orbit view, three.js, view only |
+| Axon camera with orbit | `src/board/cameras.ts` | In, ported one to one as the 3D view, view only (decision of 2026-10-31 pm, section 5) |
 | Elevation as range from a reference origin | `src/features/build/profile/` | In, as a mode beside Along path |
 | Reference origin per card (`cam.ref`) | `src/state/ui.ts` | In |
 | Layer chips Shift+1..8 | `src/features/build/map/layers.ts`, `src/commands/` | In, chips hidden by default |
@@ -179,20 +180,19 @@ inputs, and editing in the 3D view.
    inspector and the top bar. Layer chips, the readout strip, the chart strip, the debrief panel
    and the authored-event list start hidden and open by key, palette or a quiet toggle. Every
    feature registers in the command registry. The 10 minute first-use goal stays and is re-run
-   in phase 9.6.
+   in phase 9.5.
 4. Type system: Archivo and JetBrains Mono bundled from `@fontsource` packages (OFL), weights
    400 and 500, the five-step scale with its line heights, tabular numerals, three stroke
    weights, the full-stage scale. The MVP palette and the single accent stay. Icons: Lucide,
    with a label; icon-only controls get a tooltip. Board symbols do not change.
-5. 3D: a third view built on three.js in a lazy chunk. Orbit, zoom and pan. Reach domes and
-   sector cones, areas as prisms between bottom and top, flight paths at altitude with drop
-   lines, threats and track frames animated at the current time, a ground grid, terrain from
-   DEM tiles when imagery is on. View only; a drag in 3D shows a one-line prompt and 1 or 2
-   switch views. The vertical exaggeration prints on screen as in the legacy axon.
+5. 3D: the legacy axon camera ported one to one as the third view of the same board. Orbit,
+   zoom and fit. View only; a drag in 3D shows a one-line prompt and 1 or 2 switch views. The
+   vertical exaggeration, yaw and pitch print on screen as in the legacy axon. (Revised the same
+   afternoon; the morning decision was a three.js scene. See section 5.)
 6. Elevation view gets a mode: Along path (the MVP reading) or From asset (the legacy reading:
    every path, slant arcs with elevation limits, height planes).
-7. Basemap: the blank grid stays the default. An imagery toggle loads tiles from a configurable
-   URL when online. Everything else ships in the bundle.
+7. Basemap: the blank grid, as in the legacy board. An imagery underlay for the plan view is
+   deferred to a later lane (revised the same afternoon; MapLibre leaves with the port).
 8. Brief: fifth workspace built the legacy way. Cards re-render the live scene at the saved
    camera, layers and time. Clips with beats, caption tokens, presenter keys, full stage, blank
    stage, aids, readout strip, phone stage. Added: a timeline strip per card, Capture to a PNG
@@ -208,16 +208,51 @@ inputs, and editing in the 3D view.
     3D. No live feed.
 12. Non-goals stay: backend, accounts, multi-user, vos port, live feeds, false alarm simulation,
     real-system specification library.
-13. Budgets: entry ceiling raised to 800 kB gzip. The plan keeps three.js in a lazy chunk under
-    250 kB gzip; the raised ceiling is the limit, not the target. 3D holds 30 frames per second
-    at 40 threats and 15 sensors on a laptop GPU. Capture under 300 ms. A 20 card deck prints
-    in under 10 s.
-14. Delivery: six phases in order: Foundation, Board parity, 3D, Events and debrief, Brief and
-    export, Acceptance. Each phase ends with a review with browser screenshots, a fix lane and
+13. Budgets: the entry ceiling stays at 500 kB gzip; the port removes MapLibre. The 3D view
+    holds the map drag budget, since it is the same renderer. Capture under 300 ms. A 20 card
+    deck prints in under 10 s. (Revised the same afternoon.)
+14. Delivery: five sub-phases in order: Foundation, Board, Strip and events and debrief, Brief,
+    Acceptance (revised the same afternoon; see section 5). Each phase ends with a review with browser screenshots, a fix lane and
     the user's approval before merge to `rebuild/mvp`. The 11 acceptance items stay green and
     new items cover the upgrade.
 
-## 5. Sources
+## 5. Delivery decision: port, not retrofit (2026-10-31, afternoon)
+
+The user compared the MVP and the legacy app side by side and asked whether a new build from the
+artifact beats a retrofit of the MVP. The answer on record: port the legacy interface one to one
+onto the MVP's engine, domain and state, and remove MapLibre. The plan is `docs/plan.md` section
+6, phase 9. The morning draft of phase 9 (a retrofit with three.js) is withdrawn.
+
+Evidence:
+
+| | Legacy artifact | MVP |
+| --- | --- | --- |
+| Code | 12.4k lines ES5, 46 modules | 33k lines TS, of which 16k is the frozen rangeboard sim |
+| Board | One SVG renderer, three cameras, 11 layers | MapLibre plan view, SVG side profile, HTML label overlay |
+| Modes | Build, Brief, Library | Library, Build, Results, Report |
+| Engine | Deterministic derive | Monte Carlo, DroneScore scorecard, sweeps, AAR |
+| Type | Archivo and JetBrains Mono, five-step scale | System fonts, no scale |
+| Tests | 11 smoke cases | 536 unit, 12 e2e |
+
+Reasons:
+
+1. An oracle exists. Every ported panel, layer and camera is checked against the running legacy
+   app side by side. A retrofit re-derives each behaviour through MapLibre and three.js, which
+   is how the MVP became a reduced copy.
+2. One renderer. The retrofit ends with three (MapLibre, SVG elevation, three.js) and 11 layers
+   duplicated as mesh builders. The legacy design draws all three views through one layer set.
+3. MapLibre fights the design: labels as an HTML overlay because a blank style has no glyphs
+   offline, a mock in every board test, `preserveDrawingBuffer` for capture. The default
+   basemap is a blank grid.
+4. The coupling is small. Two MVP files import MapLibre. The domain, engine, state, commands,
+   UI primitives, Results and Report never touch the board.
+
+Cost: `src/features/build/{map,assets,inspector,timeline,profile}` (6.4k lines), the MVP library
+screen and the 12 end-to-end specs' selectors are replaced. The lanes 4.x, 7.4 to 7.11 and 7.F
+that polished the MapLibre board are sunk. The lane count is about the same as the retrofit
+draft: it is set by the legacy module count, not by the approach.
+
+## 6. Sources
 
 - Artifact inventory and MVP survey: worker reports of 2026-10-31 (scratch, not kept).
 - `docs/reference/legacy-app.md` for the legacy inventory.

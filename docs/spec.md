@@ -23,9 +23,11 @@ alarm simulation, real-system specification library. Each is a later phase.
 
 **Upgrade (2026-10-31).** The MVP passed its acceptance suite on 2026-10-30. The upgrade brings
 the app to the capability of the legacy app and past it: a New profile flow, the legacy type
-system, a 3D view, the legacy board layers and readouts, authored events with a debrief overlay,
-record round-trip, and a Brief workspace with export. Scope and decisions are in
-`docs/reference/artifact-study.md`. The first-use goal does not change.
+system, the three legacy views (Plan, Elevation, 3D), the legacy board layers and readouts,
+authored events with a debrief overlay, record round-trip, and a Brief workspace with export.
+It is delivered as a one-to-one port of the legacy interface onto the MVP engine (plan section 6,
+phase 9). Scope and decisions are in `docs/reference/artifact-study.md`. The first-use goal does
+not change.
 
 ## 2. Terms
 
@@ -253,13 +255,14 @@ bar. Every other panel starts hidden (principle 5.8).
   the authored-event list, the debrief panel (paste TSPI or load a CSV), the snapshot list.
 - Views. Plan: north up. Elevation: a side view with a mode, Along path (distance along the
   selected flight path) or From asset (range from the reference origin; every path, slant arcs
-  with elevation limits, height planes). 3D: an orbit view in a lazy chunk; reach domes and
-  sector cones, areas as prisms between bottom and top, flight paths at altitude with drop
-  lines, threats and track frames at the current time, a ground grid, terrain when imagery is
-  on. 3D prints its vertical exaggeration, yaw and pitch. A drag in 3D does not edit; it shows
-  "Edit in Plan (1) or Elevation (2)".
-- Basemap. The blank grid is the default. An imagery toggle loads tiles from a configurable
-  URL when the network allows and says so when it does not.
+  with elevation limits, height planes). 3D: the axonometric camera ported from the legacy
+  axon view, drawn by the same layers as Plan and Elevation. Orbit by drag (yaw 0.45 and pitch
+  0.35 degrees per pixel, pitch clamped 8 to 86 degrees), zoom and fit. It animates the threats
+  and track frames at the current time and prints its vertical exaggeration, yaw and pitch
+  ("vertical x3  yaw -35  pitch 55"). A drag in 3D does not edit; it shows "Edit in Plan (1) or
+  Elevation (2)".
+- Basemap. The blank grid with range rings, axes, compass and scale bar, as in the legacy
+  board. An imagery underlay for the plan view is deferred (plan section 6, phase 9).
 - Drag labels. A drag shows the value under the cursor and, on a second line, the largest
   downstream change, for example "T1 window -0:08".
 
@@ -415,9 +418,8 @@ orbit, racetrack, hover and stare, terminal dive, split, multi-axis salvo.
 | Preview after an edit | 100 ms |
 | Run of 200 replicates, 6 threats | 5 s, in the background, with progress |
 | First load | Interactive in 2 s on a laptop |
-| Entry bundle | 800 kB gzip ceiling (raised 2026-10-31). Target: the entry stays near today's 81 kB; fonts and the 3D view load outside it |
-| 3D chunk | 250 kB gzip, loaded on first use |
-| 3D view | 30 frames per second with 40 threats and 15 sensors on a laptop GPU |
+| Entry bundle | 500 kB gzip. The port removes MapLibre (286 kB gzip lazy today); the fonts load outside the entry |
+| 3D view | The map drag budget: 60 frames per second with 40 threats and 15 sensors, same renderer as Plan |
 | Capture | 300 ms |
 | Deck PDF | 20 cards print in 10 s |
 
