@@ -3,7 +3,9 @@
 // never changes. `id` is the display id (RDR-1, T1, DA, Q-01, H-01) and can be renamed.
 // References between records use `key`, never `id` or an array index.
 
-export const SCHEMA = 'profile-studio/5' as const;
+export const SCHEMA = 'profile-studio/6' as const;
+/** The stamp before height planes, authored events, snapshots, cards and debrief (spec section 5). */
+export const SCHEMA_V5 = 'profile-studio/5' as const;
 
 export type SensorKind = 'radar' | 'rf' | 'eoir' | 'acoustic';
 export type EffectorKind = 'ew' | 'kinetic' | 'de';
@@ -24,6 +26,11 @@ export type Vignette = {
   effectors: Effector[];
   nodes: Node[]; // C2 and TSPI stations
   areas: Area[];
+  planes: HeightPlane[];
+  events: AuthoredEvent[]; // the planned row
+  snapshots: number[]; // seconds; envelopes draw at these times when the time cursor is off
+  cards: Card[]; // the brief
+  debrief: Debrief | null; // flown data
   chainTime: { decisionS: number; assignS: number }; // Target step inputs
   measures: MeasureSetting[]; // the rows this vignette scores, with thresholds
   runs: RunSummary[]; // stored results, newest first
@@ -57,6 +64,7 @@ export type Threat = {
   type: string; // catalog archetype id
   path: Waypoint[];
   speedMs?: number; // overrides the archetype cruise speed
+  group: string; // '' when none, a letter otherwise (legacy path.group)
 };
 
 export type Waypoint = { key: string; x: number; y: number; z: number; holdS: number };
@@ -137,6 +145,87 @@ export type Area = {
   pts: [number, number][];
   zMinM: number;
   zMaxM: number;
+};
+
+/** A reference altitude drawn across the scene. */
+export type HeightPlane = { key: string; id: string; label: string; zM: number };
+
+export type AuthoredEventType =
+  | 'detect'
+  | 'track'
+  | 'identify'
+  | 'engage'
+  | 'split'
+  | 'merge'
+  | 'loiter'
+  | 'terminal'
+  | 'checkpoint';
+
+/**
+ * A planned kill-chain event at a time on a flight path. `sensorKey` is the key of the sensor,
+ * effector or node the event names (legacy `system`), or null.
+ */
+export type AuthoredEvent = {
+  key: string;
+  id: string;
+  tS: number;
+  type: AuthoredEventType;
+  label: string;
+  threatKey: string;
+  sensorKey: string | null;
+};
+
+export type LayerId =
+  'reach' | 'events' | 'envelopes' | 'tracks' | 'telemetry' | 'labels' | 'rings' | 'target';
+
+/**
+ * A card's camera. `centre` is the pan from the fitted view in metres and `zoom` the factor on
+ * it; `{x: 0, y: 0}` and 1 are the legacy card view (fit to the scene).
+ */
+export type CardView = {
+  kind: 'plan' | 'elevation' | '3d';
+  centre: { x: number; y: number };
+  zoom: number;
+  yawDeg: number;
+  pitchDeg: number;
+  ref: string; // 'asset', or the key of the system the range origin sits on
+  elevationMode: 'alongPath' | 'fromAsset';
+};
+
+/** A card's playback from `t0S` to `t1S` at `rate`, stopping at each beat. */
+export type Clip = { t0S: number; t1S: number; rate: number; beatsS: number[] };
+
+/** A saved way of looking: view, layers, time, focus, caption, notes. Never a picture. */
+export type Card = {
+  key: string;
+  id: string;
+  name: string;
+  view: CardView;
+  layers: Partial<Record<LayerId, boolean>>;
+  displays: { timeline: boolean; chart: boolean; readout: boolean };
+  clip: Clip | null;
+  focus: string[]; // keys
+  tS: number | null; // null: time off
+  caption: string;
+  notes: string;
+};
+
+/** A flown TSPI sample: t, x, y, z. */
+export type TspiSample = [number, number, number, number];
+
+export type DebriefEvent = {
+  tS: number;
+  type: AuthoredEventType;
+  threatKey: string;
+  sensorKey: string | null;
+};
+
+/** Flown TSPI and events loaded after a range run. `tspi` is keyed by threat key. */
+export type Debrief = {
+  source: string;
+  loadedAt: string;
+  tspi: Record<string, TspiSample[]>;
+  events: DebriefEvent[];
 };
 
 export type MeasureSetting = {

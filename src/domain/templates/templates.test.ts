@@ -30,10 +30,13 @@ describe('TEMPLATES', () => {
     expect(templateById('blank')?.question).toBe('');
   });
 
-  it('every make() passes parseVignette with schema profile-studio/5', () => {
+  it('every make() passes parseVignette with schema profile-studio/6', () => {
     for (const t of TEMPLATES) {
       const v = parseVignette(t.make());
-      expect(v.schema).toBe('profile-studio/5');
+      expect(v.schema).toBe('profile-studio/6');
+      expect([v.planes, v.events, v.snapshots, v.cards, v.debrief]).toEqual([[], [], [], [], null]);
+      expect(v.threats.every((x) => x.group === '')).toBe(true);
+      expect(parseVignette(JSON.parse(JSON.stringify(v)))).toEqual(v);
       expect(v.areas.some((a) => a.kind === 'asset')).toBe(true);
       expect(v.site.name).not.toBe('');
     }

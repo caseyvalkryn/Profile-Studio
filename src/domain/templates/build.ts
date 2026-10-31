@@ -115,7 +115,7 @@ export function defendedAsset(sideM = 250, at: Pt = { x: 0, y: 0 }): Area {
 }
 
 export function threat(id: string, type: string, path: Waypoint[], speedMs?: number): Threat {
-  const t: Threat = { key: newKey(), id, type, path };
+  const t: Threat = { key: newKey(), id, type, path, group: '' };
   if (speedMs != null) t.speedMs = speedMs;
   return t;
 }
@@ -180,6 +180,11 @@ export function vignette(parts: Parts): Vignette {
     effectors: parts.effectors ?? [],
     nodes: parts.nodes ?? [],
     areas: parts.areas ?? [defendedAsset()],
+    planes: [],
+    events: [],
+    snapshots: [],
+    cards: [],
+    debrief: null,
     chainTime: parts.chainTime ?? { decisionS: 5, assignS: 3 },
     measures: parts.measures ?? [],
     runs: [],
