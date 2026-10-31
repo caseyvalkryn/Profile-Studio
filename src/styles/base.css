@@ -1,6 +1,12 @@
 @import 'tailwindcss';
 /* MapLibre's sheet sits in the base layer so Tailwind utilities on the map container win. */
 @import 'maplibre-gl/dist/maplibre-gl.css' layer(base);
+/* Bundled faces, weights 400 and 500 only (principle 5.9). Vite emits them as CSS and font
+   assets outside the entry script. */
+@import '@fontsource/archivo/400.css';
+@import '@fontsource/archivo/500.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
 @import './tokens.css';
 
 @theme inline {
@@ -16,8 +22,54 @@
   --color-state-warning: var(--state-warning);
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
+  /* type: families */
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
+  /* type: the five sizes with their line heights (text-micro ... text-display) */
+  --text-micro: var(--fs-1);
+  --text-micro--line-height: var(--lh-1);
+  --text-data: var(--fs-2);
+  --text-data--line-height: var(--lh-2);
+  --text-body: var(--fs-3);
+  --text-body--line-height: var(--lh-3);
+  --text-title: var(--fs-4);
+  --text-title--line-height: var(--lh-4);
+  --text-display: var(--fs-5);
+  --text-display--line-height: var(--lh-5);
+  /* type: weights and caps tracking */
+  --font-weight-normal: var(--fw);
+  --font-weight-medium: var(--fw-med);
+  --tracking-caps: var(--ls-caps);
+  /* strokes: no Tailwind namespace; use as stroke-(--stroke-w2) or border-(length:--stroke-w1) */
+  --stroke-w1: var(--w1);
+  --stroke-w2: var(--w2);
+  --stroke-w3: var(--w3);
+  /* layout: w-col-list, w-col-right, h-top, h-strip, h-ctl, h-row, px-row-px and so on */
+  --spacing-col-list: var(--col-list);
+  --spacing-col-right: var(--col-right);
+  --spacing-top: var(--top);
+  --spacing-strip: var(--strip);
+  --spacing-lane: var(--lane);
+  --spacing-ladder-row: var(--ladder-row);
+  --spacing-hit: var(--hit);
+  --spacing-ctl: var(--ctl);
+  --spacing-ctl-dense: var(--ctl-dense);
+  --spacing-ctl-mini: var(--ctl-mini);
+  --spacing-row: var(--row);
+  --spacing-row-2: var(--row-2);
+  --spacing-row-px: var(--row-px);
+  --spacing-col-data: var(--col-data);
+  --spacing-col-id: var(--col-id);
+}
+
+@layer base {
+  /* Numbers in the mono face line up in columns (principle 5.7, 5.9). */
+  .font-mono,
+  code,
+  kbd,
+  samp {
+    font-variant-numeric: var(--tnum);
+  }
 }
 
 html,
@@ -30,7 +82,6 @@ body {
   margin: 0;
   background: var(--surface-0);
   color: var(--text);
-  font-family: var(--font-sans);
-  font-size: 14px;
+  font: var(--fw) var(--fs-3) / var(--lh-3) var(--ui);
   -webkit-font-smoothing: antialiased;
 }

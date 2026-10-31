@@ -8,6 +8,7 @@ export {
   type NumberFieldProps,
   type TextFieldProps,
 } from './Field';
+export { Icon, type IconProps, type IconStroke } from './Icon';
 export { Kbd, type KbdProps } from './Kbd';
 export { Menu, type MenuProps } from './Menu';
 export { Palette, type PaletteProps } from './Palette';
