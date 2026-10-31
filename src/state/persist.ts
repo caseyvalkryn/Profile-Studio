@@ -1,9 +1,7 @@
 // Local persistence in IndexedDB (database `profile-studio`, store `vignettes`), JSON import and
 // export, and autosave of the open document.
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import { importLegacyV4 } from '../domain/migrate';
-import { parseVignette } from '../domain/schema';
-import { SCHEMA, type Vignette } from '../domain/types';
+import { importLegacyV4, parseVignette, SCHEMA, type Vignette } from '../domain';
 import { useDocument } from './document';
 
 export const DB_NAME = 'profile-studio';
@@ -17,7 +15,8 @@ interface StudioDb extends DBSchema {
 /** The part of the idb database the functions here use. Tests pass a mock. */
 export type VignetteDb = Pick<IDBPDatabase<StudioDb>, 'get' | 'put' | 'delete' | 'getAll'>;
 
-export type VignetteListing = { id: string; name: string; updated: string };
+/** One saved profile as the Library lists it. `site` is the site name, the Library's group. */
+export type VignetteListing = { id: string; name: string; updated: string; site: string };
 
 let dbPromise: Promise<VignetteDb> | null = null;
 
@@ -62,8 +61,15 @@ export async function listVignettes(): Promise<VignetteListing[]> {
   const all = await (await getDb()).getAll('vignettes');
   for (const v of all) storedIds.add(v.id);
   return all
-    .map((v) => ({ id: v.id, name: v.name, updated: v.updated }))
+    .map((v) => ({ id: v.id, name: v.name, updated: v.updated, site: v.site?.name ?? '' }))
     .sort((a, b) => (a.updated < b.updated ? 1 : a.updated > b.updated ? -1 : 0));
+}
+
+/** Every stored profile, newest first. */
+export async function loadAllVignettes(): Promise<Vignette[]> {
+  const all = await (await getDb()).getAll('vignettes');
+  for (const v of all) storedIds.add(v.id);
+  return all.sort((a, b) => (a.updated < b.updated ? 1 : a.updated > b.updated ? -1 : 0));
 }
 
 export async function deleteVignette(id: string): Promise<void> {
@@ -75,10 +81,21 @@ export function exportJson(v: Vignette): string {
   return JSON.stringify(v, null, 2);
 }
 
+/** The library as one JSON: `{schema, library}` with every stored profile, newest first. */
+export async function exportLibrary(): Promise<string> {
+  return JSON.stringify({ schema: SCHEMA, library: await loadAllVignettes() }, null, 2);
+}
+
+/**
+ * The MVP's first stamp. `parseVignette` reads it as well as `SCHEMA` (lane 9.1.2 migrates it to
+ * v6 inside `src/domain`); while `SCHEMA` is still v5 the two are the same.
+ */
+const STAMP_V5 = 'profile-studio/5';
+
 function importRecord(data: unknown): Vignette {
   const schema =
     typeof data === 'object' && data !== null ? (data as { schema?: unknown }).schema : undefined;
-  if (schema === SCHEMA) return parseVignette(data);
+  if (schema === SCHEMA || schema === STAMP_V5) return parseVignette(data);
   if (schema === 'profile-studio/4') return importLegacyV4(data);
   throw new Error(
     `Unknown record stamp: ${String(schema)}. Expected ${SCHEMA} or profile-studio/4.`,
@@ -86,8 +103,8 @@ function importRecord(data: unknown): Vignette {
 }
 
 /**
- * Parse an import file into vignettes. Accepts a single v5 vignette, a single legacy v4 record, the
- * legacy library export `{schema: 'profile-studio/4', library: [...]}`, or a plain array of
+ * Parse an import file into vignettes. Accepts a single current-schema profile, a single legacy v4
+ * record, a library export `{schema, library: [...]}` (this app's or the legacy one), or a plain array of
  * records (the shapes the legacy `P.parse` accepts). All or nothing: one bad record fails the
  * import, and the error names its position. Throws a readable Error.
  */

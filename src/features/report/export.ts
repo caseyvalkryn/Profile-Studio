@@ -46,7 +46,7 @@ export function vignetteJson(v: Vignette, runs: readonly RunSummary[]): string {
 
 /** A file name safe on every desktop OS. */
 export function fileName(base: string, ext: string): string {
-  const safe = base.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'vignette';
+  const safe = base.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'profile';
   return `${safe}.${ext}`;
 }
 

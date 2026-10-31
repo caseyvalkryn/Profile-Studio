@@ -38,8 +38,8 @@ export type PredictionSnapshot = {
 
 /** Shown in RunEntry.error when the worker fails. The raw text goes to RunEntry.detail. */
 export const RUN_FAILED = 'The simulation failed. Try again or reduce the replicate count.';
-export const EDITED_DURING_RUN = 'Vignette edited during the run';
-export const CLOSED_DURING_RUN = 'Vignette closed during the run. The result was not stored.';
+export const EDITED_DURING_RUN = 'Profile edited during the run';
+export const CLOSED_DURING_RUN = 'Profile closed during the run. The result was not stored.';
 
 export type RunEntry = {
   key: string;
