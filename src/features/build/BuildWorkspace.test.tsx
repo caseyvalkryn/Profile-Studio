@@ -54,7 +54,7 @@ describe('Build workspace', () => {
     render(<BuildWorkspace />);
     const run = screen.getByRole('button', { name: /^Run/ });
     expect(run).toHaveAttribute('aria-disabled', 'true');
-    expect(run).toHaveAccessibleDescription('Open a vignette first');
+    expect(run).toHaveAccessibleDescription('Open a profile first');
     fireEvent.click(run);
     expect(useRuns.getState().activeKey).toBeNull();
   });
@@ -73,11 +73,11 @@ describe('Build workspace', () => {
   it('the shortcut sheet opens on ? and shows the same shortcut labels', async () => {
     renderApp();
     fireEvent.keyDown(window, { key: '?', shiftKey: true });
-    const sheet = await screen.findByRole('dialog', { name: 'Keyboard shortcuts' });
-    const runGroup = within(sheet).getByRole('region', { name: 'Run' });
-    expect(runGroup).toHaveTextContent('Run');
-    expect(within(runGroup).getByLabelText('Shortcut Ctrl+Enter')).toBeInTheDocument();
-    expect(within(sheet).getByLabelText('Shortcut Esc')).toBeInTheDocument();
+    const sheet = await screen.findByRole('dialog', { name: 'Keys in Build' });
+    const rows = within(sheet).getAllByRole('row');
+    const run = rows.find((r) => r.textContent?.endsWith('Run'))!;
+    expect(run).toHaveTextContent('Ctrl+Enter');
+    expect(rows.some((r) => r.textContent === 'EscCancel, close or go back')).toBe(true);
   });
 
   it('the units toggle changes the range shown in the inspector', () => {

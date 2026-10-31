@@ -75,7 +75,7 @@ describe('routes', () => {
   it('/build with no vignette stored or open links to the Library', async () => {
     useDocument.setState({ doc: null });
     at('/build');
-    expect(await screen.findByText('No vignette open.')).toBeInTheDocument();
+    expect(await screen.findByText('No profile open.')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('link', { name: 'Open one from the Library' }));
     expect(await screen.findAllByRole('button', { name: /^Open template/ })).toHaveLength(8);
   });

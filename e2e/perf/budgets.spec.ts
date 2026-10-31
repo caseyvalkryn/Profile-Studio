@@ -348,7 +348,7 @@ test('run 200 replicates, 6 threats, through the Run button', async ({ page }) =
       )!;
       btn.addEventListener('click', () => (w.__run.click = performance.now()), true);
       document
-        .querySelector('input[aria-label="Vignette name"]')!
+        .querySelector('#tb-name')!
         .addEventListener('focus', () => (w.__run.nameFocus = performance.now()));
       new MutationObserver(() => {
         const p = document.querySelector('[aria-label="Run progress"]')?.textContent;
@@ -359,7 +359,7 @@ test('run 200 replicates, 6 threats, through the Run button', async ({ page }) =
     });
     await FRAMES.start(page);
     await page.getByRole('main', { name: 'Build' }).getByRole('button', { name: 'Run' }).click();
-    await page.getByRole('textbox', { name: 'Vignette name' }).click();
+    await page.getByRole('textbox', { name: 'Profile name' }).click();
     await expect(page.getByText(/Run R-\d+ done/)).toBeVisible({ timeout: 60_000 });
     const fr = await FRAMES.stop(page);
     const res = await page.evaluate(
@@ -381,7 +381,7 @@ test('run 200 replicates, 6 threats, through the Run button', async ({ page }) =
     expect(res.progress.at(-1)).toMatch(/200\/200/);
     totals.push(total);
     gaps.push(fr.gap);
-    await page.getByRole('textbox', { name: 'Vignette name' }).press('Escape');
+    await page.getByRole('textbox', { name: 'Profile name' }).press('Escape');
   }
   report('run 200x6 (browser)', stat(totals), 'ms');
   report('run 200x6 main-thread worst gap', stat(gaps), 'ms');

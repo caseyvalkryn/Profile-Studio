@@ -10,6 +10,7 @@ import {
   execute,
   forTarget,
   get,
+  inWorkspace,
   menuShortcutLabel,
   shortcutLabel,
 } from './registry';
@@ -81,14 +82,16 @@ describe('command registry', () => {
       if (r !== true) expect(typeof r === 'string' && r.length > 0, c.id).toBe(true);
     }
     expect(execute('edit.undo', ctx)).toBe('Nothing to undo');
-    expect(execute('edit.delete', ctx)).toBe('Open a vignette first');
+    expect(execute('edit.delete', ctx)).toBe('Open a profile first');
   });
 
-  it('no two commands share a shortcut', () => {
-    const s = all()
-      .map((c) => c.shortcut)
-      .filter(Boolean);
-    expect(new Set(s).size).toBe(s.length);
+  it('no two commands active in one workspace share a shortcut', () => {
+    for (const w of ['library', 'build', 'results', 'report', 'brief'] as const) {
+      const s = inWorkspace(w)
+        .map((c) => c.shortcut)
+        .filter(Boolean);
+      expect(new Set(s).size, w).toBe(s.length);
+    }
   });
 
   it('every shortcutFrom names a keyed command and binds no key of its own', () => {
@@ -251,7 +254,7 @@ describe('commands edit the document', () => {
   });
 
   it('Run sweep says why without a sweep factor, then starts the stored sweep (review 6 F-02)', () => {
-    expect(execute('run.sweep', currentContext())).toBe('This vignette has no sweep factor');
+    expect(execute('run.sweep', currentContext())).toBe('This profile has no sweep factor');
     const calls: unknown[] = [];
     const original = useRuns.getState().startSweep;
     useRuns.setState({

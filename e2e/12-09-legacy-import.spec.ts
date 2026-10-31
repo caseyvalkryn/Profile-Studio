@@ -38,7 +38,7 @@ test('12.9 A legacy v4 JSON from the current app imports without loss of assets,
   const row = page.getByTestId('saved-row').filter({ hasText: legacy.name });
   await row.getByRole('button', { name: legacy.name, exact: true }).click();
   await expect(page.getByRole('main', { name: 'Build' })).toBeVisible();
-  await expect(page.getByRole('textbox', { name: 'Vignette name' })).toHaveValue(legacy.name);
+  await expect(page.getByRole('textbox', { name: 'Profile name' })).toHaveValue(legacy.name);
   await expect(page.getByRole('main', { name: 'Build' })).toContainText(legacy.purpose);
 
   // Assets: every legacy system is on the map under its id; the volume and the threat too.

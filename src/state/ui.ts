@@ -1,5 +1,5 @@
-// Interface state: selection, hover, tool, time, view, units, theme, overlays, workspace.
-// None of it is a vignette edit, so none of it is an undo step.
+// Interface state: selection, hover, tool, time, view, units, theme, overlays, workspace, panels.
+// None of it is a profile edit, so none of it is an undo step.
 import { create } from 'zustand';
 import type {
   AreaKind,
@@ -23,10 +23,45 @@ export type ArmedItem =
   | { group: 'node'; kind: NodeKind }
   | { group: 'area'; kind: AreaKind };
 
-export type View = 'plan' | 'profile';
+/** Build centre views: 1 Plan, 2 Elevation, 3 3D (legacy `46-keys.js`). */
+export type View = 'plan' | 'elevation' | '3d';
 export type Units = 'nav' | 'si';
-export type Theme = 'system' | 'light' | 'dark';
-export type Workspace = 'library' | 'build' | 'results' | 'report';
+/** `auto` follows the system setting (legacy `90-app.js` theme cycle). */
+export type Theme = 'auto' | 'light' | 'dark';
+export type Workspace = 'library' | 'build' | 'results' | 'report' | 'brief';
+/** The bottom strip's tab; R cycles them in this order. */
+export type StripTab = 'timeline' | 'chart' | 'readout';
+/** The Elevation view's section: along the selected path, or the ring around the selected asset. */
+export type ElevationMode = 'alongPath' | 'fromAsset';
+/**
+ * Build panel visibility (legacy `ui.panels`). Inspector, asset library (list), timeline and top
+ * bar show by default; the rest are opt-in.
+ */
+export type Panels = {
+  inspector: boolean;
+  list: boolean;
+  timeline: boolean;
+  topbar: boolean;
+  chips: boolean;
+  readout: boolean;
+  events: boolean;
+  debrief: boolean;
+  snapshots: boolean;
+};
+export type PanelName = keyof Panels;
+/** The shell's modal dialogs (legacy `51-panel-dialog.js`). */
+export type ShellDialog = 'export' | 'import';
+export const PANEL_DEFAULTS: Panels = {
+  inspector: true,
+  list: true,
+  timeline: true,
+  topbar: true,
+  chips: false,
+  readout: false,
+  events: false,
+  debrief: false,
+  snapshots: false,
+};
 export type LoopRange = { startS: number; endS: number };
 export type MapPoint = { x: number; y: number };
 /** A request to the map's path drawing, numbered so the same action can repeat. */
@@ -64,7 +99,12 @@ export type UiState = {
   theme: Theme;
   paletteOpen: boolean;
   shortcutsOpen: boolean;
+  /** The open export or import dialog, else null. */
+  dialog: ShellDialog | null;
   workspace: Workspace;
+  panels: Panels;
+  stripTab: StripTab;
+  elevationMode: ElevationMode;
   clipboard: Clip[];
   /** Incremented by requestFit; the map fits its view when this changes. */
   fitSeq: number;
@@ -85,7 +125,13 @@ export type UiState = {
   setTheme: (theme: Theme) => void;
   setPaletteOpen: (open: boolean) => void;
   setShortcutsOpen: (open: boolean) => void;
+  setDialog: (dialog: ShellDialog | null) => void;
   setWorkspace: (w: Workspace) => void;
+  /** Set one panel; `show` omitted flips it. */
+  togglePanel: (name: PanelName, show?: boolean) => void;
+  setPanels: (panels: Partial<Panels>) => void;
+  setStripTab: (tab: StripTab) => void;
+  setElevationMode: (mode: ElevationMode) => void;
   setClipboard: (clips: Clip[]) => void;
   requestFit: () => void;
 };
@@ -105,10 +151,16 @@ export const UI_DEFAULTS = {
   rate: 1,
   view: 'plan',
   units: 'nav',
-  theme: 'system',
+  theme: 'auto',
   paletteOpen: false,
   shortcutsOpen: false,
-  workspace: 'library',
+  dialog: null as ShellDialog | null,
+  // The shell sets the workspace from the route. Build is the default so a Build view mounted
+  // without the shell (unit tests) gets the Build keys.
+  workspace: 'build',
+  panels: PANEL_DEFAULTS,
+  stripTab: 'timeline' as StripTab,
+  elevationMode: 'alongPath' as ElevationMode,
   clipboard: [] as Clip[],
   fitSeq: 0,
 } satisfies Partial<UiState>;
@@ -132,7 +184,13 @@ export const useUi = create<UiState>()((set) => ({
   setTheme: (theme) => set({ theme }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
   setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
+  setDialog: (dialog) => set({ dialog }),
   setWorkspace: (workspace) => set({ workspace }),
+  togglePanel: (name, show) =>
+    set((s) => ({ panels: { ...s.panels, [name]: show ?? !s.panels[name] } })),
+  setPanels: (panels) => set((s) => ({ panels: { ...s.panels, ...panels } })),
+  setStripTab: (stripTab) => set({ stripTab }),
+  setElevationMode: (elevationMode) => set({ elevationMode }),
   setClipboard: (clipboard) => set({ clipboard }),
   requestFit: () => set((s) => ({ fitSeq: s.fitSeq + 1 })),
 }));
