@@ -25,6 +25,9 @@ These are settled. Do not reopen them without the user.
 | Inspector | The whole-scene inspector replaces the selection inspector (phase 10 decision 4). The selected object's row expands; nothing is lost | User, 2026-11-01 (kickoff prompt) |
 | "Envelopes" | The layer that draws the hull around a group of threats keeps the mockup's and spec's name "Envelopes" (review 10.R N-05); the `stat-te-terminology` skill allows the term for this layer | User, 2026-11-01 |
 | Hint grey | `--text-subtle` darkens from #7b7d73 to #696b61 in the light theme (4.97:1 on the panel, 4.55:1 on the board), the nearest warm grey at WCAG AA (review 10.R N-04); the dark value stays | User, 2026-11-01 |
+| Phase 10 | Approved; `rebuild/mvp` merged into `main` (phase 11 opens from there) | User, 2026-11-01 |
+| Typeface | A new family replaces Archivo and JetBrains Mono: unique, intuitive, worthy of an operator command and control panel; elegant, modern and distinctive (the SpaceX register); not "military", not JetBrains Mono. Chosen by the user from rendered specimens in lane 11.2; one download, approved first | User, 2026-11-01 |
+| Scope hold | The bigger pieces wait for "product complete": the vos port (phase 8), the domain fields the UI dropped (`chainTime`, sensor `model`, `entered`), and the deferred list of phase 10 | User, 2026-11-01 |
 
 ## 2. Stack
 
@@ -269,6 +272,97 @@ the debrief overlay, the timeline with F2T2EA lanes, the chart strip, the readou
 drag deltas, the quick-add palette's catalog rows, the target menu's long tail, snap to
 geometry. Each exists in `legacy/` and returns as its own lane only when the user asks.
 
+### Phase 11. Small defects and the typeface (opens 2026-11-01)
+
+Phase 10 was approved on 2026-11-01 and merged into `main`. Phase 11 closes the small defects
+10.F left and establishes the product's typeface. The bigger pieces are held (section 1, "Scope
+hold"): the vos port (phase 8), the dropped domain fields, and the deferred list above. Section
+5 rules apply. Lanes branch from `rebuild/mvp` as `lane/11.x`; the orchestrator merges
+`rebuild/mvp` into `main` at the end of the phase with the user's approval.
+
+#### 11.1 Small defects (`opus-medium`, 2400 s)
+
+The items 10.F and the review left, each fixed or declared with its reason:
+
+1. The selected inspector row uses `bg-surface-2` (sunken); the mockup's current row uses the
+   rule tone (`legacy/mockup-v3.html` line 146, `.item[aria-current="true"]{background:var(--rule)}`)
+   with the 2 px accent inset. `src/features/build/inspector/Row.tsx` Item.
+2. Leftover `.ps-strip` rules in `src/features/shell/shell.css` and `src/features/brief/brief.css`
+   with no element.
+3. A press on the ring edge of a system that is not selected moves its centre to the cursor:
+   `src/features/build/board/tools.ts` defaults the role to centre. The mockup (line 443) drags the
+   system only from its glyph in Plan; a ring press on an unselected system should select it and
+   start nothing, or start the range drag. Decide against the mockup line and principle 2.3.
+4. "Add card from current scene" in Brief stores the default frame (centre 0, 0, zoom 1), and a
+   card saved in 3D stores centre 0, 0 (the axon camera has no inverse). Store the Build stash's
+   centre and zoom where they exist; in 3D store the fitted frame and say so in the card line.
+   `src/features/brief/cards.ts`, `src/features/build/cards/cards.ts`.
+5. Add waypoints arms a new path of the selected threat's type; the mockup (line 445) appends
+   waypoints to the selected path on the plan. Make `placeAt` and `finishPlacing` in
+   `src/features/build/board/tools.ts` honour `placing.pathId`, so the toggle appends to the
+   selected path and starts a new one only when none is selected.
+6. The Library loads every record to draw its thumbnail, and `inspector/Profile.tsx` lists the
+   collections from `listVignettes` again. Keep one listing read per screen; render thumbnails
+   from the listing's first card and the stored scene summary, or cache the loaded records.
+7. "MAX RG" in Elevation sits just above the top tick; give it the same gap as the axis title.
+8. Words the user decides first (ask with a poll before the lane): the rail group name "C2 and
+   TSPI" and the board label "MAX RG" (unexpanded acronyms, `stat-te-terminology` rule 3).
+
+Owned: the files above and their tests. Gate green; a screenshot per fixed item under
+`reviews/phase-11/`. Report per item: fixed, partial or declared.
+
+#### 11.2 Typeface (`fable-medium`, 3600 s; decision row "Typeface")
+
+Establish one type family for the product in place of Archivo and JetBrains Mono (principle
+5.9, spec section 7 Theme and the `@fontsource` bundles of lane 9.1.1). The brief: unique,
+intuitive, worthy of an operator command and control panel; elegant, modern, distinctive, the
+register of the SpaceX interfaces; not "military" (no stencil, no DIN-signage flavour, no
+camouflage of any kind); not JetBrains Mono. The constraints stay: two voices at most (text and
+numbers), weights 400 and 500, the five sizes with their line heights, tabular numerals for
+every number, bundled from a local package, no runtime fetch, an open licence that allows
+bundling.
+
+Procedure:
+
+1. A shortlist of four candidates at most, each with the licence, the tabular-figure support,
+   the weights, the package (`@fontsource/<name>` or a local file set) and one line on why it
+   fits the brief. Starting list, to be checked, not copied: Geist with Geist Mono (Vercel,
+   OFL; a calm Swiss grotesk made for dense product interfaces; the nearest open match to the
+   SpaceX register); Recursive (OFL; one variable family that spans a sans and a mono through
+   its axes, so one family gives both voices); Instrument Sans with a tabular mono partner
+   (OFL); Manrope (OFL; geometric, clear numerals). Reject IBM Plex as common and D-DIN as
+   signage; reject anything that reads as a terminal or a stencil.
+2. Nothing is downloaded before the user approves the exact packages (section 1, Sources; the
+   kickoff rule). The lane stops after the shortlist and asks with a poll.
+3. With the approved packages installed (`npm install`, one approved command), render the
+   Build screen with CUAS-001 in every candidate at 1440 x 900, light and dark, the inspector
+   open, time on, and the Brief stage with card 2, as specimens under `reviews/phase-11/type-*`.
+   The same five sizes and two weights in each. The user picks from the specimens by poll.
+4. Apply the pick: `src/styles/base.css` imports, `src/styles/tokens.css` `--ui` and `--mono`,
+   the removal of the two old packages (offline uninstall), principle 5.9 and spec section 7
+   amended with the family names, the five sizes re-checked against the family's x-height (a
+   size step may change by one pixel; say which and why), the entry budget re-measured (the
+   fonts load outside the entry, spec section 11).
+5. The pair of screenshots per screen (Library, Build in three views, Brief, print) before and
+   after, under `reviews/phase-11/`.
+
+Owned: `src/styles/`, `package.json` and the lockfile for the font packages only,
+`docs/design-principles.md` item 5.9, `docs/spec.md` section 7 Theme. Report: the shortlist
+table, the user's pick and the poll record, the sizes changed, the measured sizes, the
+screenshots.
+
+#### 11.R Review and 11.F Fixes
+
+`opus-high` with the browser at 1440 x 900: the two lanes against the spec, the principles and
+the mockup; then the fix lane and the user's approval; then the merge into `main`.
+
+#### Held for product complete
+
+The vos port (phase 8, a separate plan); the domain fields the UI dropped (`chainTime`, read
+by `preview.ts` and `derived.ts`; the sensor `model` and the asset `entered` source notes,
+still written by the templates); the deferred list of phase 10 above. Each returns only when
+the user asks.
+
 ## 7. Status
 
 The orchestrator updates this table at each merge. `Head` is the `rebuild/mvp` commit after the
@@ -339,18 +433,18 @@ removed from the tree on 2026-11-01 (`git show 70caf07` has them); the findings 
 | 10.D | done | 474b20a | user decisions from the review notes: "Envelopes" kept (N-05, skill note added); `--text-subtle` #696b61 in the light theme at 4.97:1 (N-04) |
 | 10.F | done | 130ca87 | all 12 findings fixed and 8 notes closed: the 3D drag prompt "Edit in Plan (1) or Elevation (2)" (item 13 passes), focused and event labels lead the declutter (legacy byte parity kept through per-finding source patches in `render.test.ts`; 34 snapshots updated), the perf spec runs to the end with every section 11 budget met headless (SwiftShader) and headed (M4 Pro), user-worded disabled reasons, five dead panel toggles and `stripTab` removed, MAX RG and the zero tick, rail names wrap, "full run" on one line, print hides the toast, Brief mini buttons, DE rings in the ew ink, hover to surface-3, `Swatch` friend and neutral, `Field.list`, Undo names its step, Library thumbnails edge to edge, `readout/store.ts` deleted; 52 unit files, 465 tests, 7 e2e; entry 717 kB raw, 231.9 kB gzip; nine `after-10F-*.jpg` |
 | 10.F2 | done | 20694b7 | Enter in an inspector field blurs the input after the commit, so the next Cmd+Z is the app's undo, not the input's native undo (the 10.F follow-up); 52 unit files, 466 tests, 7 e2e; entry 231.9 kB gzip |
+| 10.M | done | main | phase 10 approved by the user on 2026-11-01; `rebuild/mvp` merged `--no-ff` into `main` with the phase 11 plan and this handoff; the gate run on `main` |
 
 ## 8. Handoff
 
-State on 2026-11-01, end of the tenth session. `rebuild/mvp` holds phase 10 whole: lanes 10.1
-to 10.6, the review 10.R, the fix lanes 10.F and 10.F2 and three wiring commits (section 7; the
-10.F2 merge is 20694b7), with the gate green: 52 unit files, 466 tests, 7 Playwright specs on
-`vite preview`, build; entry 717 kB raw, 231.9 kB gzip (budget 300). Spec section 12 items 2, 3, 4,
-9, 10 and 12 to 25 pass (`reviews/phase-10.md`; items 13 and 21 after 10.F). The first-use goal
-is met in five actions. Every section 11 budget is met headless and headed. Tag `pre-pivot`
-(d1f56d1) holds the last head with the run and score code. No lane is in flight; no worktree
-exists. `main` is at 21e96c2 on `origin`; `rebuild/mvp` is ahead of `origin` and not pushed.
-Nothing was installed since 2026-10-31.
+State on 2026-11-01, end of the tenth session. Phase 10 is approved and merged into `main`
+(section 7, row 10.M). `rebuild/mvp` and `main` hold the same tree: lanes 10.1 to 10.6, the
+review 10.R, the fix lanes 10.F and 10.F2 and three wiring commits, with the gate green: 52 unit
+files, 466 tests, 7 Playwright specs on `vite preview`, build; entry 717 kB raw, 231.9 kB gzip
+(budget 300). Spec section 12 items 2, 3, 4, 9, 10 and 12 to 25 pass (`reviews/phase-10.md`).
+The first-use goal is met in five actions. Every section 11 budget is met headless and headed.
+Tag `pre-pivot` (d1f56d1) holds the last head with the run and score code. No lane is in
+flight; no worktree exists. Nothing was installed since 2026-10-31.
 
 **The product.** A polished version of the v3 mockup `legacy/mockup-v3.html` (served at
 `/legacy/mockup-v3.html`): three workspaces (Library, Build, Brief), one board with three
@@ -358,26 +452,30 @@ cameras, a whole-scene inspector, cards and a brief. It plans tests as interacti
 does not run them. The mockup is the parity oracle; the legacy v4 app at `/legacy/index.html`
 is a source of parts.
 
-**Decisions.** Section 1 has all of phase 10: 1 (delete the run and score code), 2 (Library,
-Build, Brief), 3 (warm palette), 4 (whole-scene inspector), the "Envelopes" layer name and the
-hint grey `--text-subtle` #696b61.
+**Decisions.** Section 1 has all of phase 10 and the three of 2026-11-01 that open phase 11:
+phase 10 approved and merged, the typeface direction, the scope hold.
 
-**Approved.** Phase 10 was approved by the user on 2026-11-01 and `rebuild/mvp` pushed to
-`origin`. The merge to `main` waits ("Not now": `main` stays the legacy baseline until the user
-has used the product). Then the next phase: the deferred list at the end of section 6 (each item returns only when the
-user asks), or phase 8 (the vos port, a separate plan).
+**Next: phase 11** (section 6). Lane 11.1 closes the small defects; lane 11.2 establishes the
+typeface from specimens the user picks by poll; 11.R and 11.F follow; then the merge into
+`main` with approval. The bigger pieces are held for "product complete" (section 6, "Held").
 
 **Orchestrator prompt.** Paste this to start the next session:
 
 ```text
 You are the orchestrator for Profile Studio at /Users/caseytalbot/Projects/profile-studio,
 branch rebuild/mvp. Read CLAUDE.md, docs/design-principles.md, docs/spec.md, then docs/plan.md
-sections 1 to 5, phase 10 in section 6, then 7 and 8. Start the dev server from
+sections 1 to 5, phases 10 and 11 in section 6, then 7 and 8. Start the dev server from
 .claude/launch.json ("dev", port 5174) and use the product at / beside the mockup at
 /legacy/mockup-v3.html for ten minutes. Run `npm run gate` to confirm the baseline: 52 unit
-files, 466 tests, 7 Playwright specs, build. Read reviews/phase-10.md and the open items in
-plan section 8. Then ask me which open items and which deferred items (plan section 6) come
-next, cut them as lanes under plan section 5, and bring me the result for approval.
+files, 466 tests, 7 Playwright specs, build.
+
+Phase 11: first ask me, with a poll, the two word choices lane 11.1 item 8 names. Then launch
+11.1 and 11.2 in one message (disjoint files). Lane 11.2 stops after its shortlist and asks me
+by poll which packages to download; nothing is fetched before I say so. Then 11.R and 11.F,
+then bring me the result for approval. Plan section 5 rules apply: one worker per lane in a
+worktree under .worktrees/<id>, workers do not commit, gate and git diff --stat before each
+--no-ff merge, gate on rebuild/mvp after, worktree removed, sections 7 and 8 updated. Put every
+decision to me with the poll tool as soon as it is known.
 
 Ask me before any download (npm install included), any push, and any merge to main.
 ```
@@ -413,7 +511,7 @@ merges to `main` with pushes, the Playwright Chromium download. 2026-10-31: the 
 the push of the phase 9 plan. 2026-11-01: the pivot (phase 10), decision 1 ("Delete it"),
 decision 3 ("Yes, warm palette"), the kickoff prompt (decisions 2 and 4; lanes 10.2 to 10.F
 with their commits and `--no-ff` merges into `rebuild/mvp`), "Envelopes" kept, the hint grey
-darkened to AA, phase 10 approved, the push of `rebuild/mvp`; no install, no merge to `main`.
+darkened to AA, phase 10 approved, two pushes of `rebuild/mvp`, the merge into `main` and its push; no install.
 
 **How to run a lane.** `git worktree add .worktrees/<id> -b lane/<id> rebuild/mvp`, then
 `npm ci --offline` there (stop and ask if it tries to fetch). Parallel lanes each run the full
@@ -424,30 +522,14 @@ servers for pairs on 5191 to 5197). The worker does not commit. The orchestrator
 section 7. Workers are picked by `~/.claude/rules/delegation.md`.
 
 **Open items.** Each came from a worker report or the review. Items phase 10 closed are gone;
-`git show 0b216e2:docs/plan.md` has the list before 10.F.
-
-From 10.F (follow-ups it found and did not do; the Cmd+Z defect was fixed in 10.F2):
-- The selected inspector row is `bg-surface-2` (sunken); the mockup uses the rule colour.
-- `.ps-strip` rules remain in `shell.css` and `brief.css` with no element.
-- A press on the ring of a system that is not selected moves its centre to the cursor
-  (`board/tools.ts` defaults the role to centre). Not judged against the mockup.
-- "MAX RG" in Elevation now sits just above the top tick, close but separate.
-
-From the review notes left open (`reviews/phase-10.md`):
-- N-06: acronyms not expanded at first use: "C2 and TSPI" in the rail group name, "MAX RG" on
-  the board, the focus placeholder. The user decides the words.
-- N-10: data product React keys are indexes (the strings carry no key).
-- N-15: "Add card from current scene" in Brief stores the default frame (centre 0, 0, zoom 1),
-  and a card saved in 3D stores centre 0, 0 (the axon camera has no inverse); the Brief frame can
-  differ from the Build frame.
-- N-17: the Library loads every record for its thumbnail, and `inspector/Profile.tsx` lists the
-  collections from `listVignettes` again.
-- N-18: Add waypoints arms a new path of the selected threat's type; the board has no append to
-  an existing path. The mockup appends on the plan (line 445).
-- N-21: in headless 1440 x 900 the mockup's stage renders pushed down and oversized; the
-  `R-mockup-*` shots show part of its board. A capture limit.
-- The perf spec does not measure the deck PDF (the review timed 20 pages at 162 ms by hand) or
-  a long-task quiet window for "interactive"; preview latency is taken at the DOM mutation.
+`git show 0b216e2:docs/plan.md` has the list before 10.F. The items 10.F and the review left
+open (the selected row tone, the `.ps-strip` rules, the ring press on an unselected system, the
+Brief and 3D card frames, Add waypoints appending to the selected path, the Library's record
+loads, the "MAX RG" gap, the "C2 and TSPI" and "MAX RG" words) are lane 11.1 in section 6, not
+repeated here. Left as notes from the review: N-10 (data product React keys are indexes), N-21
+(the mockup's stage renders pushed down in headless capture). The perf spec does not measure
+the deck PDF (the review timed 20 pages at 162 ms by hand) or a long-task quiet window for
+"interactive"; preview latency is taken at the DOM mutation.
 
 From lanes 10.2 to 10.6:
 - The inspector leaves out `chainTime` (still read by `preview.ts` and `derived.ts`), the
@@ -492,7 +574,7 @@ From lanes 10.2 to 10.6:
    when it matters. The legacy app and the mockup keep their own storage (`profileStudio.v3`
    in localStorage for the mockup) and seed CUAS-001.
 
-**Pruned on 2026-11-01 for this handoff.** The previous section 8 (the tenth-session kickoff
-text, the 10.1 open items that 10.2 to 10.6 closed: Class, the top bar version, Kbd and Tooltip
+**Pruned on 2026-11-01 for this handoff.** The small open items moved into lane 11.1; the
+previous section 8 (the tenth-session kickoff text, the 10.1 open items that 10.2 to 10.6 closed: Class, the top bar version, Kbd and Tooltip
 sizes, Showcase `run.run`, the 900 px top bar, the FOV clamp, the persist comments, the
 Prettier item, the readout panel, the nudge arrows). `git show 0b216e2:docs/plan.md` has it.
