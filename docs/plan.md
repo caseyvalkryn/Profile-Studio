@@ -23,6 +23,8 @@ These are settled. Do not reopen them without the user.
 | Palette | Warm paper and graphite with affiliation inks, from `legacy/css/tokens.css` and the mockup `:root`, in lane 10.6 (phase 10 decision 3) | User, 2026-11-01 |
 | Mode names | Library, Build, Brief (phase 10 decision 2). The mockup's Collect, Compose, Brief set the direction, not the words | User, 2026-11-01 (kickoff prompt) |
 | Inspector | The whole-scene inspector replaces the selection inspector (phase 10 decision 4). The selected object's row expands; nothing is lost | User, 2026-11-01 (kickoff prompt) |
+| "Envelopes" | The layer that draws the hull around a group of threats keeps the mockup's and spec's name "Envelopes" (review 10.R N-05); the `stat-te-terminology` skill allows the term for this layer | User, 2026-11-01 |
+| Hint grey | `--text-subtle` darkens from #7b7d73 to #696b61 in the light theme (4.97:1 on the panel, 4.55:1 on the board), the nearest warm grey at WCAG AA (review 10.R N-04); the dark value stays | User, 2026-11-01 |
 
 ## 2. Stack
 
