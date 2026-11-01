@@ -94,14 +94,10 @@ describe('workspace scoping', () => {
     expect(useUi.getState().panels.list).toBe(false);
   });
 
-  it('R waits for lane 9.3.2 and a disabled key toasts its reason', () => {
+  it('a disabled key toasts its reason in user words', () => {
     inWs('build');
-    expect(dispatchKey(key('r'), undefined, true)).toBeNull();
-    expect(useUi.getState().stripTab).toBe(UI_DEFAULTS.stripTab);
-    expect(useToast.getState()).toMatchObject({
-      text: 'The chart and readout strips arrive in lane 9.3.2.',
-      visible: true,
-    });
+    expect(dispatchKey(key('['), undefined, true)).toBeNull();
+    expect(useToast.getState()).toMatchObject({ text: 'Not in this version.', visible: true });
   });
 
   it('/ focuses the Library search in the Library only', () => {

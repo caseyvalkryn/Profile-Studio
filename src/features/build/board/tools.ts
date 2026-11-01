@@ -35,7 +35,6 @@ import { find } from '../../../commands/select';
 import { useDocument } from '../../../state/document';
 import { useUi, type ArmedItem } from '../../../state/ui';
 import { showToast } from '../../shell/toastStore';
-import { setDragBaseline } from '../readout/store';
 import { addEventAt } from '../palette/pick';
 import type { BoardArmed } from '../palette/store';
 import { boardDerived, boardScene } from './derived';
@@ -117,7 +116,7 @@ const select = (keys: string[], selIndex: { key: string; i: number } | null = nu
 
 // ---------------------------------------------------------------- selection mapping
 
-/** The v6 key a hit selects, with the index the key cannot carry (an area vertex). */
+/** The key a hit selects, with the index the key cannot carry (an area vertex). */
 export function keyOfHit(rec: Scene, hit: Hit): { key: string; i: number | null } | null {
   if (hit.kind === 'path' && hit.i != null) {
     const p = rec.scene.paths.find((x) => x.id === hit.id);
@@ -129,7 +128,7 @@ export function keyOfHit(rec: Scene, hit: Hit): { key: string; i: number | null 
   return { key: hit.key, i: null };
 }
 
-/** Legacy `Sel {kind, id, i}` for a v6 key. Waypoint keys resolve to their path and index. */
+/** Legacy `Sel {kind, id, i}` for a key. Waypoint keys resolve to their path and index. */
 export function selFromKey(
   rec: Scene,
   key: string | null | undefined,
@@ -160,7 +159,7 @@ export function currentSel(rec: Scene): Sel {
   return selFromKey(rec, keys[0], useBoard.getState().selIndex);
 }
 
-/** The v6 key of a path display id. */
+/** The key of a path display id. */
 export function pathKey(rec: Scene, pathId: string): string | null {
   const p = rec.scene.paths.find((x) => x.id === pathId);
   return p ? p.key : null;
@@ -588,7 +587,7 @@ export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragH
   if (!hit || !world) return null;
   const cur = current();
   if (!cur) return null;
-  const { doc, rec } = cur;
+  const { rec } = cur;
   const kind = hit.kind === 'wp' ? 'path' : hit.kind === 'vertex' ? 'volume' : hit.kind;
   const id = hit.id;
   let role = hit.role || 'centre';
@@ -632,7 +631,6 @@ export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragH
   docStore.beginDrag(label0);
   const ghost: Ghost = { rec, derived: { timed: d0.timed } };
   useBoard.getState().set({ ghost, ghostLabel: null });
-  setDragBaseline(doc);
   let done = false;
 
   // the pre-drag record of the dragged object, for the arc end and volume move roles
@@ -660,7 +658,6 @@ export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragH
     if (!a || !b) {
       docStore.cancelDrag();
       useBoard.getState().set({ ghost: null });
-      setDragBaseline(null);
       return null;
     }
     const mid: Waypoint = {
@@ -862,7 +859,6 @@ export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragH
 
   const finish = () => {
     useBoard.getState().set({ ghost: null, ghostLabel: null, dragLabel: null });
-    setDragBaseline(null);
   };
 
   const drag: DragHandle = {

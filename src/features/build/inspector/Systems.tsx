@@ -22,7 +22,20 @@ import { useUi } from '../../../state/ui';
 import { deselect, dropRefs, useOne } from './common';
 import { displayIds } from './edit';
 import { hText } from './parse';
-import { Choice, edit, F, Field, Group, Item, NumField, Sec, toggle, useSuffix, Warn } from './Row';
+import {
+  Choice,
+  edit,
+  F,
+  Field,
+  Group,
+  Item,
+  NumField,
+  Sec,
+  Swatch,
+  toggle,
+  useSuffix,
+  Warn,
+} from './Row';
 
 type Sys =
   | { family: 'sensors'; value: Sensor }
@@ -91,12 +104,7 @@ export function Systems({ v }: { v: Vignette }) {
                   id={b.id}
                   current={current}
                   onSelect={() => toggle(b.key, current)}
-                  lead={
-                    <span
-                      aria-hidden
-                      className="mt-[5px] inline-block size-2 shrink-0 bg-[var(--friend)]"
-                    />
-                  }
+                  lead={<Swatch kind="friend" />}
                   title={
                     <>
                       {b.id}

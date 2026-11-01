@@ -12,7 +12,14 @@ import { bounds } from './geo';
 import { list } from './layers';
 import { card, hitTest, scene, type BoardView, type RenderOpts } from './render';
 import { toScene } from './scene';
-import { FIXTURES, derivedView, fixture, loadLegacy, wellFormed } from './testkit';
+import {
+  FIXTURES,
+  derivedView,
+  fixture,
+  loadLegacy,
+  wellFormed,
+  type LegacyPatch,
+} from './testkit';
 import type { DerivedView, Scene } from './types';
 
 const CAMS = ['plan', 'elev', 'axon'] as const;
@@ -188,6 +195,14 @@ describe('legacy render cases on the fixtures', () => {
     expect(ghost.svg).toContain('class="ghostrec"');
   });
 
+  it('directed energy draws the EW ring class (F-11)', () => {
+    const sc = structuredClone(c1);
+    const ew = sc.scene.systems.find((x) => x.kind === 'ew')!;
+    ew.kind = 'de';
+    const svg = scene(sc, { proj: 'plan', t: 60 }, SIZE, { derived: d1 }).svg;
+    expect(svg).toMatch(new RegExp('class="ring rg-ew[^"]*" data-k="system" data-id="' + ew.id));
+  });
+
   it('track lifecycle on CUAS-001 T1: Detect 28 s, Track 46 s, Identify 150 s', () => {
     const frameAt = (t: number) => {
       const s = scene(c1, { proj: 'plan', t }, SIZE, { derived: d1 }).svg;
@@ -261,8 +276,40 @@ describe('legacy render cases on the fixtures', () => {
   });
 });
 
+// Phase 10 deviations from the legacy renderer (review 10.R, lane 10.F). The legacy scripts load
+// with these edits, so every other byte still compares against the live legacy output.
+const PHASE_10_DEVIATIONS: readonly LegacyPatch[] = [
+  // F-02: the selection and the focus place their labels first; event labels go ahead of the
+  // track datablocks (p 1), as the mockup never culls an event label.
+  [
+    '43-layer-labels.js',
+    'var pa = selId != null && a.id === selId ? 0 : a.p, pb = selId != null && b.id === selId ? 0 : b.p;',
+    'var fo = ctx.focus || [], first = function (id) { return id != null && (id === selId || fo.indexOf(id) >= 0); };' +
+      ' var pa = first(a.id) ? 0 : a.p, pb = first(b.id) ? 0 : b.p;',
+  ],
+  ['43-layer-events.js', 'ctx.label({ p: 3, id: e.id,', 'ctx.label({ p: 0.5, id: e.id,'],
+  // F-06: in Elevation MAX RG clamps inside the frame, clear of the axis title, and the zero
+  // range tick gives way to the labels at the origin.
+  [
+    '43-layer-reach.js',
+    'top = [tp[0], tp[1] - 4];',
+    'top = [tp[0], Math.max(tp[1] - 4, cam.frame.y0 + 12)];',
+  ],
+  [
+    '43-layer-grid.js',
+    'if (!ctx.thumb) out += S("text", { x: t.px, y: r1(f.y1 + 14),',
+    'if (!ctx.thumb && t.v !== 0) out += S("text", { x: t.px, y: r1(f.y1 + 14),',
+  ],
+  // F-11: directed energy draws the EW ring, as the mockup's "ring ew".
+  [
+    '43-layer-reach.js',
+    's.kind === "ew" ? "rg-ew"',
+    's.kind === "ew" || s.kind === "de" ? "rg-ew"',
+  ],
+];
+
 describe('byte parity with the legacy renderer', () => {
-  const PS = loadLegacy();
+  const PS = loadLegacy(PHASE_10_DEVIATIONS);
   const seeds = PS.seed.load();
   function port(r: (typeof seeds)[number]): Scene {
     return structuredClone(toScene(importLegacyV4(JSON.parse(JSON.stringify(r)))));

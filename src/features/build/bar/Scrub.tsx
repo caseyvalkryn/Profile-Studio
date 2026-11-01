@@ -108,7 +108,7 @@ export default function Scrub() {
         </div>
       </ContextMenu>
       <span
-        className="w-14 shrink-0 text-right font-mono text-data text-text"
+        className="w-[4.5rem] shrink-0 text-right font-mono text-data whitespace-nowrap text-text"
         data-testid="scrub-value"
       >
         {timeOn ? `${Math.round(tS)} s` : 'full run'}

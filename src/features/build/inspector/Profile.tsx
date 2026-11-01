@@ -1,6 +1,6 @@
 // The profile sections of the whole-scene inspector (legacy/mockup-v3.html drawInspector):
 // Purpose, Telemetry, Data products and Site.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { newKey, nextId } from '../../../domain/ids';
 import { PROFILE_CLASSES, type Vignette } from '../../../domain/types';
 import { listVignettes } from '../../../state/persist';
@@ -33,11 +33,6 @@ function useCollections(current: string): string[] {
 
 export function Purpose({ v }: { v: Vignette }) {
   const collections = useCollections(v.collection);
-  // Field has no `list` prop: point its input at the datalist.
-  const collRef = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    collRef.current?.querySelector('input')?.setAttribute('list', COLLECTIONS_LIST);
-  }, []);
   return (
     <Sec title="Purpose">
       <F caption="Question" top>
@@ -71,14 +66,13 @@ export function Purpose({ v }: { v: Vignette }) {
         />
       </F>
       <F caption="Collection">
-        <span ref={collRef} className="contents">
-          <Field
-            name="Collection"
-            label="set collection"
-            value={v.collection}
-            write={(text) => (d) => void (d.collection = text)}
-          />
-        </span>
+        <Field
+          name="Collection"
+          label="set collection"
+          value={v.collection}
+          list={COLLECTIONS_LIST}
+          write={(text) => (d) => void (d.collection = text)}
+        />
         <datalist id={COLLECTIONS_LIST}>
           {collections.map((c) => (
             <option key={c} value={c} />

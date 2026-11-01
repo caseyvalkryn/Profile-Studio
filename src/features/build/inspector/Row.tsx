@@ -11,7 +11,7 @@ import { readout } from '../../shared/units';
 import { parseValue, shown, suffix, type FieldType } from './parse';
 
 export const CONTROL = `h-ctl-dense w-full min-w-0 rounded-[3px] border border-surface-3 bg-surface-0 px-[5px] text-data text-text ${focusRing}`;
-export const MINI = `h-ctl-dense shrink-0 rounded-[3px] border border-surface-3 bg-surface-1 px-2 text-data text-text hover:bg-surface-2 disabled:opacity-40 ${focusRing}`;
+export const MINI = `h-ctl-dense shrink-0 rounded-[3px] border border-surface-3 bg-surface-1 px-2 text-data text-text hover:bg-surface-3 disabled:opacity-40 ${focusRing}`;
 export const X = `h-ctl-mini w-[22px] shrink-0 rounded-[3px] text-data text-muted hover:bg-surface-3 hover:text-text disabled:opacity-40 ${focusRing}`;
 
 /** Unfocused text at readout precision (review 2 F-09): 2.70 nm, 328 ft, 31 kt. */
@@ -137,7 +137,7 @@ export function Item(props: {
     <div>
       <div
         aria-current={props.current ? 'true' : undefined}
-        className={`flex items-start gap-1.5 rounded-[4px] px-1.5 py-1.5 hover:bg-surface-2 ${
+        className={`flex items-start gap-1.5 rounded-[4px] px-1.5 py-1.5 hover:bg-surface-3 ${
           props.current ? 'bg-surface-2 shadow-[inset_2px_0_0_var(--accent)]' : ''
         }`}
       >
@@ -164,16 +164,15 @@ export function Item(props: {
   );
 }
 
-/** The colour mark before a row title (mockup .sw). */
-export function Swatch({ kind }: { kind: 'hostile' | 'volume' }) {
-  return (
-    <span
-      aria-hidden
-      className={`mt-[5px] inline-block size-2 shrink-0 ${
-        kind === 'hostile' ? 'bg-[var(--state-hostile)]' : 'border border-muted'
-      }`}
-    />
-  );
+const SWATCH = {
+  hostile: 'bg-[var(--state-hostile)]',
+  friend: 'bg-[var(--friend)]',
+  neutral: 'border border-[var(--neutral)]',
+} as const;
+
+/** The colour mark before a row title (mockup .sw: h, f, n). */
+export function Swatch({ kind }: { kind: keyof typeof SWATCH }) {
+  return <span aria-hidden className={`mt-[5px] inline-block size-2 shrink-0 ${SWATCH[kind]}`} />;
 }
 
 /** Toggle the selection to one key: a click on the selected row clears it. */
@@ -232,6 +231,8 @@ export function Field(props: {
   mono?: boolean;
   placeholder?: string;
   rows?: number;
+  /** The id of a datalist the input suggests from. */
+  list?: string;
   className?: string;
 }) {
   const [focused, setFocused] = useState(false);
@@ -300,6 +301,7 @@ export function Field(props: {
         <input
           {...common}
           type="text"
+          list={props.list}
           onChange={(e) => input(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {

@@ -29,24 +29,13 @@ export type Units = 'nav' | 'si';
 /** `auto` follows the system setting (legacy `90-app.js` theme cycle). */
 export type Theme = 'auto' | 'light' | 'dark';
 export type Workspace = 'library' | 'build' | 'brief';
-/** The bottom strip's tab; R cycles them in this order. */
-export type StripTab = 'timeline' | 'chart' | 'readout';
 /** The Elevation view's section: along the selected path, or the ring around the selected asset. */
 export type ElevationMode = 'alongPath' | 'fromAsset';
-/**
- * Build panel visibility (legacy `ui.panels`). Inspector, asset library (list), timeline and top
- * bar show by default; the rest are opt-in.
- */
+/** Build panel visibility (legacy `ui.panels`): inspector, asset list and top bar. */
 export type Panels = {
   inspector: boolean;
   list: boolean;
-  timeline: boolean;
   topbar: boolean;
-  chips: boolean;
-  readout: boolean;
-  events: boolean;
-  debrief: boolean;
-  snapshots: boolean;
 };
 export type PanelName = keyof Panels;
 /** The shell's modal dialogs (legacy `51-panel-dialog.js`). */
@@ -54,13 +43,7 @@ export type ShellDialog = 'export' | 'import';
 export const PANEL_DEFAULTS: Panels = {
   inspector: true,
   list: true,
-  timeline: true,
   topbar: true,
-  chips: false,
-  readout: false,
-  events: false,
-  debrief: false,
-  snapshots: false,
 };
 export type LoopRange = { startS: number; endS: number };
 export type MapPoint = { x: number; y: number };
@@ -126,7 +109,6 @@ export type UiState = {
   dialog: ShellDialog | null;
   workspace: Workspace;
   panels: Panels;
-  stripTab: StripTab;
   elevationMode: ElevationMode;
   clipboard: Clip[];
   /** Incremented by requestFit; the map fits its view when this changes. */
@@ -159,7 +141,6 @@ export type UiState = {
   /** Set one panel; `show` omitted flips it. */
   togglePanel: (name: PanelName, show?: boolean) => void;
   setPanels: (panels: Partial<Panels>) => void;
-  setStripTab: (tab: StripTab) => void;
   setElevationMode: (mode: ElevationMode) => void;
   setClipboard: (clips: Clip[]) => void;
   requestFit: () => void;
@@ -191,7 +172,6 @@ export const UI_DEFAULTS = {
   // without the shell (unit tests) gets the Build keys.
   workspace: 'build',
   panels: PANEL_DEFAULTS,
-  stripTab: 'timeline' as StripTab,
   // legacy opens Elevation as range from the asset
   elevationMode: 'fromAsset' as ElevationMode,
   clipboard: [] as Clip[],
@@ -229,7 +209,6 @@ export const useUi = create<UiState>()((set) => ({
   togglePanel: (name, show) =>
     set((s) => ({ panels: { ...s.panels, [name]: show ?? !s.panels[name] } })),
   setPanels: (panels) => set((s) => ({ panels: { ...s.panels, ...panels } })),
-  setStripTab: (stripTab) => set({ stripTab }),
   setElevationMode: (elevationMode) => set({ elevationMode }),
   setClipboard: (clipboard) => set({ clipboard }),
   requestFit: () => set((s) => ({ fitSeq: s.fitSeq + 1 })),

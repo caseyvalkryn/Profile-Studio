@@ -1,6 +1,6 @@
 // Fiber FPV, no RF (spec section 9, row 5). Three sensors of different kinds, so the preview's
 // first-detection sensor and the per-sensor windows show which one detects a threat that emits
-// nothing. The run rows carry no detecting-sensor field, so 1.1.1 scores the layer as a whole.
+// nothing.
 // Laydown (build.ts rule): the approach from the south east ends on an asset east of the radar,
 // clear of the sensor cluster; the EO/IR sensor looks south east up the approach.
 import { terrainFollowingIngress } from '../behaviors';
@@ -12,7 +12,7 @@ const ASSET = { x: 600, y: 400 };
 const q = () =>
   question(
     'Which sensor detects a fiber-optic FPV that emits no RF, and does the layer detect it at all?',
-    'The RF detector cannot see this threat (catalog: no RF emission). Read the first-detection sensor in the preview. 1.1.1 scores the layer; the run rows do not name the detecting sensor.',
+    'The RF detector cannot see this threat (catalog: no RF emission). Read the first-detection sensor in the preview: the first-see tick on the path names the detecting sensor.',
   );
 
 export const fiberFpv: Template = {

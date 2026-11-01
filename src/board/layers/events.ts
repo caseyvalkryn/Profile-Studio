@@ -135,8 +135,9 @@ register({
       if (!ctx.thumb && e.label) {
         const lx = c[0] + 10;
         const ly = c[1] + 14;
+        // ahead of the track datablocks (p 1): the mockup never culls an event label (F-02)
         ctx.label({
-          p: 3,
+          p: 0.5,
           id: e.id,
           box: ctx.sym.textBox(lx, ly, e.label, 11.5),
           svg: ctx.sym.label(lx, ly, e.label, 'evl' + dim),

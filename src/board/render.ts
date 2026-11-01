@@ -69,7 +69,7 @@ export type RenderResult = { svg: string; cam: Cam; hits: Hit[]; fragments: Frag
 
 const keyMemo = new WeakMap<Scene, Map<string, string>>();
 
-/** Display id to v6 key over every keyed record of the scene. */
+/** Display id to key over every keyed record of the scene. */
 function keysOf(record: Scene): Map<string, string> {
   let m = keyMemo.get(record);
   if (m) return m;

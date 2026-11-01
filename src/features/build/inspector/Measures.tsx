@@ -160,7 +160,7 @@ function Picker({ v, onDone }: { v: Vignette; onDone: () => void }) {
                       });
                     });
                   }}
-                  className={`flex w-full gap-1.5 rounded-[3px] px-1 py-0.5 text-left text-data text-text hover:bg-surface-2 disabled:opacity-40 ${focusRing}`}
+                  className={`flex w-full gap-1.5 rounded-[3px] px-1 py-0.5 text-left text-data text-text hover:bg-surface-3 disabled:opacity-40 ${focusRing}`}
                 >
                   <span className="w-12 shrink-0 font-mono text-micro text-muted">{m.id}</span>
                   <span className="min-w-0 flex-1 truncate">{m.name}</span>

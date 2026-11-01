@@ -77,7 +77,8 @@ function drawElev(ctx: Ctx): string {
       y2: r1(f.y1),
       class: t.v === 0 ? 'axis' : 'grid',
     });
-    if (!ctx.thumb)
+    // the zero tick sits under the labels at the origin; the axis marks it (F-06)
+    if (!ctx.thumb && t.v !== 0)
       out += S(
         'text',
         { x: t.px, y: r1(f.y1 + 14), class: 'tick', 'text-anchor': 'middle' },

@@ -1,5 +1,4 @@
 import { act, fireEvent, render } from '@testing-library/react';
-import { vi } from 'vitest';
 import '../../../ui/test-utils';
 import { cameras } from '../../../board';
 import { makeUnits } from '../../../board/format';
@@ -7,7 +6,6 @@ import { bounds as geoBounds } from '../../../board/geo';
 import { testSensor, testVignette } from '../../../engine/testVignette';
 import { useDocument } from '../../../state/document';
 import { UI_DEFAULTS, useUi } from '../../../state/ui';
-import { useReadout } from '../readout/store';
 import { useQuickAdd } from '../palette/store';
 import Board, { cancel, mounted } from './Board';
 import { boardCommands } from './commands';
@@ -156,14 +154,12 @@ describe('Board', () => {
     expect(useUi.getState().stack).toBeNull();
   });
 
-  it('drags a range handle as one undo step with the pre-drag ghost and the readout baseline', () => {
+  it('drags a range handle as one undo step with the pre-drag ghost', () => {
     const { stage } = mount();
-    const spy = vi.spyOn(useReadout.getState(), 'setDragBaseline');
     act(() => useUi.getState().setSelection(['k-S-02']));
     act(() => boardFlush());
     const rh = hitOf('system', 'S-02', 'range');
     const past = useDocument.getState().past.length;
-    const doc0 = useDocument.getState().doc!;
     const bounds0 = useBoard.getState().bounds;
     expect(bounds0).not.toBeNull();
     down(stage, rh.sx, rh.sy);
@@ -173,7 +169,6 @@ describe('Board', () => {
       2500,
     );
     expect(useBoard.getState().bounds).toBe(bounds0);
-    expect(useReadout.getState().dragBase).toBe(doc0);
     const label = useBoard.getState().dragLabel!;
     expect(label.text).toMatch(/^S-02 /);
     move(stage, rh.sx + 60, rh.sy);
@@ -185,7 +180,6 @@ describe('Board', () => {
     expect(useBoard.getState().ghost).toBeNull();
     // the camera bounds stick past the drag end
     expect(useBoard.getState().bounds).toBe(bounds0);
-    expect(spy).toHaveBeenLastCalledWith(null);
     expect(useDocument.getState().history.at(-1)).toMatch(/set S-02 range/);
     act(() => useDocument.getState().undo());
     expect(useDocument.getState().doc!.sensors[1]!.rangeM).toBe(2500);
@@ -342,6 +336,29 @@ describe('Board', () => {
     expect(useUi.getState().selectedKeys).toEqual([]);
   });
 
+  it('a 3D drag that starts on a sensor orbits, edits nothing and shows the edit prompt', () => {
+    const { stage } = mount();
+    act(() => useUi.getState().setView('3d'));
+    act(() => boardFlush());
+    const s = hitOf('system', 'S-02');
+    const doc0 = useDocument.getState().doc;
+    const past = useDocument.getState().past.length;
+    const yaw0 = useBoard.getState().yaw;
+    down(stage, s.sx, s.sy);
+    move(stage, s.sx + 60, s.sy + 10);
+    up(stage, s.sx + 60, s.sy + 10);
+    expect(useBoard.getState().yaw).not.toBe(yaw0);
+    expect(useDocument.getState().doc).toBe(doc0);
+    expect(useDocument.getState().past.length).toBe(past);
+    expect(useBoard.getState().readout!.text).toBe('Edit in Plan (1) or Elevation (2).');
+    // a drag on empty ground orbits with no prompt
+    act(() => useBoard.getState().set({ readout: null }));
+    down(stage, 2, 2);
+    move(stage, 40, 2);
+    up(stage, 40, 2);
+    expect(useBoard.getState().readout).toBeNull();
+  });
+
   it('zooms at the cursor on wheel and pans with the middle button', () => {
     const { stage } = mount();
     fireEvent.wheel(stage, { deltaY: -200, clientX: 100, clientY: 100 });
@@ -474,14 +491,12 @@ describe('Board', () => {
       mount();
       const b0 = useBoard.getState().bounds!;
       act(() =>
-        useDocument
-          .getState()
-          .open(
-            testVignette({
-              id: 'V-two',
-              sensors: [testSensor('S-01', 'radar', 12000, { x: 3000, y: 0 })],
-            }),
-          ),
+        useDocument.getState().open(
+          testVignette({
+            id: 'V-two',
+            sensors: [testSensor('S-01', 'radar', 12000, { x: 3000, y: 0 })],
+          }),
+        ),
       );
       act(() => boardFlush());
       const rec = [...mounted][0]!.renderer.last!.rec;

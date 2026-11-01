@@ -74,6 +74,7 @@
   .ps-overlay,
   .ps-tabs,
   .ps-sheet,
+  .dl-toast,
   .brief-screen {
     display: none !important;
   }

@@ -2,7 +2,7 @@
 // `ui.snap`, `ui.hover.t`): the viewer transform, the axon orbit, the placement and ruler
 // objects, the pointer and the index part of the selection. Nothing here is a profile edit.
 // `ui.view` and `ui.elevationMode` (src/state/ui.ts) pick the camera; `ui.selectedKeys` and
-// `ui.hoverKey` carry the selection; this store keeps what v6 keys cannot (a vertex index).
+// `ui.hoverKey` carry the selection; this store keeps what keys cannot (a vertex index).
 import { create } from 'zustand';
 import type { Bounds } from '../../../board/geo';
 import type { Ghost, Placing, Ruler } from '../../../board/layers';

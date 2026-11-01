@@ -54,7 +54,6 @@ export function timeCursor(ctx: CommandContext): number | null {
   return ctx.pointer?.tS ?? ctx.ui.tS;
 }
 
-export const CARDS_LATER = 'Cards arrive in lane 9.4.1';
 const OPEN_FIRST = 'Open a profile first';
 
 const keyArg = (arg: unknown) => (typeof arg === 'string' ? arg : null);

@@ -47,10 +47,12 @@ describe('feature command registration', () => {
     }
   });
 
-  it('enables 3D and gives K to the readout panel in Build', () => {
+  it('enables 3D; no command toggles a panel nothing mounts, and R and K are free', () => {
     expect(get('view.3d')!.shortcut).toBe('3');
-    expect(get('panel.readout')!.shortcut).toBe('K');
-    expect(sheetRows('build').some((r) => r.ids.includes('panel.readout'))).toBe(true);
-    expect(activeIn(get('panel.readout')!, 'brief')).toBe(false);
+    for (const id of ['chips', 'readout', 'events', 'debrief', 'snapshots'])
+      expect(get(`panel.${id}`), id).toBeUndefined();
+    expect(get('view.stripCycle')).toBeUndefined();
+    for (const ws of ['build', 'brief'] as const)
+      expect(sheetRows(ws).some((r) => r.keys === 'R' || r.keys === 'K')).toBe(false);
   });
 });
