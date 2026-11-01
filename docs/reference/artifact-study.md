@@ -1,7 +1,9 @@
 # Artifact study: the legacy app as the capability bar
 
-Date: 2026-10-31. Status: approved scope for the post-MVP upgrade. The plan is `docs/plan.md`
-phase 9. `docs/spec.md` and `docs/design-principles.md` were amended from this study on the same
+Date: 2026-10-31. Status: history. This was the approved scope for phase 9; the pivot of
+2026-11-01 (`docs/plan.md` phase 10) superseded sub-phases 9.3 to 9.5 and removed the run
+and score surface. Section 2 (what the legacy app does well) stays the source list for parts
+that return when the user asks. `docs/spec.md` and `docs/design-principles.md` were amended from this study on the same
 day; where this file and the spec disagree, the spec wins and this file is corrected.
 
 Read this after `docs/design-principles.md` and `docs/spec.md`. It answers three questions: what

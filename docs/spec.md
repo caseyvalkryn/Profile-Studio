@@ -1,8 +1,8 @@
-# Profile Studio MVP specification
+# Profile Studio specification
 
-Status: definitive for the MVP and the upgrade. Date: 2026-10-30, amended 2026-10-31 from
-`docs/reference/artifact-study.md` (sections 1, 2, 5 to 8, 10 to 12), amended 2026-11-01 in
-lane 10.1 (sections 1, 4, 6, 7, 8, 11, 12). Read
+Status: definitive for phase 10. Date: 2026-10-30, amended 2026-10-31 from
+`docs/reference/artifact-study.md`, amended 2026-11-01 in lane 10.1 and again in the handoff
+of the same day (sections 1, 2, 5 and 7 to 12 pruned to the pivot). Read
 `docs/design-principles.md` first. When this spec and a principle disagree, the principle wins
 and this spec is corrected. The word "vignette" in code and in sections written before the
 amendment means the record the UI calls a profile.
@@ -25,23 +25,23 @@ and briefs it in under 10 minutes.
 **Non-goals.** Running or scoring a test. Later phases: backend, accounts, multi-user editing,
 vos integration, live data feeds, false alarm simulation, real-system specification library.
 
-**Upgrade (2026-10-31).** The MVP passed its acceptance suite on 2026-10-30. The upgrade brings
-the app to the capability of the legacy app and past it: a New profile flow, the legacy type
-system, the three legacy views (Plan, Elevation, 3D), the legacy board layers and readouts,
-authored events with a debrief overlay, record round-trip, and a Brief workspace with export.
-It is delivered as a one-to-one port of the legacy interface onto the MVP engine (plan section 6,
-phase 9). Scope and decisions are in `docs/reference/artifact-study.md`. The first-use goal does
-not change.
+**History.** The MVP passed its acceptance suite on 2026-10-30. The upgrade of 2026-10-31
+(plan phase 9) ported the legacy board, rail, palette, menus, inspector and readout onto the
+MVP engine. Its remaining sub-phases were superseded on 2026-11-01 by phase 10, which makes
+the build a polished version of the mockup. `docs/reference/artifact-study.md` records the
+upgrade's scope. The first-use goal did not change.
 
 ## 2. Terms
 
 Use these words in the UI. One word for one thing. The code keeps the type names it has:
 `Vignette` is the type of a profile.
 
-| Term | Meaning | Replaces (legacy) |
+| Term | Meaning | Replaces (legacy, mockup) |
 | --- | --- | --- |
-| Profile | One test situation: site, assets, threats, question, runs, cards | profile; "vignette" in the MVP |
-| Library | The start screen: New, templates and saved profiles | Collect |
+| Profile | One test situation: site, assets, threats, question, data products, measures, cards | profile; "vignette" in the code |
+| Library | The start screen: New, templates and saved profiles grouped by collection | Collect |
+| Collection | The group a profile belongs to in the Library | collection |
+| Class | The kind of test the profile plans: Counter-UAS, Multi-aircraft, One-way attack, Surrogate, Custom | class |
 | Template | A read-only profile that opens as a new copy | template |
 | Asset | Anything placed on the map: threat, sensor, effector, C2 node, TSPI station, area | item |
 | Threat | A UAS with a type from the catalog and a flight path | aircraft |
@@ -52,22 +52,17 @@ Use these words in the UI. One word for one thing. The code keeps the type names
 | Height plane | A reference altitude drawn across the scene | plane |
 | View | Plan, Elevation or 3D. Plan and Elevation edit; 3D looks | camera (plan, elev, axon) |
 | Authored event | A planned kill-chain event at a time on a flight path: detect, track, identify, engage, split, merge, loiter, terminal, checkpoint | event |
-| Debrief | Flown TSPI and events loaded after a range run, shown against the plan | debrief |
 | Snapshot | A time at which envelopes draw when the time cursor is off | snapshot |
-| Run | One simulation batch of N replicates with one seed | none |
-| Replicate | One simulated trial. It writes one DroneScore run row per threat | none |
-| Measure | One DroneScore row, by ID and name | MOP text |
-| Threshold | The value a measure must meet in this vignette | none |
 | Question | `Q-nn`: what the test must answer | purpose |
-| Hypothesis | `H-nn`: a testable statement on one measure | none |
-| Prediction | The expected value range, recorded before the first run | none |
-| Sweep | Runs over a set of levels of one or two factors | none |
-| AAR | The exported report | none |
+| Data product | The data the test must collect to answer the question | data product |
+| Measure | One DroneScore row, by ID and name, under one F2T2EA step | MOP text |
+| Threshold | The value a measure must meet in this profile | none |
 | Brief | The workspace that presents a profile as cards | Brief mode |
 | Card | A saved way of looking: view, layers, time, focus, caption, notes | card |
-| Clip | A card's playback from one time to another at one rate, with beats | clip |
-| Beat | A time inside a clip where playback stops | beat |
-| Capture | A picture of the stage held for the session and exported as PNG or PDF | none |
+| Debrief | Flown TSPI and events loaded after a range run, shown against the plan. Deferred | debrief |
+
+Clip, beat, capture and the debrief overlay are deferred (plan, phase 10). Their words return
+with them.
 
 ## 3. Standards
 
@@ -83,8 +78,8 @@ Use these words in the UI. One word for one thing. The code keeps the type names
    metres above ground level. The site stores the origin latitude, longitude and ground
    elevation.
 5. **IDs.** Assets get short IDs by kind: `RDR-1`, `RF-1`, `EO-1`, `AC-1`, `EW-1`, `KIN-1`,
-   `DE-1`, `C2-1`, `TM-1`, `T1` for threats, `DA` for the defended asset. Questions and
-   hypotheses use `Q-01` and `H-01`.
+   `DE-1`, `C2-1`, `TM-1`, `T1` for threats, `DA` for the defended asset. Questions use
+   `Q-01`.
 6. **Terminology.** User-facing T&E words follow the `stat-te-terminology` skill.
 
 ## 4. One question, one profile, one brief
@@ -102,11 +97,12 @@ TypeScript types in `src/domain/types.ts`. Runtime validation with zod in `src/d
 
 ```ts
 type Vignette = {
-  schema: 'profile-studio/5'
+  schema: 'profile-studio/6'       // v7 in lane 10.5
   id: string; name: string; updated: string
+  collection: string; class: ProfileClass; version: number   // v7 (10.5); site.name migrates into collection
   site: { name: string; lat: number; lon: number; elevM: number }
   questions: Question[]            // Q-01 ...
-  hypotheses: Hypothesis[]         // H-01 ...
+  hypotheses: Hypothesis[]         // v6 only, deprecated; dropped in v7
   threats: Threat[]
   sensors: Sensor[]
   effectors: Effector[]
@@ -117,10 +113,10 @@ type Vignette = {
   snapshots: number[]              // upgrade: seconds
   cards: Card[]                    // upgrade: the brief
   debrief: Debrief | null          // upgrade: flown data
-  chainTime: { decisionS: number; assignS: number }   // Target step inputs
-  measures: MeasureSetting[]       // the rows this vignette scores, with thresholds
-  runs: RunSummary[]               // stored results, newest first
-  report: ReportDraft
+  chainTime: { decisionS: number; assignS: number }   // Target step inputs for the preview
+  measures: MeasureSetting[]       // the measures of performance, with thresholds
+  runs: RunSummary[]               // v6 only, deprecated; dropped in v7
+  report: ReportDraft              // v6: dataSources is the data products list; v7 keeps that and drops the rest
 }
 type Area = { id: string; kind: 'asset'|'wez'|'nfz'|'ref'; label: string
   pts: { x: number; y: number }[]; zMinM: number; zMaxM: number }
@@ -130,8 +126,8 @@ type AuthoredEvent = { id: string; tS: number
   label: string; threatKey: string; sensorKey: string | null }
 type Card = { id: string; name: string; view: CardView
   layers: Partial<Record<LayerId, boolean>>
-  displays: { timeline: boolean; chart: boolean; readout: boolean }
-  clip: Clip | null; focus: string[] /* keys */; tS: number | null /* null: time off */
+  displays: { timeline: boolean; chart: boolean; readout: boolean }   // deferred
+  clip: Clip | null /* deferred */; focus: string[] /* keys */; tS: number | null /* null: time off */
   caption: string; notes: string }
 type CardView = { kind: 'plan'|'elevation'|'3d'; centre: { x: number; y: number }; zoom: number
   yawDeg: number; pitchDeg: number; ref: 'asset' | string /* key */
@@ -152,22 +148,13 @@ type Effector = { id: string; kind: 'ew'|'kinetic'|'de'; x: number; y: number; z
 type Node = { id: string; kind: 'c2'|'tspi'; x: number; y: number; z: number; rangeM: number
   fovDeg: number /* legacy default 0; 360 or more is the full ring */; bearingDeg: number }
 type MeasureSetting = { id: string /* DroneScore ID */; op: '>='|'<='; threshold: number; unit: string }
-type Hypothesis = { id: string; question: string; measure: string; op: '>='|'<='; value: number
-  prediction: { low: number; high: number } | null; lockedAt: string | null }
+type ProfileClass = 'Counter-UAS'|'Multi-aircraft'|'One-way attack'|'Surrogate'|'Custom'
 type Entered = { value: number | boolean | string; source: string }   // source note is required
-type RunRow = {                    // one per threat per replicate; DroneScore field names
-  run: number; threat: string
-  stage_reached: 'none'|'detect'|'track'|'classify'|'identify'|'engage'|'defeat'
-  detect_range_m: number|null; detect_alt_m: number|null
-  track_continuity_pct: number|null; track_error_m: number|null
-  id_range_m: number|null; id_time_s: number|null; identified_ok: boolean|null
-  engagement_range_m: number|null; time_to_intercept_s: number|null
-  outcome: 'Success'|'Miss'|'No Attempt'
-}
 ```
 
-`SensorModel`, `Node`, `Area`, `RunSummary` and `ReportDraft` are defined in the code with the
-same rules. Every asset, waypoint, question and hypothesis also carries `key: string`, a UUID
+`SensorModel`, `Node`, `Area` and the deprecated v6 types (`Hypothesis`, `RunSummary`,
+`ReportDraft`) are defined in the code with the same rules. Every asset, waypoint and question
+also carries `key: string`, a UUID
 minted at creation that never changes. The display `id` (such as `RDR-1`) can be renamed.
 References between records and React list keys use `key`, never `id` or an array index. Legacy v4 records import through `src/domain/migrate.ts`. The import maps profile to
 vignette, aircraft and paths to threats, systems to sensors, effectors and nodes, volumes to
@@ -180,9 +167,10 @@ Upgrade rules for the record:
    without loss. Nothing is flattened to a note.
 2. A card stores a way of looking, never a picture. Captured renders and attached images live in
    session memory only and are not part of the record or of IndexedDB.
-3. `ReportDraft.slides` keeps its current use as AAR note storage. Cards are `Vignette.cards`.
-4. The schema stamp becomes `profile-studio/6`. A v5 record migrates with empty lists and a
-   null debrief.
+3. Cards are `Vignette.cards`. `report.dataSources` is the data products list.
+4. The schema stamp is `profile-studio/6`. A v5 record migrates with empty lists and a null
+   debrief. v7 (lane 10.5) adds `collection`, `class` and `version`, keeps the data products
+   and drops the run fields. A v6 record migrates without loss.
 
 ## 6. Engine
 
@@ -209,30 +197,32 @@ Three workspaces in a top bar: Library, Build, Brief. The command palette
 label, the units toggle and the theme control (auto, light, dark).
 
 **Library.** A New button first. Templates in one row of cards with a map thumbnail, the
-question and the F2T2EA steps it exercises, Blank last. Saved profiles below, newest first.
-Search filters both. Actions: open, duplicate, export, delete with undo, import JSON (v6, v5 or
-legacy v4), export the library as one JSON.
+question and the F2T2EA steps it exercises, Blank last. Saved profiles below, grouped by
+collection, newest first, each with a thumbnail from its first card and the line "id v3 ·
+class · n cards · n paths" (lane 10.5). Search filters both. Actions: Open, Brief, Duplicate,
+Export, Delete with undo, import JSON (v7, v6, v5 or legacy v4), export the library as one
+JSON.
 
 **New.** The New button and Cmd+N create "Untitled profile" with the default site and one
 defended asset, open Build and focus the name field for inline rename. A menu arrow on New
 offers "From template". Nothing asks a question first.
 
-**Build.** The map fills the screen. The default layout is the four panels below and the top
-bar. Every other panel starts hidden (principle 5.8).
-- Left: the asset library. Grouped as Threats, Sensors, Effectors, C2 and TSPI, Areas, Height
-  planes. Collapses to icons. The command palette's Add group is the quick-add: search by name,
-  catalog values per row, shortcut hints; A opens it, S, V and E open it on a group.
-- Right: the inspector for the selection. It shows only the fields of that kind, with units.
-  Areas show bottom and top. Authored events show type, time, path, sensor and any warning.
-- Bottom: the timeline with one lane per F2T2EA step and one row per threat. Each row shows the
-  planned beads (authored events), the preview stage times, and the flown times when debrief
-  data is loaded. Play, pause, scrub, loop; Shift-drag sets the loop; drag a
-  bead to retime it, snapping to a geometry crossing within 3 s. R cycles the strip between
-  timeline, chart and readout.
-- Top: profile name, the active question, the view switch (Plan, Elevation, 3D).
-- Hidden until asked: layer chips (Shift+1 to 8, one chip per `LayerId`), the readout strip
-  (follows selection then hover, pins a baseline, shows deltas during a drag), the chart strip,
-  the authored-event list, the debrief panel (paste TSPI or load a CSV), the snapshot list.
+**Build.** The board fills the screen. The default layout is the rail on the left, the board
+with its bar and strip in the centre, the inspector on the right, and the top bar (principle
+5.8).
+- Rail: the asset library, grouped as Threats, Sensors, Effectors, C2 and TSPI, Areas, Height
+  planes. The command palette's Add group is the quick-add: search by name, catalog values per
+  row, shortcut hints; A opens it, S, V and E open it on a group.
+- Bar (lane 10.3): the view segment (Plan, Elevation, 3D), Add waypoints as a pressed toggle,
+  the five layer toggles (Reach, Events, Envelopes, Telemetry, Labels), Save as card (C) and the
+  one-line readout. Fit, Ref and the units toggle live in the palette.
+- Under the board (lane 10.3): the time checkbox, the scrub and "full run" (time off by
+  default); the authored events draw as beads on the scrub. Then the two thumbnails of the other
+  cameras, click to switch.
+- Inspector (lane 10.2): the whole scene, every object under its section (Purpose, Aircraft,
+  Paths, Systems, Volumes, Reference planes, Events, Telemetry, Data products, Measures of
+  performance, Site), the selected object's row expanded. A row click selects it on the board.
+  Every field writes to the document on input, one undo step per field.
 - Views. Plan: north up. Elevation: a side view with a mode, Along path (distance along the
   selected flight path) or From asset (range from the reference origin; every path, slant arcs
   with elevation limits, height planes). 3D: the axonometric camera ported from the legacy
@@ -242,29 +232,26 @@ bar. Every other panel starts hidden (principle 5.8).
   ("vertical x3  yaw -35  pitch 55"). A drag in 3D does not edit; it shows "Edit in Plan (1) or
   Elevation (2)".
 - Basemap. The blank grid with range rings, axes, compass and scale bar, as in the legacy
-  board. An imagery underlay for the plan view is deferred (plan section 6, phase 9).
+  board.
 - Drag labels. A drag shows the value under the cursor and, on a second line, the largest
   downstream change, for example "T1 window -0:08".
 
-**Brief.** Cards on the left, the stage in the centre, notes on the right.
-- Save card (C, anywhere in Build) captures the view, layers, time and selection as a card,
-  inserted after the current card. Cards reorder by drag, duplicate and delete with undo.
-- The stage renders the card through the same map, elevation or 3D view at the card's time,
-  with its timeline strip, a caption with resolved tokens, and the readout strip when on. The
-  head shows "n. Name", "n of m", the view and `t+m:ss`.
-- Opening a card applies its view; leaving Brief restores the Build view.
-- Clip: t0, t1, rate and beats on the notes panel. Right plays to the next beat and stops,
-  else moves to the next card. Left steps back a beat, then to t0, then to the previous card.
-  Space is next card, or play and pause when time is on.
-- Presenter: F full stage with the larger type scale, B blank stage, K readout strip, N notes
-  panel, Home and End, 1 to 9 jump to a card, key hints that fade after 3 s. A thumbnail of the
-  next card and an elapsed clock sit under the stage.
-- Capture takes a PNG of the stage at the card's time into session memory and attaches it to
-  the card. The user can attach an image file the same way. Attachments show under the stage and
-  print in the deck. They are not saved.
-- Export: the deck as PDF through the print stylesheet, one page per card with its capture or
-  live render, caption and notes; a card as PNG.
-- Phone: the stage fills the width, Back, dots and Next replace the aids, a swipe changes card.
+**Brief** (lane 10.4). The card strip with thumbnails on the left, the stage in the centre,
+the notes panel on the right.
+- Save as card (C, anywhere in Build) stores the view, layers, time and focus as a card in one
+  undo step, inserted after the current card. Cards move (Up, Down), duplicate and delete with
+  undo.
+- The stage renders the card's view through the board at its time and layers, the focus drawn
+  strong and the rest dim. The head shows "n of m · id". The caption sits under the stage.
+- Previous and Next; Left, Right and Space move between cards. Opening a card applies its view;
+  leaving Brief restores the Build view.
+- The notes panel: name, camera, yaw and pitch, time, focus ids, layers, caption, presenter
+  notes.
+- "Add card from current scene" when the deck is empty.
+- Export: the deck as PDF through the print stylesheet, one page per card with its render,
+  caption and notes.
+- Deferred (plan, phase 10): clips and beats, caption tokens, presenter aids, capture and
+  attachments, the phone stage. Each returns only when the user asks.
 
 **Theme.** One control cycles auto, light and dark. Auto follows the system. The choice persists.
 
@@ -287,7 +274,7 @@ item without dragging arms it for one click on the map.
 | Height plane | Set height, Delete |
 | Authored event | Change type, Move to geometry (when it carries a warning), Delete |
 | Threat (upgrade) | also: Add event here, Formation, Split here (with a time cursor), Merge (with two or more groups) |
-| Timeline | Set time here, Loop from here, Add event here |
+| Scrub | Set time here, Add event here |
 | Card | Open, Open in Brief, Duplicate, Move up, Move down, Delete |
 | Empty map (upgrade) | also: Save card, Add height plane |
 
@@ -328,17 +315,15 @@ bypasses every snap.
 | Home, End | Time to start or end |
 | T | Time cursor on or off |
 | G | Grid snap |
-| R | Strip: timeline, chart, readout |
-| Shift+1 to 8 | Layer chip by number |
+| Shift+1 to 5 | Layer toggle by number: Reach, Events, Envelopes, Telemetry, Labels |
 | =, - | Zoom in, out |
 | Tab, Shift+Tab | Next or previous object of the same kind |
 | I | Inspector open or closed |
 | \ | Both side panels open or closed |
 
-Brief keys (only in Brief): Right or PageDown next beat else next card; Left or PageUp back;
-Space next card or play; Home, End; 1 to 9 jump to card; F full stage; B blank; K readout; N
-notes; Up, Down cycle the focus. Build keys that edit are off in Brief. The registry scopes a
-shortcut by workspace, so 1 to 3 switch views in Build and jump to cards in Brief.
+Brief keys (only in Brief): Right or Space next card; Left previous card; Home, End; Up and
+Down move the current card in the strip; Delete removes it with undo. Build keys that edit are
+off in Brief. The registry scopes a shortcut by workspace.
 
 **Commands.** One registry (`src/commands/`) defines each action once: ID, label, shortcut,
 enable rule with a reason, the kinds it applies to, and the workspaces it is active in. The
@@ -354,7 +339,7 @@ does, then its shortcut. Placed so they never cover the pointer target.
 
 ## 9. Templates
 
-Each template opens ready to run, with thresholds as planning values.
+Each template opens ready to edit and brief, with thresholds as planning values.
 
 | Template | Question | Main measures |
 | --- | --- | --- |
@@ -372,11 +357,11 @@ orbit, racetrack, hover and stare, terminal dive, split, multi-axis salvo.
 
 ## 10. Export
 
-- AAR as PDF through a print stylesheet, light theme.
-- Each chart as PNG and SVG, same look as on screen.
-- Run rows as CSV with DroneScore field names. Profile and runs as JSON. The library as one JSON.
-- The brief deck as PDF through the print stylesheet, one page per card. A card as PNG. Neither
-  export stores anything; captures and attachments leave with the session.
+- The profile as JSON: the record plus the resolved waypoint times per path (`timed`: x, y, z,
+  arrive, depart), as the mockup exports for the range's VAL tooling (lane 10.5). The library
+  as one JSON.
+- The brief deck as PDF through the print stylesheet, light theme, one page per card. An export
+  stores nothing.
 
 ## 11. Budgets
 
@@ -387,7 +372,6 @@ orbit, racetrack, hover and stare, terminal dive, split, multi-axis salvo.
 | First load | Interactive in 2 s on a laptop |
 | Entry bundle | 300 kB gzip. The fonts load outside the entry |
 | 3D view | The map drag budget: 60 frames per second with 40 threats and 15 sensors, same renderer as Plan |
-| Capture | 300 ms |
 | Deck PDF | 20 cards print in 10 s |
 
 ## 12. Acceptance
@@ -412,7 +396,7 @@ The MVP is done when all of these pass in the end-to-end suite:
 11. ~~The engine package builds and runs headless in Node with no DOM.~~
     Retired 2026-11-01, phase 10.
 
-The upgrade is done when the items of 1 to 11 that are not retired still pass and all of these
+Phase 10 is done when the items of 1 to 11 that are not retired still pass and all of these
 pass:
 
 12. New (button and Cmd+N) opens Build with "Untitled profile" and the name field focused; the
@@ -421,17 +405,22 @@ pass:
     at the current time, and prints its vertical exaggeration. A drag on a sensor in 3D shows
     the edit prompt and changes nothing.
 14. The Elevation view switches between Along path and From asset.
-15. Layer chips toggle with Shift+1 to 8; the readout strip pins a baseline and shows a delta
-    during a ring drag.
-16. An authored event retimes by drag on the timeline, warns when it contradicts geometry, and
-    the warning clears when moved to geometry.
-17. A debrief CSV loads and the flown row and flown track appear; the scorecard is unchanged.
+15. The five layer toggles in the Build bar switch their layers on the board; the one-line
+    readout follows the selection.
+16. An authored event shows as a bead on the scrub at its time; a time edit in the inspector
+    moves the bead in one undo step.
+17. ~~A debrief CSV loads and the flown row and flown track appear.~~ Deferred 2026-11-01,
+    phase 10.
 18. A legacy v4 record with height planes, no-fly and reference areas, snapshots, events, cards
     and a data list round-trips through import and export without loss.
-19. Save card from Build creates a card; Brief opens it at its view and time; a clip with two
-    beats stops at each beat on Right; capture produces a PNG; a 20 card deck prints to PDF
-    with one page per card.
+19. Save card from Build creates a card; Brief opens it at its view and time; Left and Right
+    move between cards; a 20 card deck prints to PDF with one page per card.
 20. The first-use goal (section 1) is met again by a first-time user walk, under 10 minutes.
 21. The bundle budgets in section 11 hold, measured by the perf spec.
 22. Save as card (C, or the button on the Build bar) stores the view, layers, time and focus as
     a card in one undo step. Brief opens the card at that view and time.
+23. The Library groups saved profiles by collection with a thumbnail and the metadata line; a
+    profile export carries `timed` per path.
+24. A v6 record migrates to v7 and round-trips through export and import without loss.
+25. The whole-scene inspector lists every object of CUAS-001 under its section; a waypoint edit
+    is one undo step; the measures picker lists the 67 DroneScore rows.

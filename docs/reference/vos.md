@@ -102,7 +102,9 @@ mechanical change, not a rewrite. Each is marked **[vos fact]** (vos already doe
 matching it is zero-cost alignment) or **[recommendation]** (not required by vos, but keeps the
 port cheap).
 
-1. **[vos fact]** Use the same majors where there's no reason not to: React 18, Zustand 5,
+1. **[vos fact]** (2026-11-01: Profile Studio has no map library and no chart library; the
+   board is an SVG renderer. The seam for a later port is rule 2.) Use the same majors where
+   there's no reason not to: React 18, Zustand 5,
    MapLibre GL (vos is on 6.x; stay on a 5.x/6.x line, not Leaflet — vos has both but training
    uses MapLibre), Recharts 2.x, TypeScript ~5.6, Vite. Pinning exact versions isn't required;
    staying on the same major avoids an API-shape rewrite at port time.

@@ -1,5 +1,8 @@
 # Legacy app reference
 
+Status 2026-11-01: the inventory of the legacy v4 app. It was the parity oracle for phase 9;
+in phase 10 the mockup `legacy/mockup-v3.html` is the oracle and this app is a source of parts.
+
 All file paths in this document are relative to `legacy/` (moved there on 2026-10-30, plan lane 0.2).
 
 This is an inventory of the ES5 app in `js/*.js`, for a team rebuilding it in React and

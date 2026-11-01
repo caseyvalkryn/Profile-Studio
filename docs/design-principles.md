@@ -11,15 +11,16 @@ does, polished and on a sound engine. The denser legacy app (`docs/reference/art
 is a source of parts, and a part returns only when the planner asks for it.
 
 Amended 2026-10-31 from the artifact study: sections 2, 3, 5, 7 and the new section 8. Amended
-2026-11-01 in lane 10.1: the opening paragraph, item 3.2 and section 4.
+2026-11-01 in lane 10.1 (the opening paragraph, item 3.2 and section 4) and in the handoff of
+the same day (items 1.1, 1.2, 5.8, 7.3 and sections 6 and 8, pruned to the pivot).
 
 ## 1. DroneScore is the standard
 
 1. Every measure the app shows is a DroneScore measure. Show its ID and name, for example
    "1.1.2 Detection Range (ground)". The app does not invent measures. Live readouts such as
-   range, altitude and time stay on the map and the timeline, never on the scorecard.
+   range, altitude and time stay on the board and the scrub, never in the measures list.
 2. The kill chain is Find, Fix, Track, Target, Engage, Assess (F2T2EA). Each measure sits under
-   one step. The step names are the same on the map, the timeline, the charts and the AAR.
+   one step. The step names are the same on the board, the scrub, the inspector and the brief.
 3. Store metres and seconds, as DroneScore does. Show nm, ft AGL and kt by default. One toggle
    changes the display units everywhere.
 4. Follow the JIATF-401 C4 conventions that DroneScore follows. See `docs/reference/`.
@@ -69,44 +70,41 @@ controls stay out of the way until you need them.
 5. Motion is short and only shows a change. Nothing moves for decoration.
 6. Use the words a test engineer uses. Do not show internal names.
 7. Numbers use the mono font and always carry a unit.
-8. Progressive disclosure. The default Build screen shows the map, the timeline, the asset
-   library, the inspector and the top bar. Every other panel (layer chips, readout strip, chart
-   strip, authored events, debrief) starts hidden and opens by its key, from the palette, or
-   from a quiet toggle. A hidden panel is never a missing feature.
+8. Progressive disclosure. The default Build screen shows the board with its bar, the scrub
+   and the two thumbnails, the asset library, the whole-scene inspector and the top bar. The
+   five layer toggles sit in the bar. Every other control opens by its key or from the palette.
+   A hidden control is never a missing feature.
 9. Two typefaces: Archivo for text and JetBrains Mono for numbers, both bundled, weights 400
    and 500 only. Five sizes, each with its line height: 11/14, 12/16, 13/18, 14/20, 17/24 px.
    Tabular numerals. Three stroke weights: 0.75, 1.25 and 2.25 px. Nothing else.
 10. One icon set, Lucide. An icon sits beside its label. An icon alone has a tooltip. Board
     symbols are not icons; they follow the symbology in `legacy/js/41-symbols.js`.
 
-## 6. Graphs are findings
+## 6. Cards are findings
 
-1. Each chart answers one question. Its title states the hypothesis. Its subtitle states the
-   result.
-2. A chart exports as PNG, SVG or PDF and looks the same as on screen. Print uses the light
-   theme.
-3. The AAR is in this order: question, hypothesis, prediction, result, scope of inference,
-   next test.
+1. Each card answers one question about the profile. Its caption states what the viewer must
+   see.
+2. A card prints as it shows on screen, in the light theme, one page per card.
+3. The brief is in this order: the question, the data products, the measures, then the cards.
 
 ## 7. Fast enough to forget
 
 1. A drag on the map stays smooth at 60 frames per second.
 2. A measure updates within 100 ms of an edit.
-3. A long simulation runs in the background with progress shown. It never blocks the map.
+3. The preview recomputes within 100 ms of an edit, and the board rewrites only the layers
+   whose inputs changed.
 4. The 3D view is the same board under a third camera. It holds the map drag budget.
 
-## 8. The brief is the result, told
+## 8. The brief is the plan, told
 
 1. A card is a saved way of looking: camera, layers, time, focus. One key saves it. Opening a
    card restores it, and leaving Brief restores Build as it was.
-2. A card shows the live scene, its timeline strip and a caption. Captions carry live values by
-   token, so the number on screen is the number at that time.
-3. A clip plays a card from one time to another at one rate and stops at each beat. The
-   presenter moves with one key: next beat, else next card.
-4. The stage reads from the back of the room: a larger type scale, the card position, the time.
-   Key hints show once and fade.
-5. A capture is a picture of the stage for the deck. It lives for the session and leaves the
-   app as PDF or PNG. The profile stores the card, never the picture.
+2. A card shows the live scene at its time, the focus drawn strong and the rest dim, with a
+   caption and presenter notes.
+3. The presenter moves with one key: next card, previous card.
+4. The profile stores the card, never a picture.
+5. Clips and beats, caption tokens, presenter aids and captures are deferred. Each returns only
+   when the planner asks for it.
 
 ## Sources
 

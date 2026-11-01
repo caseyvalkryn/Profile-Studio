@@ -29,16 +29,16 @@ lane names the reference it needs:
 - `docs/reference/rangeboard-parts.md`: engine and UI parts to transfer, with paths and APIs.
 - `docs/reference/vos.md`: vos facts and the portability rules for the MVP.
 - `docs/reference/sources.md`: the local VALKRYN library, with the top 10 for this project.
-- `docs/reference/artifact-study.md`: the upgrade scope (phase 9): what the legacy app does
-  well, the gap list with decisions, and the decisions of 2026-10-31.
+- `docs/reference/artifact-study.md`: the phase 9 upgrade scope, superseded by phase 10; a
+  record of what the legacy app does well and the decisions of 2026-10-31.
 
 ## Decisions on record (2026-10-30)
 
 - 2026-11-01: the pivot. The product is a polished version of the v3 mockup: three modes
   (Library, Build, Brief), one board with three cameras, a whole-scene inspector, cards and a
-  brief. The run and score surface (Monte Carlo, Results, Report) leaves in phase 10 lane 10.1
-  once the user confirms decision 1 in `docs/plan.md` phase 10. The mockup, not the legacy v4
-  app, is the parity oracle for phase 10.
+  brief. The run and score surface (Monte Carlo, Results, Report) was deleted in lane 10.1
+  (decision 1; tag `pre-pivot` keeps it). Decision 3: the warm paper and graphite palette, in
+  lane 10.6. The mockup, not the legacy v4 app, is the parity oracle for phase 10.
 
 - 2026-10-31: the upgrade (plan phase 9) ports the legacy interface in `legacy/` one to one onto
   the MVP engine, domain and state. `src/board/` is the renderer; MapLibre leaves in lane 9.2.6.
