@@ -109,6 +109,22 @@ describe('Inspector', () => {
     expect(doc().threats[0]!.path[0]!.x).toBe(3100);
   });
 
+  it('Enter commits the field, leaves the input, and the next undo is the app undo', () => {
+    useUi.setState({ selectedKeys: [keyOf('RDR-1')] });
+    render(<Inspector />);
+    const before = history().length;
+    const range = screen.getByLabelText('Range');
+    act(() => range.focus());
+    fireEvent.change(range, { target: { value: '2.5' } });
+    fireEvent.keyDown(range, { key: 'Enter' });
+    expect(document.activeElement).not.toBe(range);
+    expect(history().slice(before)).toEqual(['set RDR-1 range']);
+    expect(doc().sensors[0]!.rangeM).toBeCloseTo(2.5 * M_PER_NM, 0);
+    act(() => useDocument.getState().undo());
+    expect(doc().sensors[0]!.rangeM).toBe(4000);
+    expect(history()).toHaveLength(before);
+  });
+
   it('Escape reverts the field and adds no step', () => {
     useUi.setState({ selectedKeys: [keyOf('RDR-1')] });
     render(<Inspector />);
