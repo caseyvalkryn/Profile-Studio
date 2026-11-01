@@ -1,11 +1,11 @@
 // @vitest-environment node
 // Cameras: orbit rates and pitch clamp (legacy contract 12), the axon hint string, fit, and the
-// Along path math against src/features/build/profile/along.ts.
+// Along path math against hand-computed numbers.
 import { importLegacyV4 } from '../domain/migrate';
-import * as profileAlong from '../features/build/profile/along';
 import { alongAt, axonHint, cameras, cumulative } from './cameras';
 import { toScene } from './scene';
 import { FIXTURES, derivedView, fixture } from './testkit';
+import type { TimedPoint } from '../engine/geo';
 import type { DerivedView, Scene } from './types';
 
 const SIZE = { W: 1440, H: 900 };
@@ -79,20 +79,29 @@ describe('fit', () => {
 });
 
 describe('Along path', () => {
+  it('cumulative and alongAt match hand-computed numbers', () => {
+    // Move 0..10 s over 500 m, hold 10..20 s, move 20..30 s over 600 m.
+    const w: TimedPoint[] = [
+      { x: 0, y: 0, z: 100, t0: 0, t1: 0 },
+      { x: 300, y: 400, z: 200, t0: 10, t1: 20 },
+      { x: 300, y: 1000, z: 500, t0: 30, t1: 30 },
+    ];
+    const cum = cumulative(w);
+    expect(cum).toEqual([0, 500, 1100]);
+    const at = (t: number) => alongAt(w, cum, t);
+    expect(at(-5)).toEqual({ s: 0, z: 100 });
+    expect(at(0)).toEqual({ s: 0, z: 100 });
+    expect(at(5)).toEqual({ s: 250, z: 150 });
+    expect(at(15)).toEqual({ s: 500, z: 200 });
+    expect(at(25)).toEqual({ s: 800, z: 350 });
+    expect(at(30)).toEqual({ s: 1100, z: 500 });
+    expect(at(40)).toEqual({ s: 1100, z: 500 });
+    expect(alongAt([], [], 3)).toEqual({ s: 0, z: 0 });
+  });
   for (const id of FIXTURES) {
     const { sc, d } = load(id);
     const pids = Object.keys(d.timed || {});
     if (!pids.length) continue;
-    it(id + ': cumulative and alongAt equal profile/along.ts', () => {
-      for (const pid of pids) {
-        const w = d.timed[pid]!;
-        expect(cumulative(w)).toEqual(profileAlong.cumulative(w));
-        const cum = cumulative(w);
-        const t1 = w.length ? w[w.length - 1]!.t1 : 0;
-        for (const t of [-5, 0, t1 / 3, t1 / 2, t1, t1 + 10])
-          expect(alongAt(w, cum, t)).toEqual(profileAlong.alongAt(w, cum, t));
-      }
-    });
     it(id + ': elev in Along path mode spans the path and names it', () => {
       const pid = pids[0]!;
       const cam = cameras.elev.setup(sc.scene, d, SIZE, { elevationMode: 'alongPath', path: pid });

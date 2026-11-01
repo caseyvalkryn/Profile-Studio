@@ -10,7 +10,7 @@ import {
 } from '../../../domain/catalog';
 import type { AuthoredEventType, Vignette } from '../../../domain/types';
 import type { Units } from '../../../state/ui';
-import { LIBRARY, type LibraryItem } from '../assets/library';
+import { LIBRARY, type LibraryItem } from '../rail/library';
 import { EVENT_NAMES, EVENT_TYPES, hDist, spd, vBare } from '../rail/format';
 import { ADD_TITLE, type AddGroupId } from './store';
 

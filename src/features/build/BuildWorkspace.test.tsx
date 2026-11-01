@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { MemoryRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import { App } from '../../App';
-import { registerCommands } from '../../commands/commands';
+import { registerCommands, setBoardCancel } from '../../commands/commands';
 import { bindKeys } from '../../commands/keys';
 import { testVignette } from '../../engine/testVignette';
 import { useDocument } from '../../state/document';
@@ -11,9 +11,11 @@ import { useRuns } from '../../state/runs';
 import { UI_DEFAULTS, useUi } from '../../state/ui';
 import { M_PER_NM } from '../shared/units';
 import BuildWorkspace from './BuildWorkspace';
+import { cancel } from './board/Board';
+import { boardDerived } from './board/derived';
+import { useBoard, BOARD_DEFAULTS } from './board/store';
+import { hText } from './inspector/parse';
 import type { RunEntry } from '../../state/runs';
-
-vi.mock('maplibre-gl', () => import('./map/__mocks__/maplibre-gl'));
 
 const reset = () =>
   act(() => {
@@ -40,14 +42,33 @@ const renderApp = () =>
 describe('Build workspace', () => {
   beforeEach(reset);
 
-  it('renders the library, map, inspector and timeline regions', async () => {
+  it('renders the rail, the board in the map region, the inspector and the timeline', () => {
     act(() => useDocument.getState().open(testVignette()));
     render(<BuildWorkspace />);
-    expect(screen.getByRole('complementary', { name: 'Asset library' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Map' })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Scene' })).toBeInTheDocument();
+    const map = screen.getByRole('region', { name: 'Map' });
+    expect(within(map).getByTestId('board-stage')).toBeInTheDocument();
     expect(screen.getByRole('complementary', { name: 'Inspector' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Timeline' })).toBeInTheDocument();
-    expect(await screen.findByTestId('map-view')).toBeInTheDocument();
+    // The readout panel is off by default (legacy).
+    expect(screen.queryByRole('region', { name: 'Readout' })).toBeNull();
+  });
+
+  it('the 3D button switches the board to the 3D view', () => {
+    act(() => useDocument.getState().open(testVignette()));
+    render(<BuildWorkspace />);
+    const view = screen.getByRole('group', { name: 'View' });
+    fireEvent.click(within(view).getByRole('button', { name: '3D' }));
+    expect(useUi.getState().view).toBe('3d');
+    expect(within(view).getByRole('button', { name: '3D' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('the Ref select writes the board reference', () => {
+    act(() => useDocument.getState().open(testVignette()));
+    act(() => useBoard.setState({ ...BOARD_DEFAULTS }));
+    render(<BuildWorkspace />);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Ref' }), { target: { value: 'S-01' } });
+    expect(useBoard.getState().ref).toBe('S-01');
   });
 
   it('Run is disabled with a reason when no vignette is open', () => {
@@ -105,6 +126,37 @@ describe('Escape order (edit.escape)', () => {
 
   const esc = () => act(() => void fireEvent.keyDown(window, { key: 'Escape' }));
 
+  it('closes a dialog, then the palette, then cancels on the board, before the selection', () => {
+    let boardBusy = true;
+    setBoardCancel(() => {
+      const was = boardBusy;
+      boardBusy = false;
+      return was;
+    });
+    try {
+      act(() => {
+        useDocument.getState().open(testVignette());
+        const ui = useUi.getState();
+        ui.setSelection(['k-S-01']);
+        ui.setDialog('export');
+        ui.setPaletteOpen(true);
+      });
+      esc();
+      expect(useUi.getState().dialog).toBeNull();
+      expect(useUi.getState().paletteOpen).toBe(true);
+      esc();
+      expect(useUi.getState().paletteOpen).toBe(false);
+      expect(boardBusy).toBe(true);
+      esc();
+      expect(boardBusy).toBe(false);
+      expect(useUi.getState().selectedKeys).toEqual(['k-S-01']);
+      esc();
+      expect(useUi.getState().selectedKeys).toEqual([]);
+    } finally {
+      setBoardCancel(cancel);
+    }
+  });
+
   it('cancels a drag, then the path being drawn, then disarms, then clears selection, then the loop', () => {
     act(() => {
       useDocument.getState().open(testVignette());
@@ -142,6 +194,49 @@ describe('Escape order (edit.escape)', () => {
 
     esc();
     expect(useUi.getState().loop).toBeNull();
+  });
+});
+
+describe('readout panel', () => {
+  let unbind: () => void;
+  beforeEach(() => {
+    reset();
+    registerCommands();
+    unbind = bindKeys(window);
+    act(() => useBoard.setState({ ...BOARD_DEFAULTS }));
+  });
+  afterEach(() => unbind());
+
+  it('K shows and hides the readout above the inspector', () => {
+    act(() => useDocument.getState().open(testVignette()));
+    render(<BuildWorkspace />);
+    expect(screen.queryByRole('region', { name: 'Readout' })).toBeNull();
+    act(() => void fireEvent.keyDown(window, { key: 'k' }));
+    expect(useUi.getState().panels.readout).toBe(true);
+    expect(screen.getByRole('region', { name: 'Readout' })).toBeInTheDocument();
+    act(() => void fireEvent.keyDown(window, { key: 'k' }));
+    expect(screen.queryByRole('region', { name: 'Readout' })).toBeNull();
+  });
+
+  it('shows derived.at for the selected threat (range from the board reference)', () => {
+    act(() => {
+      useDocument.getState().open(testVignette());
+      useUi.getState().setSelection(['k-T-01']);
+      useUi.getState().setTime(30);
+      useUi.getState().togglePanel('readout');
+    });
+    render(<BuildWorkspace />);
+    const doc = useDocument.getState().doc!;
+    const r = boardDerived(doc).at('T-01', 30, 'asset')!.r;
+    const line = screen.getByRole('listitem', { name: 'T-01 readout' });
+    expect(line).toHaveTextContent(hText(r, useUi.getState().units));
+    // With S-01 as the reference the range is measured from S-01.
+    act(() => useBoard.getState().set({ ref: 'S-01' }));
+    act(() => useUi.getState().setTime(31));
+    const r2 = boardDerived(doc).at('T-01', 31, 'S-01')!.r;
+    expect(screen.getByRole('listitem', { name: 'T-01 readout' })).toHaveTextContent(
+      hText(r2, useUi.getState().units),
+    );
   });
 });
 

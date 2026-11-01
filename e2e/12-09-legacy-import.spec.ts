@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { assetLabels, goTo } from './helpers';
+import { assetCentres, goTo } from './helpers';
 
 const FIXTURE = resolve(__dirname, '../src/features/library/__fixtures__/legacy-v4-cuas-001.json');
 
@@ -44,13 +44,15 @@ test('12.9 A legacy v4 JSON from the current app imports without loss of assets,
 
   // Assets: every legacy system is on the map under its id; the volume and the threat too.
   await expect
-    .poll(async () => [...(await assetLabels(page)).keys()].sort())
+    .poll(async () => [...(await assetCentres(page)).keys()].sort())
     .toEqual(legacy.scene.systems.map((s) => s.id).sort());
   for (const id of [
     ...legacy.scene.volumes.map((v) => v.id),
     ...legacy.scene.paths.map((p) => p.id),
   ])
-    await expect(page.locator('[data-label]', { hasText: new RegExp(`^${id}$`) })).toHaveCount(1);
+    await expect(
+      page.locator(`[data-testid="board-stage"] svg.board [data-id="${id}"]`).first(),
+    ).toBeAttached();
 
   // The saved vignette, exported from the Report, keeps every path point and every text.
   await goTo(page, 'Report');

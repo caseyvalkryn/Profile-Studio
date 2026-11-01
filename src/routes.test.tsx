@@ -10,8 +10,6 @@ import { useDocument } from './state/document';
 import { setDb, type VignetteDb } from './state/persist';
 import { useRuns } from './state/runs';
 
-vi.mock('maplibre-gl', () => import('./features/build/map/__mocks__/maplibre-gl'));
-
 // An in-memory store behind persist, so start-up and the Library read and write it.
 const store = new Map<string, Vignette>();
 const fakeDb = {

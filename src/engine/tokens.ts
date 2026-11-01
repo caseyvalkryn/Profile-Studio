@@ -22,8 +22,8 @@ export function fmtN(x: number | null | undefined, d = 0): string {
 }
 
 /**
- * The legacy `PS.units` formats, kept here so the engine stays free of feature imports. The
- * wiring lane can dedupe these against src/features/shared/units.ts (same formats).
+ * The legacy `PS.units` formats, kept here so the engine stays free of feature imports. The board
+ * formatter (src/board/format.ts) builds on them (lane 9.2.6).
  */
 export const legacyUnits = {
   /** Horizontal distance: nm (2 decimals under 10, else 1) or km. */

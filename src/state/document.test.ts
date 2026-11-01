@@ -156,3 +156,20 @@ describe('document store', () => {
     expect(previewOf(doc().doc!)).not.toBe(previewOf(v));
   });
 });
+
+describe('previewOf group keys', () => {
+  it('clusters only the threats that carry a group letter', async () => {
+    const { preview } = await import('../engine/preview');
+    const loose = testVignette();
+    // No threat is grouped: no link distance and no splits, unlike the every-threat default.
+    expect(previewOf(loose).dLink.value).toBeNull();
+    expect(preview(loose).dLink.value).not.toBeNull();
+    const grouped = testVignette({
+      threats: testVignette().threats.map((t) => ({ ...t, group: 'A' })),
+    });
+    expect(previewOf(grouped).dLink).toEqual(
+      preview(grouped, { groupKeys: grouped.threats.map((t) => t.key) }).dLink,
+    );
+    expect(previewOf(grouped).dLink.value).not.toBeNull();
+  });
+});

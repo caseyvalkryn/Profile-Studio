@@ -26,7 +26,8 @@ const ORDER: readonly RowSpec[] = [
   row('build.formation'),
   row(['view.plan', 'view.elevation', 'view.3d'], 'Plan, Elevation, 3D'),
   row('time.playPause'),
-  row(['time.back1', 'time.forward1'], 'Step 1 s'),
+  // The arrows step time at the shell; while the board stage has focus they nudge the selection.
+  row(['time.back1', 'time.forward1'], 'Step 1 s; on the focused board, nudge the selection'),
   row(['time.back10', 'time.forward10'], 'Step 10 s'),
   row(['time.start', 'time.end'], 'Time to start or end'),
   row('time.cursor'),
@@ -48,6 +49,7 @@ const ORDER: readonly RowSpec[] = [
   row('edit.paste'),
   row('panel.inspector'),
   row('panel.sides'),
+  row('panel.readout'),
   row('help.shortcuts'),
   row('edit.escape', 'Cancel, close or go back'),
   row(['brief.next', 'brief.nextPage']),

@@ -124,7 +124,10 @@ const EITHER: Record<string, string> = {
   'system.makeSector': 'system.makeOmni',
   'system.makeOmni': 'system.makeSector',
 };
-/** Kinds whose menu ends with Copy and Paste (legacy). */
+/**
+ * Kinds whose menu ends with Copy and Paste (legacy). Planes, events and cards are left out:
+ * edit.copy copies assets only, so the item could never run there (lane 9.2.6).
+ */
 const CLIPBOARD = new Set<MenuKind>([
   'threat',
   'waypoint',
@@ -133,10 +136,7 @@ const CLIPBOARD = new Set<MenuKind>([
   'node',
   'area',
   'vertex',
-  'plane',
-  'event',
   'group',
-  'card',
 ]);
 
 /** The context with the target as the selection, as the menu sees it on open. */

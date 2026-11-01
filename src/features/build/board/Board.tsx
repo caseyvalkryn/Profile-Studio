@@ -16,7 +16,8 @@ import { Tip } from '../tip/Tip';
 import { BoardGestures, hintText, type MenuRequest } from './gestures';
 import { BoardRenderer } from './renderer';
 import { useBoard } from './store';
-import { anchor, cancelPlacing, finishPlacing, fit, placingFor, ruler } from './tools';
+import { anchor, cancelPlacing, finishPlacing, fit, placeAt, placingFor, ruler } from './tools';
+import { ASSET_MIME, parseAssetPayload } from '../rail/dnd';
 
 export type BoardProps = {
   /** Fixed board size in pixels; otherwise the stage size is observed. */
@@ -61,6 +62,30 @@ export default function Board({ width, height }: BoardProps) {
   const rulerOn = useBoard((s) => !!s.ruler);
   const view = useUi((s) => s.view);
   const readout = useBoard((s) => s.readout);
+  const handleRef = useRef<BoardHandle | null>(null);
+
+  // A library row dropped on the board (lane 9.2.6): arm it, then place it at the drop point.
+  // A threat starts its path there; the user continues it as after an armed click.
+  const onDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!Array.from(e.dataTransfer.types).includes(ASSET_MIME)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    const item = parseAssetPayload(e.dataTransfer.getData(ASSET_MIME));
+    const last = handleRef.current?.renderer.last;
+    if (!item || !last || !stageEl.current) return;
+    e.preventDefault();
+    const ui = useUi.getState();
+    ui.setArmed(item);
+    ui.setTool(item.group === 'threat' ? 'path' : 'place');
+    const r = stageEl.current.getBoundingClientRect();
+    const sx = (e.clientX - r.left) * (r.width ? last.W / r.width : 1);
+    const sy = (e.clientY - r.top) * (r.height ? last.H / r.height : 1);
+    const world = last.cam.unproject(sx, sy);
+    if (world) placeAt(world, { cam: last.cam });
+    stageEl.current.focus();
+  };
 
   // renderer and gestures
   useEffect(() => {
@@ -89,6 +114,7 @@ export default function Board({ width, height }: BoardProps) {
       onMenu,
     );
     const handle: BoardHandle = { renderer, gestures };
+    handleRef.current = handle;
     mounted.add(handle);
     renderer.attach();
     gestures.attach();
@@ -108,6 +134,7 @@ export default function Board({ width, height }: BoardProps) {
       gestures.detach();
       renderer.detach();
       mounted.delete(handle);
+      handleRef.current = null;
     };
   }, [width, height]);
 
@@ -206,6 +233,8 @@ export default function Board({ width, height }: BoardProps) {
         className="board-stage absolute inset-0 select-none outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--select,#2862b0)]"
         style={{ touchAction: 'none', width: width ? width : undefined, height: height ? height : undefined }}
         data-testid="board-stage"
+        onDragOver={onDragOver}
+        onDrop={onDrop}
       >
         <svg
           ref={svgEl}

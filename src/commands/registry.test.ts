@@ -140,9 +140,14 @@ describe('command registry', () => {
     const map = forTarget('map').map((c) => c.label);
     const addHere = forTarget('map').filter((c) => c.submenu?.startsWith('Add here')).length;
     expect(map.slice(0, addHere).every((l) => l.startsWith('Add '))).toBe(true);
-    expect(map.slice(addHere)).toEqual(SPEC_MENUS.map);
-    for (const kind of ['threat', 'waypoint', 'sensor', 'area', 'timeline'])
-      expect(forTarget(kind as never).map((c) => c.label)).toEqual(SPEC_MENUS[kind]);
+    // Add height plane is the legacy row after Add (menuCommands, lane 9.2.6); not a spec row.
+    expect(map.slice(addHere)).toEqual(['Add height plane', ...SPEC_MENUS.map!]);
+    // Lane 9.2.6 registers the legacy rows (menuCommands); the spec rows keep their order.
+    for (const kind of ['threat', 'waypoint', 'sensor', 'area', 'timeline']) {
+      const spec = SPEC_MENUS[kind]!;
+      const have = forTarget(kind as never).map((c) => c.label);
+      expect(have.filter((l) => spec.includes(l))).toEqual(spec);
+    }
   });
 
   it('Add threat here lists the 13 archetypes by UAS group', () => {
