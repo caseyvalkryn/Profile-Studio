@@ -18,6 +18,7 @@ These are settled. Do not reopen them without the user.
 | Sources | Local only, `~/Desktop/MASTER/VALKRYN` | User: no internet downloads |
 | Engine | rangeboard engine transferred and modified into `src/engine` | Working C-UAS Monte Carlo; no shared package. Phase 10 decision 1 removes the run and score surface |
 | Purpose | A polished profile mockup tool: create, iterate and brief test profiles. Not a place to run tests | User, 2026-11-01 (phase 10) |
+| Run and score code | Deleted in lane 10.1 (phase 10 decision 1); tag `pre-pivot` keeps it one checkout away | User, 2026-11-01 |
 
 ## 2. Stack
 
@@ -471,8 +472,8 @@ measures of performance list (`docs/reference/dronescore-measures.md`, the 67-ro
 
 **Decisions the user takes before 10.1 runs** (each is a line in section 1 once taken):
 
-1. Delete the run and score code, or hide it behind a flag. Proposal: delete. Git keeps it
-   (tag `pre-pivot` at the 9.2.F merge). A hidden workspace is not simple, and the entry
+1. Delete the run and score code, or hide it behind a flag. Decided 2026-11-01: delete. Git
+   keeps it (tag `pre-pivot` at d1f56d1). A hidden workspace is not simple, and the entry
    chunk and the gate both shrink.
 2. Mode names. Spec: Library, Build, Brief. Mockup: Collect, Compose, Brief. Proposal: keep
    Library, Build, Brief (approved in 9.1; the mockup sets the direction, not the words).
