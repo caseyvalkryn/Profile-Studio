@@ -19,7 +19,7 @@ import {
 } from '../../src/domain/templates/build';
 import type { Vignette } from '../../src/domain/types';
 import { run } from '../../src/engine/run';
-import { M_PER_NM, num, openTemplate, POINT_DEFENCE } from '../helpers';
+import { M_PER_NM, mapGeom, num, openTemplate, POINT_DEFENCE } from '../helpers';
 
 const REPS = 5;
 const DIST = join(process.cwd(), 'dist');
@@ -104,27 +104,9 @@ async function seed(page: Page, v: Vignette) {
   );
 }
 
-/** Map geometry from any two x-axis grid labels and the 0 nm labels (controller.ts renderLabels). */
+/** Board geometry in plan (e2e/helpers.ts mapGeom: world axes and scale bar), plus `at`. */
 async function geom(page: Page) {
-  const box = (await page.getByTestId('map-canvas').boundingBox())!;
-  const grid = await page.locator('[data-label="grid"]').evaluateAll((els) =>
-    els.map((el) => {
-      const m = /translate\((-?[\d.]+)px, (-?[\d.]+)px\)/.exec((el as HTMLElement).style.transform);
-      return { text: el.textContent ?? '', x: Number(m?.[1]), y: Number(m?.[2]) };
-    }),
-  );
-  const val = (t: string) => {
-    const m = /^([\d.]+) nm(?: ([EWNS]))?$/.exec(t);
-    if (!m) return null;
-    return Number(m[1]) * (m[2] === 'W' || m[2] === 'S' ? -1 : 1);
-  };
-  const xs = grid.filter((g) => g.y > box.height / 2 && /( [EW])?$/.test(g.text) && g.x > 10);
-  const x0 = xs.find((g) => g.text === '0 nm');
-  const x1 = xs.find((g) => /E$/.test(g.text));
-  const y0 = grid.find((g) => g.x < 10 && g.text === '0 nm');
-  if (!x0 || !x1 || !y0) throw new Error(`grid labels not found: ${JSON.stringify(grid)}`);
-  const pxPerM = (x1.x - x0.x) / (val(x1.text)! * M_PER_NM);
-  const origin = { x: box.x + x0.x - 3, y: box.y + y0.y + 14 };
+  const { box, origin, pxPerM } = await mapGeom(page);
   return {
     box,
     origin,
@@ -181,7 +163,7 @@ async function drag(
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   }
   const r = await FRAMES.stop(page);
-  const tip = await page.locator('[data-testid="map-view"] [role="status"]').allTextContents();
+  const tip = await page.getByTestId('board-msg').allTextContents();
   await page.mouse.up();
   return { ...r, moves, tip: tip.join(' | ') };
 }
@@ -215,8 +197,12 @@ test('map drag and preview latency, 40 threats x 15 sensors', async ({ page, bro
   await seed(page, v);
   await page.goto('/build');
   await expect(page.getByRole('main', { name: 'Build' })).toBeVisible();
-  await expect(page.locator('[data-label="grid"]').first()).toBeAttached();
-  await expect(page.locator('[data-label="asset"]'))
+  await expect(
+    page.locator('[data-testid="board-stage"] svg.board line.grid').first(),
+  ).toBeAttached();
+  await expect(
+    page.locator('[data-testid="board-stage"] svg.board g[data-k="system"][data-role="centre"]'),
+  )
     .toHaveCount(16 + 0, { timeout: 15_000 })
     .catch(() => undefined);
   await page.waitForTimeout(1000);
@@ -285,7 +271,7 @@ test('map drag and preview latency, 40 threats x 15 sensors', async ({ page, bro
       document.querySelector('[data-testid="timeline-row"]')?.closest('svg') ?? null,
       w.__lat.tl,
     );
-    watch(document.querySelector('[data-testid="map-view"] [role="status"]'), w.__lat.tip);
+    watch(document.querySelector('[data-testid="board-msg"]'), w.__lat.tip);
   });
   const tlMs: number[] = [];
   const tipMs: number[] = [];
@@ -413,7 +399,7 @@ async function load(browser: Browser, path: '/' | '/build', throttle: number, v:
     addEventListener('click', () => mark('click'), true);
     new MutationObserver(() => {
       if (document.querySelector('button[aria-label^="Open template"]')) mark('card');
-      if (document.querySelector('[data-label="grid"]')) mark('map');
+      if (document.querySelector('[data-testid="board-stage"] svg.board line.grid')) mark('map');
       if (document.querySelector('main[aria-label="Build"]')) mark('build');
       if (w.__ld.click && document.querySelector('section[aria-label="Templates"]'))
         mark('library');
@@ -424,7 +410,9 @@ async function load(browser: Browser, path: '/' | '/build', throttle: number, v:
     await page.getByRole('button', { name: `Open template ${POINT_DEFENCE}` }).click();
     await expect(page.getByRole('main', { name: 'Build' })).toBeVisible();
   } else {
-    await expect(page.locator('[data-label="grid"]').first()).toBeAttached({ timeout: 30_000 });
+    await expect(
+      page.locator('[data-testid="board-stage"] svg.board line.grid').first(),
+    ).toBeAttached({ timeout: 30_000 });
     await page
       .getByRole('navigation', { name: 'Workspaces' })
       .getByRole('link', { name: 'Library' })

@@ -9,7 +9,7 @@ import path from 'node:path';
 import { importLegacyV4 } from '../domain/migrate';
 import type { Vignette } from '../domain/types';
 import { derived, byId } from './derived';
-import type { Derived, Rung } from './derived';
+import type { Derived, Rung, RungName } from './derived';
 import { preview } from './preview';
 import { resolveTokens } from './tokens';
 
@@ -106,6 +106,7 @@ function build(F: Fixture): { v: Vignette; d: Derived } {
   return { v, d: derived(v, p) };
 }
 
+/** The legacy rung under each F2T2EA stage, as derived.ts ladderFor maps them. */
 const RUNG_OF_STAGE = {
   find: 'detect',
   fix: 'track',
@@ -113,6 +114,31 @@ const RUNG_OF_STAGE = {
   engage: 'engage',
   assess: 'effect',
 } as const;
+type RungView = { t: Num; system: string | null; tGeo: Num; warn: boolean; warnText: string };
+
+/** The legacy rungs of one threat rebuilt from `stages` and the event warnings. */
+function rungsOf(v: Vignette, d: Derived, pid: string): Record<RungName, RungView> {
+  const st = d.stages[pid]!;
+  const keyOfEvent = new Map(v.events.map((e) => [e.id, e.threatKey]));
+  const key = v.threats.find((t) => t.id === pid)!.key;
+  const out = {} as Record<RungName, RungView>;
+  for (const [stage, rung] of Object.entries(RUNG_OF_STAGE)) {
+    const s = st[stage as keyof typeof st];
+    const w = d.warnings.find(
+      (x) => x.kind === 'event' && x.rung === rung && keyOfEvent.get(x.eventId!) === key,
+    );
+    out[rung] = {
+      t: s ? s.t : null,
+      system: s ? s.system : null,
+      tGeo: s ? s.tGeo : null,
+      warn: !!w,
+      warnText: w ? w.text : '',
+    };
+  }
+  return out;
+}
+/** The authored event time of one id. */
+const evT = (v: Vignette, id: string) => v.events.find((e) => e.id === id)!.tS;
 
 describe('derived parity with legacy derive', () => {
   it.each(IDS)('%s', (id) => {
@@ -145,30 +171,30 @@ describe('derived parity with legacy derive', () => {
       close(d.splits[i]!.t, s.t, `splits[${i}].t`, 0.1 + 1e-6);
     });
 
-    // ladder rung for rung through the alias; the engage rung is the one documented difference:
+    // legacy rungs under their F2T2EA stages; the engage rung is the one documented difference:
     // its geometric time is the first effector window at or after Target (spec section 3),
     // where legacy took the first effector reach. Equal whenever that window opens after Target.
     for (const [pid, rungs] of Object.entries(L.ladder)) {
-      const mine = d.ladder[pid]!;
+      const mine = rungsOf(v, d, pid);
       for (const [k, R] of Object.entries(rungs)) {
-        const m = mine[k as keyof typeof mine];
-        const where = `ladder ${pid}.${k}`;
+        const m = mine[k as RungName];
+        const where = `rung ${pid}.${k}`;
+        const want = {
+          t: R.t,
+          system: R.t == null ? null : R.system,
+          tGeo: R.t == null ? null : R.tGeo,
+          warn: R.warn,
+          warnText: R.warnText,
+        };
+        if (R.source === 'event') close(m.t, evT(v, R.event!), `${where} event time`);
         if (k === 'engage' && R.tGeo != null && m.tGeo != null && Math.abs(m.tGeo - R.tGeo) > TOL) {
           const fe = L.firstEffector[pid]!;
           close(R.tGeo, fe.t, `${where}.tGeo legacy is first effector reach`);
           expect(m.tGeo, `${where}.tGeo gated at Target`).toBeGreaterThan(R.tGeo);
-          closeDeep({ ...m, tGeo: R.tGeo }, R, where);
-        } else closeDeep(m, R, where);
+          closeDeep({ ...m, tGeo: R.tGeo }, want, where);
+        } else closeDeep(m, want, where);
       }
-      // stages are the same times under the F2T2EA names
       const st = d.stages[pid]!;
-      for (const [stage, rung] of Object.entries(RUNG_OF_STAGE)) {
-        const s = st[stage as keyof typeof st];
-        const r = mine[rung];
-        if (r.t == null) expect(s, `stages ${pid}.${stage}`).toBeNull();
-        else
-          expect(s, `stages ${pid}.${stage}`).toEqual({ t: r.t, system: r.system, tGeo: r.tGeo });
-      }
       if (st.track) {
         expect(st.target, `stages ${pid}.target`).not.toBeNull();
         close(
@@ -220,8 +246,12 @@ describe('derived, legacy derive.js cases', () => {
 
   it('CUAS-001 rungs, window, first see and readout', () => {
     const d = C.d;
-    const L = d.ladder.T1!;
-    for (const k of ['detect', 'track', 'id', 'engage'] as const) expect(L[k].source).toBe('event');
+    const L = rungsOf(C.v, d, 'T1');
+    const typed = (type: string) => C.v.events.find((e) => e.type === type)!.tS;
+    expect(L.detect.t).toBe(typed('detect'));
+    expect(L.track.t).toBe(typed('track'));
+    expect(L.id.t).toBe(typed('identify'));
+    expect(L.engage.t).toBe(typed('engage'));
     expect(d.window.T1!.planned).toBe(234);
     near(d.window.T1!.geometric, 287.7, 1, 'geometric window');
     near(d.first.T1!['EO-1']!.t, 175.4, 0.5, 'EO-1 first see');
@@ -234,7 +264,8 @@ describe('derived, legacy derive.js cases', () => {
     near(d.window.T1!.latest, 404.1, 1, 'latest engage');
     near(d.window.T1!.margin, 142.1, 1, 'margin');
     expect(L.engage.warn).toBe(false);
-    expect(L.effect).toMatchObject({ source: 'event', event: 'e6', t: 300, warn: true });
+    expect(L.effect).toMatchObject({ t: evT(C.v, 'e6'), warn: true });
+    expect(L.effect.t).toBe(300);
     near(d.window.T1!.rangeAtEngage, 2121, 5, 'range at engage');
     near(d.tta('T1', 0), 414.1, 0.5, 'tta at 0');
     const cov = d.coveringAt('T1', 150);
@@ -268,7 +299,7 @@ describe('derived, legacy derive.js cases', () => {
 
   it('OWA-001 RF-silent threat, early events, effect from e5', () => {
     const d = O.d;
-    const L = d.ladder.T1!;
+    const L = rungsOf(O.v, d, 'T1');
     expect(d.emitsRf.T1).toBe(false);
     near(d.first.T1!['EO-1']!.t, 158.2, 0.5, 'EO-1 first see');
     expect(L.detect.warn).toBe(true);
@@ -279,7 +310,8 @@ describe('derived, legacy derive.js cases', () => {
     near(d.window.T1!.latest, 251.5, 1, 'latest engage');
     near(d.window.T1!.margin, 76.5, 1, 'margin');
     expect(L.engage.warn).toBe(false);
-    expect(L.effect).toMatchObject({ source: 'event', event: 'e5', t: 200 });
+    expect(L.effect.t).toBe(200);
+    expect(evT(O.v, 'e5')).toBe(200);
     expect(d.window.T1!.planned).toBe(135);
     near(d.window.T1!.geometric, 130.6, 1, 'geometric window');
     expect(d.firstSensor.T1!.system).toBe('RDR-1');

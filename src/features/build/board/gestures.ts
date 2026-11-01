@@ -140,10 +140,9 @@ export class BoardGestures {
       useBoard.subscribe((s, prev) => {
         if (s.placing !== prev.placing || s.ruler !== prev.ruler) this.syncClasses();
       }),
+      // ui.setSelection ends the stack cycle when another key is selected
       useUi.subscribe((s, prev) => {
         if (s.view !== prev.view) this.syncClasses();
-        // a selection made elsewhere ends the stack cycle
-        if (s.selectedKeys !== prev.selectedKeys && s.stack && s.stack.key !== s.selectedKeys[0]) s.setStack(null);
       }),
     );
     this.syncClasses();

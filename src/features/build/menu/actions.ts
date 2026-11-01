@@ -94,8 +94,8 @@ export const MENU_ORDER: Record<MenuKind, readonly Spec[]> = {
   node: [['edit.duplicate'], ['edit.delete']],
   area: AREA,
   vertex: AREA,
-  plane: [['plane.setHeight'], ['plane.delete']],
-  event: [['event.changeType'], ['event.moveToGeometry'], ['event.delete']],
+  plane: [['plane.setHeight'], ['plane.delete', 'Delete']],
+  event: [['event.changeType'], ['event.moveToGeometry'], ['event.delete', 'Delete']],
   group: [['group.split'], ['group.merge'], ['group.delete']],
   card: [
     ['card.open'],
@@ -103,7 +103,7 @@ export const MENU_ORDER: Record<MenuKind, readonly Spec[]> = {
     ['card.duplicate'],
     ['card.moveUp'],
     ['card.moveDown'],
-    ['card.delete'],
+    ['card.delete', 'Delete'],
   ],
   timeline: [['time.setHere'], ['time.loopFrom'], ['time.clearLoop'], ['threat.addEventHere']],
   map: [

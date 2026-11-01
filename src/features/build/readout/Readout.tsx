@@ -11,7 +11,8 @@ import { showToast } from '../../shell/toastStore';
 import { pick } from '../inspector/resolve';
 import { hText, spdText, tText, vText } from '../inspector/parse';
 import { delta, mmss, signed, type Delta } from './format';
-import { DEFAULT_REF, readoutAtFor } from './source';
+import { useBoard } from '../board/store';
+import { readoutAtFor } from './source';
 import { useReadout } from './store';
 import type { ReadoutAt, ReadoutSource } from './types';
 
@@ -107,6 +108,8 @@ export function Readout({ variant = 'panel', atFor = readoutAtFor }: ReadoutProp
   const hover = useUi((s) => s.hoverKey);
   const tS = useUi((s) => s.tS);
   const units = useUi((s) => s.units);
+  // the board's range reference (the Ref select): 'asset' or a system id
+  const ref = useBoard((s) => s.ref);
   const pinned = useReadout((s) => s.pinned);
   const dragBase = useReadout((s) => s.dragBase);
   if (!visible) return null;
@@ -140,21 +143,15 @@ export function Readout({ variant = 'panel', atFor = readoutAtFor }: ReadoutProp
             <div className="text-micro text-muted">{doc.name}</div>
           </>
         )}
-        <div className="mt-1.5 mb-0.5 text-micro font-medium tracking-caps text-muted uppercase">
-          at {tText(tS)}
+        <div className="mt-1.5 mb-0.5 text-micro font-medium text-muted">
+          <span className="tracking-caps">at</span> <span>{tText(tS)}</span>
         </div>
         <ul className="flex flex-col gap-1">
           {threats.map((t) => {
-            const a = at(t.id, tS, DEFAULT_REF);
+            const a = at(t.id, tS, ref);
             const bt = base && baseRec?.threats.some((x) => x.id === t.id) ? base : null;
             return (
-              <Line
-                key={t.key}
-                id={t.id}
-                a={a}
-                b={bt ? bt(t.id, tS, DEFAULT_REF) : null}
-                units={units}
-              />
+              <Line key={t.key} id={t.id} a={a} b={bt ? bt(t.id, tS, ref) : null} units={units} />
             );
           })}
         </ul>
