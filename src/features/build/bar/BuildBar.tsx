@@ -75,7 +75,7 @@ function CommandButton({
 }
 
 function segClass(on: boolean): string {
-  return `${SEG_BTN} ${on ? 'bg-text text-surface-0' : 'text-muted hover:bg-surface-2 hover:text-text'}`;
+  return `${SEG_BTN} ${on ? 'bg-text text-surface-0' : 'text-muted hover:bg-surface-3 hover:text-text'}`;
 }
 
 const VIEWS: { view: View; id: string; label: string }[] = [
@@ -167,7 +167,7 @@ function AddWaypoints() {
       disabled={!hasDoc}
       onClick={toggleAddWaypoints}
       className={`${MINI_BTN} ${
-        on ? 'border-text bg-text text-surface-0' : 'border-surface-3 text-text hover:bg-surface-2'
+        on ? 'border-text bg-text text-surface-0' : 'border-surface-3 text-text hover:bg-surface-3'
       } disabled:opacity-50 ${focusRing}`}
     >
       Add waypoints
@@ -209,7 +209,7 @@ export default function BuildBar() {
         <CommandButton
           id="card.save"
           label="Save as card"
-          className={`${MINI_BTN} border-surface-3 text-text hover:bg-surface-2`}
+          className={`${MINI_BTN} border-surface-3 text-text hover:bg-surface-3`}
         />
         <Readout />
       </div>

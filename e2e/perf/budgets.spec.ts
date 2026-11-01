@@ -159,7 +159,7 @@ async function drag(
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   }
   const r = await FRAMES.stop(page);
-  const tip = await page.getByTestId('board-msg').allTextContents();
+  const tip = await page.getByTestId('board-label').allTextContents();
   await page.mouse.up();
   return { ...r, moves, tip: tip.join(' | ') };
 }
@@ -192,6 +192,13 @@ test('map drag and preview latency, 40 threats x 15 sensors', async ({ page, bro
   const g = await geom(page);
   console.log(`PERF geometry: pxPerM ${g.pxPerM.toFixed(4)}, box ${JSON.stringify(g.box)}`);
   const inspector = page.getByRole('complementary', { name: 'Inspector' });
+  // The whole-scene inspector shows a system's fields only while its row is selected (lane 10.2).
+  const rangeOf = async () => {
+    const range = inspector.getByLabel('Range', { exact: true });
+    if (!(await range.count()))
+      await inspector.getByRole('button', { name: 'Select RDR-1', exact: true }).click();
+    return (await num(range)) * M_PER_NM;
+  };
 
   // Idle baseline: the frame rate the page reaches with no input.
   await FRAMES.start(page);
@@ -199,19 +206,21 @@ test('map drag and preview latency, 40 threats x 15 sensors', async ({ page, bro
   const idle = await FRAMES.stop(page);
   console.log(`PERF idle: ${fmt(idle.fps)} fps, worst gap ${fmt(idle.gap)} ms`);
 
-  // Ring drag: RDR-1's west edge, swept between 2500 m and 1900 m.
+  // Ring drag: RDR-1's range handle, swept between 2500 m and 1900 m. The handle is drawn only
+  // while the system is selected, on the east edge of a full circle (src/board/layers/handles.ts);
+  // a press elsewhere on the ring moves the centre (10.F F-03).
   const ringFps: number[] = [];
   const ringGap: number[] = [];
-  let r = 2500;
+  let r = await rangeOf();
   for (let i = 0; i < REPS; i++) {
-    const from = g.at(-r, 0);
-    const res = await drag(page, from, (ph) => g.at(-(r - 600 * Math.sin(Math.PI * ph)), 0));
+    const from = g.at(r, 0);
+    const res = await drag(page, from, (ph) => g.at(r - 600 * Math.sin(Math.PI * ph), 0));
     console.log(
       `PERF ring drag ${i + 1}: ${fmt(res.fps)} fps, gap ${fmt(res.gap)} ms, ${res.moves} moves, tip "${res.tip}"`,
     );
     ringFps.push(res.fps);
     ringGap.push(res.gap);
-    r = (await num(inspector.getByLabel('Range', { exact: true }))) * M_PER_NM;
+    r = await rangeOf();
   }
   report('ring drag fps', stat(ringFps, false), 'fps');
   report('ring drag worst gap', stat(ringGap), 'ms');
@@ -236,59 +245,97 @@ test('map drag and preview latency, 40 threats x 15 sensors', async ({ page, bro
   report('waypoint drag worst gap', stat(wpGap), 'ms');
 
   // Preview latency, the 12.4 method: one mousemove inside a ring drag, then the first change of
-  // the timeline svg and of the map value readout.
+  // the preview's first-see ticks (events layer, lane 10.3 removed the timeline) and of the drag
+  // value label.
+  // The board replaces its layer nodes between drags, so each rep watches the nodes it finds
+  // once its drag has begun (10.F F-03).
+  type Lat = { move: number[]; tl: number[]; tip: number[]; obs: MutationObserver[] };
   await page.evaluate(() => {
-    const w = window as unknown as { __lat: { move: number[]; tl: number[]; tip: number[] } };
-    w.__lat = { move: [], tl: [], tip: [] };
+    const w = window as unknown as { __lat: Lat };
+    w.__lat = { move: [], tl: [], tip: [], obs: [] };
     window.addEventListener('mousemove', () => w.__lat.move.push(performance.now()), true);
-    const watch = (el: Element | null, out: number[]) =>
-      el &&
-      new MutationObserver(() => out.push(performance.now())).observe(el, {
-        subtree: true,
-        childList: true,
-        characterData: true,
-        attributes: true,
-        attributeFilter: ['aria-label', 'x'],
-      });
-    watch(
-      document.querySelector('[data-testid="timeline-row"]')?.closest('svg') ?? null,
-      w.__lat.tl,
-    );
-    watch(document.querySelector('[data-testid="board-msg"]'), w.__lat.tip);
   });
-  const tlMs: number[] = [];
-  const tipMs: number[] = [];
-  for (let i = 0; i < REPS; i++) {
-    const start = g.at(-r, 0);
-    await page.mouse.move(start.x, start.y);
-    await page.mouse.down();
-    await page.mouse.move(start.x - 6, start.y);
-    await page.waitForTimeout(400);
-    await page.evaluate(() => {
-      const w = window as unknown as { __lat: { move: number[]; tl: number[]; tip: number[] } };
+  const rewatch = () =>
+    page.evaluate(() => {
+      const w = window as unknown as { __lat: Lat };
+      w.__lat.obs.forEach((o) => o.disconnect());
+      w.__lat.obs = [];
       w.__lat.move.length = 0;
       w.__lat.tl.length = 0;
       w.__lat.tip.length = 0;
+      const watch = (el: Element | null, out: number[]) => {
+        if (!el) return;
+        const o = new MutationObserver(() => out.push(performance.now()));
+        o.observe(el, {
+          subtree: true,
+          childList: true,
+          characterData: true,
+          attributes: true,
+          attributeFilter: ['aria-label', 'x', 'x1', 'y1'],
+        });
+        w.__lat.obs.push(o);
+      };
+      watch(document.querySelector('g[data-layer="events"]'), w.__lat.tl);
+      watch(document.querySelector('[data-testid="board-label"]'), w.__lat.tip);
     });
+  const tlMs: number[] = [];
+  const tipMs: number[] = [];
+  for (let i = 0; i < REPS; i++) {
+    const start = g.at(r, 0);
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    await page.mouse.move(start.x + 6, start.y);
+    await page.waitForTimeout(400);
+    await rewatch();
     const r1 = i % 2 === 0 ? r - 500 : r + 500;
-    const to = g.at(-r1, 0);
+    const to = g.at(r1, 0);
     await page.mouse.move(to.x, to.y);
     await page.waitForTimeout(400);
-    const lat = await page.evaluate(
-      () => (window as unknown as { __lat: { move: number[]; tl: number[]; tip: number[] } }).__lat,
-    );
+    const lat = await page.evaluate(() => {
+      const l = (window as unknown as { __lat: Lat }).__lat;
+      return { move: l.move, tl: l.tl, tip: l.tip };
+    });
     await page.mouse.up();
     expect(lat.move.length).toBe(1);
     const m = lat.move[0]!;
     const tl = (lat.tl.find((t) => t >= m) ?? Infinity) - m;
     const tip = (lat.tip.find((t) => t >= m) ?? Infinity) - m;
-    console.log(`PERF preview latency ${i + 1}: timeline ${fmt(tl)} ms, readout ${fmt(tip)} ms`);
+    console.log(
+      `PERF preview latency ${i + 1}: first-see ticks ${fmt(tl)} ms, readout ${fmt(tip)} ms`,
+    );
     tlMs.push(tl);
     tipMs.push(tip);
-    r = (await num(inspector.getByLabel('Range', { exact: true }))) * M_PER_NM;
+    r = await rangeOf();
   }
-  report('preview latency timeline', stat(tlMs), 'ms');
+  report('preview latency first-see ticks', stat(tlMs), 'ms');
   report('preview latency readout', stat(tipMs), 'ms');
+
+  // 3D orbit drag (spec section 11: the map drag budget, same renderer as Plan): the view
+  // switch, then a drag across empty ground that sweeps yaw and pitch.
+  await page
+    .getByRole('group', { name: 'View' })
+    .getByRole('button', { name: '3D', exact: true })
+    .click();
+  await expect(
+    page.locator('[data-testid="board-stage"] svg.board[data-proj="axon"]'),
+  ).toBeAttached();
+  await page.waitForTimeout(500);
+  const orbitFps: number[] = [];
+  const orbitGap: number[] = [];
+  for (let i = 0; i < REPS; i++) {
+    const from = { x: g.box.x + 40, y: g.box.y + g.box.height - 40 };
+    const res = await drag(page, from, (ph) => ({
+      x: from.x + 300 * Math.sin(Math.PI * ph),
+      y: from.y - 120 * Math.sin(Math.PI * ph),
+    }));
+    console.log(
+      `PERF 3D orbit ${i + 1}: ${fmt(res.fps)} fps, gap ${fmt(res.gap)} ms, ${res.moves} moves`,
+    );
+    orbitFps.push(res.fps);
+    orbitGap.push(res.gap);
+  }
+  report('3D orbit fps', stat(orbitFps, false), 'fps');
+  report('3D orbit worst gap', stat(orbitGap), 'ms');
 });
 
 /** Navigation timings for one cold load. `then` is the first interaction after load. */

@@ -213,7 +213,7 @@ export default function Notes({
               <span className="flex gap-1">
                 <button
                   type="button"
-                  className="ps-btn quiet"
+                  className="ps-btn mini"
                   aria-label="Move card up"
                   disabled={index <= 0}
                   onClick={() => onMove(-1)}
@@ -222,7 +222,7 @@ export default function Notes({
                 </button>
                 <button
                   type="button"
-                  className="ps-btn quiet"
+                  className="ps-btn mini"
                   aria-label="Move card down"
                   disabled={index >= v.cards.length - 1}
                   onClick={() => onMove(1)}
@@ -231,7 +231,7 @@ export default function Notes({
                 </button>
                 <button
                   type="button"
-                  className="ps-btn quiet"
+                  className="ps-btn mini quiet"
                   aria-label="Delete card"
                   onClick={onDelete}
                 >

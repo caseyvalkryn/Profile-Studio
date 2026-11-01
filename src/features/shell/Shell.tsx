@@ -21,8 +21,6 @@ export type ShellProps = {
   rail?: ReactNode;
   /** Right column content (Build's inspector). */
   right?: ReactNode;
-  /** Bottom strip under the centre (timeline, chart, readout). */
-  strip?: ReactNode;
   /** Phone tabs: each opens the bottom sheet on its content. */
   sheet?: readonly SheetTab[];
   children: ReactNode;
@@ -61,7 +59,7 @@ function BottomSheet({ tabs }: { tabs: readonly SheetTab[] }) {
   );
 }
 
-export default function Shell({ status, rail, right, strip, sheet, children }: ShellProps) {
+export default function Shell({ status, rail, right, sheet, children }: ShellProps) {
   const panels = useUi((s) => s.panels);
   return (
     <div className="ps-app" data-tabs={sheet?.length ? '' : undefined}>
@@ -74,7 +72,6 @@ export default function Shell({ status, rail, right, strip, sheet, children }: S
         ) : null}
         <div className="ps-centre">
           <div className="ps-main">{children}</div>
-          {strip && panels.timeline ? <div className="ps-strip">{strip}</div> : null}
         </div>
         {right && panels.inspector ? (
           // A plain column: the inspector inside it is the landmark named "Inspector".

@@ -67,6 +67,8 @@ type Pend = {
 };
 
 const LONG_PRESS_MS = 500;
+/** The 3D view does not edit (spec section 7, Views). */
+export const EDIT_IN_2D = 'Edit in Plan (1) or Elevation (2).';
 
 function sameHit(a: Hit | null, b: Hit | null): boolean {
   if (!a && !b) return true;
@@ -693,11 +695,16 @@ export class BoardGestures {
       if (a && c) placeAt(w!, { rect: { a, b: c }, cam });
       return;
     }
+    if (g.type === 'rotate' && g.moved) {
+      // a 3D drag orbits and never edits; one that started on an editable hit says where to edit
+      if (g.hit && (g.hit.handle || g.hit.role)) readout(EDIT_IN_2D);
+      return;
+    }
     if (g.moved) return;
     if (g.type === 'place') {
       if (b.placing && b.placing.kind === 'event') {
         if (!w) {
-          readout('Edit in Plan or Elevation.');
+          readout(EDIT_IN_2D);
           return;
         }
         placeAt(w, { cam });
@@ -710,7 +717,7 @@ export class BoardGestures {
     if (g.type === 'rotate') {
       if (g.hit) {
         this.select(g.hit);
-        if (g.hit.handle || g.hit.role) readout('Edit in Plan or Elevation.');
+        if (g.hit.handle || g.hit.role) readout(EDIT_IN_2D);
       } else if (last && last.sel.kind) this.select(null);
       return;
     }

@@ -11,7 +11,6 @@ export {
   type MenuTarget,
 } from './actions';
 export {
-  CARDS_LATER,
   lettersInUse,
   MENU_ARG_QUANTITY,
   MENU_KINDS,

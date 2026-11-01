@@ -45,7 +45,7 @@ export function Volumes({ v }: { v: Vignette }) {
             id={a.id}
             current={current}
             onSelect={() => toggle(a.key, current)}
-            lead={<Swatch kind="volume" />}
+            lead={<Swatch kind="neutral" />}
             title={a.label || a.id}
             meta={`${AREA_LABELS[a.kind]} · ${a.pts.length} vertices${
               a.zMaxM > 0 ? ` · to ${vText(a.zMaxM, units)}` : ''

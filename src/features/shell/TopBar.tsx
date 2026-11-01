@@ -231,10 +231,11 @@ export default function TopBar({ status }: { status?: string | null }) {
             </span>
           ) : null}
           <BarButton id="edit.undo" quiet className="tb-undo" tip={undoTitle(undoLabel)}>
-            Undo
+            {/* spec section 8: the button names the pending step (review 10.R N-14) */}
+            <span className="truncate">{undoLabel ? undoTitle(undoLabel) : 'Undo'}</span>
           </BarButton>
           <BarButton id="edit.redo" quiet className="tb-redo" tip={redoTitle(redoLabel)}>
-            Redo
+            <span className="truncate">{redoLabel ? redoTitle(redoLabel) : 'Redo'}</span>
           </BarButton>
           {onLibrary ? null : (
             <>

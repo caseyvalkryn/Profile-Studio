@@ -28,7 +28,8 @@ function active(ctx: Ctx, s: SystemRec): boolean {
 function ringClass(ctx: Ctx, s: SystemRec, on: boolean): string {
   return (
     'ring ' +
-    (isSensor(s.kind) ? 'rg-sensor' : s.kind === 'ew' ? 'rg-ew' : 'rg-eff') +
+    // EW and directed energy share the EW ring, as the mockup's "ring ew" (F-11)
+    (isSensor(s.kind) ? 'rg-sensor' : s.kind === 'ew' || s.kind === 'de' ? 'rg-ew' : 'rg-eff') +
     (on ? ' on' : '') +
     (s.status === 'inactive' ? ' off' : '') +
     ctx.cls(s.id) +
@@ -146,7 +147,8 @@ register({
           });
         }
         const tp = cam.projectRZ!(rs, Math.min(cam.maxZ!, zs + s.range));
-        top = [tp[0], tp[1] - 4];
+        // clamped to the frame top, MAX RG drops inside the frame, clear of the axis title (F-06)
+        top = [tp[0], Math.max(tp[1] - 4, cam.frame.y0 + 12)];
       } else {
         const full = !(s.fov < 360);
         const n = 64;

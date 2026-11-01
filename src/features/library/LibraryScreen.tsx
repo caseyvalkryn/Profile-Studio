@@ -132,49 +132,52 @@ function SavedCard({
           onAction('open');
         }
       }}
-      className={`flex min-w-0 flex-col gap-1.5 rounded-md border border-surface-3 bg-surface-1 p-2.5 aria-[current=true]:border-accent ${focusRing}`}
+      className={`flex min-w-0 flex-col overflow-hidden rounded-md border border-surface-3 bg-surface-1 aria-[current=true]:border-accent ${focusRing}`}
     >
-      <div className="aspect-[5/3] overflow-hidden rounded-sm border border-surface-3">
+      {/* The picture runs edge to edge over a rule, as the mockup's .pc .pic (review 10.R N-17). */}
+      <div className="aspect-[5/3] overflow-hidden border-b border-surface-3 bg-surface-0">
         {v ? (
           <Thumbnail vignette={v} title={`${s.name} ${s.firstCard ? 'first card' : 'map'}`} />
         ) : (
           <ThumbnailPlaceholder title={`${s.name} ${s.firstCard ? 'first card' : 'map'}`} />
         )}
       </div>
-      <h3 className="m-0 truncate text-sm font-medium" title={s.name}>
-        {s.name}
-      </h3>
-      <p className="m-0 line-clamp-2 min-h-8 text-xs text-muted">{s.question}</p>
-      <Tooltip content={`Saved ${relativeTime(s.updated)}, ${absoluteTime(s.updated)}`}>
-        <span
-          tabIndex={0}
-          data-testid="saved-meta"
-          className={`min-w-0 font-mono text-xs break-words text-muted ${focusRing}`}
-        >
-          {metaLine(s)}
-        </span>
-      </Tooltip>
-      <div className="flex min-w-0 items-center gap-0.5">
-        {asking ? (
-          <>
-            <span
-              className="min-w-0 truncate text-xs text-state-warning"
-              title={`Delete ${s.name}?`}
-            >
-              Delete {s.name}?
-            </span>
-            {act('Yes', 'yes', `lib-del-yes-${s.id}`)}
-            {act('No', 'no', `lib-del-no-${s.id}`)}
-          </>
-        ) : (
-          <>
-            {act('Open', 'open')}
-            {act('Brief', 'brief')}
-            {act('Duplicate', 'dup')}
-            {act('Export', 'export')}
-            <span className="ml-auto">{act('Delete', 'del', `lib-del-${s.id}`)}</span>
-          </>
-        )}
+      <div className="flex min-w-0 flex-col gap-1.5 p-2.5">
+        <h3 className="m-0 truncate text-sm font-medium" title={s.name}>
+          {s.name}
+        </h3>
+        <p className="m-0 line-clamp-2 min-h-8 text-xs text-muted">{s.question}</p>
+        <Tooltip content={`Saved ${relativeTime(s.updated)}, ${absoluteTime(s.updated)}`}>
+          <span
+            tabIndex={0}
+            data-testid="saved-meta"
+            className={`min-w-0 font-mono text-xs break-words text-muted ${focusRing}`}
+          >
+            {metaLine(s)}
+          </span>
+        </Tooltip>
+        <div className="flex min-w-0 items-center gap-0.5">
+          {asking ? (
+            <>
+              <span
+                className="min-w-0 truncate text-xs text-state-warning"
+                title={`Delete ${s.name}?`}
+              >
+                Delete {s.name}?
+              </span>
+              {act('Yes', 'yes', `lib-del-yes-${s.id}`)}
+              {act('No', 'no', `lib-del-no-${s.id}`)}
+            </>
+          ) : (
+            <>
+              {act('Open', 'open')}
+              {act('Brief', 'brief')}
+              {act('Duplicate', 'dup')}
+              {act('Export', 'export')}
+              <span className="ml-auto">{act('Delete', 'del', `lib-del-${s.id}`)}</span>
+            </>
+          )}
+        </div>
       </div>
     </article>
   );

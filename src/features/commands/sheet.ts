@@ -15,7 +15,6 @@ const row = (ids: string | readonly string[], label?: string): RowSpec => ({
 });
 
 const CHIPS = [1, 2, 3, 4, 5].map((n) => `layer.chip${n}`);
-const CARDS = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `brief.card${n}`);
 
 /** Legacy order of `46-keys.js`, with the spec section 8 keys. */
 const ORDER: readonly RowSpec[] = [
@@ -35,7 +34,6 @@ const ORDER: readonly RowSpec[] = [
   row('view.units', 'nm ft kt or km m m/s'),
   row('map.gridSnap'),
   row('map.measure'),
-  row('view.stripCycle', 'Timeline, chart, readout'),
   row(CHIPS, 'Layer toggle by number'),
   row('view.fit', 'Fit the board'),
   row(['view.zoomIn', 'view.zoomOut'], 'Zoom'),
@@ -49,19 +47,12 @@ const ORDER: readonly RowSpec[] = [
   row('edit.paste'),
   row('panel.inspector'),
   row('panel.sides'),
-  row('panel.readout'),
   row('help.shortcuts'),
   row('edit.escape', 'Cancel, close or go back'),
-  row(['brief.next', 'brief.nextPage']),
-  row(['brief.back', 'brief.backPage']),
+  row('brief.next'),
+  row('brief.back'),
   row('brief.space'),
   row(['brief.first', 'brief.last'], 'First card or last card'),
-  row(CARDS, 'Jump to card n'),
-  row('brief.full'),
-  row('brief.notes'),
-  row('brief.blank'),
-  row('brief.readout'),
-  row(['brief.focusPrev', 'brief.focusNext']),
 ];
 
 export type SheetRow = { keys: string; label: string; ids: string[] };

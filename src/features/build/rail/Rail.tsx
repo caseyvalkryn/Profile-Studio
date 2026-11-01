@@ -27,14 +27,17 @@ function Row({ row, selected }: { row: RailRow; selected: boolean }) {
       onPointerLeave={() => {
         if (useUi.getState().hoverKey === row.key) useUi.getState().setHover(null);
       }}
-      className={`flex h-row w-full cursor-default items-center gap-2 px-row-px text-left text-xs ${focusRing} ${
+      className={`flex min-h-row w-full cursor-default items-center gap-2 px-row-px py-0.5 text-left text-xs ${focusRing} ${
         selected
           ? 'bg-[color-mix(in_srgb,var(--accent)_16%,transparent)] shadow-[inset_2px_0_0_var(--accent)]'
-          : 'hover:bg-[color-mix(in_srgb,var(--accent)_8%,transparent)]'
+          : 'hover:bg-surface-3'
       }`}
     >
       <span className="w-col-id shrink-0 truncate font-mono text-[11px] text-text">{row.id}</span>
-      <span className="min-w-0 flex-1 truncate text-muted">{row.name}</span>
+      {/* a long name wraps to a second line rather than truncating (review 10.R F-07) */}
+      <span className="line-clamp-2 min-w-0 flex-1 leading-tight break-words text-muted">
+        {row.name}
+      </span>
       {row.data || row.warn ? (
         <span
           className={`shrink-0 text-right font-mono text-[11px] whitespace-pre ${
@@ -69,7 +72,7 @@ export function Rail() {
           <button
             type="button"
             onClick={() => useUi.getState().togglePanel('list', false)}
-            className={`flex h-[22px] w-[22px] items-center justify-center rounded-sm text-muted hover:bg-surface-2 hover:text-text ${focusRing}`}
+            className={`flex h-[22px] w-[22px] items-center justify-center rounded-sm text-muted hover:bg-surface-3 hover:text-text ${focusRing}`}
           >
             <Icon icon={ChevronLeft} label="Hide the scene list" iconOnly size={12} />
           </button>
@@ -90,7 +93,7 @@ export function Rail() {
                     type="button"
                     data-add={g.id}
                     onClick={() => openQuickAdd(g.id)}
-                    className={`flex h-[22px] w-[22px] items-center justify-center rounded-sm text-muted hover:bg-surface-2 hover:text-text ${focusRing}`}
+                    className={`flex h-[22px] w-[22px] items-center justify-center rounded-sm text-muted hover:bg-surface-3 hover:text-text ${focusRing}`}
                   >
                     <Icon icon={Plus} label={label} iconOnly size={12} />
                   </button>

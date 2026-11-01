@@ -1,6 +1,7 @@
 // Layer labels (legacy 43-layer-labels.js, chip 6): one greedy placement pass over the label
-// candidates the other layers queued. The selected object goes first, then by priority p, then
-// by queue order. A candidate whose padded box overlaps a placed box is dropped. With the chip
+// candidates the other layers queued. The selected object and the focus (a card's focus ids) go
+// first, then by priority p, then by queue order (review 10.R F-02: a focused event names
+// itself). A candidate whose padded box overlaps a placed box is dropped. With the chip
 // off only "always" candidates (data blocks) place.
 import { register } from '../layers';
 import type { Box } from '../symbols';
@@ -41,10 +42,13 @@ register({
   draw(ctx) {
     if (ctx.thumb) return '';
     const selId = ctx.sel && ctx.sel.id;
+    const focus = ctx.focus || [];
+    const first = (id: string | null | undefined) =>
+      id != null && (id === selId || focus.indexOf(id) >= 0);
     const list = (ctx.labels || []).filter((c) => c && c.svg && (ctx.labelsOn || c.always));
     list.sort((a, b) => {
-      const pa = selId != null && a.id === selId ? 0 : a.p;
-      const pb = selId != null && b.id === selId ? 0 : b.p;
+      const pa = first(a.id) ? 0 : a.p;
+      const pb = first(b.id) ? 0 : b.p;
       return pa - pb || (a.n ?? 0) - (b.n ?? 0);
     });
     const placed: Box[] = [];

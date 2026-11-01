@@ -64,18 +64,36 @@ export type LegacyPS = {
   layers: { list(): { id: string }[] };
 };
 
+/** Source edits on one legacy script: [file, find, replace]; each find must occur once. */
+export type LegacyPatch = readonly [file: string, find: string, replace: string];
+
 let cached: LegacyPS | null = null;
-export function loadLegacy(): LegacyPS {
-  if (cached) return cached;
+/**
+ * The live legacy app in a node vm. With patches, a fresh uncached copy whose scripts carry the
+ * named deviations, so a parity test stays byte-strict on everything else.
+ */
+export function loadLegacy(patches: readonly LegacyPatch[] = []): LegacyPS {
+  if (cached && !patches.length) return cached;
   const root = path.resolve(__dirname, '../../legacy');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const order = [...html.matchAll(/<script src="(js\/[^"]+)"/g)].map((m) => m[1]!);
   const ctx = vm.createContext({ console, performance: { now: () => Date.now() } });
   ctx.globalThis = ctx;
-  for (const f of order)
-    vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
-  cached = (ctx as unknown as { PS: LegacyPS }).PS;
-  return cached;
+  const used = new Set<LegacyPatch>();
+  for (const f of order) {
+    let src = fs.readFileSync(path.join(root, f), 'utf8');
+    for (const pt of patches) {
+      if ('js/' + pt[0] !== f) continue;
+      if (src.split(pt[1]).length !== 2) throw new Error('legacy patch not unique: ' + pt[1]);
+      src = src.replace(pt[1], () => pt[2]);
+      used.add(pt);
+    }
+    vm.runInContext(src, ctx, { filename: f });
+  }
+  for (const pt of patches) if (!used.has(pt)) throw new Error('legacy patch unused: ' + pt[0]);
+  const ps = (ctx as unknown as { PS: LegacyPS }).PS;
+  if (!patches.length) cached = ps;
+  return ps;
 }
 
 /** Tag balance of an SVG string: every open tag closes in order. */

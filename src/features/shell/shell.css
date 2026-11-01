@@ -421,6 +421,11 @@ textarea.ps-input {
     justify-content: flex-end;
   }
 }
+/* The undo and redo buttons name the step (N-14); a long name ends in an ellipsis, the tip has it all. */
+.tb-undo,
+.tb-redo {
+  max-width: 14rem;
+}
 @media (max-width: 600px) {
   .tb-undo,
   .tb-redo,

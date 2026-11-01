@@ -33,7 +33,7 @@ import type {
   Waypoint,
 } from '../domain/types';
 import { previewOf } from '../state/document';
-import type { Clip, MapPoint, PanelName, StripTab, Theme, Workspace } from '../state/ui';
+import type { Clip, MapPoint, Theme, Workspace } from '../state/ui';
 import { libraryCommands } from '../features/library/commands';
 import { boardCommands } from '../features/build/board/commands';
 import { briefCommands } from '../features/brief/commands';
@@ -58,6 +58,8 @@ const selOf = (ctx: CommandContext, kinds?: readonly FoundKind[]) =>
   selected(docOf(ctx), ctx.ui.selectedKeys).filter((f) => !kinds || kinds.includes(f.kind));
 
 const needDoc: Rule = (ctx) => (docOf(ctx) ? true : 'Open a profile first');
+/** The reason a deferred command shows (plan phase 10, deferred list). */
+const NOT_YET = 'Not in this version';
 const needPointer: Rule = (ctx) => (ctx.pointer ? true : 'Right-click the map first');
 const needSel =
   (kinds: readonly FoundKind[] | undefined, what: string): Rule =>
@@ -453,12 +455,6 @@ const THEME_NEXT: Record<Theme, Theme> = { auto: 'light', light: 'dark', dark: '
 /** Legacy theme cycle: auto, light, dark. */
 export const nextTheme = (t: Theme): Theme => THEME_NEXT[t];
 
-const STRIP_NEXT: Record<StripTab, StripTab> = {
-  timeline: 'chart',
-  chart: 'readout',
-  readout: 'timeline',
-};
-
 /**
  * The board's cancel (drag, then placing, then ruler), set by the Build workspace when it loads.
  * Injected so this file does not import the board view (the board's menu imports this file).
@@ -498,25 +494,6 @@ function cycleKind(ctx: CommandContext, dir: 1 | -1) {
   const next = list[(i + dir + list.length) % list.length];
   if (next) ctx.ui.setSelection([next.key]);
 }
-
-/** Panels with no key yet; each flips its `ui.panels` field (the panel itself mounts later). */
-const PANEL_TOGGLES: Command[] = (
-  [
-    ['chips', 'Layer chips on or off'],
-    ['readout', 'Readout panel on or off'],
-    ['events', 'Events panel on or off'],
-    ['debrief', 'Debrief panel on or off'],
-    ['snapshots', 'Snapshots panel on or off'],
-  ] as const satisfies readonly (readonly [PanelName, string])[]
-).map(([name, label]): Command => ({
-  id: `panel.${name}`,
-  label,
-  group: 'view',
-  // K shows the readout panel in Build (legacy `panel.readout`); Brief's K is `brief.readout`.
-  ...(name === 'readout' ? { shortcut: 'K', workspaces: BUILD } : {}),
-  when: () => true,
-  run: (ctx) => ctx.ui.togglePanel(name),
-}));
 
 /** Shift+1 to Shift+5: the Build bar's five layer toggles by number (spec section 8, Keys). */
 const LAYER_CHIPS: Command[] = LAYER_TOGGLES.map((t, i) => ({
@@ -820,7 +797,7 @@ const COMMANDS: Command[] = [
     label: 'Previous event or derived time',
     group: 'time',
     shortcut: '[',
-    when: () => 'Event steps arrive with the time engine, lane 9.3.2',
+    when: () => NOT_YET,
     run: () => {},
   },
   {
@@ -828,7 +805,7 @@ const COMMANDS: Command[] = [
     label: 'Next event or derived time',
     group: 'time',
     shortcut: ']',
-    when: () => 'Event steps arrive with the time engine, lane 9.3.2',
+    when: () => NOT_YET,
     run: () => {},
   },
   {
@@ -867,16 +844,6 @@ const COMMANDS: Command[] = [
       ctx.ui.setPanels({ list: open, inspector: open });
     },
   },
-  {
-    id: 'view.stripCycle',
-    label: 'Strip: timeline, chart, readout',
-    group: 'view',
-    shortcut: 'R',
-    // Build's strip has only the timeline until the chart and readout strips land.
-    when: () => 'The chart and readout strips arrive in lane 9.3.2',
-    run: (ctx) => ctx.ui.setStripTab(STRIP_NEXT[ctx.ui.stripTab]),
-  },
-  ...PANEL_TOGGLES,
   ...LAYER_CHIPS,
   // Lanes 9.2.3 to 9.2.5: the rail adds, quick-add, the right-click items and the board keys.
   // They replace the stubs build.quickAdd, build.addSensor, build.addArea, build.addEvent,
