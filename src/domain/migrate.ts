@@ -1,10 +1,10 @@
 // Legacy v4 import (spec section 5). profile -> vignette, aircraft and paths -> threats,
 // systems -> sensors, effectors and nodes, volumes -> areas, MOP text -> question note.
 // Height planes, authored events, snapshots, cards, the data list and debrief map to their own
-// v6 fields (upgrade rule 1); references by legacy id become references by key. Every free-text
-// field is kept. Collection becomes the site name when that is empty, else a question note line.
-// Other text with no field of its own (class, path identity, system status, site datum) goes to
-// report.notes as plain lines.
+// v7 fields (upgrade rule 1); references by legacy id become references by key. Every free-text
+// field is kept. Collection, class and the version counter map to their own fields; a class
+// outside the catalog becomes 'Custom' and its text a report.notes line. Other text with no field
+// of its own (path identity, system status, site datum) goes to report.notes as plain lines.
 
 import {
   AUTHORED_EVENT_TYPES,
@@ -31,15 +31,16 @@ import type {
   LayerId,
   MeasureSetting,
   Node,
+  ProfileClass,
   Question,
   Sensor,
   SensorKind,
   Threat,
   Vignette,
 } from './types';
-import { SCHEMA } from './types';
+import { PROFILE_CLASSES, SCHEMA } from './types';
 
-export { migrateV5ToV6 } from './migrateV5';
+export { migrateToV7, migrateV5ToV6 } from './migrateV5';
 
 type Obj = Record<string, unknown>;
 
@@ -95,7 +96,11 @@ export function importLegacyV4(doc: unknown): Vignette {
   const note = (label: string, text: string) => {
     if (text) notes.push(`${label}: ${text}`);
   };
-  note('Class', str(doc.cls));
+  const cls = str(doc.cls);
+  const klass = (PROFILE_CLASSES as readonly string[]).includes(cls)
+    ? (cls as ProfileClass)
+    : 'Custom';
+  if (cls !== klass) note('Class', cls);
 
   // aircraft -> archetype and cruise; each path becomes one threat
   const aircraft = new Map(objs(scene.aircraft).map((a) => [str(a.id), a]));
@@ -336,15 +341,6 @@ export function importLegacyV4(doc: unknown): Vignette {
       : [];
 
   const site = isObj(doc.site) ? doc.site : {};
-  // Collection has no field of its own. It names the site when the site has no name (the Library
-  // groups by site name); otherwise it goes on the question note, else on the report notes.
-  const collection = str(doc.collection);
-  let siteName = str(site.name);
-  if (collection && !siteName) siteName = collection;
-  else if (collection && questions[0]) {
-    const q = questions[0];
-    q.note = q.note ? `${q.note}\nCollection: ${collection}` : `Collection: ${collection}`;
-  } else note('Collection', collection);
   if (str(site.datum) === 'MSL') note('Site datum', 'MSL');
   notes.push(TARGET_TIME_NOTE);
   notes.push('Site origin not set: lat 0, lon 0.');
@@ -356,9 +352,11 @@ export function importLegacyV4(doc: unknown): Vignette {
     id: str(doc.id, 'PROF-1'),
     name: str(doc.name),
     updated: str(meta.updated) || str(meta.created) || new Date().toISOString(),
-    site: { name: siteName, lat: 0, lon: 0, elevM: num(site.elev) },
+    collection: str(doc.collection),
+    class: klass,
+    version: Math.max(1, Math.round(num(doc.v, 1))),
+    site: { name: str(site.name), lat: 0, lon: 0, elevM: num(site.elev) },
     questions,
-    hypotheses: [],
     threats,
     sensors,
     effectors,
@@ -371,9 +369,7 @@ export function importLegacyV4(doc: unknown): Vignette {
     debrief,
     chainTime: { decisionS: 0, assignS: 0 },
     measures: DEFAULT_MEASURES.map((m) => ({ ...m })),
-    runs: [],
     report: {
-      summary: '',
       notes: notes.join('\n'),
       dataSources: list(doc.data).map((d) => str(d)),
       truth: {
@@ -383,8 +379,6 @@ export function importLegacyV4(doc: unknown): Vignette {
           .map((id) => keyOfSystem.get(str(id)))
           .filter((k): k is string => k !== undefined),
       },
-      // Legacy cards import to `cards`; `slides` holds AAR notes only (spec section 5 rule 3).
-      slides: [],
     },
   };
   return parseVignette(v);

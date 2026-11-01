@@ -1,13 +1,43 @@
 // The profile sections of the whole-scene inspector (legacy/mockup-v3.html drawInspector):
-// Purpose, Telemetry, Data products and Site. Class has no v6 field and is omitted (lane 10.5).
+// Purpose, Telemetry, Data products and Site.
+import { useEffect, useRef, useState } from 'react';
 import { newKey, nextId } from '../../../domain/ids';
-import type { Vignette } from '../../../domain/types';
+import { PROFILE_CLASSES, type Vignette } from '../../../domain/types';
+import { listVignettes } from '../../../state/persist';
 import { usePreview } from '../../../state/document';
 import { useUi, type Units } from '../../../state/ui';
 import { hText, parseIds, parseValue } from './parse';
 import { Choice, edit, F, Field, Hint, Mini, NumField, Remove, Sec, useSuffix } from './Row';
 
+const CLASS_OPTIONS = PROFILE_CLASSES.map((c) => [c, c] as const);
+const COLLECTIONS_LIST = 'inspector-collections';
+
+/** The collections in the stored library and the open profile, sorted, for the datalist. */
+function useCollections(current: string): string[] {
+  const [stored, setStored] = useState<string[]>([]);
+  useEffect(() => {
+    let live = true;
+    listVignettes()
+      .then((l) => {
+        if (live) setStored(l.map((x) => x.collection));
+      })
+      .catch(() => {
+        // No storage: only the open profile's collection.
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
+  return [...new Set([...stored, current].filter(Boolean))].sort();
+}
+
 export function Purpose({ v }: { v: Vignette }) {
+  const collections = useCollections(v.collection);
+  // Field has no `list` prop: point its input at the datalist.
+  const collRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    collRef.current?.querySelector('input')?.setAttribute('list', COLLECTIONS_LIST);
+  }, []);
   return (
     <Sec title="Purpose">
       <F caption="Question" top>
@@ -32,13 +62,28 @@ export function Purpose({ v }: { v: Vignette }) {
           }}
         />
       </F>
-      <F caption="Collection">
-        <Field
-          name="Collection"
-          label="set collection"
-          value={v.site.name}
-          write={(text) => (d) => void (d.site.name = text)}
+      <F caption="Class">
+        <Choice
+          name="Class"
+          value={v.class}
+          options={CLASS_OPTIONS}
+          onChange={(c) => edit('set class', (d) => void (d.class = c))}
         />
+      </F>
+      <F caption="Collection">
+        <span ref={collRef} className="contents">
+          <Field
+            name="Collection"
+            label="set collection"
+            value={v.collection}
+            write={(text) => (d) => void (d.collection = text)}
+          />
+        </span>
+        <datalist id={COLLECTIONS_LIST}>
+          {collections.map((c) => (
+            <option key={c} value={c} />
+          ))}
+        </datalist>
       </F>
     </Sec>
   );

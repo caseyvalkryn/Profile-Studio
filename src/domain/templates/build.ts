@@ -11,6 +11,7 @@ import type {
   Node,
   NodeKind,
   Op,
+  ProfileClass,
   Question,
   Sensor,
   SensorKind,
@@ -144,7 +145,7 @@ export type Parts = Partial<
     | 'measures'
     | 'report'
   >
-> & { name: string };
+> & { name: string; class?: ProfileClass };
 
 export function vignette(parts: Parts): Vignette {
   return {
@@ -152,9 +153,11 @@ export function vignette(parts: Parts): Vignette {
     id: `V-${newKey().slice(0, 8)}`,
     name: parts.name,
     updated: new Date().toISOString(),
+    collection: '',
+    class: parts.class ?? 'Custom',
+    version: 1,
     site: { ...SITE },
     questions: parts.questions ?? [],
-    hypotheses: [],
     threats: parts.threats ?? [],
     sensors: parts.sensors ?? [],
     effectors: parts.effectors ?? [],
@@ -167,13 +170,10 @@ export function vignette(parts: Parts): Vignette {
     debrief: null,
     chainTime: parts.chainTime ?? { decisionS: 5, assignS: 3 },
     measures: parts.measures ?? [],
-    runs: [],
     report: parts.report ?? {
-      summary: '',
       notes: '',
       dataSources: [],
       truth: { source: '', intervalS: 1, stationKeys: [] },
-      slides: [],
     },
   };
 }

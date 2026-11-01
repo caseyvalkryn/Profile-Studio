@@ -36,6 +36,7 @@ export const surrogateRacetrack: Template = {
     const tm1 = node('TM-1', 'tspi', 400, -900, 3500);
     const rtk = node('TM-2', 'tspi', -500, -300, 0);
     return vignette({
+      class: 'Surrogate',
       name: 'Surrogate racetrack with truth',
       questions: [Q],
       threats: [
@@ -49,7 +50,6 @@ export const surrogateRacetrack: Template = {
       ],
       measures: [m],
       report: {
-        summary: '',
         notes: '',
         dataSources: ['RTK GPS truth, 20 Hz', 'Radar track, 1 Hz, with covariance'],
         truth: {
@@ -57,7 +57,6 @@ export const surrogateRacetrack: Template = {
           intervalS: 10,
           stationKeys: [tm1.key, rtk.key],
         },
-        slides: [],
       },
     });
   },

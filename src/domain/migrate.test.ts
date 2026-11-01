@@ -276,23 +276,24 @@ describe('legacy v4 round trip (acceptance item 18)', () => {
     expect(v.report.notes).not.toMatch(/Height plane|Event e1/);
   });
 
-  it('keeps the collection: site name when empty, else a question note line', () => {
+  it('maps collection, class and the version counter to their fields', () => {
     const [, base] = fixtures[0]!;
     const v = importLegacyV4(base);
-    expect(v.site.name).toBe('Toughstump');
-    expect(v.report.notes).not.toMatch(/Collection/);
+    expect([v.collection, v.class, v.version, v.site.name]).toEqual([
+      'Toughstump',
+      'Counter-UAS',
+      3,
+      '',
+    ]);
+    expect(v.report.notes).not.toMatch(/Collection|Class/);
 
     const named = structuredClone(base) as L & { site: L };
     named.site.name = 'North range';
+    named.cls = 'Tank';
     const w = importLegacyV4(named);
-    expect(w.site.name).toBe('North range');
-    expect(w.questions[0]!.note.split('\n').at(-1)).toBe('Collection: Toughstump');
-    expect(w.report.notes).not.toMatch(/Collection/);
-
-    const bare = { ...named, purpose: '', mop: [] };
-    const b = importLegacyV4(bare);
-    expect(b.questions).toEqual([]);
-    expect(b.report.notes).toMatch(/^Collection: Toughstump$/m);
+    expect([w.collection, w.site.name, w.class]).toEqual(['Toughstump', 'North range', 'Custom']);
+    expect(w.questions[0]!.note).not.toMatch(/Collection/);
+    expect(w.report.notes).toMatch(/^Class: Tank$/m);
   });
 
   it('maps a debrief, a clip and a system origin by key', () => {
@@ -344,11 +345,10 @@ describe('legacy v4 round trip (acceptance item 18)', () => {
     );
   });
 
-  it('imports legacy cards to cards only; report slides stay empty', () => {
+  it('imports legacy cards to cards', () => {
     const [, base] = fixtures[0]!;
     const v = importLegacyV4(structuredClone(base));
     expect(v.cards.length).toBeGreaterThan(0);
-    expect(v.report.slides).toEqual([]);
   });
 
   it('rejects what the legacy validator rejects', () => {
@@ -379,7 +379,7 @@ describe('legacy v4 round trip (acceptance item 18)', () => {
 });
 
 describe('migrateV5ToV6', () => {
-  it('gives a v5 record empty lists, a null debrief and empty threat groups', () => {
+  it('takes a v5 record to v7: empty lists, a null debrief and empty threat groups', () => {
     const v6 = templateById('swarm-split')!.make();
     const v5 = JSON.parse(JSON.stringify(v6)) as Record<string, unknown> & {
       threats: Record<string, unknown>[];
@@ -392,14 +392,22 @@ describe('migrateV5ToV6', () => {
     delete v5.areas[1]!.zMinM;
     delete v5.areas[1]!.zMaxM;
 
+    // The template is v7: a stored v5 record has no collection, class or version.
+    for (const k of ['collection', 'class', 'version']) delete v5[k];
     const v = parseVignette(v5);
-    expect(v.schema).toBe('profile-studio/6');
+    expect(v.schema).toBe('profile-studio/7');
+    expect([v.collection, v.class, v.version]).toEqual([v6.site.name, 'Custom', 1]);
     expect([v.planes, v.events, v.snapshots, v.cards, v.debrief]).toEqual([[], [], [], [], null]);
     expect(v.threats.length).toBeGreaterThan(0);
     expect(v.threats.every((t) => t.group === '')).toBe(true);
     expect(v.areas[0]).toEqual(v6.areas[0]);
     expect(v.areas[1]).toMatchObject({ id: 'NFZ-1', zMinM: 0, zMaxM: 150 });
-    expect({ ...v, areas: [] }).toEqual({ ...v6, areas: [] });
+    expect({ ...v, areas: [] }).toEqual({
+      ...v6,
+      areas: [],
+      collection: v6.site.name,
+      class: 'Custom',
+    });
     expect(migrateV5ToV6(v6)).toBe(v6);
   });
 });

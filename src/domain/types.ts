@@ -1,9 +1,11 @@
 // Domain types, spec section 5. Units stored: metres, seconds, metres per second.
-// Every asset, waypoint, question and hypothesis carries `key`: a UUID minted at creation that
-// never changes. `id` is the display id (RDR-1, T1, DA, Q-01, H-01) and can be renamed.
+// Every asset, waypoint and question carries `key`: a UUID minted at creation that
+// never changes. `id` is the display id (RDR-1, T1, DA, Q-01) and can be renamed.
 // References between records use `key`, never `id` or an array index.
 
-export const SCHEMA = 'profile-studio/6' as const;
+export const SCHEMA = 'profile-studio/7' as const;
+/** The stamp before collection, class and version, with the run fields (spec section 5). */
+export const SCHEMA_V6 = 'profile-studio/6' as const;
 /** The stamp before height planes, authored events, snapshots, cards and debrief (spec section 5). */
 export const SCHEMA_V5 = 'profile-studio/5' as const;
 
@@ -13,15 +15,28 @@ export type NodeKind = 'c2' | 'tspi';
 export type AreaKind = 'asset' | 'wez' | 'nfz' | 'ref';
 export type Op = '>=' | '<=';
 
+/** The profile classes (spec section 5, legacy C.CLASSES). */
+export const PROFILE_CLASSES = [
+  'Counter-UAS',
+  'Multi-aircraft',
+  'One-way attack',
+  'Surrogate',
+  'Custom',
+] as const;
+export type ProfileClass = (typeof PROFILE_CLASSES)[number];
+
 export type Vignette = {
   schema: typeof SCHEMA;
   id: string;
   name: string;
   updated: string;
+  /** The Library group; '' when none. A v6 record takes its site name. */
+  collection: string;
+  class: ProfileClass;
+  /** Rises by one on each committed edit; undo does not lower it. Starts at 1. */
+  version: number;
   site: { name: string; lat: number; lon: number; elevM: number };
   questions: Question[]; // Q-01 ...
-  /** @deprecated: removed in v7 (plan 10.5). Stored v6 records carry it; nothing reads it. */
-  hypotheses: Hypothesis[]; // H-01 ...
   threats: Threat[];
   sensors: Sensor[];
   effectors: Effector[];
@@ -34,28 +49,7 @@ export type Vignette = {
   debrief: Debrief | null; // flown data
   chainTime: { decisionS: number; assignS: number }; // Target step inputs
   measures: MeasureSetting[]; // the rows this vignette scores, with thresholds
-  /** @deprecated: removed in v7 (plan 10.5). Stored v6 records carry it; nothing reads it. */
-  runs: RunSummary[]; // stored results, newest first
   report: ReportDraft;
-  /** @deprecated: removed in v7 (plan 10.5). The sweep factors of a stored v6 record; nothing reads it. */
-  sweep?: { factors: SweepFactor[] };
-};
-
-/** Sweep factor kinds. @deprecated: removed in v7 (plan 10.5). */
-export type SweepFactorKind =
-  | 'threat-speed'
-  | 'threat-altitude'
-  | 'approach-bearing'
-  | 'sensor-range'
-  | 'sensor-position-offset';
-
-/** @deprecated: removed in v7 (plan 10.5). */
-export type SweepFactor = {
-  kind: SweepFactorKind;
-  /** Levels in the factor's unit: m/s, m AGL, degrees, m, m. */
-  levels: number[];
-  /** Threat or sensor id the factor applies to; every one of that kind when absent. */
-  target?: string;
 };
 
 /** `Q-nn`: what the test must answer. `note` holds supporting text, such as legacy MOP lines. */
@@ -241,82 +235,15 @@ export type MeasureSetting = {
   unit: string;
 };
 
-/** @deprecated: removed in v7 (plan 10.5). Kept so stored v6 records parse. */
-export type Hypothesis = {
-  key: string;
-  id: string;
-  question: string; // question key
-  measure: string; // DroneScore ID
-  op: Op;
-  value: number;
-  prediction: { low: number; high: number } | null;
-  lockedAt: string | null;
-};
-
 export type Entered = { value: number | boolean | string; source: string }; // source note is required
 
-/** @deprecated: removed in v7 (plan 10.5). */
-export type StageReached =
-  'none' | 'detect' | 'track' | 'classify' | 'identify' | 'engage' | 'defeat';
-
-/** @deprecated: removed in v7 (plan 10.5). */
-export type Outcome = 'Success' | 'Miss' | 'No Attempt';
-
 /**
- * One per threat per replicate; DroneScore field names. @deprecated: removed in v7 (plan 10.5). Kept so stored v6 records parse.
+ * The profile's report fields. `dataSources` is the data products list, `truth` the telemetry
+ * (the inspector's Telemetry section) and `notes` the import's plain lines that have no field of
+ * their own (the board reads identity, status and datum from them).
  */
-export type RunRow = {
-  run: number;
-  threat: string;
-  stage_reached: StageReached;
-  detect_range_m: number | null;
-  detect_alt_m: number | null;
-  track_continuity_pct: number | null;
-  track_error_m: number | null;
-  id_range_m: number | null;
-  id_time_s: number | null;
-  identified_ok: boolean | null;
-  engagement_range_m: number | null;
-  time_to_intercept_s: number | null;
-  outcome: Outcome;
-};
-
-/** One run: N replicates with one seed. @deprecated: removed in v7 (plan 10.5). Kept so stored v6 records parse. */
-export type RunSummary = {
-  key: string;
-  id: string;
-  createdAt: string;
-  n: number;
-  seed: number;
-  rows: RunRow[];
-  /**
-   * @deprecated: removed in v7 (plan 10.5).
-   * Hypothesis predictions as they stood at run start, by hypothesis key. `measure`, `op` and
-   * `value` record the hypothesis statement; runs stored before they existed lack them.
-   */
-  predictions?: {
-    hypothesis: string;
-    measure?: string;
-    op?: Op;
-    value?: number;
-    low: number;
-    high: number;
-  }[];
-  /** Set when the vignette was edited while the run was in flight. */
-  note?: string;
-};
-
-/** One brief view carried into the AAR (legacy brief card text). */
-export type ReportSlide = { key: string; name: string; caption: string; notes: string };
-
 export type ReportDraft = {
-  summary: string;
   notes: string;
   dataSources: string[];
   truth: { source: string; intervalS: number; stationKeys: string[] };
-  slides: ReportSlide[];
-  /** AAR section notes, by section id. @deprecated: removed in v7 (plan 10.5). */
-  sections?: Partial<Record<string, string>>;
-  /** Measure ids picked as AAR charts. @deprecated: removed in v7 (plan 10.5). */
-  charts?: string[];
 };

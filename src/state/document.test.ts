@@ -3,8 +3,8 @@ import type { Vignette } from '../domain/types';
 import { previewOf, useDocument } from './document';
 
 const doc = () => useDocument.getState();
-/** The document without its `updated` stamp, which is set outside history. */
-const body = (v: Vignette | null) => (v ? { ...v, updated: '' } : v);
+/** The document without its `updated` and `version` stamps, which are set outside history. */
+const body = (v: Vignette | null) => (v ? { ...v, updated: '', version: 0 } : v);
 
 beforeEach(() => doc().open(testVignette()));
 
@@ -94,6 +94,30 @@ describe('document store', () => {
     doc().undo();
     expect(doc().doc!.name).toBe('test vignette');
     expect(doc().doc!.updated >= stamped).toBe(true);
+  });
+
+  it('raises version once per committed edit, a drag is one, and undo and redo leave it', () => {
+    expect(doc().doc!.version).toBe(1);
+    doc().edit('Rename', (d) => {
+      d.name = 'x';
+    });
+    expect(doc().doc!.version).toBe(2);
+    doc().edit('noop', () => {});
+    expect(doc().doc!.version).toBe(2);
+    doc().beginDrag('Drag radar');
+    for (let i = 0; i < 5; i++)
+      doc().updateDrag((d) => {
+        d.sensors[0]!.x = i + 1;
+      });
+    expect(doc().doc!.version).toBe(2);
+    doc().endDrag();
+    expect(doc().doc!.version).toBe(3);
+    doc().undo();
+    expect(doc().doc!.version).toBe(3);
+    doc().undo();
+    doc().redo();
+    expect(doc().doc!.version).toBe(3);
+    expect(doc().doc!.name).toBe('x');
   });
 
   it('memoises the preview on the document reference', () => {

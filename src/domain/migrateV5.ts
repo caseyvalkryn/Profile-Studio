@@ -1,12 +1,14 @@
-// v5 to v6 (spec section 5, upgrade rule 4). A v5 record gains empty height planes, authored
+// v5 to v6 and v6 to v7 (spec section 5, upgrade rule 4). A v5 record gains empty height planes, authored
 // events, snapshots and cards, a null debrief, and `group: ''` on each threat. Area bottoms and
 // tops already exist in v5 (`zMinM`, `zMaxM`) and are kept; a missing one takes 0 for the bottom
-// and the kind default for the top (legacy C.VOL_DEFAULTS). Kept apart from migrate.ts so
+// and the kind default for the top (legacy C.VOL_DEFAULTS). A v6 record gains `collection` (its
+// site name), `class` 'Custom' and `version` 1, and loses the run fields (hypotheses, runs, sweep,
+// and on `report` everything but notes, dataSources and truth). Kept apart from migrate.ts so
 // schema.ts can call it without an import cycle; migrate.ts re-exports it.
 
 import { AREA_DEFAULTS } from './catalog';
 import type { AreaKind } from './types';
-import { SCHEMA, SCHEMA_V5 } from './types';
+import { SCHEMA, SCHEMA_V5, SCHEMA_V6 } from './types';
 
 type Obj = Record<string, unknown>;
 
@@ -14,9 +16,15 @@ const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !
 const fin = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 
 /**
- * Return a `profile-studio/6` copy of a `profile-studio/5` record. Any other input comes back
- * unchanged, so callers can pass every record through it before validation.
+ * Return a `profile-studio/7` copy of a `profile-studio/5` or `/6` record. Any other input comes
+ * back unchanged, so callers can pass every record through it before validation.
  */
+export function migrateToV7(doc: unknown): unknown {
+  const v6 = migrateV5ToV6(doc);
+  return isObj(v6) && v6.schema === SCHEMA_V6 ? migrateV6ToV7(v6) : v6;
+}
+
+/** Return a `profile-studio/6` copy of a `profile-studio/5` record; any other input unchanged. */
 export function migrateV5ToV6(doc: unknown): unknown {
   if (!isObj(doc) || doc.schema !== SCHEMA_V5) return doc;
   const threats = Array.isArray(doc.threats)
@@ -33,7 +41,7 @@ export function migrateV5ToV6(doc: unknown): unknown {
     : doc.areas;
   return {
     ...doc,
-    schema: SCHEMA,
+    schema: SCHEMA_V6,
     threats,
     areas,
     planes: [],
@@ -41,5 +49,31 @@ export function migrateV5ToV6(doc: unknown): unknown {
     snapshots: [],
     cards: [],
     debrief: null,
+  };
+}
+
+/**
+ * v6 to v7: `collection` takes the site name when the record has none (the site keeps its name),
+ * `class` 'Custom', `version` 1; the run fields go.
+ */
+function migrateV6ToV7(doc: Obj): Obj {
+  const rest = { ...doc };
+  for (const k of ['hypotheses', 'runs', 'sweep']) delete rest[k];
+  const site = isObj(doc.site) ? doc.site : {};
+  const report = isObj(doc.report)
+    ? { notes: doc.report.notes, dataSources: doc.report.dataSources, truth: doc.report.truth }
+    : doc.report;
+  return {
+    ...rest,
+    schema: SCHEMA,
+    collection:
+      typeof doc.collection === 'string'
+        ? doc.collection
+        : typeof site.name === 'string'
+          ? site.name
+          : '',
+    class: typeof doc.class === 'string' ? doc.class : 'Custom',
+    version: typeof doc.version === 'number' ? doc.version : 1,
+    report,
   };
 }

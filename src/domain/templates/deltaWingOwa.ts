@@ -39,6 +39,7 @@ export const deltaWingOwa: Template = {
     const m313 = setting('3.1.3', '>=', 2000, 'm');
     const path = terrainFollowingIngress({ x: -9200, y: -8200 }, ASSET, 100, 300, 2400, 20);
     return vignette({
+      class: 'One-way attack',
       name: 'Delta wing one-way attack, low ingress',
       questions: [Q],
       threats: [threat('T1', 'g3-delta-owa', path, 46)],
