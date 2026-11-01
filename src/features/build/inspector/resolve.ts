@@ -1,9 +1,7 @@
 // The inspector's selection resolver. `find` in src/commands/select.ts covers threats, waypoints,
 // sensors, effectors, nodes and areas; height planes, authored events, cards and groups resolve here.
-import type { Draft } from 'immer';
 import { find, type Found } from '../../../commands/select';
 import type { AuthoredEvent, Card, HeightPlane, Threat, Vignette } from '../../../domain/types';
-import { useDocument } from '../../../state/document';
 
 /** A group has no record key; its selection key is `group:<letter>`. */
 export const GROUP_PREFIX = 'group:';
@@ -33,25 +31,4 @@ export function pick(v: Vignette, key: string): Picked | null {
     if (members.length) return { kind: 'group', letter, members };
   }
   return null;
-}
-
-/**
- * The warnings on one authored event (legacy `derived.warnings` with `w.eventId`). Returns `[]`
- * until lane 9.3.1 brings `checkEvents`; that lane rewires this selector.
- */
-export function eventWarnings(v: Vignette, eventKey: string): string[] {
-  return v.events.some((e) => e.key === eventKey) ? [] : [];
-}
-
-/** Edit a height plane, an authored event or a card as one undo step. */
-export function editKeyed(
-  label: string,
-  list: 'planes' | 'events' | 'cards',
-  key: string,
-  recipe: (r: Draft<HeightPlane & AuthoredEvent & Card>, d: Draft<Vignette>) => void,
-): void {
-  useDocument.getState().edit(label, (d) => {
-    const r = (d[list] as { key: string }[]).find((x) => x.key === key);
-    if (r) recipe(r as Draft<HeightPlane & AuthoredEvent & Card>, d);
-  });
 }

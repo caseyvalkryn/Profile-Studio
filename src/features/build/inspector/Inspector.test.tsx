@@ -1,240 +1,201 @@
 import '../../../ui/test-utils';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import { testVignette } from '../../../engine/testVignette';
-import { useDocument } from '../../../state/document';
+import fixture from '../../../../fixtures/legacy-derive/CUAS-001.json';
+import { importLegacyV4 } from '../../../domain/migrate';
+import { MEASURES } from '../../../domain/measures';
+import { previewOf, useDocument } from '../../../state/document';
 import { useUi, UI_DEFAULTS } from '../../../state/ui';
-import Inspector from './Inspector';
 import { M_PER_NM } from '../../shared/units';
+import Inspector from './Inspector';
 
+const seed = () => importLegacyV4(JSON.parse(JSON.stringify(fixture.input)));
 const doc = () => useDocument.getState().doc!;
 const history = () => useDocument.getState().history;
+const keyOf = (id: string) =>
+  [...doc().threats, ...doc().sensors, ...doc().effectors, ...doc().areas, ...doc().events].find(
+    (r) => r.id === id,
+  )!.key;
+const region = (name: string) => screen.getByRole('region', { name });
 
-function commit(label: string, value: string) {
-  const input = screen.getByLabelText(label);
-  fireEvent.change(input, { target: { value } });
-  fireEvent.keyDown(input, { key: 'Enter' });
-}
-
-/** Each field row of a section as "label suffix", in order. */
-function rows(section: string): string[] {
-  const sec = screen.getByRole('region', { name: section });
-  return [...sec.querySelectorAll('label')].map((l) => {
-    const suf = l.parentElement?.querySelector('span.font-mono');
-    return [l.textContent, suf?.textContent].filter(Boolean).join(' ');
-  });
-}
-
-function addPlaneAndEvent() {
-  act(() =>
-    useDocument.getState().edit('add', (d) => {
-      d.planes.push({ key: 'k-P-01', id: 'P-01', label: 'floor', zM: 120 });
-      d.events.push({
-        key: 'k-EV-01',
-        id: 'EV-01',
-        tS: 30,
-        type: 'detect',
-        label: 'first detect',
-        threatKey: 'k-T-01',
-        sensorKey: 'k-S-01',
-      });
-    }),
-  );
+/** Type a value into a field as one focus: focus, input, blur. */
+function type(name: string, ...values: string[]) {
+  const input = screen.getByLabelText(name);
+  fireEvent.focus(input);
+  for (const value of values) fireEvent.change(input, { target: { value } });
+  fireEvent.blur(input);
 }
 
 beforeEach(() => {
-  useDocument.getState().open(testVignette());
+  act(() => useDocument.getState().open(seed()));
   useUi.setState({ ...UI_DEFAULTS });
 });
 
 describe('Inspector', () => {
-  it('shows the stack position "n of m" only while the selected target is in a cycled stack (7.R F-11)', () => {
-    useUi.setState({ selectedKeys: ['k-S-01'] });
+  it('renders every section from CUAS-001 in mockup order', () => {
     render(<Inspector />);
-    expect(screen.queryByText(/\d+ of \d+/)).toBeNull();
-    act(() => useUi.getState().setStack({ key: 'k-S-01', n: 2, m: 4 }));
-    expect(screen.getByText('2 of 4')).toBeInTheDocument();
-    act(() => useUi.getState().setSelection(['k-E-01']));
-    expect(screen.queryByText('2 of 4')).toBeNull();
+    const names = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'));
+    expect(names).toEqual([
+      'Purpose',
+      'Aircraft',
+      'Paths',
+      'Systems',
+      'Volumes',
+      'Reference planes',
+      'Events',
+      'Telemetry',
+      'Data products',
+      'Measures of performance',
+      'Site',
+    ]);
+    expect(screen.getByLabelText('Question')).toHaveValue(doc().questions[0]!.text);
+    expect(screen.getByLabelText('Collection')).toHaveValue('Toughstump');
+    expect(screen.getByLabelText('Quadrotor ISR aircraft')).toHaveDisplayValue(
+      'G1 · Quadrotor ISR',
+    );
+    expect(within(region('Aircraft')).getByRole('link', { name: 'source' })).toBeInTheDocument();
+    expect(
+      within(region('Paths')).getByText(
+        `Quadrotor ISR · 4 wp · ${Math.round(previewOf(doc()).threats[keyOf('T1')]!.endS)} s`,
+      ),
+    ).toBeInTheDocument();
+    const systems = region('Systems');
+    for (const id of ['RDR-1', 'RF-1', 'EO-1', 'EW-1'])
+      expect(within(systems).getByRole('button', { name: `Select ${id}` })).toBeInTheDocument();
+    expect(within(systems).getByText(/1\.35 nm · 30° at 45°$/)).toBeInTheDocument();
+    expect(within(region('Volumes')).getByText('Defended asset · 4 vertices')).toBeInTheDocument();
+    expect(screen.getByLabelText('P1 label')).toHaveValue('120 m ceiling');
+    const events = within(region('Events'))
+      .getAllByRole('button', { name: /^Select e\d$/ })
+      .map((b) => b.getAttribute('aria-label'));
+    expect(events).toEqual([
+      'Select e1',
+      'Select e2',
+      'Select e3',
+      'Select e4',
+      'Select e5',
+      'Select e6',
+    ]);
+    expect(screen.getByLabelText('Truth source')).toHaveValue('Platform GPS, 10 Hz');
+    expect(screen.getByLabelText('Sample interval')).toHaveValue('20');
+    expect(screen.getByLabelText('Stations')).toHaveValue(doc().sensors[0]!.id);
+    expect(within(region('Data products')).getAllByRole('textbox')).toHaveLength(4);
+    expect(screen.getByLabelText('1.1.2 threshold')).toHaveValue('3000');
+    expect(screen.getByLabelText('Units')).toHaveValue('nav');
   });
 
-  it('renders each kind with its fields in legacy order and units', () => {
-    useUi.setState({ selectedKeys: ['k-S-01'] });
-    const { rerender } = render(<Inspector />);
-    expect(rows('Sensor')).toEqual([
-      'Id',
-      'Kind',
-      'x nm',
-      'y nm',
-      'Height ft AGL',
-      'Range nm',
-      'Minimum range nm',
-      'Field of view deg',
-      'Bearing deg',
-      'Elevation min deg',
-      'Elevation max deg',
-    ]);
-    act(() => useUi.getState().setSelection(['k-E-01']));
-    rerender(<Inspector />);
-    expect(rows('Effector')).toEqual([
-      'Id',
-      'Kind',
-      'x nm',
-      'y nm',
-      'Height ft AGL',
-      'Range nm',
-      'Field of view deg',
-      'Bearing deg',
-      'Time to effect s',
-      'Pk',
-    ]);
-    act(() => useUi.getState().setSelection(['k-N-01']));
-    expect(rows('Node')).toEqual([
-      'Id',
-      'Kind',
-      'x nm',
-      'y nm',
-      'Height ft AGL',
-      'Range nm',
-      'Field of view deg',
-      'Bearing deg',
-    ]);
-    act(() => useUi.getState().setSelection(['k-T-01']));
-    expect(rows('Threat')).toEqual(['Id', 'Type', 'Group', 'Speed kt']);
-    expect(screen.getByRole('columnheader', { name: 'Height ft' })).toBeInTheDocument();
-    act(() => useUi.getState().setSelection(['k-A-01']));
-    expect(rows('Area')).toEqual(['Id', 'Kind', 'Label', 'Bottom ft', 'Top ft']);
-    addPlaneAndEvent();
-    act(() => useUi.getState().setSelection(['k-P-01']));
-    expect(rows('Height plane')).toEqual(['Id', 'Label', 'Height ft AGL']);
-    act(() => useUi.getState().setSelection(['k-EV-01']));
-    expect(rows('Event')).toEqual(['Id', 'Type', 'Label', 'Path', 'Time s', 'System']);
-  });
-
-  it('shows sensor range in nm under nav units and in km under SI', () => {
-    useUi.setState({ selectedKeys: ['k-S-01'] });
+  it('a row click selects its object, a second click clears it, and only that row expands', () => {
     render(<Inspector />);
-    expect(screen.getByLabelText('Range')).toHaveValue('2.70');
-    act(() => useUi.getState().setUnits('si'));
-    expect(screen.getByLabelText('Range')).toHaveValue('5.00');
-    expect(rows('Sensor')).toContain('Range km');
+    const select = screen.getByRole('button', { name: 'Select RDR-1' });
+    fireEvent.click(select);
+    expect(useUi.getState().selectedKeys).toEqual([keyOf('RDR-1')]);
+    expect(select.parentElement).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByLabelText('Range')).toHaveValue((4000 / M_PER_NM).toFixed(2));
+    expect(screen.getByLabelText('East (x)')).toBeInTheDocument();
+    expect(screen.queryByLabelText('T1 waypoint 1 x')).toBeNull();
+    fireEvent.click(select);
+    expect(useUi.getState().selectedKeys).toEqual([]);
+    expect(select.parentElement).not.toHaveAttribute('aria-current');
+    expect(screen.queryByLabelText('Range')).toBeNull();
   });
 
-  it('writes a field commit as one undo step with the legacy label', () => {
-    useUi.setState({ selectedKeys: ['k-S-01'] });
+  it('a waypoint edit typed key by key is one undo step', () => {
+    useUi.setState({ selectedKeys: [keyOf('T1')] });
     render(<Inspector />);
     const before = history().length;
-    commit('Range', '3');
-    expect(doc().sensors[0]!.rangeM).toBeCloseTo(3 * M_PER_NM, 6);
-    expect(history()).toHaveLength(before + 1);
-    expect(history().at(-1)).toBe('set S-01 range');
+    type('T1 waypoint 1 x', '1', '1.', '1.5');
+    expect(history().slice(before)).toEqual(['move T1 waypoint 1']);
+    expect(doc().threats[0]!.path[0]!.x).toBeCloseTo(1.5 * M_PER_NM, 0);
     act(() => useDocument.getState().undo());
-    expect(doc().sensors[0]!.rangeM).toBe(5000);
+    expect(doc().threats[0]!.path[0]!.x).toBe(3100);
   });
 
-  it('sets a node field of view as one undo step (legacy 51-panel-inspector.js:211)', () => {
-    useUi.setState({ selectedKeys: ['k-N-01'] });
+  it('Escape reverts the field and adds no step', () => {
+    useUi.setState({ selectedKeys: [keyOf('RDR-1')] });
     render(<Inspector />);
     const before = history().length;
-    commit('Field of view', '360');
-    expect(doc().nodes[0]!.fovDeg).toBe(360);
-    expect(history()).toHaveLength(before + 1);
-    expect(history().at(-1)).toBe('set N-01 field of view');
-  });
-
-  it('shows the legacy words for a value it cannot read and writes nothing', () => {
-    useUi.setState({ selectedKeys: ['k-S-01'] });
-    render(<Inspector />);
-    const before = history().length;
-    commit('Range', 'far');
-    expect(screen.getByText('Type a number, for example 2km or 900ft.')).toBeInTheDocument();
+    const range = screen.getByLabelText('Range');
+    fireEvent.focus(range);
+    fireEvent.change(range, { target: { value: '1' } });
+    expect(doc().sensors[0]!.rangeM).toBeCloseTo(M_PER_NM, 0);
+    fireEvent.keyDown(range, { key: 'Escape' });
+    fireEvent.blur(range);
+    expect(doc().sensors[0]!.rangeM).toBe(4000);
     expect(history()).toHaveLength(before);
   });
 
-  it('accepts unit suffixes in a field', () => {
-    useUi.setState({ selectedKeys: ['k-S-01'] });
+  it('clamps the field of view to 1 to 360 and names the step after the system', () => {
+    useUi.setState({ selectedKeys: [keyOf('EO-1')] });
     render(<Inspector />);
-    commit('Range', '4km');
-    expect(doc().sensors[0]!.rangeM).toBe(4000);
+    type('EO-1 field of view', '400');
+    expect(doc().sensors[2]!.fovDeg).toBe(360);
+    type('EO-1 field of view', '0');
+    expect(doc().sensors[2]!.fovDeg).toBe(1);
+    expect(history().slice(-2)).toEqual(['set EO-1 field of view', 'set EO-1 field of view']);
   });
 
-  it('adds, edits and deletes waypoints, warning under two', () => {
-    useUi.setState({ selectedKeys: ['k-T-01'] });
+  it('the measure picker lists all 67 DroneScore measures by step and adds one', () => {
     render(<Inspector />);
-    commit('Waypoint 1 height', '500');
-    expect(doc().threats[0]!.path[0]!.z).toBeCloseTo(152.4, 1);
-    expect(history().at(-1)).toBe('set T-01 waypoint 1 height');
-    expect(screen.getByLabelText('Insert after waypoint 2')).toBeDisabled();
-    fireEvent.click(screen.getByLabelText('Insert after waypoint 1'));
-    expect(doc().threats[0]!.path).toHaveLength(3);
-    expect(doc().threats[0]!.path[1]!.y).toBe(2900);
-    expect(history().at(-1)).toBe('insert T-01 waypoint 2');
-    fireEvent.click(screen.getByLabelText('Delete waypoint 3'));
-    fireEvent.click(screen.getByLabelText('Delete waypoint 2'));
-    expect(doc().threats[0]!.path).toHaveLength(1);
-    expect(screen.getByText('T-01 needs two waypoints.')).toBeInTheDocument();
-    expect(screen.getByLabelText('Delete waypoint 1')).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Add measure' }));
+    const picker = screen.getByRole('group', { name: 'Measure picker' });
+    const rows = within(picker).getAllByRole('button', { name: /^Add / });
+    expect(MEASURES).toHaveLength(67);
+    expect(rows).toHaveLength(67);
+    expect(
+      within(picker).getByRole('button', { name: 'Add 1.1.1 Probability of Detection' }),
+    ).toBeDisabled();
+    fireEvent.change(within(picker).getByLabelText('Search measures'), {
+      target: { value: 'identification time' },
+    });
+    fireEvent.click(within(picker).getByRole('button', { name: 'Add 2.1.3t Identification Time' }));
+    expect(doc().measures.at(-1)).toEqual({ id: '2.1.3t', op: '<=', threshold: 0, unit: 's' });
+    expect(history().at(-1)).toBe('add 2.1.3t');
   });
 
-  it('adds, edits and deletes vertices, keeping three', () => {
-    useUi.setState({ selectedKeys: ['k-A-01'] });
+  it('removing a path removes its events', () => {
     render(<Inspector />);
-    commit('Vertex 1 x', '-0.1');
-    expect(doc().areas[0]!.pts[0]![0]).toBeCloseTo(-0.1 * M_PER_NM, 1);
-    expect(screen.getByLabelText('Delete vertex 1')).not.toBeDisabled();
-    fireEvent.click(screen.getByLabelText('Delete vertex 4'));
-    expect(doc().areas[0]!.pts).toHaveLength(3);
-    expect(screen.getByLabelText('Delete vertex 1')).toBeDisabled();
-    fireEvent.click(screen.getByLabelText('Insert after vertex 3'));
-    expect(doc().areas[0]!.pts).toHaveLength(4);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove T1' }));
+    expect(doc().threats).toHaveLength(0);
+    expect(doc().events).toHaveLength(0);
+    expect(history().at(-1)).toBe('remove T1');
   });
 
-  it('reads an event time as m:ss or seconds', () => {
-    addPlaneAndEvent();
-    useUi.setState({ selectedKeys: ['k-EV-01'] });
+  it('retyping an aircraft retypes every path of it', () => {
     render(<Inspector />);
-    commit('Time', '2:55');
-    expect(doc().events[0]!.tS).toBe(175);
-    expect(history().at(-1)).toBe('set EV-01 time');
-    commit('Time', '95');
-    expect(doc().events[0]!.tS).toBe(95);
-    commit('Time', 'soon');
-    expect(screen.getByText('Type a time as 2:55 or 175.')).toBeInTheDocument();
-    expect(doc().events[0]!.tS).toBe(95);
+    fireEvent.change(screen.getByLabelText('Quadrotor ISR aircraft'), {
+      target: { value: 'g1-fpv-fiber' },
+    });
+    expect(doc().threats.every((t) => t.type === 'g1-fpv-fiber')).toBe(true);
   });
 
-  it('lists group members and selects one on click', () => {
-    act(() =>
-      useDocument.getState().edit('group', (d) => {
-        d.threats[0]!.group = 'A';
-        d.threats[1]!.group = 'A';
-      }),
-    );
-    useUi.setState({ selectedKeys: ['group:A'] });
+  it('the event time slider is one undo step per drag', () => {
+    useUi.setState({ selectedKeys: [keyOf('e3')] });
     render(<Inspector />);
-    const members = screen.getByRole('region', { name: 'Members' });
-    fireEvent.click(within(members).getByRole('button', { name: 'Select T-02' }));
-    expect(useUi.getState().selectedKeys).toEqual(['k-T-02']);
+    const before = history().length;
+    const slider = screen.getByLabelText('e3 time slider');
+    fireEvent.pointerDown(slider);
+    fireEvent.change(slider, { target: { value: '160' } });
+    fireEvent.change(slider, { target: { value: '170' } });
+    fireEvent.pointerUp(slider);
+    expect(doc().events.find((e) => e.id === 'e3')!.tS).toBe(170);
+    expect(history().slice(before)).toEqual(['set e3 time']);
   });
 
-  it('refuses a rename to an id in use and says why', () => {
-    useUi.setState({ selectedKeys: [doc().threats[0]!.key] });
+  it('the question creates Q-01 when the profile has none', () => {
+    act(() => useDocument.getState().edit('clear', (d) => void (d.questions = [])));
     render(<Inspector />);
-    commit('Id', 'T-02');
-    expect(screen.getByText('T-02 is in use. Pick another id.')).toBeInTheDocument();
-    expect(doc().threats[0]!.id).toBe('T-01');
-    commit('Id', 'T-09');
-    expect(doc().threats[0]!.id).toBe('T-09');
-    expect(history().at(-1)).toBe('rename T-01');
+    type('Question', 'Does the track hold?');
+    expect(doc().questions).toEqual([
+      expect.objectContaining({ id: 'Q-01', text: 'Does the track hold?' }),
+    ]);
   });
 
-  it('shows the profile and telemetry when nothing is selected', () => {
+  it('shows the stack position "n of m" only while the selected target is in a cycled stack', () => {
+    useUi.setState({ selectedKeys: [keyOf('RDR-1')] });
     render(<Inspector />);
-    expect(screen.getByLabelText('Name')).toHaveValue('test vignette');
-    expect(screen.getByLabelText('Collection')).toHaveValue('site');
-    commit('Name', 'range day');
-    expect(doc().name).toBe('range day');
-    expect(history().at(-1)).toBe('set profile name');
-    commit('Stations', 'S-01, X-9');
-    expect(screen.getByText('X-9 is not a system id.')).toBeInTheDocument();
+    expect(screen.queryByText(/^\d+ of \d+$/)).toBeNull();
+    act(() => useUi.getState().setStack({ key: keyOf('RDR-1'), n: 2, m: 4 }));
+    expect(screen.getByText('2 of 4')).toBeInTheDocument();
+    act(() => useUi.getState().setSelection([keyOf('EW-1')]));
+    expect(screen.queryByText('2 of 4')).toBeNull();
   });
 });
