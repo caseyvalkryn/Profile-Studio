@@ -6,7 +6,7 @@ import { useDocument } from '../../../state/document';
 import { UI_DEFAULTS, useUi } from '../../../state/ui';
 import { applyFormation } from '../palette/formation';
 import { actionsFor, runAction, targetContext, toMenuItems } from './actions';
-import { CARDS_LATER, setEventWarnings, type MenuContext } from './commands';
+import { setEventWarnings, type MenuContext } from './commands';
 
 const seed = () => importLegacyV4(JSON.parse(JSON.stringify(fixture.input)));
 const doc = () => useDocument.getState().doc!;
@@ -103,9 +103,10 @@ describe('actionsFor', () => {
     const atSixty: MenuContext = { ...currentContext(), tCursor: 60 };
     const at = actionsFor('group', { letter: 'A' }, atSixty);
     expect(reason(at, 'Split here')).toMatch(/^Group A is one cluster at /);
+    // Lane 10.3: the card commands are live; with no card targeted they ask for one.
     for (const a of actionsFor('card', {}, currentContext()).slice(0, 6))
-      expect(a.disabledReason).toBe(CARDS_LATER);
-    expect(reason(actionsFor('map', {}, currentContext()), 'Save card')).toBe(CARDS_LATER);
+      expect(a.disabledReason).toBe('Select a card first');
+    expect(reason(actionsFor('map', {}, currentContext()), 'Save card')).toBeUndefined();
   });
 
   it('shows Move to geometry only when the event has a warning', () => {

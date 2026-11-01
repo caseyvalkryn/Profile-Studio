@@ -52,7 +52,6 @@ describe('workspace scoping', () => {
 
   it('a stub command stays registered and says which lane brings it', () => {
     const ctx = { doc: useDocument.getState().doc, ui: useUi.getState() } as never;
-    expect(get('card.save')!.when(ctx)).toMatch(/lane 9\.4\.1/);
     expect(get('brief.next')!.when(ctx)).toBe('Brief arrives in lane 9.4');
     expect(get('profile.new')!.when(ctx)).toBe(true); // live since the 9.1.4 merge
     inWs('brief');
