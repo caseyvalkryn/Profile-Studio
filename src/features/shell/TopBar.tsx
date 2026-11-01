@@ -14,12 +14,10 @@ import { Menu } from '../../ui/Menu';
 import { Tooltip } from '../../ui/Tooltip';
 import { toMenuItem } from '../commands/adapter';
 
-/** The five workspaces, in spec section 7 order. */
+/** The three workspaces, in spec section 7 order. */
 export const WORKSPACES = [
   { path: '/', name: 'Library' },
   { path: '/build', name: 'Build' },
-  { path: '/results', name: 'Results' },
-  { path: '/report', name: 'Report' },
   { path: '/brief', name: 'Brief' },
 ] as const;
 

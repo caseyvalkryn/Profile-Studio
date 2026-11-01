@@ -10,7 +10,6 @@ import {
   defendedAsset,
   effector,
   entered,
-  hypothesis,
   question,
   sensor,
   setting,
@@ -68,7 +67,6 @@ export const swarmSplit: Template = {
     return vignette({
       name: 'Swarm of six, split',
       questions: [Q],
-      hypotheses: [hypothesis(Q, m121, { low: 85, high: 100 })],
       threats: paths.map((p, i) => threat(ids[i]!, 'g1-swarm-quad', p)),
       sensors: [
         radar,

@@ -16,14 +16,8 @@ export async function openTemplate(page: Page, name: string): Promise<void> {
 }
 
 /** Switch workspace through the app bar. */
-export async function goTo(page: Page, name: 'Library' | 'Build' | 'Results' | 'Report') {
+export async function goTo(page: Page, name: 'Library' | 'Build' | 'Brief') {
   await page.getByRole('navigation', { name: 'Workspaces' }).getByRole('link', { name }).click();
-}
-
-/** Press Run on Build and wait for the run to finish. */
-export async function runOnce(page: Page, runId: string): Promise<void> {
-  await page.getByRole('main', { name: 'Build' }).getByRole('button', { name: 'Run' }).click();
-  await expect(page.getByText(`Run ${runId} done`)).toBeVisible({ timeout: 30_000 });
 }
 
 /** What the helpers read off the board SVG, in client pixels. */
@@ -109,19 +103,3 @@ export const isMac = (page: Page) =>
     const nav = navigator as Navigator & { userAgentData?: { platform?: string } };
     return /mac|iphone|ipad/i.test(nav.userAgentData?.platform ?? nav.platform ?? '');
   });
-
-/** Select H-01 in the inspector and state its prediction, in nm. */
-export async function setPrediction(page: Page, low: string, high: string): Promise<void> {
-  const inspector = page.getByRole('complementary', { name: 'Inspector' });
-  await inspector.getByRole('button', { name: /^H-01/ }).click();
-  for (const [label, value] of [
-    ['Prediction low', low],
-    ['Prediction high', high],
-  ] as const) {
-    const field = inspector.getByRole('textbox', { name: label });
-    await field.fill(value);
-    await field.press('Enter');
-    await field.blur(); // unfocused fields show readout precision
-    await expect.poll(() => num(field)).toBeCloseTo(Number(value), 2);
-  }
-}

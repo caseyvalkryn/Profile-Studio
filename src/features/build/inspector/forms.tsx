@@ -35,12 +35,10 @@ import type {
 import { usePreview } from '../../../state/document';
 import { useUi } from '../../../state/ui';
 import { focusRing } from '../../../ui/focus';
-import { EnteredSection } from './Entered';
 import { displayIds, editRecord } from './edit';
 import { parseValue, shown, suffix, tText, vText, type FieldType } from './parse';
 import { editKeyed, eventWarnings } from './resolve';
 import { CommitInput, Hint, IdRow, SelectRow, ShowRow, TextRow, UnitRow, Warn } from './Row';
-import { SensorModelSection } from './SensorModel';
 
 const MINI = `h-ctl-mini rounded-[3px] border border-surface-3 bg-surface-1 px-1 text-micro text-text hover:bg-surface-2 disabled:opacity-40 ${focusRing}`;
 const TH = 'px-0.5 py-0.5 text-left text-micro font-medium tracking-caps text-muted uppercase';
@@ -395,20 +393,6 @@ export function SystemForm({ v, sys }: { v: Vignette; sys: System }) {
       ) : null}
     </>
   );
-}
-
-/** The MVP rows under a sensor or effector: the sensor model and the entered values. */
-export function SystemExtras({ sys }: { sys: System }) {
-  if (sys.kind === 'sensor')
-    return (
-      <>
-        <SensorModelSection s={sys.value} />
-        <EnteredSection group="sensor" assetKey={sys.value.key} entered={sys.value.entered} />
-      </>
-    );
-  if (sys.kind === 'effector')
-    return <EnteredSection group="effector" assetKey={sys.value.key} entered={sys.value.entered} />;
-  return null;
 }
 
 // ---------------------------------------------------------------- area (legacy volume)

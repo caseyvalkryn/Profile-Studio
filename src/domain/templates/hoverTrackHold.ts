@@ -5,31 +5,15 @@
 // Laydown as Point defence (build.ts laydown rule); the run-in ends on the defended asset.
 import { directApproach, hoverAndStare, orbit } from '../behaviors';
 import type { Template } from './types';
-import {
-  defendedAsset,
-  effector,
-  hypothesis,
-  question,
-  sensor,
-  setting,
-  threat,
-  vignette,
-} from './build';
+import { defendedAsset, effector, question, sensor, setting, threat, vignette } from './build';
 
 const LOITER = { x: 1060, y: 1060 }; // 1.5 km from the radar, bearing 045
 const ASSET = { x: -500, y: 500 };
 
-/**
- * Scope of inference note for the AAR (review 6 F-18, review 7 item 6b). The limit itself (the
- * runs do not stop at the hover) is the generated line from `simulationLimits` (review 7.R F-01);
- * this note says only what 1.2.2 covers here.
- */
-export const HOVER_SCOPE =
-  '1.2.2 Track Continuity is measured over the orbit turn and the run-in that the runs fly.';
 const q = () =>
   question(
     'Does the radar hold a continuous track through a 60 s loiter inside its coverage?',
-    'The loiter is one slow orbit turn of about 60 s, then a 60 s hover. The threshold on 1.2.2 Track Continuity is in the results table.',
+    'The loiter is one slow orbit turn of about 60 s, then a 60 s hover. The measure of performance is 1.2.2 Track Continuity.',
   );
 
 export const hoverTrackHold: Template = {
@@ -48,7 +32,6 @@ export const hoverTrackHold: Template = {
     const v = vignette({
       name: 'Hover track hold',
       questions: [Q],
-      hypotheses: [hypothesis(Q, m, { low: 90, high: 100 })],
       threats: [threat('T1', 'g1-quad-isr', [...approach, ...loiter, ...hover, ...runIn])],
       sensors: [
         sensor('RDR-1', 'radar', 0, 0, 4000),
@@ -59,7 +42,6 @@ export const hoverTrackHold: Template = {
       areas: [defendedAsset(250, ASSET)],
       measures: [m],
     });
-    v.report.sections = { scope: HOVER_SCOPE };
     return v;
   },
 };

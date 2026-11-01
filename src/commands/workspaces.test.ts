@@ -36,14 +36,14 @@ describe('workspace scoping', () => {
     useUi.getState().setView('elevation');
     expect(dispatchKey(key('1'), undefined, true)).toBe('view.plan');
     expect(useUi.getState().view).toBe('plan');
-    inWs('results');
+    inWs('library');
     useUi.getState().setView('elevation');
     expect(dispatchKey(key('1'), undefined, true)).toBeNull();
     expect(useUi.getState().view).toBe('elevation');
   });
 
   it('undo, help and theme run in every workspace', () => {
-    for (const w of ['library', 'build', 'results', 'report', 'brief'] as const) {
+    for (const w of ['library', 'build', 'brief'] as const) {
       const ids = inWorkspace(w).map((c) => c.id);
       for (const id of ['edit.undo', 'edit.redo', 'help.shortcuts', 'view.theme', 'file.export'])
         expect(ids, `${w}: ${id}`).toContain(id);
@@ -71,7 +71,7 @@ describe('workspace scoping', () => {
     });
     register(cmd('test.a', ['build']));
     expect(() => register(cmd('test.b', ['brief']))).not.toThrow();
-    expect(() => register(cmd('test.c', ['results', 'build']))).toThrow();
+    expect(() => register(cmd('test.c', ['library', 'build']))).toThrow();
   });
 
   it('the panel keys flip the ui panel fields', () => {

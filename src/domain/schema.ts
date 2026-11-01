@@ -253,6 +253,7 @@ export const measureSettingSchema: z.ZodType<MeasureSetting> = z.object({
   unit: z.string(),
 });
 
+/** @deprecated: removed in v7 (plan 10.5). Parses the field on stored v6 records. */
 export const hypothesisSchema: z.ZodType<Hypothesis> = z.object({
   key,
   id: z.string(),
@@ -266,6 +267,7 @@ export const hypothesisSchema: z.ZodType<Hypothesis> = z.object({
 
 const numOrNull = num.nullable();
 
+/** @deprecated: removed in v7 (plan 10.5). Parses the field on stored v6 records. */
 export const runRowSchema: z.ZodType<RunRow> = z.object({
   run: z.number().int().min(0),
   threat: z.string(),
@@ -282,6 +284,7 @@ export const runRowSchema: z.ZodType<RunRow> = z.object({
   outcome: z.enum(['Success', 'Miss', 'No Attempt']),
 });
 
+/** @deprecated: removed in v7 (plan 10.5). Parses the field on stored v6 records. */
 export const runSummarySchema: z.ZodType<RunSummary> = z.object({
   key,
   id: z.string(),
@@ -289,6 +292,7 @@ export const runSummarySchema: z.ZodType<RunSummary> = z.object({
   n: z.number().int().min(0),
   seed: z.number().int(),
   rows: z.array(runRowSchema),
+  /** @deprecated: removed in v7 (plan 10.5). */
   predictions: z
     .array(
       z.object({
@@ -310,7 +314,9 @@ export const reportDraftSchema: z.ZodType<ReportDraft> = z.object({
   dataSources: z.array(z.string()),
   truth: z.object({ source: z.string(), intervalS: num.min(0), stationKeys: z.array(z.string()) }),
   slides: z.array(z.object({ key, name: z.string(), caption: z.string(), notes: z.string() })),
+  /** @deprecated: removed in v7 (plan 10.5). */
   sections: z.record(z.string(), z.string()).optional(),
+  /** @deprecated: removed in v7 (plan 10.5). */
   charts: z.array(z.string()).optional(),
 });
 
@@ -326,6 +332,7 @@ export const vignetteSchema: z.ZodType<Vignette> = z.object({
     elevM: num,
   }),
   questions: z.array(questionSchema),
+  /** @deprecated: removed in v7 (plan 10.5). */
   hypotheses: z.array(hypothesisSchema),
   threats: z.array(threatSchema),
   sensors: z.array(sensorSchema),
@@ -339,8 +346,10 @@ export const vignetteSchema: z.ZodType<Vignette> = z.object({
   debrief: debriefSchema.nullable(),
   chainTime: z.object({ decisionS: num.min(0), assignS: num.min(0) }),
   measures: z.array(measureSettingSchema),
+  /** @deprecated: removed in v7 (plan 10.5). */
   runs: z.array(runSummarySchema),
   report: reportDraftSchema,
+  /** @deprecated: removed in v7 (plan 10.5). */
   sweep: z
     .object({
       factors: z

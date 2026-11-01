@@ -7,10 +7,8 @@ import { join } from 'node:path';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { SENSOR_KINDS } from '../../src/domain/catalog';
 import { newKey } from '../../src/domain/ids';
-import { swarmSplit } from '../../src/domain/templates/swarmSplit';
 import {
   effector,
-  hypothesis,
   question,
   sensor,
   setting,
@@ -18,8 +16,7 @@ import {
   vignette,
 } from '../../src/domain/templates/build';
 import type { Vignette } from '../../src/domain/types';
-import { run } from '../../src/engine/run';
-import { M_PER_NM, mapGeom, num, openTemplate, POINT_DEFENCE } from '../helpers';
+import { M_PER_NM, mapGeom, num, POINT_DEFENCE } from '../helpers';
 
 const REPS = 5;
 const DIST = join(process.cwd(), 'dist');
@@ -71,7 +68,6 @@ function bigVignette(): Vignette {
   return vignette({
     name: 'Perf 40 x 15',
     questions: [Q],
-    hypotheses: [hypothesis(Q, m, { low: 2000, high: 3000 })],
     threats,
     sensors,
     effectors: [effector('EW-1', 'ew', 0, 0, 1500)],
@@ -176,19 +172,6 @@ async function machine(page: Page, browser: Browser) {
   });
   console.log(`PERF machine: chromium ${browser.version()}, WebGL ${gl}, node ${process.version}`);
 }
-
-test('node: engine run, 200 replicates x 6 threats (swarm template)', () => {
-  const v = swarmSplit.make();
-  expect(v.threats).toHaveLength(6);
-  run(v, 20, 1); // warm-up
-  const ts: number[] = [];
-  for (let i = 0; i < REPS; i++) {
-    const t0 = performance.now();
-    run(v, 200, i + 1);
-    ts.push(performance.now() - t0);
-  }
-  report('engine run 200x6 (node)', stat(ts), 'ms');
-});
 
 test('map drag and preview latency, 40 threats x 15 sensors', async ({ page, browser }) => {
   const v = bigVignette();
@@ -306,71 +289,6 @@ test('map drag and preview latency, 40 threats x 15 sensors', async ({ page, bro
   }
   report('preview latency timeline', stat(tlMs), 'ms');
   report('preview latency readout', stat(tipMs), 'ms');
-});
-
-test('run 200 replicates, 6 threats, through the Run button', async ({ page }) => {
-  // The UI has no replicate field: Run sends DEFAULT_RUN_N (100). Rewrite n to 200 where the
-  // request enters the worker, so the Run button, worker, progress and store path is the app's.
-  await page.addInitScript(() => {
-    const post = Worker.prototype.postMessage;
-    Worker.prototype.postMessage = function (this: Worker, m: unknown, ...rest: unknown[]) {
-      const req = m as { type?: string; n?: number };
-      const next = req && req.type === 'run' ? { ...req, n: 200 } : m;
-      return (post as (...a: unknown[]) => void).call(this, next, ...rest);
-    } as Worker['postMessage'];
-  });
-  const totals: number[] = [];
-  const gaps: number[] = [];
-  for (let i = 0; i < REPS; i++) {
-    await page.evaluate(() => indexedDB.deleteDatabase('profile-studio')).catch(() => undefined);
-    await openTemplate(page, 'Swarm of six, split');
-    await page.evaluate(() => {
-      const w = window as unknown as {
-        __run: { click: number; done: number; progress: string[]; nameFocus: number };
-      };
-      w.__run = { click: 0, done: 0, progress: [], nameFocus: 0 };
-      const btn = Array.from(document.querySelectorAll('main[aria-label="Build"] button')).find(
-        (b) => b.textContent?.trim() === 'Run',
-      )!;
-      btn.addEventListener('click', () => (w.__run.click = performance.now()), true);
-      document
-        .querySelector('#tb-name')!
-        .addEventListener('focus', () => (w.__run.nameFocus = performance.now()));
-      new MutationObserver(() => {
-        const p = document.querySelector('[aria-label="Run progress"]')?.textContent;
-        if (p && w.__run.progress.at(-1) !== p) w.__run.progress.push(p);
-        if (!w.__run.done && /Run R-\d+ done/.test(document.body.textContent ?? ''))
-          w.__run.done = performance.now();
-      }).observe(document.body, { subtree: true, childList: true, characterData: true });
-    });
-    await FRAMES.start(page);
-    await page.getByRole('main', { name: 'Build' }).getByRole('button', { name: 'Run' }).click();
-    await page.getByRole('textbox', { name: 'Profile name' }).click();
-    await expect(page.getByText(/Run R-\d+ done/)).toBeVisible({ timeout: 60_000 });
-    const fr = await FRAMES.stop(page);
-    const res = await page.evaluate(
-      () =>
-        (
-          window as unknown as {
-            __run: { click: number; done: number; progress: string[]; nameFocus: number };
-          }
-        ).__run,
-    );
-    const total = res.done - res.click;
-    const focusIn = res.nameFocus > 0 && res.nameFocus < res.done;
-    console.log(
-      `PERF run ${i + 1}: ${fmt(total)} ms, ${res.progress.length} progress texts ` +
-        `(${res.progress.slice(0, 3).join(', ')} ... ${res.progress.at(-1) ?? ''}), ` +
-        `click during run focused the name field: ${focusIn} (+${fmt(res.nameFocus - res.click)} ms), ` +
-        `rAF worst gap ${fmt(fr.gap)} ms`,
-    );
-    expect(res.progress.at(-1)).toMatch(/200\/200/);
-    totals.push(total);
-    gaps.push(fr.gap);
-    await page.getByRole('textbox', { name: 'Profile name' }).press('Escape');
-  }
-  report('run 200x6 (browser)', stat(totals), 'ms');
-  report('run 200x6 main-thread worst gap', stat(gaps), 'ms');
 });
 
 /** Navigation timings for one cold load. `then` is the first interaction after load. */

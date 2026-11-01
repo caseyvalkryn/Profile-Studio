@@ -5,17 +5,7 @@
 // corners; the defended asset north west of the radar, off the datum.
 import { racetrack } from '../behaviors';
 import type { Template } from './types';
-import {
-  area,
-  defendedAsset,
-  hypothesis,
-  node,
-  question,
-  sensor,
-  setting,
-  threat,
-  vignette,
-} from './build';
+import { area, defendedAsset, node, question, sensor, setting, threat, vignette } from './build';
 
 const RT: [number, number][] = [
   [1000, -800],
@@ -48,7 +38,6 @@ export const surrogateRacetrack: Template = {
     return vignette({
       name: 'Surrogate racetrack with truth',
       questions: [Q],
-      hypotheses: [hypothesis(Q, m, { low: 5, high: 15 })],
       threats: [
         threat('T1', 'g3-target-piston', racetrack({ x: 1900, y: 0 }, 2400, 1600, 300, 1), 33),
       ],

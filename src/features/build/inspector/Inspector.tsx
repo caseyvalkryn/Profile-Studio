@@ -11,7 +11,6 @@ import {
   GroupForm,
   Head,
   PlaneForm,
-  SystemExtras,
   SystemForm,
   ThreatForm,
 } from './forms';
@@ -92,7 +91,6 @@ function Selected({ v, one }: { v: Vignette; one: Picked }) {
           <Sec title={title}>
             <SystemForm v={v} sys={sys} />
           </Sec>
-          <SystemExtras sys={sys} />
         </div>
       );
     }
