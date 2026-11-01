@@ -148,6 +148,33 @@ describe('vignette store functions (mocked idb)', () => {
     expect(await loadVignette('a')).toBeNull();
   });
 
+  it('a save, a duplicate and a delete keep the cached listing current (11.F, N-05)', async () => {
+    const db = mockDb();
+    setDb(db);
+    await saveVignette(
+      testVignette({ id: 'a', collection: 'Range A', updated: '2026-01-01T00:00:00Z' }),
+    );
+    await listVignettes();
+    expect(db.getAll).toHaveBeenCalledTimes(1);
+    await saveVignette(
+      testVignette({ id: 'b', collection: 'Range B', updated: '2026-02-01T00:00:00Z' }),
+    );
+    expect(lastListing()!.map((l) => [l.id, l.collection])).toEqual([
+      ['b', 'Range B'],
+      ['a', 'Range A'],
+    ]);
+    await saveVignette(
+      testVignette({ id: 'a', collection: 'Range C', updated: '2026-03-01T00:00:00Z' }),
+    );
+    expect(lastListing()!.map((l) => [l.id, l.collection])).toEqual([
+      ['a', 'Range C'],
+      ['b', 'Range B'],
+    ]);
+    await deleteVignette('b');
+    expect(lastListing()!.map((l) => l.id)).toEqual(['a']);
+    expect(db.getAll).toHaveBeenCalledTimes(1);
+  });
+
   it('listWithRecords reads the store once and parses each record once per updated (11.1)', async () => {
     const db = mockDb();
     setDb(db);

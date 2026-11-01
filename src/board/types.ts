@@ -72,6 +72,9 @@ export type CardCam = {
   pitch: number;
   ref: string; // 'asset' or a system display id
   elevationMode: ElevationMode;
+  /** The card's zoom and its pan from the fitted view in metres (plan x, y; Elevation r, z). */
+  zoom?: number;
+  centre?: { x: number; y: number };
 };
 
 export type CardRec = {
@@ -162,4 +165,7 @@ export type Hit = {
   handle?: boolean;
   poly?: number[][];
   seg?: number[][];
+  /** Set by the Build gesture layer on a press that landed on a system's reach drawing:
+   *  'range' for the max range ring (data-role="range"), 'reach' for any other part. */
+  part?: 'range' | 'reach';
 };

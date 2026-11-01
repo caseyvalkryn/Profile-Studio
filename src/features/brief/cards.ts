@@ -141,8 +141,8 @@ export function addCard(): void {
   if (next) applyCard(next, card);
 }
 
-/** 3D has no inverse camera, so a card added from a 3D view keeps the fitted frame. */
-export const ADDED_TOAST_3D = 'Card added at the fitted 3D frame.';
+/** 3D has no inverse camera, so a card added from a 3D view keeps the default 3D view. */
+export const ADDED_TOAST_3D = 'Card added. 3D cards keep the default 3D view, not the pan and zoom.';
 
 /** Move the current card up (-1) or down (+1) in the deck; one undo step. */
 export function moveCard(d: -1 | 1): void {

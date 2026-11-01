@@ -13,8 +13,9 @@ import { useBoard } from '../board/store';
 import { toggledLayers } from '../bar/layers';
 
 export const SAVED_TOAST = 'Card saved. Write its caption in Brief.';
-/** 3D has no inverse camera, so a 3D card keeps the fitted frame, not the pan and zoom. */
-export const SAVED_TOAST_3D = 'Card saved at the fitted 3D frame. Write its caption in Brief.';
+/** 3D has no inverse camera, so a 3D card keeps the default 3D view, not the pan and zoom. */
+export const SAVED_TOAST_3D =
+  'Card saved. 3D cards keep the default 3D view, not the pan and zoom. Write its caption in Brief.';
 
 /** The lowest unused `c<n>` (spec section 3 item 5), minted as every other display id. */
 export function nextCardId(cards: readonly Card[]): string {

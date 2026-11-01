@@ -316,6 +316,24 @@ const PHASE_10_DEVIATIONS: readonly LegacyPatch[] = [
     'ctx.sym.textBox(top[0], top[1], "MAX RG", 10, "middle"), svg: ctx.sym.label(top[0], top[1], "MAX RG",',
     'ctx.sym.textBox(top[0], top[1], "Max range", 10, "middle"), svg: ctx.sym.label(top[0], top[1], "Max range",',
   ],
+  // Lane 11.F F-01: only the max range ring (plan circle or sector, Elevation arc) carries
+  // data-role="range", the one reach part a press off the glyph drags as range.
+  [
+    '43-layer-reach.js',
+    'at = { "data-k": "system", "data-id": s.id }, top;',
+    'at = { "data-k": "system", "data-id": s.id }, rg = Object.assign({}, at, { "data-role": "range" }), top;',
+  ],
+  [
+    '43-layer-reach.js',
+    'if (d) out += S("path", Object.assign({ d: d, class: c }, at));',
+    'if (d) out += S("path", Object.assign({ d: d, class: c }, rg));',
+  ],
+  ['43-layer-reach.js', 'r: r1(R), class: c }, at));', 'r: r1(R), class: c }, rg));'],
+  [
+    '43-layer-reach.js',
+    'if (arc) out += S("polyline", Object.assign({ points: arc, class: c }, at));',
+    'if (arc) out += S("polyline", Object.assign({ points: arc, class: c }, rg));',
+  ],
   // F-11: directed energy draws the EW ring, as the mockup's "ring ew".
   [
     '43-layer-reach.js',
