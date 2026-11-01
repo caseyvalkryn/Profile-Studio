@@ -1,7 +1,6 @@
 // The one command registry. Commands register once at import of commands.ts.
 import { useDocument } from '../state/document';
-import { useRuns } from '../state/runs';
-import { useUi } from '../state/ui';
+import { useUi, type Workspace } from '../state/ui';
 import type { AssetKind, Command, CommandContext, Pointer } from './types';
 
 const commands = new Map<string, Command>();
@@ -11,7 +10,7 @@ let menuOrder: Partial<Record<AssetKind, readonly string[]>> = {};
 export function register(cmd: Command): Command {
   if (commands.has(cmd.id)) throw new Error(`Command ${cmd.id} is already registered`);
   if (cmd.shortcut) {
-    const clash = byShortcut(cmd.shortcut);
+    const clash = all().find((c) => c.shortcut === cmd.shortcut && overlaps(c, cmd));
     if (clash) throw new Error(`Shortcut ${cmd.shortcut} is taken by ${clash.id}`);
   }
   commands.set(cmd.id, cmd);
@@ -44,9 +43,26 @@ export function forTarget(kind: AssetKind): Command[] {
     .sort((a, b) => rank(a) - rank(b));
 }
 
-export function byShortcut(shortcut: string): Command | undefined {
-  for (const c of commands.values()) if (c.shortcut === shortcut) return c;
+/** True when the command is active in the workspace. A command with no `workspaces` is active everywhere. */
+export function activeIn(cmd: Pick<Command, 'workspaces'>, workspace: Workspace): boolean {
+  return !cmd.workspaces || cmd.workspaces.includes(workspace);
+}
+
+function overlaps(a: Pick<Command, 'workspaces'>, b: Pick<Command, 'workspaces'>): boolean {
+  if (!a.workspaces || !b.workspaces) return true;
+  return a.workspaces.some((w) => b.workspaces!.includes(w));
+}
+
+/** The command bound to the shortcut in the workspace; any workspace when it is omitted. */
+export function byShortcut(shortcut: string, workspace?: Workspace): Command | undefined {
+  for (const c of commands.values())
+    if (c.shortcut === shortcut && (!workspace || activeIn(c, workspace))) return c;
   return undefined;
+}
+
+/** Every command active in the workspace, in registration order. */
+export function inWorkspace(workspace: Workspace): Command[] {
+  return all().filter((c) => activeIn(c, workspace));
 }
 
 /** Remove every command, for tests. */
@@ -112,7 +128,6 @@ export function currentContext(pointer: Pointer | null = null): CommandContext {
   return {
     document: useDocument.getState(),
     ui: useUi.getState(),
-    runs: useRuns.getState(),
     pointer,
   };
 }

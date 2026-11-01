@@ -2,24 +2,30 @@
 // TypeScript type, so the two cannot drift.
 
 import { z } from 'zod';
+import { AUTHORED_EVENT_TYPES, LAYER_IDS, NODE_DEFAULTS, RATES } from './catalog';
+import { migrateToV7 } from './migrateV5';
 import type {
   Area,
+  AuthoredEvent,
+  Card,
+  CardView,
+  Clip,
+  Debrief,
   Effector,
+  HeightPlane,
   Entered,
-  Hypothesis,
   MeasureSetting,
   Node,
+  NodeKind,
   Question,
   ReportDraft,
-  RunRow,
-  RunSummary,
   Sensor,
   SensorModel,
   Threat,
   Vignette,
   Waypoint,
 } from './types';
-import { SCHEMA } from './types';
+import { PROFILE_CLASSES, SCHEMA } from './types';
 
 const num = z.number().finite();
 const key = z.string().min(1);
@@ -46,6 +52,7 @@ export const threatSchema: z.ZodType<Threat> = z.object({
   type: z.string(),
   path: z.array(waypointSchema),
   speedMs: num.positive().optional(),
+  group: z.string(),
 });
 
 export const enteredSchema: z.ZodType<Entered> = z.object({
@@ -120,15 +127,28 @@ export const effectorSchema: z.ZodType<Effector> = z.object({
   entered,
 });
 
-export const nodeSchema: z.ZodType<Node> = z.object({
-  key,
-  id: z.string(),
-  kind: z.enum(['c2', 'tspi']),
-  x: num,
-  y: num,
-  z: num,
-  rangeM: num.min(0),
-});
+// A stored v6 node from before fovDeg and bearingDeg existed gets the catalog defaults.
+// A node's fovDeg may be 0, the legacy default (a zero-width sector).
+export const nodeSchema: z.ZodType<Node> = z.preprocess(
+  (n) => {
+    if (n == null || typeof n !== 'object') return n;
+    const d = NODE_DEFAULTS[(n as { kind?: unknown }).kind as NodeKind] as
+      (typeof NODE_DEFAULTS)[NodeKind] | undefined;
+    if (!d) return n;
+    return { fovDeg: d.fovDeg, bearingDeg: d.bearingDeg, ...n };
+  },
+  z.object({
+    key,
+    id: z.string(),
+    kind: z.enum(['c2', 'tspi']),
+    x: num,
+    y: num,
+    z: num,
+    rangeM: num.min(0),
+    fovDeg: num.min(0).max(360),
+    bearingDeg: num,
+  }),
+);
 
 // zMinM may equal zMaxM: legacy footprints (asset, ref) are flat at zmax 0.
 export const areaSchema: z.ZodType<Area> = z
@@ -146,6 +166,83 @@ export const areaSchema: z.ZodType<Area> = z
     path: ['zMaxM'],
   });
 
+export const heightPlaneSchema: z.ZodType<HeightPlane> = z.object({
+  key,
+  id: z.string(),
+  label: z.string(),
+  zM: num,
+});
+
+const eventType = z.enum(AUTHORED_EVENT_TYPES, {
+  message: 'The event type is not in the catalog.',
+});
+
+export const authoredEventSchema: z.ZodType<AuthoredEvent> = z.object({
+  key,
+  id: z.string(),
+  tS: num,
+  type: eventType,
+  label: z.string(),
+  threatKey: key,
+  sensorKey: key.nullable(),
+});
+
+// Legacy card rules (legacy/js/11-schema.js validate): the start before the end, a rate from the
+// rate menu, every beat inside the clip.
+export const clipSchema: z.ZodType<Clip> = z
+  .object({
+    t0S: num,
+    t1S: num,
+    rate: num.refine((r) => RATES.includes(r), 'The clip rate is not in the rate menu.'),
+    beatsS: z.array(num),
+  })
+  .refine((c) => c.t0S < c.t1S, {
+    message: 'The clip start must be before the clip end.',
+    path: ['t1S'],
+  })
+  .refine((c) => c.beatsS.every((b) => b >= c.t0S && b <= c.t1S), {
+    message: 'A beat is outside the clip.',
+    path: ['beatsS'],
+  });
+
+export const cardViewSchema: z.ZodType<CardView> = z.object({
+  kind: z.enum(['plan', 'elevation', '3d'], {
+    message: 'The view is not plan, elevation or 3D.',
+  }),
+  centre: z.object({ x: num, y: num }),
+  zoom: num.positive(),
+  yawDeg: num,
+  pitchDeg: num,
+  ref: key,
+  elevationMode: z.enum(['alongPath', 'fromAsset']),
+});
+
+export const cardSchema: z.ZodType<Card> = z.object({
+  key,
+  id: z.string(),
+  name: z.string(),
+  view: cardViewSchema,
+  layers: z.partialRecord(z.enum(LAYER_IDS), z.boolean()),
+  displays: z.object({ timeline: z.boolean(), chart: z.boolean(), readout: z.boolean() }),
+  clip: clipSchema.nullable(),
+  focus: z.array(key),
+  tS: num.nullable(),
+  caption: z.string(),
+  notes: z.string(),
+});
+
+export const debriefSchema: z.ZodType<Debrief> = z.object({
+  source: z.string(),
+  loadedAt: z.string(),
+  tspi: z.record(
+    key,
+    z.array(z.tuple([num, num, num, num], { message: 'A TSPI sample needs t, x, y and z.' })),
+  ),
+  events: z.array(
+    z.object({ tS: num, type: eventType, threatKey: key, sensorKey: key.nullable() }),
+  ),
+});
+
 export const measureSettingSchema: z.ZodType<MeasureSetting> = z.object({
   id: z.string(),
   op,
@@ -153,72 +250,20 @@ export const measureSettingSchema: z.ZodType<MeasureSetting> = z.object({
   unit: z.string(),
 });
 
-export const hypothesisSchema: z.ZodType<Hypothesis> = z.object({
-  key,
-  id: z.string(),
-  question: z.string(),
-  measure: z.string(),
-  op,
-  value: num,
-  prediction: z.object({ low: num, high: num }).nullable(),
-  lockedAt: z.string().nullable(),
-});
-
-const numOrNull = num.nullable();
-
-export const runRowSchema: z.ZodType<RunRow> = z.object({
-  run: z.number().int().min(0),
-  threat: z.string(),
-  stage_reached: z.enum(['none', 'detect', 'track', 'classify', 'identify', 'engage', 'defeat']),
-  detect_range_m: numOrNull,
-  detect_alt_m: numOrNull,
-  track_continuity_pct: numOrNull,
-  track_error_m: numOrNull,
-  id_range_m: numOrNull,
-  id_time_s: numOrNull,
-  identified_ok: z.boolean().nullable(),
-  engagement_range_m: numOrNull,
-  time_to_intercept_s: numOrNull,
-  outcome: z.enum(['Success', 'Miss', 'No Attempt']),
-});
-
-export const runSummarySchema: z.ZodType<RunSummary> = z.object({
-  key,
-  id: z.string(),
-  createdAt: z.string(),
-  n: z.number().int().min(0),
-  seed: z.number().int(),
-  rows: z.array(runRowSchema),
-  predictions: z
-    .array(
-      z.object({
-        hypothesis: z.string(),
-        measure: z.string().optional(),
-        op: op.optional(),
-        value: num.optional(),
-        low: num,
-        high: num,
-      }),
-    )
-    .optional(),
-  note: z.string().optional(),
-});
-
 export const reportDraftSchema: z.ZodType<ReportDraft> = z.object({
-  summary: z.string(),
   notes: z.string(),
   dataSources: z.array(z.string()),
   truth: z.object({ source: z.string(), intervalS: num.min(0), stationKeys: z.array(z.string()) }),
-  slides: z.array(z.object({ key, name: z.string(), caption: z.string(), notes: z.string() })),
-  sections: z.record(z.string(), z.string()).optional(),
-  charts: z.array(z.string()).optional(),
 });
 
 export const vignetteSchema: z.ZodType<Vignette> = z.object({
   schema: z.literal(SCHEMA),
-  id: z.string().min(1, 'The vignette has no id.'),
+  id: z.string().min(1, 'The profile has no id.'),
   name: z.string(),
   updated: z.string(),
+  collection: z.string(),
+  class: z.enum(PROFILE_CLASSES, { message: 'The class is not in the catalog.' }),
+  version: z.number().int().min(1),
   site: z.object({
     name: z.string(),
     lat: num.min(-90).max(90),
@@ -226,45 +271,32 @@ export const vignetteSchema: z.ZodType<Vignette> = z.object({
     elevM: num,
   }),
   questions: z.array(questionSchema),
-  hypotheses: z.array(hypothesisSchema),
   threats: z.array(threatSchema),
   sensors: z.array(sensorSchema),
   effectors: z.array(effectorSchema),
   nodes: z.array(nodeSchema),
   areas: z.array(areaSchema),
+  planes: z.array(heightPlaneSchema),
+  events: z.array(authoredEventSchema),
+  snapshots: z.array(num),
+  cards: z.array(cardSchema),
+  debrief: debriefSchema.nullable(),
   chainTime: z.object({ decisionS: num.min(0), assignS: num.min(0) }),
   measures: z.array(measureSettingSchema),
-  runs: z.array(runSummarySchema),
   report: reportDraftSchema,
-  sweep: z
-    .object({
-      factors: z
-        .array(
-          z.object({
-            kind: z.enum([
-              'threat-speed',
-              'threat-altitude',
-              'approach-bearing',
-              'sensor-range',
-              'sensor-position-offset',
-            ]),
-            levels: z.array(num).min(1),
-            target: z.string().optional(),
-          }),
-        )
-        .min(1)
-        .max(2),
-    })
-    .optional(),
 });
 
-/** Parse and validate a vignette. Throws an Error whose message lists each problem and its path. */
+/**
+ * Parse and validate a vignette. A `profile-studio/5` or `/6` record is migrated to v7 first
+ * (migrateToV7). Throws an Error whose message lists each problem and its path.
+ */
 export function parseVignette(input: unknown): Vignette {
-  const r = vignetteSchema.safeParse(input);
-  if (!r.success) throw new Error(`This is not a valid vignette.\n${z.prettifyError(r.error)}`);
+  const r = vignetteSchema.safeParse(migrateToV7(input));
+  if (!r.success) throw new Error(`This is not a valid profile.\n${z.prettifyError(r.error)}`);
   return r.data;
 }
 
+/** True for a valid v7 record only; a v5 or v6 record needs parseVignette to migrate it. */
 export function isVignette(input: unknown): input is Vignette {
   return vignetteSchema.safeParse(input).success;
 }

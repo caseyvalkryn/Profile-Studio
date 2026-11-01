@@ -4,7 +4,7 @@ export type KbdProps = { shortcut: string; className?: string };
 export function Kbd({ shortcut, className = '' }: KbdProps) {
   return (
     <kbd
-      className={`font-mono text-[11px] leading-none tracking-wide text-muted ${className}`}
+      className={`font-mono text-micro tracking-wide text-muted ${className}`}
       aria-label={`Shortcut ${shortcut}`}
     >
       {shortcut}

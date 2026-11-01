@@ -10,7 +10,6 @@ import {
   defendedAsset,
   effector,
   entered,
-  hypothesis,
   question,
   sensor,
   setting,
@@ -66,9 +65,9 @@ export const swarmSplit: Template = {
     const radar = sensor('RDR-1', 'radar', 0, 0, 4000);
     radar.entered['2.3'] = entered(6, 'Planning value; vendor sheet to confirm');
     return vignette({
+      class: 'Multi-aircraft',
       name: 'Swarm of six, split',
       questions: [Q],
-      hypotheses: [hypothesis(Q, m121, { low: 85, high: 100 })],
       threats: paths.map((p, i) => threat(ids[i]!, 'g1-swarm-quad', p)),
       sensors: [
         radar,

@@ -3,16 +3,7 @@
 // up the approach, jammer south, the defended asset north west with the approach ending on it.
 import { directApproach } from '../behaviors';
 import type { Template } from './types';
-import {
-  defendedAsset,
-  effector,
-  hypothesis,
-  question,
-  sensor,
-  setting,
-  threat,
-  vignette,
-} from './build';
+import { defendedAsset, effector, question, sensor, setting, threat, vignette } from './build';
 
 const ASSET = { x: -500, y: 500 };
 
@@ -32,9 +23,9 @@ export const pointDefence: Template = {
     const Q = q();
     const m112 = setting('1.1.2', '>=', 3000, 'm');
     return vignette({
+      class: 'Counter-UAS',
       name: 'Point defence, single quadrotor',
       questions: [Q],
-      hypotheses: [hypothesis(Q, m112, { low: 3000, high: 4000 })],
       threats: [threat('T1', 'g1-quad-isr', directApproach({ x: 3100, y: 3000 }, ASSET, 120))],
       sensors: [
         sensor('RDR-1', 'radar', 0, 0, 4000),

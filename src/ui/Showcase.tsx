@@ -39,7 +39,6 @@ const PALETTE_ITEMS: PaletteItem[] = [
     disabledReason: 'Nothing selected',
     onSelect: noop,
   },
-  { id: 'run.run', label: 'Run', group: 'Run', shortcut: '⌘↵', onSelect: noop },
   { id: 'view.fit', label: 'Fit view', group: 'View', shortcut: 'F', onSelect: noop },
 ];
 
@@ -61,8 +60,8 @@ export function Showcase() {
           <Button variant="default" size="sm" tooltip="Fit view" shortcut="F">
             Fit
           </Button>
-          <Button variant="accent" tooltip="Run the vignette" shortcut="⌘↵">
-            Run
+          <Button variant="accent" tooltip="Save the current view as a card">
+            Save card
           </Button>
           <Tooltip content="Units toggle" shortcut="U">
             <span tabIndex={0} className="text-xs text-muted">
@@ -82,7 +81,7 @@ export function Showcase() {
             source="Entered by planner"
             onCommit={setSpeed}
           />
-          <Field kind="text" label="Vignette name" value={name} onCommit={setName} />
+          <Field kind="text" label="Profile name" value={name} onCommit={setName} />
         </section>
 
         <section className="flex items-center gap-2">
@@ -115,7 +114,7 @@ export function Showcase() {
         <Dialog
           open={dialog}
           onOpenChange={setDialog}
-          title="Delete vignette"
+          title="Delete profile"
           actions={
             <>
               <Button variant="default" onClick={() => setDialog(false)}>
@@ -127,7 +126,7 @@ export function Showcase() {
             </>
           }
         >
-          <p className="text-muted">The vignette moves to the trash. Undo restores it.</p>
+          <p className="text-muted">The profile moves to the trash. Undo restores it.</p>
         </Dialog>
         <PromptNumber
           open={prompt}

@@ -7,10 +7,8 @@ import { join } from 'node:path';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { SENSOR_KINDS } from '../../src/domain/catalog';
 import { newKey } from '../../src/domain/ids';
-import { swarmSplit } from '../../src/domain/templates/swarmSplit';
 import {
   effector,
-  hypothesis,
   question,
   sensor,
   setting,
@@ -18,8 +16,7 @@ import {
   vignette,
 } from '../../src/domain/templates/build';
 import type { Vignette } from '../../src/domain/types';
-import { run } from '../../src/engine/run';
-import { M_PER_NM, num, openTemplate, POINT_DEFENCE } from '../helpers';
+import { M_PER_NM, mapGeom, num, POINT_DEFENCE } from '../helpers';
 
 const REPS = 5;
 const DIST = join(process.cwd(), 'dist');
@@ -71,7 +68,6 @@ function bigVignette(): Vignette {
   return vignette({
     name: 'Perf 40 x 15',
     questions: [Q],
-    hypotheses: [hypothesis(Q, m, { low: 2000, high: 3000 })],
     threats,
     sensors,
     effectors: [effector('EW-1', 'ew', 0, 0, 1500)],
@@ -104,27 +100,9 @@ async function seed(page: Page, v: Vignette) {
   );
 }
 
-/** Map geometry from any two x-axis grid labels and the 0 nm labels (controller.ts renderLabels). */
+/** Board geometry in plan (e2e/helpers.ts mapGeom: world axes and scale bar), plus `at`. */
 async function geom(page: Page) {
-  const box = (await page.getByTestId('map-canvas').boundingBox())!;
-  const grid = await page.locator('[data-label="grid"]').evaluateAll((els) =>
-    els.map((el) => {
-      const m = /translate\((-?[\d.]+)px, (-?[\d.]+)px\)/.exec((el as HTMLElement).style.transform);
-      return { text: el.textContent ?? '', x: Number(m?.[1]), y: Number(m?.[2]) };
-    }),
-  );
-  const val = (t: string) => {
-    const m = /^([\d.]+) nm(?: ([EWNS]))?$/.exec(t);
-    if (!m) return null;
-    return Number(m[1]) * (m[2] === 'W' || m[2] === 'S' ? -1 : 1);
-  };
-  const xs = grid.filter((g) => g.y > box.height / 2 && /( [EW])?$/.test(g.text) && g.x > 10);
-  const x0 = xs.find((g) => g.text === '0 nm');
-  const x1 = xs.find((g) => /E$/.test(g.text));
-  const y0 = grid.find((g) => g.x < 10 && g.text === '0 nm');
-  if (!x0 || !x1 || !y0) throw new Error(`grid labels not found: ${JSON.stringify(grid)}`);
-  const pxPerM = (x1.x - x0.x) / (val(x1.text)! * M_PER_NM);
-  const origin = { x: box.x + x0.x - 3, y: box.y + y0.y + 14 };
+  const { box, origin, pxPerM } = await mapGeom(page);
   return {
     box,
     origin,
@@ -181,7 +159,7 @@ async function drag(
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   }
   const r = await FRAMES.stop(page);
-  const tip = await page.locator('[data-testid="map-view"] [role="status"]').allTextContents();
+  const tip = await page.getByTestId('board-label').allTextContents();
   await page.mouse.up();
   return { ...r, moves, tip: tip.join(' | ') };
 }
@@ -195,19 +173,6 @@ async function machine(page: Page, browser: Browser) {
   console.log(`PERF machine: chromium ${browser.version()}, WebGL ${gl}, node ${process.version}`);
 }
 
-test('node: engine run, 200 replicates x 6 threats (swarm template)', () => {
-  const v = swarmSplit.make();
-  expect(v.threats).toHaveLength(6);
-  run(v, 20, 1); // warm-up
-  const ts: number[] = [];
-  for (let i = 0; i < REPS; i++) {
-    const t0 = performance.now();
-    run(v, 200, i + 1);
-    ts.push(performance.now() - t0);
-  }
-  report('engine run 200x6 (node)', stat(ts), 'ms');
-});
-
 test('map drag and preview latency, 40 threats x 15 sensors', async ({ page, browser }) => {
   const v = bigVignette();
   await page.goto('/');
@@ -215,14 +180,25 @@ test('map drag and preview latency, 40 threats x 15 sensors', async ({ page, bro
   await seed(page, v);
   await page.goto('/build');
   await expect(page.getByRole('main', { name: 'Build' })).toBeVisible();
-  await expect(page.locator('[data-label="grid"]').first()).toBeAttached();
-  await expect(page.locator('[data-label="asset"]'))
+  await expect(
+    page.locator('[data-testid="board-stage"] svg.board line.grid').first(),
+  ).toBeAttached();
+  await expect(
+    page.locator('[data-testid="board-stage"] svg.board g[data-k="system"][data-role="centre"]'),
+  )
     .toHaveCount(16 + 0, { timeout: 15_000 })
     .catch(() => undefined);
   await page.waitForTimeout(1000);
   const g = await geom(page);
   console.log(`PERF geometry: pxPerM ${g.pxPerM.toFixed(4)}, box ${JSON.stringify(g.box)}`);
   const inspector = page.getByRole('complementary', { name: 'Inspector' });
+  // The whole-scene inspector shows a system's fields only while its row is selected (lane 10.2).
+  const rangeOf = async () => {
+    const range = inspector.getByLabel('Range', { exact: true });
+    if (!(await range.count()))
+      await inspector.getByRole('button', { name: 'Select RDR-1', exact: true }).click();
+    return (await num(range)) * M_PER_NM;
+  };
 
   // Idle baseline: the frame rate the page reaches with no input.
   await FRAMES.start(page);
@@ -230,19 +206,21 @@ test('map drag and preview latency, 40 threats x 15 sensors', async ({ page, bro
   const idle = await FRAMES.stop(page);
   console.log(`PERF idle: ${fmt(idle.fps)} fps, worst gap ${fmt(idle.gap)} ms`);
 
-  // Ring drag: RDR-1's west edge, swept between 2500 m and 1900 m.
+  // Ring drag: RDR-1's range handle, swept between 2500 m and 1900 m. The handle is drawn only
+  // while the system is selected, on the east edge of a full circle (src/board/layers/handles.ts);
+  // a press elsewhere on the ring moves the centre (10.F F-03).
   const ringFps: number[] = [];
   const ringGap: number[] = [];
-  let r = 2500;
+  let r = await rangeOf();
   for (let i = 0; i < REPS; i++) {
-    const from = g.at(-r, 0);
-    const res = await drag(page, from, (ph) => g.at(-(r - 600 * Math.sin(Math.PI * ph)), 0));
+    const from = g.at(r, 0);
+    const res = await drag(page, from, (ph) => g.at(r - 600 * Math.sin(Math.PI * ph), 0));
     console.log(
       `PERF ring drag ${i + 1}: ${fmt(res.fps)} fps, gap ${fmt(res.gap)} ms, ${res.moves} moves, tip "${res.tip}"`,
     );
     ringFps.push(res.fps);
     ringGap.push(res.gap);
-    r = (await num(inspector.getByLabel('Range', { exact: true }))) * M_PER_NM;
+    r = await rangeOf();
   }
   report('ring drag fps', stat(ringFps, false), 'fps');
   report('ring drag worst gap', stat(ringGap), 'ms');
@@ -267,124 +245,97 @@ test('map drag and preview latency, 40 threats x 15 sensors', async ({ page, bro
   report('waypoint drag worst gap', stat(wpGap), 'ms');
 
   // Preview latency, the 12.4 method: one mousemove inside a ring drag, then the first change of
-  // the timeline svg and of the map value readout.
+  // the preview's first-see ticks (events layer, lane 10.3 removed the timeline) and of the drag
+  // value label.
+  // The board replaces its layer nodes between drags, so each rep watches the nodes it finds
+  // once its drag has begun (10.F F-03).
+  type Lat = { move: number[]; tl: number[]; tip: number[]; obs: MutationObserver[] };
   await page.evaluate(() => {
-    const w = window as unknown as { __lat: { move: number[]; tl: number[]; tip: number[] } };
-    w.__lat = { move: [], tl: [], tip: [] };
+    const w = window as unknown as { __lat: Lat };
+    w.__lat = { move: [], tl: [], tip: [], obs: [] };
     window.addEventListener('mousemove', () => w.__lat.move.push(performance.now()), true);
-    const watch = (el: Element | null, out: number[]) =>
-      el &&
-      new MutationObserver(() => out.push(performance.now())).observe(el, {
-        subtree: true,
-        childList: true,
-        characterData: true,
-        attributes: true,
-        attributeFilter: ['aria-label', 'x'],
-      });
-    watch(
-      document.querySelector('[data-testid="timeline-row"]')?.closest('svg') ?? null,
-      w.__lat.tl,
-    );
-    watch(document.querySelector('[data-testid="map-view"] [role="status"]'), w.__lat.tip);
   });
-  const tlMs: number[] = [];
-  const tipMs: number[] = [];
-  for (let i = 0; i < REPS; i++) {
-    const start = g.at(-r, 0);
-    await page.mouse.move(start.x, start.y);
-    await page.mouse.down();
-    await page.mouse.move(start.x - 6, start.y);
-    await page.waitForTimeout(400);
-    await page.evaluate(() => {
-      const w = window as unknown as { __lat: { move: number[]; tl: number[]; tip: number[] } };
+  const rewatch = () =>
+    page.evaluate(() => {
+      const w = window as unknown as { __lat: Lat };
+      w.__lat.obs.forEach((o) => o.disconnect());
+      w.__lat.obs = [];
       w.__lat.move.length = 0;
       w.__lat.tl.length = 0;
       w.__lat.tip.length = 0;
+      const watch = (el: Element | null, out: number[]) => {
+        if (!el) return;
+        const o = new MutationObserver(() => out.push(performance.now()));
+        o.observe(el, {
+          subtree: true,
+          childList: true,
+          characterData: true,
+          attributes: true,
+          attributeFilter: ['aria-label', 'x', 'x1', 'y1'],
+        });
+        w.__lat.obs.push(o);
+      };
+      watch(document.querySelector('g[data-layer="events"]'), w.__lat.tl);
+      watch(document.querySelector('[data-testid="board-label"]'), w.__lat.tip);
     });
+  const tlMs: number[] = [];
+  const tipMs: number[] = [];
+  for (let i = 0; i < REPS; i++) {
+    const start = g.at(r, 0);
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    await page.mouse.move(start.x + 6, start.y);
+    await page.waitForTimeout(400);
+    await rewatch();
     const r1 = i % 2 === 0 ? r - 500 : r + 500;
-    const to = g.at(-r1, 0);
+    const to = g.at(r1, 0);
     await page.mouse.move(to.x, to.y);
     await page.waitForTimeout(400);
-    const lat = await page.evaluate(
-      () => (window as unknown as { __lat: { move: number[]; tl: number[]; tip: number[] } }).__lat,
-    );
+    const lat = await page.evaluate(() => {
+      const l = (window as unknown as { __lat: Lat }).__lat;
+      return { move: l.move, tl: l.tl, tip: l.tip };
+    });
     await page.mouse.up();
     expect(lat.move.length).toBe(1);
     const m = lat.move[0]!;
     const tl = (lat.tl.find((t) => t >= m) ?? Infinity) - m;
     const tip = (lat.tip.find((t) => t >= m) ?? Infinity) - m;
-    console.log(`PERF preview latency ${i + 1}: timeline ${fmt(tl)} ms, readout ${fmt(tip)} ms`);
+    console.log(
+      `PERF preview latency ${i + 1}: first-see ticks ${fmt(tl)} ms, readout ${fmt(tip)} ms`,
+    );
     tlMs.push(tl);
     tipMs.push(tip);
-    r = (await num(inspector.getByLabel('Range', { exact: true }))) * M_PER_NM;
+    r = await rangeOf();
   }
-  report('preview latency timeline', stat(tlMs), 'ms');
+  report('preview latency first-see ticks', stat(tlMs), 'ms');
   report('preview latency readout', stat(tipMs), 'ms');
-});
 
-test('run 200 replicates, 6 threats, through the Run button', async ({ page }) => {
-  // The UI has no replicate field: Run sends DEFAULT_RUN_N (100). Rewrite n to 200 where the
-  // request enters the worker, so the Run button, worker, progress and store path is the app's.
-  await page.addInitScript(() => {
-    const post = Worker.prototype.postMessage;
-    Worker.prototype.postMessage = function (this: Worker, m: unknown, ...rest: unknown[]) {
-      const req = m as { type?: string; n?: number };
-      const next = req && req.type === 'run' ? { ...req, n: 200 } : m;
-      return (post as (...a: unknown[]) => void).call(this, next, ...rest);
-    } as Worker['postMessage'];
-  });
-  const totals: number[] = [];
-  const gaps: number[] = [];
+  // 3D orbit drag (spec section 11: the map drag budget, same renderer as Plan): the view
+  // switch, then a drag across empty ground that sweeps yaw and pitch.
+  await page
+    .getByRole('group', { name: 'View' })
+    .getByRole('button', { name: '3D', exact: true })
+    .click();
+  await expect(
+    page.locator('[data-testid="board-stage"] svg.board[data-proj="axon"]'),
+  ).toBeAttached();
+  await page.waitForTimeout(500);
+  const orbitFps: number[] = [];
+  const orbitGap: number[] = [];
   for (let i = 0; i < REPS; i++) {
-    await page.evaluate(() => indexedDB.deleteDatabase('profile-studio')).catch(() => undefined);
-    await openTemplate(page, 'Swarm of six, split');
-    await page.evaluate(() => {
-      const w = window as unknown as {
-        __run: { click: number; done: number; progress: string[]; nameFocus: number };
-      };
-      w.__run = { click: 0, done: 0, progress: [], nameFocus: 0 };
-      const btn = Array.from(document.querySelectorAll('main[aria-label="Build"] button')).find(
-        (b) => b.textContent?.trim() === 'Run',
-      )!;
-      btn.addEventListener('click', () => (w.__run.click = performance.now()), true);
-      document
-        .querySelector('input[aria-label="Vignette name"]')!
-        .addEventListener('focus', () => (w.__run.nameFocus = performance.now()));
-      new MutationObserver(() => {
-        const p = document.querySelector('[aria-label="Run progress"]')?.textContent;
-        if (p && w.__run.progress.at(-1) !== p) w.__run.progress.push(p);
-        if (!w.__run.done && /Run R-\d+ done/.test(document.body.textContent ?? ''))
-          w.__run.done = performance.now();
-      }).observe(document.body, { subtree: true, childList: true, characterData: true });
-    });
-    await FRAMES.start(page);
-    await page.getByRole('main', { name: 'Build' }).getByRole('button', { name: 'Run' }).click();
-    await page.getByRole('textbox', { name: 'Vignette name' }).click();
-    await expect(page.getByText(/Run R-\d+ done/)).toBeVisible({ timeout: 60_000 });
-    const fr = await FRAMES.stop(page);
-    const res = await page.evaluate(
-      () =>
-        (
-          window as unknown as {
-            __run: { click: number; done: number; progress: string[]; nameFocus: number };
-          }
-        ).__run,
-    );
-    const total = res.done - res.click;
-    const focusIn = res.nameFocus > 0 && res.nameFocus < res.done;
+    const from = { x: g.box.x + 40, y: g.box.y + g.box.height - 40 };
+    const res = await drag(page, from, (ph) => ({
+      x: from.x + 300 * Math.sin(Math.PI * ph),
+      y: from.y - 120 * Math.sin(Math.PI * ph),
+    }));
     console.log(
-      `PERF run ${i + 1}: ${fmt(total)} ms, ${res.progress.length} progress texts ` +
-        `(${res.progress.slice(0, 3).join(', ')} ... ${res.progress.at(-1) ?? ''}), ` +
-        `click during run focused the name field: ${focusIn} (+${fmt(res.nameFocus - res.click)} ms), ` +
-        `rAF worst gap ${fmt(fr.gap)} ms`,
+      `PERF 3D orbit ${i + 1}: ${fmt(res.fps)} fps, gap ${fmt(res.gap)} ms, ${res.moves} moves`,
     );
-    expect(res.progress.at(-1)).toMatch(/200\/200/);
-    totals.push(total);
-    gaps.push(fr.gap);
-    await page.getByRole('textbox', { name: 'Vignette name' }).press('Escape');
+    orbitFps.push(res.fps);
+    orbitGap.push(res.gap);
   }
-  report('run 200x6 (browser)', stat(totals), 'ms');
-  report('run 200x6 main-thread worst gap', stat(gaps), 'ms');
+  report('3D orbit fps', stat(orbitFps, false), 'fps');
+  report('3D orbit worst gap', stat(orbitGap), 'ms');
 });
 
 /** Navigation timings for one cold load. `then` is the first interaction after load. */
@@ -413,7 +364,7 @@ async function load(browser: Browser, path: '/' | '/build', throttle: number, v:
     addEventListener('click', () => mark('click'), true);
     new MutationObserver(() => {
       if (document.querySelector('button[aria-label^="Open template"]')) mark('card');
-      if (document.querySelector('[data-label="grid"]')) mark('map');
+      if (document.querySelector('[data-testid="board-stage"] svg.board line.grid')) mark('map');
       if (document.querySelector('main[aria-label="Build"]')) mark('build');
       if (w.__ld.click && document.querySelector('section[aria-label="Templates"]'))
         mark('library');
@@ -424,7 +375,9 @@ async function load(browser: Browser, path: '/' | '/build', throttle: number, v:
     await page.getByRole('button', { name: `Open template ${POINT_DEFENCE}` }).click();
     await expect(page.getByRole('main', { name: 'Build' })).toBeVisible();
   } else {
-    await expect(page.locator('[data-label="grid"]').first()).toBeAttached({ timeout: 30_000 });
+    await expect(
+      page.locator('[data-testid="board-stage"] svg.board line.grid').first(),
+    ).toBeAttached({ timeout: 30_000 });
     await page
       .getByRole('navigation', { name: 'Workspaces' })
       .getByRole('link', { name: 'Library' })

@@ -1,192 +1,217 @@
 import '../../../ui/test-utils';
-import { act, fireEvent, render, screen } from '@testing-library/react';
-import { testVignette } from '../../../engine/testVignette';
-import { useDocument } from '../../../state/document';
-import { useUi, UI_DEFAULTS } from '../../../state/ui';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import fixture from '../../../../fixtures/legacy-derive/CUAS-001.json';
+import { importLegacyV4 } from '../../../domain/migrate';
 import { MEASURES } from '../../../domain/measures';
+import { previewOf, useDocument } from '../../../state/document';
+import { useUi, UI_DEFAULTS } from '../../../state/ui';
+import { M_PER_NM } from '../../shared/units';
 import Inspector from './Inspector';
-import { enteredRows } from './enteredRows';
-import { M_PER_FT, M_PER_NM } from '../../shared/units';
 
+const seed = () => importLegacyV4(JSON.parse(JSON.stringify(fixture.input)));
 const doc = () => useDocument.getState().doc!;
+const history = () => useDocument.getState().history;
+const keyOf = (id: string) =>
+  [...doc().threats, ...doc().sensors, ...doc().effectors, ...doc().areas, ...doc().events].find(
+    (r) => r.id === id,
+  )!.key;
+const region = (name: string) => screen.getByRole('region', { name });
 
-function commit(label: string, value: string) {
-  const input = screen.getByLabelText(label);
-  fireEvent.change(input, { target: { value } });
-  fireEvent.keyDown(input, { key: 'Enter' });
+/** Type a value into a field as one focus: focus, input, blur. */
+function type(name: string, ...values: string[]) {
+  const input = screen.getByLabelText(name);
+  fireEvent.focus(input);
+  for (const value of values) fireEvent.change(input, { target: { value } });
+  fireEvent.blur(input);
 }
 
 beforeEach(() => {
-  useDocument.getState().open(testVignette());
+  act(() => useDocument.getState().open(seed()));
   useUi.setState({ ...UI_DEFAULTS });
 });
 
 describe('Inspector', () => {
-  it('shows the stack position "n of m" only while the selected target is in a cycled stack (7.R F-11)', () => {
-    useUi.setState({ selectedKeys: ['k-S-01'] });
+  it('renders every section from CUAS-001 in mockup order', () => {
     render(<Inspector />);
-    expect(screen.queryByText(/\d+ of \d+/)).toBeNull();
-    act(() => useUi.getState().setStack({ key: 'k-S-01', n: 2, m: 4 }));
-    expect(screen.getByText('2 of 4')).toBeInTheDocument();
-    // a selection outside the stack hides it, as does the map clearing the stack
-    act(() => useUi.getState().setSelection(['k-E-01']));
-    expect(screen.queryByText('2 of 4')).toBeNull();
-    act(() => useUi.getState().setSelection(['k-S-01']));
-    act(() => useUi.getState().setStack(null));
-    expect(screen.queryByText('2 of 4')).toBeNull();
-  });
-
-  it('shows the vignette header when nothing is selected', () => {
-    render(<Inspector />);
-    expect(screen.getByLabelText('Name')).toHaveValue('test vignette');
-    expect(screen.getByLabelText('Site name')).toHaveValue('site');
-    expect(screen.getByLabelText('Decision time')).toHaveValue('5');
-    expect(screen.getByLabelText('Assignment time')).toHaveValue('3');
-    expect(screen.getByText(/feed the Target step/)).toBeInTheDocument();
-  });
-
-  it('shows sensor range in nm under nav units and in km under SI', () => {
-    useUi.setState({ selectedKeys: ['k-S-01'] });
-    render(<Inspector />);
-    // Unfocused fields show readout precision (F-09): 5000 m is 2.70 nm.
-    expect(screen.getByLabelText('Range')).toHaveValue((5000 / M_PER_NM).toFixed(2));
-    expect(screen.getAllByText('nm').length).toBeGreaterThan(0);
-    act(() => useUi.getState().setUnits('si'));
-    expect(screen.getByLabelText('Range')).toHaveValue('5.00');
-    expect(screen.getAllByText('km').length).toBeGreaterThan(0);
-  });
-
-  it('shows ground elevation in ft MSL, not AGL (F-06)', () => {
-    render(<Inspector />);
-    const el = screen.getByLabelText('Ground elevation');
-    expect(document.getElementById(el.getAttribute('aria-describedby')!)).toHaveTextContent(
-      'ft MSL',
+    const names = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'));
+    expect(names).toEqual([
+      'Purpose',
+      'Aircraft',
+      'Paths',
+      'Systems',
+      'Volumes',
+      'Reference planes',
+      'Events',
+      'Telemetry',
+      'Data products',
+      'Measures of performance',
+      'Site',
+    ]);
+    expect(screen.getByLabelText('Question')).toHaveValue(doc().questions[0]!.text);
+    expect(screen.getByLabelText('Collection')).toHaveValue('Toughstump');
+    expect(screen.getByLabelText('Quadrotor ISR aircraft')).toHaveDisplayValue(
+      'G1 · Quadrotor ISR',
     );
+    expect(within(region('Aircraft')).getByRole('link', { name: 'source' })).toBeInTheDocument();
+    expect(
+      within(region('Paths')).getByText(
+        `Quadrotor ISR · 4 wp · ${Math.round(previewOf(doc()).threats[keyOf('T1')]!.endS)} s`,
+      ),
+    ).toBeInTheDocument();
+    const systems = region('Systems');
+    for (const id of ['RDR-1', 'RF-1', 'EO-1', 'EW-1'])
+      expect(within(systems).getByRole('button', { name: `Select ${id}` })).toBeInTheDocument();
+    expect(within(systems).getByText(/1\.35 nm · 30° at 45°$/)).toBeInTheDocument();
+    expect(within(region('Volumes')).getByText('Defended asset · 4 vertices')).toBeInTheDocument();
+    expect(screen.getByLabelText('P1 label')).toHaveValue('120 m ceiling');
+    const events = within(region('Events'))
+      .getAllByRole('button', { name: /^Select e\d$/ })
+      .map((b) => b.getAttribute('aria-label'));
+    expect(events).toEqual([
+      'Select e1',
+      'Select e2',
+      'Select e3',
+      'Select e4',
+      'Select e5',
+      'Select e6',
+    ]);
+    expect(screen.getByLabelText('Truth source')).toHaveValue('Platform GPS, 10 Hz');
+    expect(screen.getByLabelText('Sample interval')).toHaveValue('20');
+    expect(screen.getByLabelText('Stations')).toHaveValue(doc().sensors[0]!.id);
+    expect(within(region('Data products')).getAllByRole('textbox')).toHaveLength(4);
+    expect(screen.getByLabelText('1.1.2 threshold')).toHaveValue('3000');
+    expect(screen.getByLabelText('Units')).toHaveValue('nav');
   });
 
-  it('shows Pfa in exponent notation (F-07)', () => {
-    act(() =>
-      useDocument.getState().edit('Set Pfa', (d) => {
-        const pd = d.sensors[0]!.model.pd;
-        if (pd.kind === 'swerling') pd.pfa = 1e-6;
-      }),
-    );
-    useUi.setState({ selectedKeys: ['k-S-01'] });
+  it('a row click selects its object, a second click clears it, and only that row expands', () => {
     render(<Inspector />);
-    expect(screen.getByLabelText('Pfa')).toHaveValue('1e-6');
+    const select = screen.getByRole('button', { name: 'Select RDR-1' });
+    fireEvent.click(select);
+    expect(useUi.getState().selectedKeys).toEqual([keyOf('RDR-1')]);
+    expect(select.parentElement).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByLabelText('Range')).toHaveValue((4000 / M_PER_NM).toFixed(2));
+    expect(screen.getByLabelText('East (x)')).toBeInTheDocument();
+    expect(screen.queryByLabelText('T1 waypoint 1 x')).toBeNull();
+    fireEvent.click(select);
+    expect(useUi.getState().selectedKeys).toEqual([]);
+    expect(select.parentElement).not.toHaveAttribute('aria-current');
+    expect(screen.queryByLabelText('Range')).toBeNull();
   });
 
-  it('lays waypoint fields two to a row so values fit (F-05)', () => {
-    useUi.setState({ selectedKeys: [doc().threats[0]!.key] });
+  it('a waypoint edit typed key by key is one undo step', () => {
+    useUi.setState({ selectedKeys: [keyOf('T1')] });
     render(<Inspector />);
-    const grid = screen.getByLabelText('WP 1 x').closest('.grid');
-    expect(grid).toHaveClass('grid-cols-2');
-    expect(screen.getByLabelText('WP 1 x')).toHaveClass('min-w-[6ch]');
-  });
-
-  it('writes metres for a range commit as one labelled undo step', () => {
-    useUi.setState({ selectedKeys: ['k-S-01'] });
-    render(<Inspector />);
-    const before = useDocument.getState().history.length;
-    commit('Range', '3');
-    expect(doc().sensors[0]!.rangeM).toBeCloseTo(3 * M_PER_NM, 6);
-    expect(useDocument.getState().history).toHaveLength(before + 1);
-    expect(useDocument.getState().history.at(-1)).toBe('Set range');
+    const before = history().length;
+    type('T1 waypoint 1 x', '1', '1.', '1.5');
+    expect(history().slice(before)).toEqual(['move T1 waypoint 1']);
+    expect(doc().threats[0]!.path[0]!.x).toBeCloseTo(1.5 * M_PER_NM, 0);
     act(() => useDocument.getState().undo());
-    expect(doc().sensors[0]!.rangeM).toBe(5000);
+    expect(doc().threats[0]!.path[0]!.x).toBe(3100);
   });
 
-  it('stores an entered value and its source under the DroneScore id', () => {
-    useUi.setState({ selectedKeys: ['k-S-01'] });
+  it('Enter commits the field, leaves the input, and the next undo is the app undo', () => {
+    useUi.setState({ selectedKeys: [keyOf('RDR-1')] });
     render(<Inspector />);
-    commit('1.8 Resolution', '12');
-    expect(doc().sensors[0]!.entered['1.8']).toEqual({ value: 12, source: '' });
-    expect(screen.getByText(/No source note/)).toBeInTheDocument();
-    commit('Source, 1.8', 'Vendor sheet rev C, p. 4');
-    expect(doc().sensors[0]!.entered['1.8']).toEqual({
-      value: 12,
-      source: 'Vendor sheet rev C, p. 4',
+    const before = history().length;
+    const range = screen.getByLabelText('Range');
+    act(() => range.focus());
+    fireEvent.change(range, { target: { value: '2.5' } });
+    fireEvent.keyDown(range, { key: 'Enter' });
+    expect(document.activeElement).not.toBe(range);
+    expect(history().slice(before)).toEqual(['set RDR-1 range']);
+    expect(doc().sensors[0]!.rangeM).toBeCloseTo(2.5 * M_PER_NM, 0);
+    act(() => useDocument.getState().undo());
+    expect(doc().sensors[0]!.rangeM).toBe(4000);
+    expect(history()).toHaveLength(before);
+  });
+
+  it('Escape reverts the field and adds no step', () => {
+    useUi.setState({ selectedKeys: [keyOf('RDR-1')] });
+    render(<Inspector />);
+    const before = history().length;
+    const range = screen.getByLabelText('Range');
+    fireEvent.focus(range);
+    fireEvent.change(range, { target: { value: '1' } });
+    expect(doc().sensors[0]!.rangeM).toBeCloseTo(M_PER_NM, 0);
+    fireEvent.keyDown(range, { key: 'Escape' });
+    fireEvent.blur(range);
+    expect(doc().sensors[0]!.rangeM).toBe(4000);
+    expect(history()).toHaveLength(before);
+  });
+
+  it('clamps the field of view to 1 to 360 and names the step after the system', () => {
+    useUi.setState({ selectedKeys: [keyOf('EO-1')] });
+    render(<Inspector />);
+    type('EO-1 field of view', '400');
+    expect(doc().sensors[2]!.fovDeg).toBe(360);
+    type('EO-1 field of view', '0');
+    expect(doc().sensors[2]!.fovDeg).toBe(1);
+    expect(history().slice(-2)).toEqual(['set EO-1 field of view', 'set EO-1 field of view']);
+  });
+
+  it('the measure picker lists all 67 DroneScore measures by step and adds one', () => {
+    render(<Inspector />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add measure' }));
+    const picker = screen.getByRole('group', { name: 'Measure picker' });
+    const rows = within(picker).getAllByRole('button', { name: /^Add / });
+    expect(MEASURES).toHaveLength(67);
+    expect(rows).toHaveLength(67);
+    expect(
+      within(picker).getByRole('button', { name: 'Add 1.1.1 Probability of Detection' }),
+    ).toBeDisabled();
+    fireEvent.change(within(picker).getByLabelText('Search measures'), {
+      target: { value: 'identification time' },
     });
-    expect(screen.queryByText(/No source note/)).toBeNull();
+    fireEvent.click(within(picker).getByRole('button', { name: 'Add 2.1.3t Identification Time' }));
+    expect(doc().measures.at(-1)).toEqual({ id: '2.1.3t', op: '<=', threshold: 0, unit: 's' });
+    expect(history().at(-1)).toBe('add 2.1.3t');
   });
 
-  it('writes a waypoint altitude edit as metres', () => {
-    useUi.setState({ selectedKeys: ['k-T-01'] });
+  it('removing a path removes its events', () => {
     render(<Inspector />);
-    commit('WP 1 alt', '500');
-    expect(doc().threats[0]!.path[0]!.z).toBeCloseTo(500 * M_PER_FT, 6);
-    expect(useDocument.getState().history.at(-1)).toBe('Set waypoint altitude');
+    fireEvent.click(screen.getByRole('button', { name: 'Remove T1' }));
+    expect(doc().threats).toHaveLength(0);
+    expect(doc().events).toHaveLength(0);
+    expect(history().at(-1)).toBe('remove T1');
   });
 
-  it('refuses a rename to an id in use and says why', () => {
-    useUi.setState({ selectedKeys: ['k-T-01'] });
+  it('retyping an aircraft retypes every path of it', () => {
     render(<Inspector />);
-    const before = useDocument.getState().history.length;
-    commit('Id', 'T-02');
-    expect(doc().threats[0]!.id).toBe('T-01');
-    expect(useDocument.getState().history).toHaveLength(before);
-    expect(screen.getByText('T-02 is already in use.')).toBeInTheDocument();
-    commit('Id', 'T-09');
-    expect(doc().threats[0]!.id).toBe('T-09');
-    expect(useDocument.getState().history.at(-1)).toBe('Rename');
+    fireEvent.change(screen.getByLabelText('Quadrotor ISR aircraft'), {
+      target: { value: 'g1-fpv-fiber' },
+    });
+    expect(doc().threats.every((t) => t.type === 'g1-fpv-fiber')).toBe(true);
   });
-});
 
-describe('Inspector hypotheses (review 6 F-03, F-10)', () => {
-  const h1 = {
-    key: 'h1',
-    id: 'H-01',
-    question: '',
-    measure: '1.1.2',
-    op: '>=' as const,
-    value: 3000,
-    prediction: null,
-    lockedAt: null,
-  };
-
-  it('lists each hypothesis in display units and sets its prediction through the fields', () => {
-    act(() =>
-      useDocument.getState().edit('Add hypothesis', (d) => {
-        d.hypotheses.push({ ...h1 });
-      }),
-    );
+  it('the event time slider is one undo step per drag', () => {
+    useUi.setState({ selectedKeys: [keyOf('e3')] });
     render(<Inspector />);
-    const row = screen.getByRole('button', { name: /H-01 1\.1\.2 .* ≥ 1\.62 nm/ });
-    fireEvent.click(row);
-    expect(useUi.getState().selectedKeys).toEqual(['h1']);
-    commit('Prediction low', '1.5');
-    commit('Prediction high', '2');
-    const p = doc().hypotheses[0]!.prediction!;
-    expect(p.low).toBeCloseTo(1.5 * M_PER_NM, 6);
-    expect(p.high).toBeCloseTo(2 * M_PER_NM, 6);
+    const before = history().length;
+    const slider = screen.getByLabelText('e3 time slider');
+    fireEvent.pointerDown(slider);
+    fireEvent.change(slider, { target: { value: '160' } });
+    fireEvent.change(slider, { target: { value: '170' } });
+    fireEvent.pointerUp(slider);
+    expect(doc().events.find((e) => e.id === 'e3')!.tS).toBe(170);
+    expect(history().slice(before)).toEqual(['set e3 time']);
   });
 
-  it('a locked hypothesis shows its fields read-only', () => {
-    act(() =>
-      useDocument.getState().edit('Add hypothesis', (d) => {
-        d.hypotheses.push({
-          ...h1,
-          prediction: { low: 2800, high: 3600 },
-          lockedAt: '2026-10-30T17:40:00Z',
-        });
-      }),
-    );
-    useUi.setState({ selectedKeys: ['h1'] });
+  it('the question creates Q-01 when the profile has none', () => {
+    act(() => useDocument.getState().edit('clear', (d) => void (d.questions = [])));
     render(<Inspector />);
-    expect(screen.getByLabelText('Prediction low')).toBeDisabled();
-    expect(screen.getByLabelText('Threshold')).toBeDisabled();
-    expect(screen.getByText(/Locked at the first run/)).toBeInTheDocument();
+    type('Question', 'Does the track hold?');
+    expect(doc().questions).toEqual([
+      expect.objectContaining({ id: 'Q-01', text: 'Does the track hold?' }),
+    ]);
   });
-});
 
-describe('enteredRows', () => {
-  it('offers every entered row on at least one asset group, and only entered rows', () => {
-    const offered = new Set(
-      [...enteredRows('sensor'), ...enteredRows('effector')].map((m) => m.id),
-    );
-    const entered = MEASURES.filter((m) => m.sourceClass === 'entered').map((m) => m.id);
-    expect([...offered].sort()).toEqual([...entered].sort());
-    expect(enteredRows('sensor').some((m) => m.id === 'INT-1')).toBe(true);
-    expect(enteredRows('effector').some((m) => m.id === '1.3')).toBe(false);
+  it('shows the stack position "n of m" only while the selected target is in a cycled stack', () => {
+    useUi.setState({ selectedKeys: [keyOf('RDR-1')] });
+    render(<Inspector />);
+    expect(screen.queryByText(/^\d+ of \d+$/)).toBeNull();
+    act(() => useUi.getState().setStack({ key: keyOf('RDR-1'), n: 2, m: 4 }));
+    expect(screen.getByText('2 of 4')).toBeInTheDocument();
+    act(() => useUi.getState().setSelection([keyOf('EW-1')]));
+    expect(screen.queryByText('2 of 4')).toBeNull();
   });
 });

@@ -10,6 +10,7 @@ import {
   defaultSensorModel,
   EFFECTOR_DEFAULTS,
   EFFECTOR_KINDS,
+  NODE_DEFAULTS,
   NODE_KINDS,
   SENSOR_DEFAULTS,
   SENSOR_KINDS,
@@ -32,7 +33,17 @@ import type {
   Waypoint,
 } from '../domain/types';
 import { previewOf } from '../state/document';
-import type { Clip, MapPoint } from '../state/ui';
+import type { Clip, MapPoint, Theme, Workspace } from '../state/ui';
+import { libraryCommands } from '../features/library/commands';
+import { boardCommands } from '../features/build/board/commands';
+import { briefCommands } from '../features/brief/commands';
+import { useBoard } from '../features/build/board/store';
+import { LAYER_TOGGLES, setToggle, toggleOn } from '../features/build/bar/layers';
+import { cardCommands } from '../features/build/cards/commands';
+import { menuCommands } from '../features/build/menu/commands';
+import { paletteCommands } from '../features/build/palette/commands';
+import { railCommands } from '../features/build/rail/commands';
+import { redidText, showToast, undidText } from '../features/shell/toastStore';
 import { find, selected, type Found } from './select';
 import { get, register, setMenuOrder } from './registry';
 import type { AssetKind, Command, CommandContext, CommandOption } from './types';
@@ -46,7 +57,9 @@ const docOf = (ctx: CommandContext) => ctx.document.doc;
 const selOf = (ctx: CommandContext, kinds?: readonly FoundKind[]) =>
   selected(docOf(ctx), ctx.ui.selectedKeys).filter((f) => !kinds || kinds.includes(f.kind));
 
-const needDoc: Rule = (ctx) => (docOf(ctx) ? true : 'Open a vignette first');
+const needDoc: Rule = (ctx) => (docOf(ctx) ? true : 'Open a profile first');
+/** The reason a deferred command shows (plan phase 10, deferred list). */
+const NOT_YET = 'Not in this version';
 const needPointer: Rule = (ctx) => (ctx.pointer ? true : 'Right-click the map first');
 const needSel =
   (kinds: readonly FoundKind[] | undefined, what: string): Rule =>
@@ -65,12 +78,6 @@ function every(...rules: Rule[]): Rule {
 
 const num = (arg: unknown): number | null =>
   typeof arg === 'number' && Number.isFinite(arg) ? arg : null;
-
-/** The first selected hypothesis, by key. */
-const selectedHypothesis = (ctx: CommandContext) => {
-  const keys = new Set(ctx.ui.selectedKeys);
-  return docOf(ctx)?.hypotheses.find((h) => keys.has(h.key)) ?? null;
-};
 
 const ASSETS: readonly FoundKind[] = ['threat', 'sensor', 'effector', 'node', 'area'];
 const SYSTEMS: readonly FoundKind[] = ['sensor', 'effector'];
@@ -228,6 +235,7 @@ function endTime(ctx: CommandContext): number {
 
 function stepTime(ctx: CommandContext, ds: number) {
   const t = Math.min(Math.max(0, ctx.ui.tS + ds), Math.max(endTime(ctx), 0));
+  if (!ctx.ui.timeOn) ctx.ui.setTimeOn(true);
   ctx.ui.setTime(t);
 }
 
@@ -313,6 +321,8 @@ function addNode(d: Draft<Vignette>, kind: NodeKind, p: MapPoint): string {
     y: p.y,
     z: 0,
     rangeM: 0,
+    fovDeg: NODE_DEFAULTS[kind].fovDeg,
+    bearingDeg: NODE_DEFAULTS[kind].bearingDeg,
   };
   d.nodes.push(n);
   return n.key;
@@ -347,6 +357,7 @@ function addThreat(d: Draft<Vignette>, type: string, p: MapPoint): string {
     id: nextId('threat', displayIds(d as Vignette)),
     type,
     path: [{ key: newKey(), x: p.x, y: p.y, z: arch ? arch.altM[0] : 100, holdS: 0 }],
+    group: '',
   };
   d.threats.push(t);
   return t.key;
@@ -416,10 +427,84 @@ const ADD_HERE: Command[] = [
   ),
 ];
 
-// ---- the command list ----
+// ---- workspaces and later-lane keys ----
 
-/** Default replicates and seed for a run started from a key or the palette. */
-export const DEFAULT_RUN_N = 100;
+const BUILD: readonly Workspace[] = ['build'];
+const BUILD_BRIEF: readonly Workspace[] = ['build', 'brief'];
+
+/**
+ * Commands active in every workspace. Every other command without its own `workspaces` is a
+ * Build command; `registerCommands` scopes it so.
+ */
+const EVERYWHERE = new Set([
+  'help.palette',
+  'edit.undo',
+  'edit.redo',
+  'edit.escape',
+  'view.units',
+  'help.shortcuts',
+  'view.theme',
+  'file.export',
+  'file.import',
+  'profile.new',
+  'profile.newFromTemplate',
+  'library.export',
+]);
+
+const THEME_NEXT: Record<Theme, Theme> = { auto: 'light', light: 'dark', dark: 'auto' };
+/** Legacy theme cycle: auto, light, dark. */
+export const nextTheme = (t: Theme): Theme => THEME_NEXT[t];
+
+/**
+ * The board's cancel (drag, then placing, then ruler), set by the Build workspace when it loads.
+ * Injected so this file does not import the board view (the board's menu imports this file).
+ */
+let boardCancel: () => boolean = () => false;
+export function setBoardCancel(fn: () => boolean): void {
+  boardCancel = fn;
+}
+
+const needAny: Rule = (ctx) => {
+  const d = docOf(ctx);
+  return d &&
+    d.threats.length + d.sensors.length + d.effectors.length + d.nodes.length + d.areas.length
+    ? true
+    : 'Add an asset first';
+};
+
+/** Tab and Shift+Tab: the next or previous record of the selected kind; the first asset when none. */
+function cycleKind(ctx: CommandContext, dir: 1 | -1) {
+  const d = docOf(ctx);
+  if (!d) return;
+  const cur = selOf(ctx)[0];
+  const lists: Record<Exclude<FoundKind, 'waypoint'>, readonly { key: string }[]> = {
+    threat: d.threats,
+    sensor: d.sensors,
+    effector: d.effectors,
+    node: d.nodes,
+    area: d.areas,
+  };
+  if (!cur) {
+    const first = [d.threats, d.sensors, d.effectors, d.nodes, d.areas].find((l) => l.length);
+    if (first?.[0]) ctx.ui.setSelection([first[0].key]);
+    return;
+  }
+  const list = cur.kind === 'waypoint' ? cur.threat.path : lists[cur.kind];
+  const i = list.findIndex((x) => x.key === cur.value.key);
+  const next = list[(i + dir + list.length) % list.length];
+  if (next) ctx.ui.setSelection([next.key]);
+}
+
+/** Shift+1 to Shift+5: the Build bar's five layer toggles by number (spec section 8, Keys). */
+const LAYER_CHIPS: Command[] = LAYER_TOGGLES.map((t, i) => ({
+  id: `layer.chip${i + 1}`,
+  label: `${t.label} layer on or off`,
+  group: 'view',
+  shortcut: `Shift+${i + 1}`,
+  workspaces: BUILD_BRIEF,
+  when: () => true,
+  run: () => setToggle(t, !toggleOn(useBoard.getState().layers, t)),
+}));
 
 const COMMANDS: Command[] = [
   // keys table
@@ -437,7 +522,11 @@ const COMMANDS: Command[] = [
     group: 'edit',
     shortcut: 'Mod+Z',
     when: (ctx) => (ctx.document.canUndo ? true : 'Nothing to undo'),
-    run: (ctx) => ctx.document.undo(),
+    run: (ctx) => {
+      const label = ctx.document.past[ctx.document.past.length - 1]?.label;
+      ctx.document.undo();
+      showToast(undidText(label));
+    },
   },
   {
     id: 'edit.redo',
@@ -445,7 +534,11 @@ const COMMANDS: Command[] = [
     group: 'edit',
     shortcut: 'Shift+Mod+Z',
     when: (ctx) => (ctx.document.canRedo ? true : 'Nothing to redo'),
-    run: (ctx) => ctx.document.redo(),
+    run: (ctx) => {
+      const label = ctx.document.future[0]?.label;
+      ctx.document.redo();
+      showToast(redidText(label));
+    },
   },
   {
     id: 'edit.delete',
@@ -477,15 +570,19 @@ const COMMANDS: Command[] = [
     group: 'edit',
     shortcut: 'Escape',
     when: () => true,
-    // The one Escape owner. Each press undoes one layer, in this order: a handle drag or the path
-    // being drawn, an open palette or sheet, an armed library item or a tool, the selection, and
-    // last the loop range. The map and the library keep no Escape listener of their own.
+    // The one Escape owner (legacy 90-app.js order). Each press undoes one layer: an open dialog,
+    // the palette or the sheet; then the board's drag, placing or ruler (`cancel()` from the
+    // board view); a document drag; an armed item or a tool; the selection; last the loop range.
+    // The board stage handles Escape itself while it has focus and a gesture to cancel; it calls
+    // preventDefault, so this binding does not fire a second time.
     run: (ctx) => {
       const ui = ctx.ui;
-      if (ctx.document.drag) ctx.document.cancelDrag();
-      else if (ui.drawing) ui.signalPath('cancel');
+      if (ui.dialog) ui.setDialog(null);
       else if (ui.paletteOpen) ui.setPaletteOpen(false);
       else if (ui.shortcutsOpen) ui.setShortcutsOpen(false);
+      else if (boardCancel()) return;
+      else if (ctx.document.drag) ctx.document.cancelDrag();
+      else if (ui.drawing) ui.signalPath('cancel');
       else if (ui.tool !== 'select' || ui.armed || ui.measureFrom) {
         ui.setTool('select');
         ui.setArmed(null);
@@ -588,55 +685,6 @@ const COMMANDS: Command[] = [
     },
   },
   {
-    id: 'run.start',
-    label: 'Run',
-    group: 'run',
-    shortcut: 'Mod+Enter',
-    when: every(
-      needDoc,
-      (ctx) => (docOf(ctx)?.threats.length ? true : 'Add a threat first'),
-      (ctx) => (docOf(ctx)?.sensors.length ? true : 'Add a sensor first'),
-      (ctx) => {
-        const k = ctx.runs.activeKey;
-        return k && ctx.runs.results[k]?.status === 'running' ? 'A run is in progress' : true;
-      },
-    ),
-    run: (ctx, arg) => {
-      const doc = docOf(ctx);
-      if (!doc) return;
-      const a = (arg ?? {}) as { n?: unknown; seed?: unknown };
-      const n = num(a.n) ?? DEFAULT_RUN_N;
-      const seed = num(a.seed) ?? doc.runs.length + 1;
-      void ctx.runs.startRun(n, seed);
-    },
-  },
-  {
-    // Spec section 6.4 and acceptance 12.7: the vignette's stored sweep factor and levels.
-    id: 'run.sweep',
-    label: 'Run sweep',
-    group: 'run',
-    when: every(
-      needDoc,
-      (ctx) => (docOf(ctx)?.sweep?.factors.length ? true : 'This vignette has no sweep factor'),
-      (ctx) => (docOf(ctx)?.threats.length ? true : 'Add a threat first'),
-      (ctx) => (docOf(ctx)?.sensors.length ? true : 'Add a sensor first'),
-      (ctx) => (ctx.runs.sweep?.status === 'running' ? 'A sweep is in progress' : true),
-    ),
-    run: (ctx, arg) => {
-      const doc = docOf(ctx);
-      const factors = doc?.sweep?.factors;
-      if (!doc || !factors?.length) return;
-      const a = (arg ?? {}) as { n?: unknown; seed?: unknown };
-      const n = num(a.n) ?? DEFAULT_RUN_N;
-      const seed = num(a.seed) ?? doc.runs.length + 1;
-      void ctx.runs.startSweep(
-        factors.map((f) => ({ ...f, levels: [...f.levels] })),
-        n,
-        seed,
-      );
-    },
-  },
-  {
     id: 'view.fit',
     label: 'Fit view',
     group: 'view',
@@ -673,12 +721,25 @@ const COMMANDS: Command[] = [
     run: (ctx) => ctx.ui.setView('plan'),
   },
   {
-    id: 'view.profile',
-    label: 'Profile view',
+    id: 'view.elevation',
+    label: 'Elevation view',
     group: 'view',
     shortcut: '2',
-    when: every(needDoc, needSel(['threat', 'waypoint'], 'a flight path')),
-    run: (ctx) => ctx.ui.setView('profile'),
+    // The board's Elevation defaults to From asset (legacy), which needs no selected path.
+    when: needDoc,
+    run: (ctx) => ctx.ui.setView('elevation'),
+  },
+  {
+    id: 'view.elevationMode',
+    label: 'Elevation mode',
+    group: 'view',
+    workspaces: BUILD,
+    when: needDoc,
+    run: (ctx) => {
+      const mode = ctx.ui.elevationMode === 'fromAsset' ? 'alongPath' : 'fromAsset';
+      ctx.ui.setElevationMode(mode);
+      showToast(mode === 'fromAsset' ? 'Elevation from asset' : 'Elevation along path');
+    },
   },
   {
     id: 'help.shortcuts',
@@ -688,6 +749,140 @@ const COMMANDS: Command[] = [
     when: () => true,
     run: (ctx) => ctx.ui.setShortcutsOpen(!ctx.ui.shortcutsOpen),
   },
+  {
+    id: 'view.3d',
+    label: '3D view',
+    group: 'view',
+    shortcut: '3',
+    when: needDoc,
+    run: (ctx) => ctx.ui.setView('3d'),
+  },
+  {
+    id: 'time.start',
+    label: 'Time to start',
+    group: 'time',
+    shortcut: 'Home',
+    when: needDoc,
+    run: (ctx) => {
+      if (!ctx.ui.timeOn) ctx.ui.setTimeOn(true);
+      ctx.ui.setTime(0);
+    },
+  },
+  {
+    id: 'time.end',
+    label: 'Time to end',
+    group: 'time',
+    shortcut: 'End',
+    when: needDoc,
+    run: (ctx) => {
+      if (!ctx.ui.timeOn) ctx.ui.setTimeOn(true);
+      ctx.ui.setTime(Math.max(endTime(ctx), 0));
+    },
+  },
+  {
+    id: 'time.cursor',
+    label: 'Time cursor',
+    group: 'time',
+    shortcut: 'T',
+    workspaces: BUILD_BRIEF,
+    when: needDoc,
+    run: (ctx) => {
+      const on = !ctx.ui.timeOn;
+      ctx.ui.setTimeOn(on);
+      showToast(on ? 'Time cursor on' : 'Time cursor off');
+    },
+  },
+  {
+    id: 'time.prevEvent',
+    label: 'Previous event or derived time',
+    group: 'time',
+    shortcut: '[',
+    when: () => NOT_YET,
+    run: () => {},
+  },
+  {
+    id: 'time.nextEvent',
+    label: 'Next event or derived time',
+    group: 'time',
+    shortcut: ']',
+    when: () => NOT_YET,
+    run: () => {},
+  },
+  {
+    id: 'edit.nextOfKind',
+    label: 'Next object of the same kind',
+    group: 'edit',
+    shortcut: 'Tab',
+    when: every(needDoc, needAny),
+    run: (ctx) => cycleKind(ctx, 1),
+  },
+  {
+    id: 'edit.prevOfKind',
+    label: 'Previous object of the same kind',
+    group: 'edit',
+    shortcut: 'Shift+Tab',
+    when: every(needDoc, needAny),
+    run: (ctx) => cycleKind(ctx, -1),
+  },
+  {
+    id: 'panel.inspector',
+    label: 'Inspector open or closed',
+    group: 'view',
+    shortcut: 'I',
+    when: () => true,
+    run: (ctx) => ctx.ui.togglePanel('inspector'),
+  },
+  {
+    // Legacy `90-app.js` panel.sides: both open unless either is, then both closed.
+    id: 'panel.sides',
+    label: 'Both side panels open or closed',
+    group: 'view',
+    shortcut: '\\',
+    when: () => true,
+    run: (ctx) => {
+      const open = !(ctx.ui.panels.list || ctx.ui.panels.inspector);
+      ctx.ui.setPanels({ list: open, inspector: open });
+    },
+  },
+  ...LAYER_CHIPS,
+  // Lanes 9.2.3 to 9.2.5: the rail adds, quick-add, the right-click items and the board keys.
+  // They replace the stubs build.quickAdd, build.addSensor, build.addArea, build.addEvent,
+  // build.formation, map.gridSnap, view.zoomIn and view.zoomOut (the card.* commands come from cards/).
+  ...railCommands,
+  ...paletteCommands,
+  ...menuCommands,
+  ...boardCommands,
+  // Lane 10.3: Save as card (C) and the range reference cycle (view.ref).
+  ...cardCommands,
+
+  // file. New, New from template, Export library and the Library's `/` search come from the
+  // Library (lane 9.1.4, review 9.1 F-19, F-20). `file.export` is "Export" (the dialog);
+  // `library.export` is "Export library" (the file). Import is `file.import` only.
+  ...libraryCommands,
+  {
+    id: 'file.export',
+    label: 'Export',
+    group: 'file',
+    when: () => true,
+    run: (ctx) => ctx.ui.setDialog('export'),
+  },
+  {
+    id: 'file.import',
+    label: 'Import',
+    group: 'file',
+    when: () => true,
+    run: (ctx) => ctx.ui.setDialog('import'),
+  },
+  {
+    id: 'view.theme',
+    label: 'Theme: auto, light or dark',
+    group: 'view',
+    when: () => true,
+    run: (ctx) => ctx.ui.setTheme(nextTheme(ctx.ui.theme)),
+  },
+
+  // Brief keys and commands (spec section 8), scoped to the Brief workspace (lane 10.4)
+  ...briefCommands,
 
   // empty map
   ...ADD_HERE,
@@ -733,15 +928,21 @@ const COMMANDS: Command[] = [
     group: 'time',
     kinds: ['map', 'timeline'],
     needsPointer: true,
-    when: every(needDoc, needPointer, (ctx) =>
-      ctx.pointer?.tS != null || docOf(ctx)?.threats.length ? true : 'Add a threat first',
+    // On the timeline the pointer carries its time; on the board, the nearest threat time.
+    when: every(
+      needDoc,
+      (ctx) => (ctx.pointer ? true : 'Right-click the timeline first'),
+      (ctx) =>
+        ctx.pointer?.tS != null || docOf(ctx)?.threats.length ? true : 'Add a threat first',
     ),
     run: (ctx) => {
       const p = ctx.pointer;
       const doc = docOf(ctx);
       if (!p || !doc) return;
-      const t = p.tS ?? timeNear(doc, p);
-      if (t != null) ctx.ui.setTime(t);
+      const t = p.tS != null ? p.tS : timeNear(doc, p);
+      if (t == null) return;
+      ctx.ui.setTime(t);
+      ctx.ui.setTimeOn(true);
     },
   },
   {
@@ -966,31 +1167,6 @@ const COMMANDS: Command[] = [
     },
   },
 
-  // hypothesis (inspector, not a right-click target)
-  {
-    id: 'hypothesis.setPrediction',
-    label: 'Set prediction',
-    group: 'edit',
-    needsArg: true,
-    when: every(needDoc, (ctx) => {
-      const h = selectedHypothesis(ctx);
-      if (!h) return 'Select a hypothesis first';
-      return h.lockedAt ? 'Prediction locked at first run' : true;
-    }),
-    run: (ctx, arg) => {
-      const h = selectedHypothesis(ctx);
-      if (!h || h.lockedAt) return;
-      const a = arg as { low?: unknown; high?: unknown } | null;
-      const low = num(a?.low);
-      const high = num(a?.high);
-      if (a !== null && (low == null || high == null || low > high)) return;
-      ctx.document.edit('Set prediction', (d) => {
-        const x = d.hypotheses.find((y) => y.key === h.key);
-        if (x) x.prediction = a === null ? null : { low: low as number, high: high as number };
-      });
-    },
-  },
-
   // area
   {
     id: 'area.setTop',
@@ -1032,6 +1208,7 @@ const COMMANDS: Command[] = [
 export const MENU_ORDER: Readonly<Partial<Record<AssetKind, readonly string[]>>> = {
   map: [
     ...ADD_HERE.map((c) => c.id),
+    'map.addHeightPlane',
     'map.pasteHere',
     'map.measureFrom',
     'time.setHere',
@@ -1071,7 +1248,8 @@ export const MENU_ORDER: Readonly<Partial<Record<AssetKind, readonly string[]>>>
 /** Register every command once. Safe to call again. */
 export function registerCommands(): void {
   if (get('help.palette')) return;
-  for (const c of COMMANDS) register(c);
+  for (const c of COMMANDS)
+    register(c.workspaces || EVERYWHERE.has(c.id) ? c : { ...c, workspaces: BUILD });
   setMenuOrder(MENU_ORDER);
 }
 

@@ -13,7 +13,6 @@ import {
   area,
   defendedAsset,
   effector,
-  hypothesis,
   question,
   sensor,
   setting,
@@ -40,9 +39,9 @@ export const deltaWingOwa: Template = {
     const m313 = setting('3.1.3', '>=', 2000, 'm');
     const path = terrainFollowingIngress({ x: -9200, y: -8200 }, ASSET, 100, 300, 2400, 20);
     return vignette({
+      class: 'One-way attack',
       name: 'Delta wing one-way attack, low ingress',
       questions: [Q],
-      hypotheses: [hypothesis(Q, m313, { low: 1500, high: 2500 })],
       threats: [threat('T1', 'g3-delta-owa', path, 46)],
       sensors: [
         sensor('RDR-1', 'radar', 0, 0, 9000),

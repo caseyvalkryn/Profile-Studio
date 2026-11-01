@@ -53,7 +53,7 @@ describe('right-click menus from the registry', () => {
     expect(paste.onSelect).toBeUndefined();
     useDocument.getState().close();
     const none = menuItemsFor('threat', { pointer: { x: 0, y: 0 }, onArg: () => {} });
-    expect(none.every((i) => i.disabledReason === 'Open a vignette first')).toBe(true);
+    expect(none.every((i) => i.disabledReason === 'Open a profile first')).toBe(true);
   });
 
   it('threat menu: shortcuts on Duplicate and Delete, threat types as a submenu', () => {

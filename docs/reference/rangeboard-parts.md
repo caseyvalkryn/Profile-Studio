@@ -1,5 +1,9 @@
 # Rangeboard parts survey
 
+Status 2026-11-01: history. The headless engine listed in section 2 was transferred in phase 2
+and deleted in lane 10.1 (tag `pre-pivot`). Profile Studio no longer simulates. The file stays
+as the record of what rangeboard offers.
+
 Rangeboard is a source of parts, not a template. This document records what exists in
 `/Users/caseytalbot/projects/rangeboard` (verified by reading the files), what Profile Studio
 would need from each part, and what must not carry over. Layout, form factor and visual design

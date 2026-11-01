@@ -5,17 +5,7 @@
 // corners; the defended asset north west of the radar, off the datum.
 import { racetrack } from '../behaviors';
 import type { Template } from './types';
-import {
-  area,
-  defendedAsset,
-  hypothesis,
-  node,
-  question,
-  sensor,
-  setting,
-  threat,
-  vignette,
-} from './build';
+import { area, defendedAsset, node, question, sensor, setting, threat, vignette } from './build';
 
 const RT: [number, number][] = [
   [1000, -800],
@@ -46,9 +36,9 @@ export const surrogateRacetrack: Template = {
     const tm1 = node('TM-1', 'tspi', 400, -900, 3500);
     const rtk = node('TM-2', 'tspi', -500, -300, 0);
     return vignette({
+      class: 'Surrogate',
       name: 'Surrogate racetrack with truth',
       questions: [Q],
-      hypotheses: [hypothesis(Q, m, { low: 5, high: 15 })],
       threats: [
         threat('T1', 'g3-target-piston', racetrack({ x: 1900, y: 0 }, 2400, 1600, 300, 1), 33),
       ],
@@ -60,7 +50,6 @@ export const surrogateRacetrack: Template = {
       ],
       measures: [m],
       report: {
-        summary: '',
         notes: '',
         dataSources: ['RTK GPS truth, 20 Hz', 'Radar track, 1 Hz, with covariance'],
         truth: {
@@ -68,7 +57,6 @@ export const surrogateRacetrack: Template = {
           intervalS: 10,
           stationKeys: [tm1.key, rtk.key],
         },
-        slides: [],
       },
     });
   },

@@ -1,0 +1,854 @@
+/* Board SVG styles, legacy css/board.css one to one (lane 9.2.2), with the mockup's affiliation
+   inks (legacy/mockup-v3.html lines 104 to 124; lane 10.6). The legacy class names stay (elev and
+   axon cameras, vol for areas, sys for systems, af for aircraft frames). The chart rules stay for
+   the strip lane.
+
+   Token block: the inks are global (src/styles/tokens.css: --hostile, --friend, --neutral, --ew,
+   --ghost, --nominal, --warn, --grid, --rule-strong). The legacy names below are the board-only
+   inks with no mockup token; their dark values are screen-only, like the theme. */
+
+svg.board,
+svg.chart {
+  --board: var(--surface-0);
+  --t1: var(--text);
+  --t2: var(--text-muted);
+  --t3: var(--text-subtle);
+  --unknown: var(--neutral);
+  --select: var(--accent); /* tokens.css: the accent is selection and current time only */
+  --control: #3a3c38;
+  --datablock: #4e504b;
+  --link: #8a8d86;
+  --killx: #4e504b;
+  --tint-cover: color-mix(in srgb, var(--friend) 8%, transparent);
+  --tint-wez: color-mix(in srgb, var(--hostile) 7%, transparent);
+  --tint-window: color-mix(in srgb, var(--nominal) 10%, transparent);
+}
+
+@media screen and (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) :is(svg.board, svg.chart) {
+    --control: #ebe9e3;
+    --datablock: #b7bdb2;
+    --link: #8a9199;
+    --killx: #cfd4cc;
+  }
+}
+
+@media screen {
+  :root[data-theme='dark'] :is(svg.board, svg.chart) {
+    --control: #ebe9e3;
+    --datablock: #b7bdb2;
+    --link: #8a9199;
+    --killx: #cfd4cc;
+  }
+}
+
+/* ---------------------------------------------------------------- legacy rules */
+
+svg.board,
+svg.chart {
+  display: block;
+  max-width: 100%;
+  background: var(--board);
+  font-family: var(--ui);
+  user-select: none;
+  -webkit-user-select: none;
+}
+svg.board {
+  touch-action: none;
+}
+svg.board :where(line, path, polyline, polygon, circle, rect, ellipse) {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+svg.board text,
+svg.chart text {
+  fill: var(--t2);
+  font-size: var(--fs-2);
+  stroke: none;
+}
+
+/* type: sizes, families and weights come only from the type tokens; .pid and .lid are id-only labels, event labels stay sans */
+:is(svg.board, svg.chart)
+  :is(.small, .tick, .tick2, .axl, .hint, .vl, .pl, .mr, .sl, .cpn, .jmk, .sct) {
+  font-size: var(--fs-1);
+}
+:is(svg.board, svg.chart) :is(.db, .slx, .sct, .tick, .hint, .hlab, .rulerl, .pid, .lid) {
+  font-family: var(--mono);
+  font-variant-numeric: var(--tnum);
+}
+:is(svg.board, svg.chart) :is(.db, .rulerl, .evl, .pid, .hl) {
+  font-size: var(--fs-2);
+}
+:is(svg.board, svg.chart) :is(.cpn, .pid) {
+  font-weight: var(--fw-med);
+}
+
+/* inks */
+:where(svg.board, svg.chart) .id-hostile,
+:where(svg.board, svg.chart) .id-suspect {
+  --ink: var(--hostile);
+}
+:where(svg.board, svg.chart) .id-unknown,
+:where(svg.board, svg.chart) .id-pending,
+:where(svg.board, svg.chart) .id-neutral {
+  --ink: var(--unknown);
+}
+:where(svg.board, svg.chart) .id-friend {
+  --ink: var(--friend);
+}
+:where(svg.board, svg.chart) .ink-sensor {
+  --ink: var(--friend);
+}
+:where(svg.board, svg.chart) .ink-eff {
+  --ink: var(--control);
+}
+:where(svg.board, svg.chart) .ink-ew {
+  --ink: var(--ew);
+}
+svg.board .ghostink,
+svg.chart .ghostink {
+  fill: var(--ghost);
+}
+
+/* grid, compass, scale, axes */
+:where(svg.board, svg.chart) .grid {
+  stroke: var(--grid);
+  stroke-width: var(--w1);
+}
+:where(svg.board, svg.chart) .axis {
+  stroke: var(--rule-strong);
+  stroke-width: var(--w1);
+}
+:where(svg.board, svg.chart) .rring {
+  stroke: var(--rule-strong);
+  stroke-width: var(--w1);
+  stroke-dasharray: 2 4;
+}
+:where(svg.board, svg.chart) .cpr {
+  stroke: var(--rule-strong);
+  stroke-width: var(--w1);
+  fill: var(--board);
+}
+:where(svg.board, svg.chart) .cpt {
+  stroke: var(--t3);
+  stroke-width: var(--w1);
+}
+svg.board .cpa {
+  fill: var(--t1);
+  stroke: none;
+}
+svg.board .cpn {
+  fill: var(--t1);
+  text-anchor: middle;
+}
+:where(svg.board, svg.chart) .scl {
+  stroke: var(--t2);
+  stroke-width: var(--w2);
+}
+svg.board .sct {
+  fill: var(--t2);
+}
+svg.board .sct2 {
+  fill: var(--t3);
+}
+svg.board .tick,
+svg.chart .tick {
+  fill: var(--t3);
+}
+svg.chart .tick2 {
+  fill: var(--t3);
+  opacity: 0.8;
+}
+svg.board .axl,
+svg.chart .axl {
+  fill: var(--t2);
+}
+svg.board .hint {
+  fill: var(--t3);
+}
+
+/* volumes and planes */
+:where(svg.board, svg.chart) .vol {
+  stroke: var(--neutral);
+  stroke-width: var(--w1);
+  stroke-dasharray: 2 3;
+}
+:where(svg.board, svg.chart) .vol-asset {
+  stroke: var(--friend);
+  stroke-dasharray: none;
+}
+:where(svg.board, svg.chart) .vol-wez {
+  stroke: var(--hostile);
+  stroke-dasharray: 3 3;
+  fill: var(--tint-wez);
+}
+:where(svg.board, svg.chart) .vol-nfz {
+  stroke: var(--unknown);
+  stroke-dasharray: 2 3;
+}
+:where(svg.board, svg.chart) .vol-ref {
+  stroke: var(--ghost);
+}
+:where(svg.board, svg.chart) .vol.flat {
+  stroke-width: var(--w3);
+}
+:where(svg.board, svg.chart) .vol.sel {
+  stroke-width: var(--w3);
+}
+:where(svg.board, svg.chart) .vol.hov {
+  stroke-width: var(--w3);
+  opacity: 0.75;
+}
+:where(svg.board, svg.chart) .plane {
+  stroke: var(--ghost);
+  stroke-width: var(--w1);
+  stroke-dasharray: 6 4;
+}
+:where(svg.board, svg.chart) .plane.sel {
+  stroke: var(--select);
+}
+svg.board .vl,
+svg.board .pl {
+  fill: var(--t3);
+}
+
+/* reach rings */
+:where(svg.board, svg.chart) .ring {
+  stroke: var(--friend);
+  stroke-width: var(--w2);
+  stroke-dasharray: 4 4;
+  opacity: 0.8;
+  pointer-events: visibleStroke;
+}
+:where(svg.board, svg.chart) .rg-sensor,
+:where(svg.board, svg.chart) .rg-eff {
+  stroke: var(--friend);
+}
+:where(svg.board, svg.chart) .rg-ew {
+  stroke: var(--ew);
+}
+:where(svg.board, svg.chart) .ring.on {
+  stroke-dasharray: none;
+  opacity: 1;
+}
+:where(svg.board, svg.chart) .rg-sensor.on {
+  fill: var(--tint-cover);
+}
+:where(svg.board, svg.chart) .ring.off {
+  opacity: 0.55;
+}
+:where(svg.board, svg.chart) .ring.sel {
+  stroke-width: var(--w3);
+}
+:where(svg.board, svg.chart) .elray {
+  stroke: var(--friend);
+  stroke-width: var(--w1);
+  stroke-dasharray: 2 3;
+}
+svg.board .mr {
+  fill: var(--control);
+}
+
+/* ground systems */
+:where(svg.board, svg.chart) .gfk {
+  stroke: var(--friend);
+  stroke-width: var(--w2);
+  fill: var(--board);
+}
+:where(svg.board, svg.chart) .gg {
+  stroke: var(--friend);
+  stroke-width: var(--w2);
+}
+svg.board .ggf {
+  fill: var(--friend);
+  stroke: none;
+}
+svg.board .gt {
+  fill: var(--friend);
+  font-size: 7px; /* mark, not text */
+  font-weight: 700;
+  text-anchor: middle;
+}
+:where(svg.board, svg.chart) .gf-ew .gfk,
+:where(svg.board, svg.chart) .gf-ew .gg {
+  stroke: var(--ew);
+}
+svg.board .gf-ew .gt {
+  fill: var(--ew);
+}
+:where(svg.board, svg.chart) .gf-de .gfk,
+:where(svg.board, svg.chart) .gf-de .gg {
+  stroke: var(--ew);
+}
+svg.board .gf-de .gt {
+  fill: var(--ew);
+}
+:where(svg.board, svg.chart) .gf-tspi .gfk,
+:where(svg.board, svg.chart) .gfk.gf-tspi {
+  stroke: var(--ghost);
+}
+svg.board .ggf.gf-tspi {
+  fill: var(--ghost);
+}
+svg.board .gf-dot {
+  fill: var(--friend);
+  stroke: none;
+}
+:where(svg.board, svg.chart) .gs-inactive {
+  opacity: 0.55;
+}
+:where(svg.board, svg.chart) .gs-inactive .gfk {
+  stroke-dasharray: 3 2;
+}
+svg.board .degr {
+  fill: var(--warn);
+  stroke: none;
+}
+svg.board .sl {
+  fill: var(--t2);
+}
+
+/* paths */
+:where(svg.board, svg.chart) .route {
+  stroke: var(--ink, var(--hostile));
+  stroke-width: var(--w2);
+}
+:where(svg.board, svg.chart) .route.w1 {
+  stroke-width: var(--w1);
+}
+:where(svg.board, svg.chart) .route.w3 {
+  stroke-width: var(--w3);
+}
+:where(svg.board, svg.chart) .path.sel .route {
+  stroke-width: var(--w3);
+}
+:where(svg.board, svg.chart) .path.hov .route {
+  stroke-width: var(--w3);
+  opacity: 0.75;
+}
+:where(svg.board, svg.chart) .shadow {
+  stroke: var(--rule-strong);
+  stroke-width: var(--w1);
+  stroke-dasharray: 2 3;
+}
+:where(svg.board, svg.chart) .drop {
+  stroke: var(--hostile);
+  stroke-opacity: 0.3;
+  stroke-width: var(--w1);
+}
+svg.board .wpd {
+  fill: var(--board);
+  stroke: var(--ink, var(--hostile));
+  stroke-width: var(--w1);
+}
+:where(svg.board, svg.chart) .holdring {
+  stroke: var(--ink, var(--hostile));
+  stroke-width: var(--w1);
+  stroke-dasharray: 2 3;
+}
+svg.board .pid {
+  fill: var(--ink, var(--hostile));
+}
+svg.board .wpn {
+  fill: var(--t3);
+}
+
+/* envelopes */
+:where(svg.board, svg.chart) .hull {
+  stroke: var(--hostile);
+  stroke-width: var(--w1);
+  stroke-dasharray: 3 3;
+  fill: color-mix(in srgb, var(--hostile) 6%, transparent);
+}
+:where(svg.board, svg.chart) .hull.thin {
+  stroke-width: var(--w1);
+  fill: none;
+}
+svg.board .hl {
+  fill: var(--hostile);
+}
+
+/* telemetry */
+svg.board .tel {
+  fill: var(--ghost);
+  stroke: none;
+}
+:where(svg.board, svg.chart) .tell {
+  stroke: var(--ew);
+  stroke-width: var(--w1);
+  stroke-dasharray: 1.5 3;
+}
+svg.board .flsq {
+  fill: none;
+  stroke: var(--ghost);
+  stroke-width: var(--w1);
+}
+:where(svg.board, svg.chart) .fllink {
+  stroke: var(--ghost);
+  stroke-width: var(--w1);
+}
+:where(svg.board, svg.chart) .flownfr .fk {
+  stroke: var(--ghost);
+  stroke-dasharray: 3 2;
+}
+
+/* events */
+:where(svg.board, svg.chart) .fst {
+  stroke: var(--ink);
+  stroke-width: var(--w2);
+}
+svg.board .fstx {
+  fill: var(--ink);
+}
+svg.board .bead {
+  fill: var(--board);
+  stroke: var(--t1);
+  stroke-width: var(--w2);
+}
+svg.board .beadtx,
+svg.chart .beadtx {
+  fill: var(--t1);
+  font-size: 8px; /* mark, not text */
+  font-weight: 700;
+  text-anchor: middle;
+  font-family: var(--mono);
+}
+:where(svg.board, svg.chart) .ev.sel .bead {
+  stroke: var(--select);
+  stroke-width: var(--w3);
+}
+:where(svg.board, svg.chart) .ev.hov .bead {
+  stroke: var(--select);
+}
+:where(svg.board, svg.chart) .ev.warned .bead {
+  stroke: var(--warn);
+}
+svg.board .wt {
+  fill: var(--warn);
+  stroke: var(--board);
+  stroke-width: var(--w1);
+}
+svg.board .wx {
+  fill: var(--board);
+  font-size: 8px; /* mark, not text */
+  font-weight: 700;
+  text-anchor: middle;
+}
+svg.board .evl {
+  fill: var(--t1);
+}
+
+/* tracks */
+:where(svg.board, svg.chart) .af {
+  --ink: var(--hostile);
+}
+:where(svg.board, svg.chart) .af-hostile,
+:where(svg.board, svg.chart) .af-suspect {
+  --ink: var(--hostile);
+}
+:where(svg.board, svg.chart) .af-unknown,
+:where(svg.board, svg.chart) .af-pending,
+:where(svg.board, svg.chart) .af-neutral {
+  --ink: var(--unknown);
+}
+:where(svg.board, svg.chart) .af-friend {
+  --ink: var(--friend);
+}
+svg.board .fk {
+  stroke: var(--ink);
+  stroke-width: var(--w3);
+  fill: var(--board);
+}
+:where(svg.board, svg.chart) .fv {
+  stroke: var(--ink);
+  stroke-width: var(--w2);
+}
+:where(svg.board, svg.chart) .af.dash .fk {
+  stroke-dasharray: 3 2;
+}
+:where(svg.board, svg.chart) .af.st-coasting {
+  opacity: 0.5;
+}
+:where(svg.board, svg.chart) .af.st-lost {
+  opacity: 0.55;
+}
+:where(svg.board, svg.chart) .tspi {
+  stroke: var(--control);
+  stroke-width: var(--w2);
+}
+:where(svg.board, svg.chart) .tgtl {
+  stroke: var(--control);
+  stroke-width: var(--w1);
+  stroke-dasharray: 2 2;
+}
+:where(svg.board, svg.chart) .leader {
+  stroke: var(--t1);
+  stroke-width: var(--w2);
+}
+svg.board .db {
+  fill: var(--datablock);
+}
+:where(svg.board, svg.chart) .dbg.lost {
+  opacity: 0.55;
+}
+:where(svg.board, svg.chart) .slant {
+  stroke: var(--link);
+  stroke-width: var(--w1);
+}
+svg.board .slx {
+  fill: var(--t3);
+}
+:where(svg.board, svg.chart) .ll {
+  stroke-width: var(--w1);
+}
+:where(svg.board, svg.chart) .ll-tracking {
+  stroke: var(--friend);
+  opacity: 0.55;
+}
+:where(svg.board, svg.chart) .ll-coasting {
+  stroke: var(--friend);
+  stroke-dasharray: 4 4;
+  opacity: 0.55;
+}
+:where(svg.board, svg.chart) .ll-lock {
+  stroke: var(--control);
+  opacity: 0.7;
+}
+:where(svg.board, svg.chart) .ll-seeker {
+  stroke: var(--control);
+  stroke-dasharray: 1 4;
+}
+:where(svg.board, svg.chart) .ll-de {
+  stroke: var(--control);
+  stroke-width: 1.6px;
+}
+:where(svg.board, svg.chart) .ll-jam {
+  stroke: var(--ew);
+  stroke-dasharray: 2 4;
+}
+svg.board .engb {
+  fill: var(--board);
+  stroke: var(--control);
+  stroke-width: var(--w1);
+}
+svg.board .engt {
+  fill: var(--control);
+  font-size: 8px; /* mark, not text */
+  font-weight: 700;
+  text-anchor: middle;
+  font-family: var(--mono);
+}
+svg.board .jmk {
+  fill: var(--ew);
+  font-weight: 700;
+  text-anchor: end;
+}
+:where(svg.board, svg.chart) .mk {
+  stroke: var(--killx);
+  stroke-width: var(--w3);
+}
+:where(svg.board, svg.chart) .ghostfr {
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+/* selection, hover, focus */
+:where(svg.board, svg.chart) .selring {
+  stroke: var(--select);
+  stroke-width: var(--w2);
+}
+:where(svg.board, svg.chart) .selring.hov {
+  opacity: 0.5;
+}
+:where(svg.board, svg.chart) .dim {
+  opacity: 0.32;
+}
+:where(svg.board, svg.chart) .ghostrec {
+  opacity: 0.32;
+  pointer-events: none;
+}
+:where(svg.board, svg.chart) .gvol,
+:where(svg.board, svg.chart) .gring,
+:where(svg.board, svg.chart) .groute {
+  stroke: var(--ghost);
+  stroke-width: var(--w1);
+  stroke-dasharray: 3 3;
+}
+svg.board .gsys {
+  fill: var(--ghost);
+  stroke: none;
+}
+
+/* edit handles */
+:where(svg.board, svg.chart) .hit {
+  fill: none;
+  stroke: none;
+  pointer-events: all;
+}
+svg.board .hm {
+  fill: var(--board);
+  stroke: var(--select);
+  stroke-width: var(--w2);
+}
+svg.board .hm.on {
+  fill: var(--select);
+}
+svg.board .hm-plus {
+  stroke: var(--select);
+}
+svg.board .hm-hold {
+  fill: none;
+  stroke-dasharray: 2 3;
+}
+svg.board .hm-bead {
+  fill: none;
+  stroke-width: var(--w3);
+}
+:where(svg.board, svg.chart) .h {
+  cursor: grab;
+}
+:where(svg.board, svg.chart) .h-insert,
+:where(svg.board, svg.chart) .h-edge {
+  opacity: 0.7;
+}
+svg.board .hlab {
+  fill: var(--select);
+}
+:where(svg.board, svg.chart) .placing {
+  pointer-events: none;
+}
+:where(svg.board, svg.chart) .placing .groute {
+  stroke: var(--select);
+}
+:where(svg.board, svg.chart) .groute.form {
+  stroke: var(--ghost);
+}
+svg.board .gbead {
+  fill: var(--board);
+  stroke: var(--select);
+  stroke-width: var(--w2);
+}
+:where(svg.board, svg.chart) .gframe {
+  opacity: 0.6;
+}
+:where(svg.board, svg.chart) .xhair {
+  stroke: var(--select);
+  stroke-width: var(--w1);
+}
+:where(svg.board, svg.chart) .ruler {
+  stroke: var(--t1);
+  stroke-width: var(--w1);
+  stroke-dasharray: 4 3;
+}
+svg.board .rulerend {
+  fill: var(--t1);
+  stroke: none;
+}
+svg.board .rulerl {
+  fill: var(--t1);
+}
+svg.board .rulerl tspan + tspan {
+  fill: var(--t2);
+}
+:where(svg.board, svg.chart) .rulerg {
+  pointer-events: none;
+}
+
+/* labels */
+svg.board .lbl {
+  paint-order: stroke;
+  stroke: var(--board);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+/* thumbnails */
+svg.board.thumb .route {
+  stroke-width: var(--w1);
+}
+svg.board.thumb .fk {
+  stroke-width: var(--w2);
+}
+
+/* chart */
+svg.chart :where(line, path, polyline, polygon, circle, rect) {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+svg.chart .grid {
+  stroke: var(--grid);
+  stroke-width: var(--w1);
+}
+svg.chart .axis {
+  stroke: var(--rule-strong);
+  stroke-width: var(--w1);
+}
+svg.chart .chl {
+  stroke: var(--ink, var(--hostile));
+  stroke-width: var(--w2);
+}
+svg.chart .chl.pre {
+  stroke-dasharray: 1 3;
+}
+svg.chart .chl.sel {
+  stroke-width: var(--w3);
+}
+svg.chart .chf {
+  stroke: var(--ghost);
+  stroke-width: var(--w2);
+  stroke-dasharray: 4 3;
+}
+svg.chart .chr {
+  stroke: var(--ink);
+  stroke-width: var(--w2);
+  cursor: ns-resize;
+  pointer-events: visibleStroke;
+}
+svg.chart .chr.dot {
+  stroke-dasharray: 1 3;
+}
+svg.chart .chd {
+  fill: var(--ink);
+  stroke: var(--board);
+  stroke-width: var(--w1);
+  cursor: pointer;
+}
+svg.chart .lbl {
+  fill: var(--ink, var(--t2));
+}
+svg.chart .lbl.ghostink {
+  fill: var(--ghost);
+}
+svg.chart .band {
+  fill: var(--tint-window);
+  stroke: none;
+}
+svg.chart .chb .bead {
+  fill: var(--board);
+  stroke: var(--t1);
+  stroke-width: var(--w1);
+}
+svg.chart .chb.sel .bead {
+  stroke: var(--select);
+  stroke-width: var(--w2);
+}
+svg.chart .chtick {
+  stroke: var(--t3);
+  stroke-width: var(--w1);
+}
+svg.chart .split {
+  stroke: var(--t3);
+  stroke-width: var(--w1);
+  stroke-dasharray: 3 3;
+}
+svg.chart .cursor {
+  stroke: var(--accent);
+  stroke-width: var(--w2);
+}
+svg.chart .hovt {
+  stroke: var(--t3);
+  stroke-width: var(--w1);
+  stroke-dasharray: 2 2;
+}
+svg.chart .empty {
+  fill: var(--t3);
+  font-size: var(--fs-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  svg.board *,
+  svg.chart * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Structural hooks: classes the renderer writes for grouping, hit roles and tests. They carry no
+   style of their own in legacy; listed here so every class the board emits is declared. */
+:where(svg.board, svg.chart) .ly,
+:where(svg.board, svg.chart) .ly-grid,
+:where(svg.board, svg.chart) .ly-volumes,
+:where(svg.board, svg.chart) .ly-planes,
+:where(svg.board, svg.chart) .ly-reach,
+:where(svg.board, svg.chart) .ly-systems,
+:where(svg.board, svg.chart) .ly-envelopes,
+:where(svg.board, svg.chart) .ly-paths,
+:where(svg.board, svg.chart) .ly-telemetry,
+:where(svg.board, svg.chart) .ly-events,
+:where(svg.board, svg.chart) .ly-tracks,
+:where(svg.board, svg.chart) .ly-handles,
+:where(svg.board, svg.chart) .ly-labels,
+:where(svg.board, svg.chart) .board,
+:where(svg.board, svg.chart) .thumb,
+:where(svg.board, svg.chart) .edit,
+:where(svg.board, svg.chart) .sys,
+:where(svg.board, svg.chart) .path,
+:where(svg.board, svg.chart) .ev,
+:where(svg.board, svg.chart) .trkf,
+:where(svg.board, svg.chart) .tgt,
+:where(svg.board, svg.chart) .trk,
+:where(svg.board, svg.chart) .eng-l,
+:where(svg.board, svg.chart) .telem,
+:where(svg.board, svg.chart) .vsym,
+:where(svg.board, svg.chart) .vl,
+:where(svg.board, svg.chart) .pl,
+:where(svg.board, svg.chart) .compass,
+:where(svg.board, svg.chart) .scale,
+:where(svg.board, svg.chart) .warnmk,
+:where(svg.board, svg.chart) .af,
+:where(svg.board, svg.chart) .gf,
+:where(svg.board, svg.chart) .flownfr,
+:where(svg.board, svg.chart) .ghostfr,
+:where(svg.board, svg.chart) .placing,
+:where(svg.board, svg.chart) .gframe,
+:where(svg.board, svg.chart) .wpn,
+:where(svg.board, svg.chart) .lid,
+:where(svg.board, svg.chart) .fstx,
+:where(svg.board, svg.chart) .hm-sq,
+:where(svg.board, svg.chart) .hm-tri,
+:where(svg.board, svg.chart) .hm-mid,
+:where(svg.board, svg.chart) .eng,
+:where(svg.board, svg.chart) .rmin,
+:where(svg.board, svg.chart) .edge,
+:where(svg.board, svg.chart) .on,
+:where(svg.board, svg.chart) .off,
+:where(svg.board, svg.chart) .sel,
+:where(svg.board, svg.chart) .hov,
+:where(svg.board, svg.chart) .dim,
+:where(svg.board, svg.chart) .warned,
+:where(svg.board, svg.chart) .lost,
+:where(svg.board, svg.chart) .w1,
+:where(svg.board, svg.chart) .w2,
+:where(svg.board, svg.chart) .w3,
+:where(svg.board, svg.chart) .vol-asset,
+:where(svg.board, svg.chart) .vol-wez,
+:where(svg.board, svg.chart) .vol-nfz,
+:where(svg.board, svg.chart) .vol-ref,
+:where(svg.board, svg.chart) .route,
+:where(svg.board, svg.chart) .id-hostile,
+:where(svg.board, svg.chart) .id-suspect,
+:where(svg.board, svg.chart) .id-unknown,
+:where(svg.board, svg.chart) .id-pending,
+:where(svg.board, svg.chart) .id-neutral,
+:where(svg.board, svg.chart) .id-friend,
+:where(svg.board, svg.chart) .form,
+:where(svg.board, svg.chart) .flat,
+:where(svg.board, svg.chart) .thin,
+:where(svg.board, svg.chart) .small,
+:where(svg.board, svg.chart) .st-normal,
+:where(svg.board, svg.chart) .st-pending,
+:where(svg.board, svg.chart) .gs-active,
+:where(svg.board, svg.chart) .gs-degraded,
+:where(svg.board, svg.chart) .gf-radar,
+:where(svg.board, svg.chart) .gf-rf,
+:where(svg.board, svg.chart) .gf-eoir,
+:where(svg.board, svg.chart) .gf-acoustic,
+:where(svg.board, svg.chart) .gf-kinetic,
+:where(svg.board, svg.chart) .gf-de,
+:where(svg.board, svg.chart) .gf-ew,
+:where(svg.board, svg.chart) .gf-tspi,
+:where(svg.board, svg.chart) .gf-c2,
+:where(svg.board, svg.chart) .gf-asset {
+}

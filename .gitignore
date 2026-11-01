@@ -8,3 +8,6 @@ e2e/__results__/
 
 # TypeScript incremental build state
 *.tsbuildinfo
+
+# local Claude Code permissions
+.claude/settings.local.json

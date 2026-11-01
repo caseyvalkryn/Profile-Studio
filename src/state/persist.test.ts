@@ -1,10 +1,11 @@
 import { vi } from 'vitest';
 import { testVignette } from '../engine/testVignette';
-import type { Vignette } from '../domain/types';
+import { SCHEMA, type Vignette } from '../domain';
 import { useDocument } from './document';
 import {
   deleteVignette,
   exportJson,
+  exportLibrary,
   flushAutosave,
   importJson,
   listVignettes,
@@ -14,6 +15,17 @@ import {
   startAutosave,
   type VignetteDb,
 } from './persist';
+
+/** A v7 record without the fields v7 added, as a v6 record would carry it. */
+function withoutV7<T extends { collection?: unknown; class?: unknown; version?: unknown }>(
+  v: T,
+): Omit<T, 'collection' | 'class' | 'version'> {
+  const out: Partial<T> = { ...v };
+  delete out.collection;
+  delete out.class;
+  delete out.version;
+  return out as Omit<T, 'collection' | 'class' | 'version'>;
+}
 
 function mockDb(): VignetteDb {
   const m = new Map<string, Vignette>();
@@ -40,15 +52,64 @@ const v4 = (name: string) => ({
 });
 
 describe('JSON import and export', () => {
-  it('round-trips a v5 vignette', () => {
+  it('round-trips a v7 profile; the export carries timed and the import drops it', () => {
     const v = testVignette();
-    expect(importJson(exportJson(v))).toEqual([v]);
+    const text = exportJson(v);
+    expect(JSON.parse(text).threats[0].timed).toBeDefined();
+    expect(importJson(text)).toEqual([v]);
+  });
+
+  it('exports timed per path as [x, y, z, arrive, depart] with holds, whole m and s', () => {
+    const v = testVignette({ threats: [] });
+    v.threats = [
+      {
+        key: 't',
+        id: 'T1',
+        type: 'g1-quad-isr',
+        speedMs: 10,
+        group: '',
+        path: [
+          { key: 'w0', x: 0.4, y: 0, z: 100, holdS: 0 },
+          { key: 'w1', x: 300, y: 400, z: 100, holdS: 60 },
+          { key: 'w2', x: 300, y: 400, z: 220.6, holdS: 0 },
+        ],
+      },
+    ];
+    const out = JSON.parse(exportJson(v)) as { threats: { timed: number[][] }[] };
+    expect(out.threats[0]!.timed).toEqual([
+      [0, 0, 100, 0, 0],
+      [300, 400, 100, 50, 110],
+      [300, 400, 221, 122, 122],
+    ]);
+  });
+
+  it('round-trips a v6 record to v7: export then import loses nothing', () => {
+    const rest = withoutV7(testVignette());
+    const v6 = {
+      ...rest,
+      schema: 'profile-studio/6',
+      site: { ...rest.site, name: 'Toughstump' },
+      hypotheses: [],
+      runs: [],
+      report: { ...rest.report, summary: '', slides: [] },
+    };
+    const [v7] = importJson(JSON.stringify(v6));
+    expect(v7).toMatchObject({ schema: SCHEMA, collection: 'Toughstump', class: 'Custom' });
+    expect(v7!.version).toBe(1);
+    expect('runs' in v7! || 'hypotheses' in v7!).toBe(false);
+    expect(importJson(exportJson(v7!))).toEqual([v7]);
+  });
+
+  it("refuses the mockup's own stamp", () => {
+    expect(() => importJson('{"schema":"profile-studio/3"}')).toThrow(
+      /Unknown record stamp: profile-studio\/3/,
+    );
   });
 
   it('imports a single legacy v4 record by its schema field', () => {
     const out = importJson(JSON.stringify(v4('old')));
     expect(out).toHaveLength(1);
-    expect(out[0]!.schema).toBe('profile-studio/5');
+    expect(out[0]!.schema).toBe(SCHEMA);
     expect(out[0]!.name).toBe('old');
   });
 
@@ -83,6 +144,38 @@ describe('vignette store functions (mocked idb)', () => {
     expect((await loadVignette('a'))?.name).toBe('A');
     await deleteVignette('a');
     expect(await loadVignette('a')).toBeNull();
+  });
+
+  it('lists what the Library card needs, a stored v6 record under its site name', async () => {
+    setDb(mockDb());
+    const v = testVignette({ id: 'a', collection: 'North', class: 'Surrogate', version: 4 });
+    v.questions = [{ key: 'q', id: 'Q-01', text: 'Why?', note: '' }];
+    await saveVignette(v);
+    const v6 = withoutV7(testVignette({ id: 'b' }));
+    await saveVignette({ ...v6, site: { ...v6.site, name: 'South' } } as unknown as Vignette);
+    const byId = Object.fromEntries((await listVignettes()).map((l) => [l.id, l]));
+    expect(byId.a).toMatchObject({
+      collection: 'North',
+      class: 'Surrogate',
+      version: 4,
+      question: 'Why?',
+      cards: 0,
+      paths: 2,
+      firstCard: null,
+    });
+    expect(byId.b).toMatchObject({ collection: 'South', class: 'Custom', version: 1 });
+  });
+
+  it('exportLibrary then importJson round-trips every stored profile', async () => {
+    setDb(mockDb());
+    const a = testVignette({ id: 'a', name: 'A', updated: '2026-01-01T00:00:00Z' });
+    const b = testVignette({ id: 'b', name: 'B', updated: '2026-02-01T00:00:00Z' });
+    await saveVignette(a);
+    await saveVignette(b);
+    const text = await exportLibrary();
+    expect(JSON.parse(text).schema).toBe(SCHEMA);
+    expect(JSON.parse(text).library[0].threats[0].timed.length).toBeGreaterThan(0);
+    expect(importJson(text)).toEqual([b, a]);
   });
 });
 
@@ -198,45 +291,6 @@ describe('autosave', () => {
     vi.advanceTimersByTime(1000);
     stop();
     expect(save).not.toHaveBeenCalled();
-  });
-
-  it('a run alone on a template copy writes nothing; its first edit writes it (7.R F-06)', async () => {
-    const save = vi.fn<(v: Vignette) => Promise<void>>(async () => {});
-    useDocument.getState().close();
-    const stop = startAutosave(save);
-    useDocument.getState().open(testVignette({ id: 'R' }));
-    useDocument.getState().apply('Run result', (d) => {
-      d.name = 'with run';
-    });
-    vi.advanceTimersByTime(1000);
-    expect(save).not.toHaveBeenCalled();
-    // a drag is held back until it ends, then written as the first edit
-    useDocument.getState().beginDrag('Move');
-    useDocument.getState().updateDrag((d) => {
-      d.sensors[0]!.x += 50;
-    });
-    vi.advanceTimersByTime(1000);
-    expect(save).not.toHaveBeenCalled();
-    useDocument.getState().endDrag();
-    vi.advanceTimersByTime(500);
-    expect(names(save)).toEqual(['R:with run']);
-    stop();
-  });
-
-  it('a run on a stored vignette is written without an edit (7.R F-06)', async () => {
-    setDb(mockDb());
-    await saveVignette(testVignette({ id: 'K', name: 'stored' }));
-    const save = vi.fn<(v: Vignette) => Promise<void>>(async () => {});
-    useDocument.getState().close();
-    const stop = startAutosave(save);
-    useDocument.getState().open((await loadVignette('K'))!);
-    useDocument.getState().apply('Run result', (d) => {
-      d.name = 'stored with run';
-    });
-    vi.advanceTimersByTime(500);
-    expect(names(save)).toEqual(['K:stored with run']);
-    stop();
-    setDb(null);
   });
 
   it('flushAutosave writes a pending edit at once (route change, 7.R F-06)', async () => {

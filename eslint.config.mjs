@@ -61,4 +61,46 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Board fence (lane 9.2.6): src/board renders SVG strings for Build, the Library and the
+    // Report. Pure TS like the engine; it may import types from src/state/ui, nothing else.
+    files: ['src/board/**/*.{ts,tsx}'],
+    ignores: ['**/*.test.ts'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            { name: 'react', message: 'src/board is pure TS: no React.' },
+            { name: 'react-dom', message: 'src/board is pure TS: no React.' },
+          ],
+          patterns: [
+            {
+              group: ['**/state', '**/state/**'],
+              allowTypeImports: true,
+              message: 'src/board may import only types from src/state.',
+            },
+            {
+              // src/ui by relative path from src/board and src/board/layers; '**/ui' would
+              // also match src/state/ui.
+              group: [
+                '../ui',
+                '../ui/**',
+                '../../ui',
+                '../../ui/**',
+                '**/features',
+                '**/features/**',
+              ],
+              message: 'src/board must not import from src/ui or src/features.',
+            },
+          ],
+        },
+      ],
+      'no-restricted-globals': [
+        'error',
+        { name: 'window', message: 'src/board has no DOM.' },
+        { name: 'document', message: 'src/board has no DOM.' },
+      ],
+    },
+  },
 );

@@ -7,11 +7,11 @@ import type {
   Effector,
   EffectorKind,
   Entered,
-  Hypothesis,
   MeasureSetting,
   Node,
   NodeKind,
   Op,
+  ProfileClass,
   Question,
   Sensor,
   SensorKind,
@@ -77,7 +77,7 @@ export function effector(
 }
 
 export function node(id: string, kind: NodeKind, x: number, y: number, rangeM = 0): Node {
-  return { key: newKey(), id, kind, x, y, z: 0, rangeM };
+  return { key: newKey(), id, kind, x, y, z: 0, rangeM, fovDeg: 0, bearingDeg: 0 };
 }
 
 /**
@@ -115,7 +115,7 @@ export function defendedAsset(sideM = 250, at: Pt = { x: 0, y: 0 }): Area {
 }
 
 export function threat(id: string, type: string, path: Waypoint[], speedMs?: number): Threat {
-  const t: Threat = { key: newKey(), id, type, path };
+  const t: Threat = { key: newKey(), id, type, path, group: '' };
   if (speedMs != null) t.speedMs = speedMs;
   return t;
 }
@@ -132,29 +132,10 @@ export function setting(id: string, op: Op, threshold: number, unit: string): Me
   return { id, op, threshold, unit };
 }
 
-/** H-01 on `s`, with the threshold as the planning value and a prediction range. */
-export function hypothesis(
-  q: Question,
-  s: MeasureSetting,
-  prediction: { low: number; high: number },
-): Hypothesis {
-  return {
-    key: newKey(),
-    id: 'H-01',
-    question: q.key,
-    measure: s.id,
-    op: s.op,
-    value: s.threshold,
-    prediction,
-    lockedAt: null,
-  };
-}
-
 export type Parts = Partial<
   Pick<
     Vignette,
     | 'questions'
-    | 'hypotheses'
     | 'threats'
     | 'sensors'
     | 'effectors'
@@ -164,7 +145,7 @@ export type Parts = Partial<
     | 'measures'
     | 'report'
   >
-> & { name: string };
+> & { name: string; class?: ProfileClass };
 
 export function vignette(parts: Parts): Vignette {
   return {
@@ -172,23 +153,27 @@ export function vignette(parts: Parts): Vignette {
     id: `V-${newKey().slice(0, 8)}`,
     name: parts.name,
     updated: new Date().toISOString(),
+    collection: '',
+    class: parts.class ?? 'Custom',
+    version: 1,
     site: { ...SITE },
     questions: parts.questions ?? [],
-    hypotheses: parts.hypotheses ?? [],
     threats: parts.threats ?? [],
     sensors: parts.sensors ?? [],
     effectors: parts.effectors ?? [],
     nodes: parts.nodes ?? [],
     areas: parts.areas ?? [defendedAsset()],
+    planes: [],
+    events: [],
+    snapshots: [],
+    cards: [],
+    debrief: null,
     chainTime: parts.chainTime ?? { decisionS: 5, assignS: 3 },
     measures: parts.measures ?? [],
-    runs: [],
     report: parts.report ?? {
-      summary: '',
       notes: '',
       dataSources: [],
       truth: { source: '', intervalS: 1, stationKeys: [] },
-      slides: [],
     },
   };
 }

@@ -3,8 +3,8 @@ import type { Vignette } from '../domain/types';
 import { previewOf, useDocument } from './document';
 
 const doc = () => useDocument.getState();
-/** The document without its `updated` stamp, which is set outside history. */
-const body = (v: Vignette | null) => (v ? { ...v, updated: '' } : v);
+/** The document without its `updated` and `version` stamps, which are set outside history. */
+const body = (v: Vignette | null) => (v ? { ...v, updated: '', version: 0 } : v);
 
 beforeEach(() => doc().open(testVignette()));
 
@@ -96,55 +96,28 @@ describe('document store', () => {
     expect(doc().doc!.updated >= stamped).toBe(true);
   });
 
-  it('apply edits outside history: undo does not revert it', () => {
+  it('raises version once per committed edit, a drag is one, and undo and redo leave it', () => {
+    expect(doc().doc!.version).toBe(1);
     doc().edit('Rename', (d) => {
       d.name = 'x';
     });
-    doc().apply('Lock', (d) => {
-      d.sensors[0]!.rangeM = 4321;
-    });
-    expect(doc().history).toEqual(['Rename']);
-    doc().undo();
-    expect(doc().doc!.name).toBe('test vignette');
-    expect(doc().doc!.sensors[0]!.rangeM).toBe(4321);
-  });
-
-  it('undo keeps a locked prediction as locked (review 6 F-04)', () => {
-    doc().edit('Add hypothesis', (d) => {
-      d.hypotheses.push({
-        key: 'h1',
-        id: 'H-01',
-        question: '',
-        measure: '1.1.1',
-        op: '>=',
-        value: 80,
-        prediction: { low: 90, high: 100 },
-        lockedAt: null,
+    expect(doc().doc!.version).toBe(2);
+    doc().edit('noop', () => {});
+    expect(doc().doc!.version).toBe(2);
+    doc().beginDrag('Drag radar');
+    for (let i = 0; i < 5; i++)
+      doc().updateDrag((d) => {
+        d.sensors[0]!.x = i + 1;
       });
-    });
-    doc().edit('Set prediction', (d) => {
-      d.hypotheses[0]!.prediction = { low: 97, high: 100 };
-    });
-    doc().apply('Lock predictions', (d) => {
-      d.hypotheses[0]!.lockedAt = '2026-10-30T17:40:00Z';
-    });
-    doc().edit('Rename', (d) => {
-      d.name = 'x';
-    });
+    expect(doc().doc!.version).toBe(2);
+    doc().endDrag();
+    expect(doc().doc!.version).toBe(3);
     doc().undo();
+    expect(doc().doc!.version).toBe(3);
     doc().undo();
-    doc().undo();
-    expect(doc().doc!.name).toBe('test vignette');
-    expect(doc().doc!.hypotheses).toEqual([
-      expect.objectContaining({
-        key: 'h1',
-        prediction: { low: 97, high: 100 },
-        lockedAt: '2026-10-30T17:40:00Z',
-      }),
-    ]);
     doc().redo();
-    doc().redo();
-    expect(doc().doc!.hypotheses[0]!.prediction).toEqual({ low: 97, high: 100 });
+    expect(doc().doc!.version).toBe(3);
+    expect(doc().doc!.name).toBe('x');
   });
 
   it('memoises the preview on the document reference', () => {
@@ -154,5 +127,22 @@ describe('document store', () => {
       d.sensors[0]!.x = 5;
     });
     expect(previewOf(doc().doc!)).not.toBe(previewOf(v));
+  });
+});
+
+describe('previewOf group keys', () => {
+  it('clusters only the threats that carry a group letter', async () => {
+    const { preview } = await import('../engine/preview');
+    const loose = testVignette();
+    // No threat is grouped: no link distance and no splits, unlike the every-threat default.
+    expect(previewOf(loose).dLink.value).toBeNull();
+    expect(preview(loose).dLink.value).not.toBeNull();
+    const grouped = testVignette({
+      threats: testVignette().threats.map((t) => ({ ...t, group: 'A' })),
+    });
+    expect(previewOf(grouped).dLink).toEqual(
+      preview(grouped, { groupKeys: grouped.threats.map((t) => t.key) }).dLink,
+    );
+    expect(previewOf(grouped).dLink.value).not.toBeNull();
   });
 });

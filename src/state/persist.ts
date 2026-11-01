@@ -1,10 +1,17 @@
 // Local persistence in IndexedDB (database `profile-studio`, store `vignettes`), JSON import and
 // export, and autosave of the open document.
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import { importLegacyV4 } from '../domain/migrate';
-import { parseVignette } from '../domain/schema';
-import { SCHEMA, type Vignette } from '../domain/types';
-import { useDocument } from './document';
+import {
+  importLegacyV4,
+  parseVignette,
+  SCHEMA,
+  SCHEMA_V5,
+  SCHEMA_V6,
+  type Card,
+  type ProfileClass,
+  type Vignette,
+} from '../domain';
+import { previewOf, useDocument } from './document';
 
 export const DB_NAME = 'profile-studio';
 export const DB_VERSION = 1;
@@ -17,7 +24,39 @@ interface StudioDb extends DBSchema {
 /** The part of the idb database the functions here use. Tests pass a mock. */
 export type VignetteDb = Pick<IDBPDatabase<StudioDb>, 'get' | 'put' | 'delete' | 'getAll'>;
 
-export type VignetteListing = { id: string; name: string; updated: string };
+/** One saved profile as the Library lists it: what its card shows, without parsing the record. */
+export type VignetteListing = {
+  id: string;
+  name: string;
+  updated: string;
+  /** The Library group; a record stored before v7 lists under its site name. */
+  collection: string;
+  class: ProfileClass;
+  version: number;
+  /** The first question with text, or ''. */
+  question: string;
+  cards: number;
+  paths: number;
+  /** The first card, for the thumbnail, or null. */
+  firstCard: Card | null;
+};
+
+/** The listing of one stored record, v5 to v7. Read defensively: the record is not parsed. */
+export function listingOf(v: Vignette): VignetteListing {
+  const old = v as Partial<Vignette>;
+  return {
+    id: v.id,
+    name: v.name,
+    updated: v.updated,
+    collection: old.collection ?? v.site?.name ?? '',
+    class: old.class ?? 'Custom',
+    version: old.version ?? 1,
+    question: (v.questions ?? []).find((q) => q.text)?.text ?? '',
+    cards: old.cards?.length ?? 0,
+    paths: v.threats?.length ?? 0,
+    firstCard: old.cards?.[0] ?? null,
+  };
+}
 
 let dbPromise: Promise<VignetteDb> | null = null;
 
@@ -41,8 +80,8 @@ export function setDb(db: VignetteDb | null): void {
 }
 
 /**
- * Ids this session has seen in the store (listed, loaded or saved). Autosave writes a run result
- * on a stored vignette at once; an unsaved template copy is first written on its first edit.
+ * Ids this session has seen in the store (listed, loaded or saved). Autosave writes an edit on a
+ * stored profile at once; an unsaved template copy is first written on its first edit.
  */
 const storedIds = new Set<string>();
 
@@ -53,8 +92,10 @@ export async function saveVignette(v: Vignette): Promise<void> {
 
 export async function loadVignette(id: string): Promise<Vignette | null> {
   const v = await (await getDb()).get('vignettes', id);
-  if (v) storedIds.add(v.id);
-  return v ?? null;
+  if (!v) return null;
+  storedIds.add(v.id);
+  // A record stored at v5 or v6 migrates on load; parseVignette accepts v5, v6 and v7.
+  return parseVignette(v);
 }
 
 /** Saved vignettes, newest first. */
@@ -62,7 +103,16 @@ export async function listVignettes(): Promise<VignetteListing[]> {
   const all = await (await getDb()).getAll('vignettes');
   for (const v of all) storedIds.add(v.id);
   return all
-    .map((v) => ({ id: v.id, name: v.name, updated: v.updated }))
+    .map(listingOf)
+    .sort((a, b) => (a.updated < b.updated ? 1 : a.updated > b.updated ? -1 : 0));
+}
+
+/** Every stored profile, newest first, parsed: a record stored at v5 or v6 comes back as v7. */
+export async function loadAllVignettes(): Promise<Vignette[]> {
+  const all = await (await getDb()).getAll('vignettes');
+  for (const v of all) storedIds.add(v.id);
+  return all
+    .map((v) => parseVignette(v))
     .sort((a, b) => (a.updated < b.updated ? 1 : a.updated > b.updated ? -1 : 0));
 }
 
@@ -71,23 +121,78 @@ export async function deleteVignette(id: string): Promise<void> {
   storedIds.delete(id);
 }
 
+/** A waypoint as exported: x, y, z, arrive, depart, in whole metres and seconds. */
+export type TimedWaypoint = [number, number, number, number, number];
+
+/**
+ * The record as exported (spec section 10): the v7 record with `timed` on each threat, the
+ * resolved waypoint times from the preview's path timing (leg length over speed, plus holds).
+ */
+export function exportRecord(v: Vignette): Vignette & {
+  threats: (Vignette['threats'][number] & { timed: TimedWaypoint[] })[];
+} {
+  const p = previewOf(v);
+  return {
+    ...v,
+    threats: v.threats.map((t) => ({
+      ...t,
+      timed: (p.threats[t.key]?.timed ?? []).map((q): TimedWaypoint => [
+        Math.round(q.x),
+        Math.round(q.y),
+        Math.round(q.z),
+        Math.round(q.t0),
+        Math.round(q.t1),
+      ]),
+    })),
+  };
+}
+
 export function exportJson(v: Vignette): string {
-  return JSON.stringify(v, null, 2);
+  return JSON.stringify(exportRecord(v), null, 2);
+}
+
+/**
+ * The library as one JSON: `{schema, library}` with every stored profile, newest first, all at
+ * the current schema and with `timed` on each threat. `current` (the open profile) replaces its
+ * stored copy; an unsaved one is left out.
+ */
+export async function exportLibrary(current: Vignette | null = null): Promise<string> {
+  const library = (await loadAllVignettes()).map((v) =>
+    exportRecord(current && v.id === current.id ? current : v),
+  );
+  return JSON.stringify({ schema: SCHEMA, library }, null, 2);
+}
+
+/** The record without the export's derived `timed` on each threat. */
+function withoutTimed(data: unknown): unknown {
+  if (typeof data !== 'object' || data === null) return data;
+  const threats = (data as { threats?: unknown }).threats;
+  if (!Array.isArray(threats)) return data;
+  return {
+    ...data,
+    threats: threats.map((t: unknown) => {
+      if (typeof t !== 'object' || t === null) return t;
+      const rest = { ...(t as Record<string, unknown>) };
+      delete rest.timed;
+      return rest;
+    }),
+  };
 }
 
 function importRecord(data: unknown): Vignette {
   const schema =
     typeof data === 'object' && data !== null ? (data as { schema?: unknown }).schema : undefined;
-  if (schema === SCHEMA) return parseVignette(data);
+  if (schema === SCHEMA || schema === SCHEMA_V6 || schema === SCHEMA_V5)
+    return parseVignette(withoutTimed(data));
   if (schema === 'profile-studio/4') return importLegacyV4(data);
   throw new Error(
-    `Unknown record stamp: ${String(schema)}. Expected ${SCHEMA} or profile-studio/4.`,
+    `Unknown record stamp: ${String(schema)}. Expected ${SCHEMA}, ${SCHEMA_V6}, ${SCHEMA_V5} or profile-studio/4.`,
   );
 }
 
 /**
- * Parse an import file into vignettes. Accepts a single v5 vignette, a single legacy v4 record, the
- * legacy library export `{schema: 'profile-studio/4', library: [...]}`, or a plain array of
+ * Parse an import file into vignettes. Accepts a single v7, v6 or v5 profile, a single legacy v4
+ * record, a library export `{schema, library: [...]}` (this app's or the legacy one), or a plain array of
  * records (the shapes the legacy `P.parse` accepts). All or nothing: one bad record fails the
  * import, and the error names its position. Throws a readable Error.
  */
@@ -132,8 +237,8 @@ export function flushAutosave(): Promise<void> {
  * A pending save is written at once, not dropped, when another vignette opens, when the document
  * closes, when autosave stops, on `pagehide` and on `flushAutosave`. Opening a vignette writes
  * nothing: a template copy is first written on its first edit (FR-07), and a stored vignette
- * keeps saving on each edit. A system change (a run result) on a copy that no edit has touched
- * writes nothing either (review 7.R F-06); the first edit then writes it with its runs. A
+ * keeps saving on each edit. A change that is not a user edit (a drag step held back) on a copy
+ * that no edit has touched writes nothing either (review 7.R F-06). A
  * cancelled drag that returns the document to its state at open, with nothing written since,
  * writes nothing. `save` defaults to saveVignette; save errors go to `onError`.
  */
@@ -194,7 +299,7 @@ export function startAutosave(
       return;
     }
     if (userEdit) edited = true;
-    // A run, or a drag step, on an unedited, unsaved template copy: not a reason to save it.
+    // A drag step on an unedited, unsaved template copy: not a reason to save it.
     if (!edited && !written && !storedIds.has(doc.id)) return;
     schedule(doc);
   });

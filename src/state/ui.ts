@@ -1,5 +1,5 @@
-// Interface state: selection, hover, tool, time, view, units, theme, overlays, workspace.
-// None of it is a vignette edit, so none of it is an undo step.
+// Interface state: selection, hover, tool, time, view, units, theme, overlays, workspace, panels.
+// None of it is a profile edit, so none of it is an undo step.
 import { create } from 'zustand';
 import type {
   AreaKind,
@@ -23,16 +23,52 @@ export type ArmedItem =
   | { group: 'node'; kind: NodeKind }
   | { group: 'area'; kind: AreaKind };
 
-export type View = 'plan' | 'profile';
+/** Build centre views: 1 Plan, 2 Elevation, 3 3D (legacy `46-keys.js`). */
+export type View = 'plan' | 'elevation' | '3d';
 export type Units = 'nav' | 'si';
-export type Theme = 'system' | 'light' | 'dark';
-export type Workspace = 'library' | 'build' | 'results' | 'report';
+/** `auto` follows the system setting (legacy `90-app.js` theme cycle). */
+export type Theme = 'auto' | 'light' | 'dark';
+export type Workspace = 'library' | 'build' | 'brief';
+/** The Elevation view's section: along the selected path, or the ring around the selected asset. */
+export type ElevationMode = 'alongPath' | 'fromAsset';
+/** Build panel visibility (legacy `ui.panels`): inspector, asset list and top bar. */
+export type Panels = {
+  inspector: boolean;
+  list: boolean;
+  topbar: boolean;
+};
+export type PanelName = keyof Panels;
+/** The shell's modal dialogs (legacy `51-panel-dialog.js`). */
+export type ShellDialog = 'export' | 'import';
+export const PANEL_DEFAULTS: Panels = {
+  inspector: true,
+  list: true,
+  topbar: true,
+};
 export type LoopRange = { startS: number; endS: number };
 export type MapPoint = { x: number; y: number };
 /** A request to the map's path drawing, numbered so the same action can repeat. */
 export type PathSignal = { seq: number; action: 'cancel' | 'finish' };
 /** The selected target's place in the stack a repeat click cycles: `n` of `m`, top-most is 1. */
 export type StackPosition = { key: string; n: number; m: number };
+/**
+ * The Build camera and time, stashed when Brief opens and restored when it closes (spec section
+ * 7, Brief; principle 8.1). `view`, `elevationMode`, `tS` and `timeOn` are this store's; the rest
+ * are the board store's (src/features/build/board/store.ts), copied as plain values.
+ */
+export type BuildStash = {
+  view: View;
+  elevationMode: ElevationMode;
+  tS: number;
+  timeOn: boolean;
+  zoom: number;
+  px: number;
+  py: number;
+  yaw: number;
+  pitch: number;
+  ref: string;
+  layers: Record<string, boolean>;
+};
 
 /** Copied assets, deep copies. Paste mints new keys and ids. */
 export type Clip =
@@ -53,9 +89,14 @@ export type UiState = {
   drawing: boolean;
   /** The latest cancel or finish request for the path being drawn. The map acts on each new one. */
   pathSignal: PathSignal;
-  /** Set by the map while a repeat click can cycle a stack; null otherwise. The map is the only writer. */
+  /** Set by the board while a repeat click can cycle a stack; null otherwise. A selection of another key clears it. */
   stack: StackPosition | null;
   tS: number;
+  /**
+   * The time cursor (T). Off (legacy and mockup default) draws every path in full with no track
+   * frames; the board reads t only while it is on. Scrub, step, play and set-here turn it on.
+   */
+  timeOn: boolean;
   playing: boolean;
   loop: LoopRange | null;
   rate: number;
@@ -64,10 +105,18 @@ export type UiState = {
   theme: Theme;
   paletteOpen: boolean;
   shortcutsOpen: boolean;
+  /** The open export or import dialog, else null. */
+  dialog: ShellDialog | null;
   workspace: Workspace;
+  panels: Panels;
+  elevationMode: ElevationMode;
   clipboard: Clip[];
   /** Incremented by requestFit; the map fits its view when this changes. */
   fitSeq: number;
+  /** The Brief's current card, by key; null or a key no longer in the deck means the first card. */
+  cardKey: string | null;
+  /** The Build view to restore when Brief closes; null while Brief is closed. */
+  buildStash: BuildStash | null;
   setSelection: (keys: string[]) => void;
   setHover: (key: string | null) => void;
   setTool: (tool: Tool) => void;
@@ -77,6 +126,8 @@ export type UiState = {
   signalPath: (action: PathSignal['action']) => void;
   setStack: (stack: StackPosition | null) => void;
   setTime: (tS: number) => void;
+  setTimeOn: (on: boolean) => void;
+  /** Playing turns the time cursor on. */
   setPlaying: (playing: boolean) => void;
   setLoop: (loop: LoopRange | null) => void;
   setRate: (rate: number) => void;
@@ -85,9 +136,16 @@ export type UiState = {
   setTheme: (theme: Theme) => void;
   setPaletteOpen: (open: boolean) => void;
   setShortcutsOpen: (open: boolean) => void;
+  setDialog: (dialog: ShellDialog | null) => void;
   setWorkspace: (w: Workspace) => void;
+  /** Set one panel; `show` omitted flips it. */
+  togglePanel: (name: PanelName, show?: boolean) => void;
+  setPanels: (panels: Partial<Panels>) => void;
+  setElevationMode: (mode: ElevationMode) => void;
   setClipboard: (clips: Clip[]) => void;
   requestFit: () => void;
+  setCardKey: (key: string | null) => void;
+  setBuildStash: (stash: BuildStash | null) => void;
 };
 
 export const UI_DEFAULTS = {
@@ -100,22 +158,35 @@ export const UI_DEFAULTS = {
   pathSignal: { seq: 0, action: 'cancel' } as PathSignal,
   stack: null as StackPosition | null,
   tS: 0,
+  timeOn: false,
   playing: false,
   loop: null,
   rate: 1,
   view: 'plan',
   units: 'nav',
-  theme: 'system',
+  theme: 'auto',
   paletteOpen: false,
   shortcutsOpen: false,
-  workspace: 'library',
+  dialog: null as ShellDialog | null,
+  // The shell sets the workspace from the route. Build is the default so a Build view mounted
+  // without the shell (unit tests) gets the Build keys.
+  workspace: 'build',
+  panels: PANEL_DEFAULTS,
+  // legacy opens Elevation as range from the asset
+  elevationMode: 'fromAsset' as ElevationMode,
   clipboard: [] as Clip[],
   fitSeq: 0,
+  cardKey: null as string | null,
+  buildStash: null as BuildStash | null,
 } satisfies Partial<UiState>;
 
 export const useUi = create<UiState>()((set) => ({
   ...UI_DEFAULTS,
-  setSelection: (selectedKeys) => set({ selectedKeys }),
+  // A selection of another key ends the board's stack cycle (moved here from the board gestures).
+  setSelection: (selectedKeys) =>
+    set((s) =>
+      s.stack && s.stack.key !== selectedKeys[0] ? { selectedKeys, stack: null } : { selectedKeys },
+    ),
   setHover: (hoverKey) => set({ hoverKey }),
   setTool: (tool) => set({ tool }),
   setArmed: (armed) => set({ armed }),
@@ -124,7 +195,8 @@ export const useUi = create<UiState>()((set) => ({
   signalPath: (action) => set((s) => ({ pathSignal: { seq: s.pathSignal.seq + 1, action } })),
   setStack: (stack) => set({ stack }),
   setTime: (tS) => set({ tS: Math.max(0, tS) }),
-  setPlaying: (playing) => set({ playing }),
+  setTimeOn: (timeOn) => set({ timeOn }),
+  setPlaying: (playing) => set(playing ? { playing, timeOn: true } : { playing }),
   setLoop: (loop) => set({ loop }),
   setRate: (rate) => set({ rate }),
   setView: (view) => set({ view }),
@@ -132,7 +204,14 @@ export const useUi = create<UiState>()((set) => ({
   setTheme: (theme) => set({ theme }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
   setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
+  setDialog: (dialog) => set({ dialog }),
   setWorkspace: (workspace) => set({ workspace }),
+  togglePanel: (name, show) =>
+    set((s) => ({ panels: { ...s.panels, [name]: show ?? !s.panels[name] } })),
+  setPanels: (panels) => set((s) => ({ panels: { ...s.panels, ...panels } })),
+  setElevationMode: (elevationMode) => set({ elevationMode }),
   setClipboard: (clipboard) => set({ clipboard }),
   requestFit: () => set((s) => ({ fitSeq: s.fitSeq + 1 })),
+  setCardKey: (cardKey) => set({ cardKey }),
+  setBuildStash: (buildStash) => set({ buildStash }),
 }));

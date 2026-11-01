@@ -2,10 +2,25 @@ import { expect, test } from '@playwright/test';
 import { isMac, openTemplate, POINT_DEFENCE } from './helpers';
 
 type Cmd = { id: string; label: string; shortcut?: string };
-type Registry = { all: () => Cmd[]; shortcutLabel: (c: Cmd, mac?: boolean) => string };
+type Registry = {
+  inWorkspace: (w: 'build') => Cmd[];
+  shortcutLabel: (c: Cmd, mac?: boolean) => string;
+};
+type Row = { keys: string; label: string; ids: string[] };
+type Sheet = { sheetRows: (w: 'build', mac?: boolean) => Row[] };
+type QuickAdd = { ADD_GROUPS: readonly { title: string }[] };
 
-/** The live command registry, loaded in Node through Vite's SSR loader (it handles import.meta). */
-async function loadRegistry(): Promise<Cmd[] & { label: (c: Cmd, mac: boolean) => string }> {
+/**
+ * The live command registry, filtered to the Build workspace, and the Build sheet rows, loaded in
+ * Node through Vite's SSR loader (it handles import.meta).
+ */
+async function loadRegistry(): Promise<
+  Cmd[] & {
+    label: (c: Cmd, mac: boolean) => string;
+    rows: (mac: boolean) => Row[];
+    addGroups: string[];
+  }
+> {
   const { createServer } = await import('vite');
   const server = await createServer({
     server: { middlewareMode: true, hmr: false, ws: false },
@@ -17,9 +32,22 @@ async function loadRegistry(): Promise<Cmd[] & { label: (c: Cmd, mac: boolean) =
       registerCommands: () => void;
     };
     const reg = (await server.ssrLoadModule('/src/commands/registry.ts')) as unknown as Registry;
+    const sheet = (await server.ssrLoadModule(
+      '/src/features/commands/sheet.ts',
+    )) as unknown as Sheet;
+    const quickAdd = (await server.ssrLoadModule(
+      '/src/features/build/palette/store.ts',
+    )) as unknown as QuickAdd;
     commands.registerCommands();
-    const list = reg.all().map((c) => ({ id: c.id, label: c.label, shortcut: c.shortcut }));
-    return Object.assign(list, { label: (c: Cmd, mac: boolean) => reg.shortcutLabel(c, mac) });
+    const list = reg
+      .inWorkspace('build')
+      .map((c) => ({ id: c.id, label: c.label, shortcut: c.shortcut }));
+    const rows = { mac: sheet.sheetRows('build', true), other: sheet.sheetRows('build', false) };
+    return Object.assign(list, {
+      label: (c: Cmd, mac: boolean) => reg.shortcutLabel(c, mac),
+      rows: (mac: boolean) => (mac ? rows.mac : rows.other),
+      addGroups: quickAdd.ADD_GROUPS.map((g) => g.title),
+    });
   } finally {
     await server.close();
   }
@@ -34,42 +62,54 @@ test('12.10 Every command is reachable from the palette, and its shortcut matche
   const mac = await isMac(page);
   await page.locator('body').click({ position: { x: 5, y: 5 } });
 
-  // Palette: one entry per command. The palette command itself is the Cmd+K that opens it.
+  // Palette: one entry per command. The palette command itself is the Cmd+K that opens it. On
+  // Build the palette also lists the quick-add rows in its Add groups; those are not commands.
   await page.keyboard.press('ControlOrMeta+k');
   const palette = page.getByRole('dialog', { name: 'Command palette' });
   await expect(palette).toBeVisible();
-  const entries = await palette.getByRole('option').evaluateAll((els) =>
-    els.map((el) => ({
-      label: el.querySelector('span')?.textContent ?? '',
-      shortcut: el.querySelector('kbd')?.textContent ?? '',
-    })),
+  const entries = await palette.getByRole('option').evaluateAll(
+    (els, addGroups) =>
+      els
+        .filter(
+          (el) => !addGroups.includes(el.closest('[cmdk-group]')?.getAttribute('data-value') ?? ''),
+        )
+        .map((el) => ({
+          id: (el.getAttribute('data-value') ?? '').toLowerCase(),
+          label: el.querySelector('span')?.textContent ?? '',
+          shortcut: el.querySelector('kbd')?.textContent ?? '',
+        })),
+    registry.addGroups,
   );
   const inPalette = registry.filter((c) => c.id !== 'help.palette');
   expect(entries.map((e) => e.label).sort()).toEqual(inPalette.map((c) => c.label).sort());
+  // Matched by command id: menu commands share short labels such as Delete (lane 9.2.6).
+  const entryOf = (c: Cmd) => entries.find((x) => x.id === c.id.toLowerCase())!;
   for (const c of inPalette) {
-    const e = entries.find((x) => x.label === c.label)!;
+    const e = entryOf(c);
     expect(e.shortcut, `palette shortcut for ${c.id}`).toBe(registry.label(c, mac));
   }
   await page.keyboard.press('Escape');
   await expect(palette).toBeHidden();
 
-  // Shortcut sheet: every command with a key, with the same label and shortcut.
+  // Shortcut sheet: every command with a key in Build, in the generated rows, with the same
+  // shortcut as the palette. Legacy rows join related commands ("Step 1 s": Left, Right).
   await page.keyboard.press('?');
-  const sheet = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
+  const sheet = page.getByRole('dialog', { name: 'Keys in Build' });
   await expect(sheet).toBeVisible();
-  const rows = await sheet.getByRole('listitem').evaluateAll((els) =>
+  const rows = await sheet.getByRole('row').evaluateAll((els) =>
     els.map((el) => ({
-      label: el.querySelector('span')?.textContent ?? '',
-      shortcut: el.querySelector('kbd')?.textContent ?? '',
+      shortcut: el.querySelector('.hp-k')?.textContent ?? '',
+      label: el.querySelector('.hp-l')?.textContent ?? '',
     })),
   );
+  const expected = registry.rows(mac);
+  expect(rows).toEqual(expected.map((r) => ({ shortcut: r.keys, label: r.label })));
   const keyed = registry.filter((c) => c.shortcut);
-  expect(rows.map((r) => `${r.label} ${r.shortcut}`).sort()).toEqual(
-    keyed.map((c) => `${c.label} ${registry.label(c, mac)}`).sort(),
-  );
-  // And each keyed command shows the same shortcut in both places.
-  for (const r of rows) {
-    const e = entries.find((x) => x.label === r.label);
-    if (e) expect(e.shortcut, `palette vs sheet for ${r.label}`).toBe(r.shortcut);
+  expect(expected.flatMap((r) => r.ids).sort()).toEqual(keyed.map((c) => c.id).sort());
+  // And each one-command row shows the same shortcut in both places.
+  for (const r of expected.filter((x) => x.ids.length === 1 && x.ids[0] !== 'help.palette')) {
+    const c = registry.find((x) => x.id === r.ids[0])!;
+    const e = entryOf(c);
+    expect(e.shortcut, `palette vs sheet for ${c.id}`).toBe(r.keys);
   }
 });

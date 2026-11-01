@@ -1,8 +1,7 @@
 import { testVignette } from '../engine/testVignette';
 import { useDocument } from '../state/document';
-import { useRuns } from '../state/runs';
 import { UI_DEFAULTS, useUi } from '../state/ui';
-import { DEFAULT_RUN_N, DEFAULT_THREAT_TYPE, MENU_TARGETS } from './commands';
+import { DEFAULT_THREAT_TYPE, MENU_TARGETS } from './commands';
 import {
   all,
   byShortcut,
@@ -10,6 +9,7 @@ import {
   execute,
   forTarget,
   get,
+  inWorkspace,
   menuShortcutLabel,
   shortcutLabel,
 } from './registry';
@@ -29,7 +29,6 @@ const SPEC_KEYS = [
   'Mod+D',
   'Mod+C',
   'Mod+V',
-  'Mod+Enter',
   'F',
   'M',
   'U',
@@ -61,7 +60,6 @@ const SPEC_MENUS: Record<string, string[]> = {
 beforeEach(() => {
   useDocument.getState().close();
   useUi.setState(UI_DEFAULTS);
-  useRuns.setState({ results: {}, order: [], activeKey: null, compareKeys: [], sweep: null });
 });
 
 describe('command registry', () => {
@@ -81,14 +79,16 @@ describe('command registry', () => {
       if (r !== true) expect(typeof r === 'string' && r.length > 0, c.id).toBe(true);
     }
     expect(execute('edit.undo', ctx)).toBe('Nothing to undo');
-    expect(execute('edit.delete', ctx)).toBe('Open a vignette first');
+    expect(execute('edit.delete', ctx)).toBe('Open a profile first');
   });
 
-  it('no two commands share a shortcut', () => {
-    const s = all()
-      .map((c) => c.shortcut)
-      .filter(Boolean);
-    expect(new Set(s).size).toBe(s.length);
+  it('no two commands active in one workspace share a shortcut', () => {
+    for (const w of ['library', 'build', 'brief'] as const) {
+      const s = inWorkspace(w)
+        .map((c) => c.shortcut)
+        .filter(Boolean);
+      expect(new Set(s).size, w).toBe(s.length);
+    }
   });
 
   it('every shortcutFrom names a keyed command and binds no key of its own', () => {
@@ -137,9 +137,14 @@ describe('command registry', () => {
     const map = forTarget('map').map((c) => c.label);
     const addHere = forTarget('map').filter((c) => c.submenu?.startsWith('Add here')).length;
     expect(map.slice(0, addHere).every((l) => l.startsWith('Add '))).toBe(true);
-    expect(map.slice(addHere)).toEqual(SPEC_MENUS.map);
-    for (const kind of ['threat', 'waypoint', 'sensor', 'area', 'timeline'])
-      expect(forTarget(kind as never).map((c) => c.label)).toEqual(SPEC_MENUS[kind]);
+    // Add height plane is the legacy row after Add (menuCommands, lane 9.2.6); not a spec row.
+    expect(map.slice(addHere)).toEqual(['Add height plane', ...SPEC_MENUS.map!]);
+    // Lane 9.2.6 registers the legacy rows (menuCommands); the spec rows keep their order.
+    for (const kind of ['threat', 'waypoint', 'sensor', 'area', 'timeline']) {
+      const spec = SPEC_MENUS[kind]!;
+      const have = forTarget(kind as never).map((c) => c.label);
+      expect(have.filter((l) => spec.includes(l))).toEqual(spec);
+    }
   });
 
   it('Add threat here lists the 13 archetypes by UAS group', () => {
@@ -201,7 +206,17 @@ describe('commands edit the document', () => {
   });
 
   it('delete removes a TSPI node from the truth station keys', () => {
-    const node = { key: 'n1', id: 'TSPI-1', kind: 'tspi' as const, x: 0, y: 0, z: 0, rangeM: 0 };
+    const node = {
+      key: 'n1',
+      id: 'TSPI-1',
+      kind: 'tspi' as const,
+      x: 0,
+      y: 0,
+      z: 0,
+      rangeM: 0,
+      fovDeg: 0,
+      bearingDeg: 0,
+    };
     useDocument.getState().edit('add', (d) => {
       d.nodes.push(node);
       d.report.truth.stationKeys = ['n1', 'other'];
@@ -222,56 +237,6 @@ describe('commands edit the document', () => {
     expect(execute('system.makeOmni', currentContext())).toBe('Already omni');
     expect(execute('system.makeSector', currentContext())).toBe(true);
     expect(execute('system.makeSector', currentContext())).toBe('Already a sector');
-  });
-
-  it('a locked prediction cannot be edited', () => {
-    useDocument.getState().edit('add', (d) => {
-      d.hypotheses.push({
-        key: 'h1',
-        id: 'H-01',
-        question: '',
-        measure: '1.1.2',
-        op: '>=',
-        value: 0.9,
-        prediction: null,
-        lockedAt: null,
-      });
-    });
-    useUi.getState().setSelection(['h1']);
-    expect(execute('hypothesis.setPrediction', currentContext(), { low: 0.7, high: 0.9 })).toBe(
-      true,
-    );
-    expect(useDocument.getState().doc!.hypotheses[0]!.prediction).toEqual({ low: 0.7, high: 0.9 });
-    useDocument.getState().apply('Lock', (d) => {
-      d.hypotheses[0]!.lockedAt = '2026-10-30T00:00:00Z';
-    });
-    expect(execute('hypothesis.setPrediction', currentContext(), { low: 0, high: 1 })).toBe(
-      'Prediction locked at first run',
-    );
-  });
-
-  it('Run sweep says why without a sweep factor, then starts the stored sweep (review 6 F-02)', () => {
-    expect(execute('run.sweep', currentContext())).toBe('This vignette has no sweep factor');
-    const calls: unknown[] = [];
-    const original = useRuns.getState().startSweep;
-    useRuns.setState({
-      startSweep: (factors, n, seed) => {
-        calls.push({ factors, n, seed });
-        return Promise.resolve('k');
-      },
-    });
-    try {
-      useDocument.getState().edit('Sweep', (d) => {
-        d.sweep = { factors: [{ kind: 'threat-altitude', levels: [30, 400] }] };
-      });
-      expect(execute('run.sweep', currentContext())).toBe(true);
-      expect(calls).toEqual([
-        { factors: [{ kind: 'threat-altitude', levels: [30, 400] }], n: DEFAULT_RUN_N, seed: 1 },
-      ]);
-      expect(all().find((c) => c.id === 'run.sweep')?.group).toBe('run');
-    } finally {
-      useRuns.setState({ startSweep: original });
-    }
   });
 
   it('delete removes the selection and duplicate copies it', () => {
