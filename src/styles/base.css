@@ -1,10 +1,10 @@
 @import 'tailwindcss';
 /* Bundled faces, weights 400 and 500 only (principle 5.9). Vite emits them as CSS and font
    assets outside the entry script. */
-@import '@fontsource/archivo/400.css';
-@import '@fontsource/archivo/500.css';
-@import '@fontsource/jetbrains-mono/400.css';
-@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/geist/400.css';
+@import '@fontsource/geist/500.css';
+@import '@fontsource/geist-mono/400.css';
+@import '@fontsource/geist-mono/500.css';
 @import './tokens.css';
 
 @theme inline {
@@ -44,11 +44,10 @@
   --stroke-w1: var(--w1);
   --stroke-w2: var(--w2);
   --stroke-w3: var(--w3);
-  /* layout: w-col-list, w-col-right, h-top, h-strip, h-ctl, h-row, px-row-px and so on */
+  /* layout: w-col-list, w-col-right, h-top, h-ctl, h-row, px-row-px and so on */
   --spacing-col-list: var(--col-list);
   --spacing-col-right: var(--col-right);
   --spacing-top: var(--top);
-  --spacing-strip: var(--strip);
   --spacing-lane: var(--lane);
   --spacing-ladder-row: var(--ladder-row);
   --spacing-hit: var(--hit);

@@ -44,13 +44,12 @@
   --col-list: 232px;
   --col-right: 320px;
   --top: 48px;
-  --strip: 112px;
   --lane: 14px;
   --ladder-row: 22px;
   --hit: 14px;
-  /* type: families (Archivo and JetBrains Mono, bundled from @fontsource in base.css) */
-  --ui: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  /* type: families (Geist and Geist Mono, bundled from @fontsource in base.css) */
+  --ui: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   --font-sans: var(--ui);
   --font-mono: var(--mono);
   /* type: five sizes with their line heights */
@@ -146,7 +145,6 @@
 
 @media (max-width: 600px) {
   :root {
-    --strip: 64px;
     --lane: 10px;
     --row: 44px;
     --row-2: 52px;
