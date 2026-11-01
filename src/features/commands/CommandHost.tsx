@@ -1,6 +1,8 @@
 // The app-wide command surfaces: the palette (Cmd+K), the option picker and number prompt that
-// palette commands open, and the shortcut sheet (?). Mounted once at the App root.
+// palette commands open, and the shortcut sheet (?). Mounted once at the App root. In Build the
+// palette is the quick-add palette: the commands plus the Add groups (lane 9.2.6).
 import { useState } from 'react';
+import { QuickAddPalette } from '../build/palette/QuickAddPalette';
 import { useUi } from '../../state/ui';
 import { Palette } from '../../ui/Palette';
 import { PromptNumber } from '../../ui/PromptNumber';
@@ -11,6 +13,7 @@ import ShortcutSheet from './ShortcutSheet';
 export default function CommandHost() {
   const open = useUi((s) => s.paletteOpen);
   const setOpen = useUi((s) => s.setPaletteOpen);
+  const workspace = useUi((s) => s.workspace);
   const [arg, setArg] = useState<ArgRequest | null>(null);
   const [pick, setPick] = useState<PickRequest | null>(null);
   // Built when the palette opens, so each enable rule reads the stores at that moment.
@@ -25,7 +28,11 @@ export default function CommandHost() {
     : [];
   return (
     <>
-      <Palette open={open} onOpenChange={setOpen} items={items} />
+      {workspace === 'build' ? (
+        <QuickAddPalette items={items} />
+      ) : (
+        <Palette open={open} onOpenChange={setOpen} items={items} />
+      )}
       <Palette
         open={pick !== null}
         onOpenChange={(o) => {

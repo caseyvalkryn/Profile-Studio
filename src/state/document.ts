@@ -189,7 +189,8 @@ const previews = new WeakMap<Vignette, Preview>();
 export function previewOf(v: Vignette): Preview {
   let p = previews.get(v);
   if (!p) {
-    p = preview(v);
+    // Grouped threats fly as one group (legacy derive); the preview needs their keys.
+    p = preview(v, { groupKeys: v.threats.filter((t) => t.group).map((t) => t.key) });
     previews.set(v, p);
   }
   return p;

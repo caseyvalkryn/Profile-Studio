@@ -169,7 +169,7 @@ describe('Timeline', () => {
     expect(runMarks[0]!.getAttribute('aria-label')).toBe('Find run mean t+0:15');
   });
 
-  it('the right-click menu lists Set time here, Loop from here and Clear loop', () => {
+  it('the right-click menu lists Set time here, Loop from here, Clear loop and Add event here', () => {
     const p = previewOf(useDocument.getState().doc!);
     render(<Timeline width={W} />);
     const target = screen.getByTestId('timeline-svg').parentElement!;
@@ -179,6 +179,8 @@ describe('Timeline', () => {
       'Set time here',
       'Loop from here',
       'Clear loop',
+      // Legacy timeline menu row, registered with menuCommands in lane 9.2.6.
+      'Add event here',
     ]);
     fireEvent.click(screen.getByRole('menuitem', { name: /Loop from here/ }));
     expect(useUi.getState().loop).toEqual({ startS: expect.closeTo(30, 6), endS: p.tmaxS });

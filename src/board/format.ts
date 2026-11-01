@@ -1,22 +1,17 @@
 // Legacy PS.units and PS.fmt formatters (00-ns.js), ported one to one for the board. The port is
-// literal, so the legacy names stay (h, hDual, v, spd, t, brg, roundBar, hundredsFt). The wiring
-// lane can dedupe these with src/features/shared/units.ts: `h` matches `formatRange`-style nm/km
-// text, `v` the altitude text with the datum, `spd` the kt or m/s text, `t` the t+m:ss clock.
+// literal, so the legacy names stay (h, hDual, v, spd, t, brg, roundBar, hundredsFt).
 // Unlike legacy there is no global mode: makeUnits(mode) returns a formatter bound to one mode.
+import { fmtN, legacyUnits } from '../engine/tokens';
 import type { Units } from '../state/ui';
 
 export const NM = 1852;
 export const FT = 0.3048;
 export const KT = 0.514444;
 
-/** Thousands commas, d decimals; '' for null or a non-finite number (legacy fmt.n). */
-export function fmtN(x: number | null | undefined, d = 0): string {
-  if (x == null || !isFinite(x)) return '';
-  const s = Math.abs(x).toFixed(d).split('.');
-  const neg = x < 0 && Number(s.join('.')) !== 0;
-  const int = s[0]!.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  return (neg ? '-' : '') + int + (s.length > 1 ? '.' + s[1] : '');
-}
+// fmtN and the h, v, spd and t formats are the engine's legacy units (src/engine/tokens.ts),
+// deduped in lane 9.2.6. src/features/shared/units.ts keeps the MVP field formats; the fences
+// stop src/board and src/engine from importing it.
+export { fmtN };
 
 /** Hundreds of feet, three digits (legacy fmt.hundredsFt). */
 export function hundredsFt(m: number): string {
@@ -24,14 +19,8 @@ export function hundredsFt(m: number): string {
   return (h < 10 ? '00' : h < 100 ? '0' : '') + h;
 }
 
-function hNum(m: number, mode: Units): string {
-  const x = m / (mode === 'si' ? 1000 : NM);
-  return fmtN(x, Math.abs(x) < 10 ? 2 : 1) + (mode === 'si' ? ' km' : ' nm');
-}
-
-function spdNum(ms: number, mode: Units): string {
-  return mode === 'si' ? fmtN(ms, 0) + ' m/s' : fmtN(ms / KT, 0) + ' kt';
-}
+const hNum = (m: number, mode: Units): string => legacyUnits.h(m, mode);
+const spdNum = (ms: number, mode: Units): string => legacyUnits.spd(ms, mode);
 
 const BAR = [0.5, 1, 2, 5, 10];
 
@@ -72,19 +61,10 @@ export function makeUnits(modeIn: Units | undefined | null): BoardUnits {
         ? hNum(m, 'si') + ' (' + hNum(m, 'nav') + ')'
         : hNum(m, 'nav') + ' (' + fmtN(m, 0) + ' m)',
     // nav always names the datum (default AGL); si names it only when the caller passes it
-    v: (m, datum) =>
-      mode === 'si'
-        ? fmtN(m, 0) + ' m' + (datum ? ' ' + datum : '')
-        : fmtN(m / FT, 0) + ' ft ' + (datum || 'AGL'),
+    v: (m, datum) => legacyUnits.v(m, mode, datum),
     spd: (ms) => spdNum(ms, mode),
     spdDual: (ms) => spdNum(ms, mode) + ' (' + spdNum(ms, mode === 'si' ? 'nav' : 'si') + ')',
-    t: (s) => {
-      if (s == null) return 'full run';
-      const r = Math.max(0, Math.round(s));
-      const mm = Math.floor(r / 60);
-      const ss = r % 60;
-      return 't+' + mm + ':' + (ss < 10 ? '0' : '') + ss;
-    },
+    t: (s) => legacyUnits.t(s ?? null),
     brg: (deg) => {
       const d = ((Math.round(deg) % 360) + 360) % 360;
       return (d < 10 ? '00' : d < 100 ? '0' : '') + d + '°';

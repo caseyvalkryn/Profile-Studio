@@ -56,8 +56,9 @@ describe('actionsFor', () => {
       'Copy',
       'Paste',
     ]);
-    expect(labels('plane', 'P1')).toEqual(['Set height', 'Delete', 'Copy', 'Paste']);
-    expect(labels('event', 'e1')).toEqual(['Change type', 'Delete', 'Copy', 'Paste']);
+    // No Copy or Paste on planes and events: edit.copy copies assets only (lane 9.2.6).
+    expect(labels('plane', 'P1')).toEqual(['Set height', 'Delete']);
+    expect(labels('event', 'e1')).toEqual(['Change type', 'Delete']);
     expect(labels('timeline')).toEqual([
       'Set time here',
       'Loop from here',
@@ -114,8 +115,6 @@ describe('actionsFor', () => {
       'Change type',
       'Move to geometry',
       'Delete',
-      'Copy',
-      'Paste',
     ]);
     act(
       () =>
@@ -136,7 +135,7 @@ describe('actionsFor', () => {
       context: () => ({ ...currentContext(), ui: { ...useUi.getState(), selectedKeys: [p1] } }),
       onArg,
     });
-    expect(items[1]!.separatorAfter).toBe(true);
+    expect(items.map((i) => i.label)).toEqual(['Set height', 'Delete']);
     act(() => items[0]!.onSelect!());
     const req = onArg.mock.calls[0]![0];
     expect([req.title, req.label, req.unit, req.value]).toEqual([

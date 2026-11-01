@@ -1,6 +1,4 @@
 @import 'tailwindcss';
-/* MapLibre's sheet sits in the base layer so Tailwind utilities on the map container win. */
-@import 'maplibre-gl/dist/maplibre-gl.css' layer(base);
 /* Bundled faces, weights 400 and 500 only (principle 5.9). Vite emits them as CSS and font
    assets outside the entry script. */
 @import '@fontsource/archivo/400.css';

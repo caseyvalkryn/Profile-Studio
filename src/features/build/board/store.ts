@@ -56,6 +56,8 @@ export type BoardState = {
   dragLabel: { text: string; sub: string | null } | null;
   /** The hint line (legacy `ui.readout`). */
   readout: { text: string; level: 'info' | 'warn' } | null;
+  /** Layer chips the user flipped (legacy `ui.layers`); a missing id keeps the layer default. */
+  layers: Record<string, boolean>;
   set: (patch: Partial<Omit<BoardState, 'set' | 'reset'>>) => void;
   reset: () => void;
 };
@@ -79,6 +81,7 @@ export const BOARD_DEFAULTS = {
   ghostLabel: null as string | null,
   dragLabel: null as { text: string; sub: string | null } | null,
   readout: null as { text: string; level: 'info' | 'warn' } | null,
+  layers: {} as Record<string, boolean>,
 };
 
 export const useBoard = create<BoardState>()((set) => ({

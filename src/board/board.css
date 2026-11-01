@@ -19,7 +19,7 @@ svg.chart {
   --friend: #2862b0;
   --ew: #227f8c;
   --control: #3a3c38;
-  --select: #2862b0;
+  --select: var(--accent); /* tokens.css: the accent is selection and current time only */
   --datablock: #4e504b;
   --link: #8a8d86;
   --ghost: #767d84;
@@ -38,7 +38,6 @@ svg.chart {
     --friend: #7fbfe6;
     --ew: #5ad1e0;
     --control: #ebe9e3;
-    --select: #ebe9e3;
     --datablock: #b7bdb2;
     --link: #8a9199;
     --ghost: #6a7178;
@@ -54,7 +53,6 @@ svg.chart {
   --friend: #7fbfe6;
   --ew: #5ad1e0;
   --control: #ebe9e3;
-  --select: #ebe9e3;
   --datablock: #b7bdb2;
   --link: #8a9199;
   --ghost: #6a7178;

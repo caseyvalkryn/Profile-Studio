@@ -35,6 +35,12 @@ import type {
 import { previewOf } from '../state/document';
 import type { Clip, MapPoint, PanelName, StripTab, Theme, Workspace } from '../state/ui';
 import { libraryCommands } from '../features/library/commands';
+import { chips, defaultLayers } from '../board';
+import { boardCommands } from '../features/build/board/commands';
+import { useBoard } from '../features/build/board/store';
+import { menuCommands } from '../features/build/menu/commands';
+import { paletteCommands } from '../features/build/palette/commands';
+import { railCommands } from '../features/build/rail/commands';
 import { redidText, showToast, undidText } from '../features/shell/toastStore';
 import { find, selected, type Found } from './select';
 import { get, register, setMenuOrder } from './registry';
@@ -464,7 +470,14 @@ const STRIP_NEXT: Record<StripTab, StripTab> = {
   readout: 'timeline',
 };
 
-const QUICK_ADD_LATER = 'Quick-add arrives with the palette, lane 9.2.3';
+/**
+ * The board's cancel (drag, then placing, then ruler), set by the Build workspace when it loads.
+ * Injected so this file does not import the board view (the board's menu imports this file).
+ */
+let boardCancel: () => boolean = () => false;
+export function setBoardCancel(fn: () => boolean): void {
+  boardCancel = fn;
+}
 
 const needAny: Rule = (ctx) => {
   const d = docOf(ctx);
@@ -501,18 +514,27 @@ function cycleKind(ctx: CommandContext, dir: 1 | -1) {
 const PANEL_TOGGLES: Command[] = (
   [
     ['chips', 'Layer chips on or off'],
-    ['readout', 'Readout strip on or off'],
+    ['readout', 'Readout panel on or off'],
     ['events', 'Events panel on or off'],
     ['debrief', 'Debrief panel on or off'],
     ['snapshots', 'Snapshots panel on or off'],
   ] as const satisfies readonly (readonly [PanelName, string])[]
-).map(([name, label]) => ({
+).map(([name, label]): Command => ({
   id: `panel.${name}`,
   label,
   group: 'view',
+  // K shows the readout panel in Build (legacy `panel.readout`); Brief's K is `brief.readout`.
+  ...(name === 'readout' ? { shortcut: 'K', workspaces: BUILD } : {}),
   when: () => true,
   run: (ctx) => ctx.ui.togglePanel(name),
 }));
+
+/** Flip one board layer in `useBoard.layers`; a layer never flipped reads its default. */
+export function toggleLayer(id: string): void {
+  const b = useBoard.getState();
+  const on = b.layers[id] ?? (defaultLayers() as Record<string, boolean>)[id] ?? false;
+  b.set({ layers: { ...b.layers, [id]: !on } });
+}
 
 /** Shift+1 to Shift+8: the layer chip by number (legacy `layer.toggle`). */
 const LAYER_CHIPS: Command[] = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({
@@ -521,8 +543,11 @@ const LAYER_CHIPS: Command[] = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({
   group: 'view',
   shortcut: `Shift+${n}`,
   workspaces: BUILD_BRIEF,
-  when: () => 'Layer chips arrive with the board layers, lane 9.2.2',
-  run: () => {},
+  when: () => (chips().some((l) => l.chip === n) ? true : `No layer has chip ${n}`),
+  run: () => {
+    const l = chips().find((x) => x.chip === n);
+    if (l) toggleLayer(l.id);
+  },
 }));
 
 const BRIEF_LATER = 'Brief arrives in lane 9.4';
@@ -620,16 +645,19 @@ const COMMANDS: Command[] = [
     group: 'edit',
     shortcut: 'Escape',
     when: () => true,
-    // The one Escape owner. Each press undoes one layer, in this order: a handle drag or the path
-    // being drawn, an open export or import dialog, palette or sheet, an armed library item or a tool, the selection, and
-    // last the loop range. The map and the library keep no Escape listener of their own.
+    // The one Escape owner (legacy 90-app.js order). Each press undoes one layer: an open dialog,
+    // the palette or the sheet; then the board's drag, placing or ruler (`cancel()` from the
+    // board view); a document drag; an armed item or a tool; the selection; last the loop range.
+    // The board stage handles Escape itself while it has focus and a gesture to cancel; it calls
+    // preventDefault, so this binding does not fire a second time.
     run: (ctx) => {
       const ui = ctx.ui;
-      if (ctx.document.drag) ctx.document.cancelDrag();
-      else if (ui.drawing) ui.signalPath('cancel');
-      else if (ui.dialog) ui.setDialog(null);
+      if (ui.dialog) ui.setDialog(null);
       else if (ui.paletteOpen) ui.setPaletteOpen(false);
       else if (ui.shortcutsOpen) ui.setShortcutsOpen(false);
+      else if (boardCancel()) return;
+      else if (ctx.document.drag) ctx.document.cancelDrag();
+      else if (ui.drawing) ui.signalPath('cancel');
       else if (ui.tool !== 'select' || ui.armed || ui.measureFrom) {
         ui.setTool('select');
         ui.setArmed(null);
@@ -821,7 +849,8 @@ const COMMANDS: Command[] = [
     label: 'Elevation view',
     group: 'view',
     shortcut: '2',
-    when: every(needDoc, needSel(['threat', 'waypoint'], 'a flight path')),
+    // The board's Elevation defaults to From asset (legacy), which needs no selected path.
+    when: needDoc,
     run: (ctx) => ctx.ui.setView('elevation'),
   },
   {
@@ -837,7 +866,7 @@ const COMMANDS: Command[] = [
     label: '3D view',
     group: 'view',
     shortcut: '3',
-    when: () => 'The 3D view arrives with the board renderer, lane 9.2.2',
+    when: needDoc,
     run: (ctx) => ctx.ui.setView('3d'),
   },
   {
@@ -879,30 +908,6 @@ const COMMANDS: Command[] = [
     group: 'time',
     shortcut: ']',
     when: () => 'Event steps arrive with the time engine, lane 9.3.2',
-    run: () => {},
-  },
-  {
-    id: 'map.gridSnap',
-    label: 'Grid snap',
-    group: 'map',
-    shortcut: 'G',
-    when: () => 'Grid snap arrives with the board tools, lane 9.2.5',
-    run: () => {},
-  },
-  {
-    id: 'view.zoomIn',
-    label: 'Zoom in',
-    group: 'view',
-    shortcut: '=',
-    when: () => 'Zoom keys arrive with the board tools, lane 9.2.5',
-    run: () => {},
-  },
-  {
-    id: 'view.zoomOut',
-    label: 'Zoom out',
-    group: 'view',
-    shortcut: '-',
-    when: () => 'Zoom keys arrive with the board tools, lane 9.2.5',
     run: () => {},
   },
   {
@@ -952,46 +957,13 @@ const COMMANDS: Command[] = [
   },
   ...PANEL_TOGGLES,
   ...LAYER_CHIPS,
-  {
-    id: 'build.quickAdd',
-    label: 'Quick-add palette',
-    group: 'map',
-    shortcut: 'A',
-    when: () => QUICK_ADD_LATER,
-    run: () => {},
-  },
-  {
-    id: 'build.addSensor',
-    label: 'Add a sensor',
-    group: 'map',
-    shortcut: 'S',
-    when: () => QUICK_ADD_LATER,
-    run: () => {},
-  },
-  {
-    id: 'build.addArea',
-    label: 'Add an area',
-    group: 'map',
-    shortcut: 'V',
-    when: () => QUICK_ADD_LATER,
-    run: () => {},
-  },
-  {
-    id: 'build.addEvent',
-    label: 'Add an event',
-    group: 'map',
-    shortcut: 'E',
-    when: () => QUICK_ADD_LATER,
-    run: () => {},
-  },
-  {
-    id: 'build.formation',
-    label: 'Formation',
-    group: 'map',
-    shortcut: 'Shift+F',
-    when: () => 'Formation arrives with the quick-add palette, lane 9.2.3',
-    run: () => {},
-  },
+  // Lanes 9.2.3 to 9.2.5: the rail adds, quick-add, the right-click items and the board keys.
+  // They replace the stubs build.quickAdd, build.addSensor, build.addArea, build.addEvent,
+  // build.formation, map.gridSnap, view.zoomIn and view.zoomOut (card.* stay stubs in menuCommands).
+  ...railCommands,
+  ...paletteCommands,
+  ...menuCommands,
+  ...boardCommands,
   {
     id: 'card.save',
     label: 'Save the view as a card',
@@ -1074,14 +1046,18 @@ const COMMANDS: Command[] = [
     group: 'time',
     kinds: ['map', 'timeline'],
     needsPointer: true,
-    when: every(needDoc, needPointer, (ctx) =>
-      ctx.pointer?.tS != null || docOf(ctx)?.threats.length ? true : 'Add a threat first',
+    // On the timeline the pointer carries its time; on the board, the nearest threat time.
+    when: every(
+      needDoc,
+      (ctx) => (ctx.pointer ? true : 'Right-click the timeline first'),
+      (ctx) =>
+        ctx.pointer?.tS != null || docOf(ctx)?.threats.length ? true : 'Add a threat first',
     ),
     run: (ctx) => {
       const p = ctx.pointer;
       const doc = docOf(ctx);
       if (!p || !doc) return;
-      const t = p.tS ?? timeNear(doc, p);
+      const t = p.tS != null ? p.tS : timeNear(doc, p);
       if (t != null) ctx.ui.setTime(t);
     },
   },
@@ -1373,6 +1349,7 @@ const COMMANDS: Command[] = [
 export const MENU_ORDER: Readonly<Partial<Record<AssetKind, readonly string[]>>> = {
   map: [
     ...ADD_HERE.map((c) => c.id),
+    'map.addHeightPlane',
     'map.pasteHere',
     'map.measureFrom',
     'time.setHere',

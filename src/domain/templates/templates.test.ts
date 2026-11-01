@@ -8,7 +8,24 @@ import { sweep } from '../../engine/sweep';
 import { HOVER_SCOPE } from './hoverTrackHold';
 import { SWEEP_SCOPE } from './detectionRangeSweep';
 import { preview } from '../../engine/preview';
-import { assetBounds } from '../../features/build/map/geojson';
+import type { Vignette } from '../types';
+
+type BoundsM = [number, number, number, number];
+
+/** Bounds of every asset in metres (from the removed map/geojson.ts, lane 9.2.6). */
+function assetBounds(d: Vignette): BoundsM | null {
+  let b: BoundsM | null = null;
+  const add = (x: number, y: number, r = 0) => {
+    b = b
+      ? [Math.min(b[0], x - r), Math.min(b[1], y - r), Math.max(b[2], x + r), Math.max(b[3], y + r)]
+      : [x - r, y - r, x + r, y + r];
+  };
+  for (const t of d.threats) for (const w of t.path) add(w.x, w.y);
+  for (const s of [...d.sensors, ...d.effectors]) add(s.x, s.y, s.rangeM);
+  for (const n of d.nodes) add(n.x, n.y);
+  for (const a of d.areas) for (const [x, y] of a.pts) add(x, y);
+  return b;
+}
 
 const RUNNABLE = TEMPLATES.filter((t) => t.id !== 'blank');
 // 2.3 Track Quantity is an entered measure (vendor sheet); it scores from the asset's entered

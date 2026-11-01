@@ -88,7 +88,7 @@ export type UiState = {
   drawing: boolean;
   /** The latest cancel or finish request for the path being drawn. The map acts on each new one. */
   pathSignal: PathSignal;
-  /** Set by the map while a repeat click can cycle a stack; null otherwise. The map is the only writer. */
+  /** Set by the board while a repeat click can cycle a stack; null otherwise. A selection of another key clears it. */
   stack: StackPosition | null;
   tS: number;
   playing: boolean;
@@ -167,7 +167,11 @@ export const UI_DEFAULTS = {
 
 export const useUi = create<UiState>()((set) => ({
   ...UI_DEFAULTS,
-  setSelection: (selectedKeys) => set({ selectedKeys }),
+  // A selection of another key ends the board's stack cycle (moved here from the board gestures).
+  setSelection: (selectedKeys) =>
+    set((s) =>
+      s.stack && s.stack.key !== selectedKeys[0] ? { selectedKeys, stack: null } : { selectedKeys },
+    ),
   setHover: (hoverKey) => set({ hoverKey }),
   setTool: (tool) => set({ tool }),
   setArmed: (armed) => set({ armed }),

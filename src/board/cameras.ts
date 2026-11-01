@@ -5,7 +5,7 @@
 //
 // Added to legacy: the elevation camera has two modes. From asset is the legacy reading (range
 // from the reference). Along path puts along-track distance of one path on x, with the math of
-// src/features/build/profile/along.ts copied below (not imported: src/board stays pure).
+// the MVP profile view's along.ts (removed in lane 9.2.6) kept below.
 import type { Pt3, TimedPoint } from '../engine/geo';
 import type { ElevationMode, View } from '../state/ui';
 import { bounds as geoBounds, gridStep, type Bounds } from './geo';
@@ -102,7 +102,7 @@ function maxZOf(scene: SceneObjects): number {
   return m;
 }
 
-// ---------------------------------------------------------------- along path (copied from along.ts)
+// ---------------------------------------------------------------- along path
 
 /** Cumulative horizontal distance in metres at each waypoint. */
 export function cumulative(w: readonly TimedPoint[]): number[] {
