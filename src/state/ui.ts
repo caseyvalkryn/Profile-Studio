@@ -68,6 +68,24 @@ export type MapPoint = { x: number; y: number };
 export type PathSignal = { seq: number; action: 'cancel' | 'finish' };
 /** The selected target's place in the stack a repeat click cycles: `n` of `m`, top-most is 1. */
 export type StackPosition = { key: string; n: number; m: number };
+/**
+ * The Build camera and time, stashed when Brief opens and restored when it closes (spec section
+ * 7, Brief; principle 8.1). `view`, `elevationMode`, `tS` and `timeOn` are this store's; the rest
+ * are the board store's (src/features/build/board/store.ts), copied as plain values.
+ */
+export type BuildStash = {
+  view: View;
+  elevationMode: ElevationMode;
+  tS: number;
+  timeOn: boolean;
+  zoom: number;
+  px: number;
+  py: number;
+  yaw: number;
+  pitch: number;
+  ref: string;
+  layers: Record<string, boolean>;
+};
 
 /** Copied assets, deep copies. Paste mints new keys and ids. */
 export type Clip =
@@ -113,6 +131,10 @@ export type UiState = {
   clipboard: Clip[];
   /** Incremented by requestFit; the map fits its view when this changes. */
   fitSeq: number;
+  /** The Brief's current card, by key; null or a key no longer in the deck means the first card. */
+  cardKey: string | null;
+  /** The Build view to restore when Brief closes; null while Brief is closed. */
+  buildStash: BuildStash | null;
   setSelection: (keys: string[]) => void;
   setHover: (key: string | null) => void;
   setTool: (tool: Tool) => void;
@@ -141,6 +163,8 @@ export type UiState = {
   setElevationMode: (mode: ElevationMode) => void;
   setClipboard: (clips: Clip[]) => void;
   requestFit: () => void;
+  setCardKey: (key: string | null) => void;
+  setBuildStash: (stash: BuildStash | null) => void;
 };
 
 export const UI_DEFAULTS = {
@@ -172,6 +196,8 @@ export const UI_DEFAULTS = {
   elevationMode: 'fromAsset' as ElevationMode,
   clipboard: [] as Clip[],
   fitSeq: 0,
+  cardKey: null as string | null,
+  buildStash: null as BuildStash | null,
 } satisfies Partial<UiState>;
 
 export const useUi = create<UiState>()((set) => ({
@@ -207,4 +233,6 @@ export const useUi = create<UiState>()((set) => ({
   setElevationMode: (elevationMode) => set({ elevationMode }),
   setClipboard: (clipboard) => set({ clipboard }),
   requestFit: () => set((s) => ({ fitSeq: s.fitSeq + 1 })),
+  setCardKey: (cardKey) => set({ cardKey }),
+  setBuildStash: (buildStash) => set({ buildStash }),
 }));

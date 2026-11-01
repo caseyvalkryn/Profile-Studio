@@ -91,15 +91,3 @@ export default function Shell({ status, rail, right, strip, sheet, children }: S
     </div>
   );
 }
-
-/** Brief until lane 9.4 ports it. */
-export function BriefPlaceholder() {
-  return (
-    <main
-      aria-label="Brief"
-      className="flex flex-1 flex-col items-center justify-center bg-surface-0 text-sm text-muted"
-    >
-      <p className="m-0">Brief arrives in lane 9.4.</p>
-    </main>
-  );
-}

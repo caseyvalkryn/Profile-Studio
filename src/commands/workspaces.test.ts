@@ -25,10 +25,19 @@ beforeEach(() => {
 });
 
 describe('workspace scoping', () => {
-  it('1 is the Plan view in Build and card 1 in Brief', () => {
+  it('1 is the Plan view in Build and nothing in Brief or the Library', () => {
     expect(byShortcut('1', 'build')?.id).toBe('view.plan');
-    expect(byShortcut('1', 'brief')?.id).toBe('brief.card1');
+    // The card jumps (1 to 9) left with the Brief stubs (plan, Deferred from phase 10).
+    expect(byShortcut('1', 'brief')).toBeUndefined();
     expect(byShortcut('1', 'library')).toBeUndefined();
+  });
+
+  it('the arrows step time in Build and move between cards in Brief', () => {
+    expect(byShortcut('ArrowRight', 'build')?.id).toBe('time.forward1');
+    expect(byShortcut('ArrowRight', 'brief')?.id).toBe('brief.next');
+    expect(byShortcut('Space', 'brief')?.id).toBe('brief.space');
+    expect(byShortcut('Delete', 'brief')?.id).toBe('brief.delete');
+    expect(byShortcut('Delete', 'build')?.id).toBe('edit.delete');
   });
 
   it('dispatchKey runs the command of the current workspace only', () => {
@@ -50,12 +59,15 @@ describe('workspace scoping', () => {
     }
   });
 
-  it('a stub command stays registered and says which lane brings it', () => {
+  it('a command that is live reports true', () => {
     const ctx = { doc: useDocument.getState().doc, ui: useUi.getState() } as never;
-    expect(get('brief.next')!.when(ctx)).toBe('Brief arrives in lane 9.4');
     expect(get('profile.new')!.when(ctx)).toBe(true); // live since the 9.1.4 merge
+  });
+
+  it('the Brief keys need cards; with none, Right does nothing', () => {
     inWs('brief');
     expect(dispatchKey(key('ArrowRight'), undefined, true)).toBeNull();
+    expect(useToast.getState().text).toBe('No cards yet.');
   });
 
   it('two commands may share a shortcut only in disjoint workspaces', () => {
@@ -122,7 +134,10 @@ describe('shortcut sheet rows', () => {
 
   it('Brief shows card keys and no Build-only keys', () => {
     const l = labels('brief');
-    expect(sheetRows('brief', true).find((r) => r.label === 'Jump to card n')!.keys).toBe('1 to 9');
+    const rows = sheetRows('brief', true);
+    expect(rows.find((r) => r.ids.includes('brief.next'))!.keys).toBe('Right');
+    expect(rows.find((r) => r.label === 'First card or last card')!.keys).toBe('Home, End');
+    expect(rows.find((r) => r.ids.includes('brief.delete'))!.keys).toBe('Delete');
     expect(l).not.toContain('Plan, Elevation, 3D');
     expect(l).toContain('Cancel, close or go back');
   });
@@ -132,6 +147,6 @@ describe('shortcut sheet rows', () => {
     expect(ids).toContain('edit.undo');
     expect(ids).toContain('help.shortcuts');
     expect(ids).not.toContain('time.playPause');
-    expect(ids).not.toContain('brief.card1');
+    expect(ids).not.toContain('brief.next');
   });
 });
