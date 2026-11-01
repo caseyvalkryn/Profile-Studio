@@ -299,7 +299,7 @@ export const menuCommands: Command[] = [
   },
   {
     id: 'plane.delete',
-    label: 'Delete',
+    label: 'Delete height plane',
     group: 'edit',
     workspaces: ['build'],
     when: (ctx) => (selectedPlane(ctx) ? true : 'Select a height plane first'),
@@ -355,7 +355,7 @@ export const menuCommands: Command[] = [
   },
   {
     id: 'event.delete',
-    label: 'Delete',
+    label: 'Delete event',
     group: 'edit',
     workspaces: ['build'],
     when: (ctx) => (selectedEvent(ctx) ? true : 'Select an event first'),
@@ -373,7 +373,7 @@ export const menuCommands: Command[] = [
   stub('card.duplicate', 'Duplicate'),
   stub('card.moveUp', 'Move up'),
   stub('card.moveDown', 'Move down'),
-  stub('card.delete', 'Delete'),
+  stub('card.delete', 'Delete card'),
 ];
 
 /** Menu targets per new command, including kinds AssetKind does not have yet. */

@@ -1,9 +1,8 @@
 // The renderer's derived object (plan section 6, phase 9 renderer contract), built from `Preview`.
 // Field names and shapes follow docs/reference/legacy-app.md section 5, keyed by display id
 // (`Threat.id`, system `id`, `Area.id`) as the legacy app was, with F2T2EA `stages` in place of
-// the five-rung ladder. `ladder` is a derived view of `stages` with the legacy rung names so
-// the events layer and the fixture parity tests can read rung for rung; the orchestrator drops
-// it after sub-phase 9.2. Pure: no React, DOM or store. Memoised by (vignette, preview) reference.
+// the five-rung ladder; the legacy rungs stay internal to `ladderFor`. Pure: no React, DOM or
+// store. Memoised by (vignette, preview) reference.
 
 import type {
   Area,
@@ -112,8 +111,6 @@ export type Derived = {
   dLink: { value: number | null; auto: boolean };
   splits: Split[];
   stages: Record<string, DerivedStages>;
-  /** Legacy rung view of `stages`: detect=find, track=fix, id=track, engage, effect=assess. */
-  ladder: Record<string, Ladder>;
   window: Record<string, WindowSummary>;
   warnings: Warning[];
   crossings: Record<string, Crossing[]>;
@@ -399,7 +396,6 @@ function compute(v: Vignette, p: Preview): Derived {
     dLink: p.dLink,
     splits: p.splits,
     stages: {},
-    ladder: {},
     window: {},
     warnings: [],
     crossings: {},
@@ -488,9 +484,10 @@ function compute(v: Vignette, p: Preview): Derived {
     daEntry: d.daEntry,
   };
   const evWarn: Warning[] = [];
+  const ladders: Record<string, Ladder> = {};
   for (const tp of previews) {
     const r = ladderFor(ctx, tp, evWarn);
-    d.ladder[tp.id] = r.ladder;
+    ladders[tp.id] = r.ladder;
     d.stages[tp.id] = r.stages;
     d.window[tp.id] = r.window;
   }
@@ -538,7 +535,7 @@ function compute(v: Vignette, p: Preview): Derived {
   d.warnings = d.warnings.concat(evWarn);
 
   for (const tp of previews) {
-    const L = d.ladder[tp.id]!;
+    const L = ladders[tp.id]!;
     d.trackLine[tp.id] = trackLineFor({
       timed: tp.timed,
       findT: L.detect.t,

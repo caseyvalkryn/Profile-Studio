@@ -4,6 +4,7 @@ import { testVignette } from '../../../engine/testVignette';
 import type { Vignette } from '../../../domain/types';
 import { useDocument } from '../../../state/document';
 import { useUi, UI_DEFAULTS } from '../../../state/ui';
+import { useBoard } from '../board/store';
 import Readout from './Readout';
 import { useReadout } from './store';
 import type { ReadoutAt, ReadoutSource } from './types';
@@ -47,6 +48,7 @@ beforeEach(() => {
   useDocument.getState().open(testVignette());
   useUi.setState({ ...UI_DEFAULTS, panels: { ...UI_DEFAULTS.panels, readout: true } });
   useReadout.setState({ pinned: null, dragBase: null });
+  useBoard.getState().reset();
 });
 
 describe('Readout', () => {
@@ -110,5 +112,23 @@ describe('Readout', () => {
     expect(screen.getByText('(-0:04)')).toHaveClass('text-state-warning');
     act(() => useReadout.getState().setDragBaseline(null));
     expect(screen.getByText(/^Margin/)).toHaveTextContent(/^Margin \+0:12$/);
+  });
+
+  it('measures from the board Ref and prints the time in lower case', () => {
+    const refs: string[] = [];
+    const spy =
+      (v: Vignette): ReadoutAt =>
+      (threatId, tS, ref) => {
+        refs.push(ref);
+        return atFor(v)(threatId, tS, ref);
+      };
+    useUi.setState({ selectedKeys: ['k-T-01'] });
+    render(<Readout atFor={spy} />);
+    expect(refs.at(-1)).toBe('asset');
+    const time = screen.getByText('t+0:00');
+    expect(time.parentElement).toHaveTextContent(/^at t\+0:00$/);
+    expect(time.parentElement!.className).not.toMatch(/uppercase/);
+    act(() => useBoard.setState({ ref: 'S-01' }));
+    expect(refs.at(-1)).toBe('S-01');
   });
 });
