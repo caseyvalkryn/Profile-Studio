@@ -92,9 +92,11 @@ export function syntheticVignette(nThreats = 40, nSensors = 15, seed = 7): Vigne
     id: 'PERF-1',
     name: 'perf',
     updated: '2026-10-30T00:00:00.000Z',
+    collection: '',
+    class: 'Custom',
+    version: 1,
     site: { name: 'perf', lat: 0, lon: 0, elevM: 0 },
     questions: [],
-    hypotheses: [],
     threats,
     sensors,
     effectors,
@@ -122,13 +124,10 @@ export function syntheticVignette(nThreats = 40, nSensors = 15, seed = 7): Vigne
     debrief: null,
     chainTime: { decisionS: 5, assignS: 3 },
     measures: [],
-    runs: [],
     report: {
-      summary: '',
       notes: '',
       dataSources: [],
       truth: { source: '', intervalS: 20, stationKeys: [] },
-      slides: [],
     },
   };
 }

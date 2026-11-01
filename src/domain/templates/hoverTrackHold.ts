@@ -30,6 +30,7 @@ export const hoverTrackHold: Template = {
     const hover = hoverAndStare(LOITER, 120, 60);
     const runIn = directApproach(LOITER, ASSET, 120).slice(1);
     const v = vignette({
+      class: 'Counter-UAS',
       name: 'Hover track hold',
       questions: [Q],
       threats: [threat('T1', 'g1-quad-isr', [...approach, ...loiter, ...hover, ...runIn])],

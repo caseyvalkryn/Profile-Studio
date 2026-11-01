@@ -3,29 +3,31 @@ import { newKey } from './ids';
 import { isVignette, parseVignette } from './schema';
 import type { Vignette } from './types';
 
+/** A v7 record without the fields v7 added, as a v6 record would carry it. */
+function withoutV7<T extends { collection?: unknown; class?: unknown; version?: unknown }>(
+  v: T,
+): Omit<T, 'collection' | 'class' | 'version'> {
+  const out: Partial<T> = { ...v };
+  delete out.collection;
+  delete out.class;
+  delete out.version;
+  return out as Omit<T, 'collection' | 'class' | 'version'>;
+}
+
 function small(): Vignette {
   const q = newKey();
   const t1 = newKey();
   const rdr = newKey();
   return {
-    schema: 'profile-studio/6',
+    schema: 'profile-studio/7',
     id: 'V-1',
     name: 'Round trip',
     updated: '2026-10-30T00:00:00.000Z',
+    collection: 'Range',
+    class: 'Counter-UAS',
+    version: 3,
     site: { name: 'Range', lat: 35.1, lon: -117.6, elevM: 700 },
     questions: [{ key: q, id: 'Q-01', text: 'Does detection reach 3 km?', note: '' }],
-    hypotheses: [
-      {
-        key: newKey(),
-        id: 'H-01',
-        question: q,
-        measure: '1.1.2',
-        op: '>=',
-        value: 3000,
-        prediction: { low: 2800, high: 3600 },
-        lockedAt: null,
-      },
-    ],
     threats: [
       {
         key: t1,
@@ -145,16 +147,73 @@ function small(): Vignette {
     },
     chainTime: { decisionS: 5, assignS: 3 },
     measures: [{ id: '1.1.2', op: '>=', threshold: 3000, unit: 'm' }],
-    runs: [],
     report: {
-      summary: '',
       notes: '',
       dataSources: [],
       truth: { source: 'GPS', intervalS: 20, stationKeys: [] },
-      slides: [],
     },
   };
 }
+
+/** `small()` as a stored v6 record: no collection, class or version, with the run fields. */
+function smallV6(base: Vignette = small()): Record<string, unknown> {
+  const rest = withoutV7(base);
+  return {
+    ...JSON.parse(JSON.stringify(rest)),
+    schema: 'profile-studio/6',
+    hypotheses: [
+      {
+        key: newKey(),
+        id: 'H-01',
+        question: rest.questions[0]!.key,
+        measure: '1.1.2',
+        op: '>=',
+        value: 3000,
+        prediction: { low: 2800, high: 3600 },
+        lockedAt: null,
+      },
+    ],
+    runs: [{ key: newKey(), id: 'R-1', createdAt: '', n: 1, seed: 1, rows: [] }],
+    sweep: { factors: [{ kind: 'threat-speed', levels: [10, 20] }] },
+    report: {
+      summary: 'Old summary',
+      notes: '',
+      dataSources: ['Radar log'],
+      truth: { source: 'GPS', intervalS: 20, stationKeys: [] },
+      slides: [{ key: newKey(), name: 'S', caption: '', notes: '' }],
+      sections: { results: 'x' },
+      charts: ['1.1.2'],
+    },
+  };
+}
+
+describe('v6 to v7', () => {
+  it('takes the collection from the site name and drops the run fields', () => {
+    const base = small();
+    const v = parseVignette(smallV6(base));
+    expect(v.schema).toBe('profile-studio/7');
+    expect([v.collection, v.class, v.version]).toEqual(['Range', 'Custom', 1]);
+    expect(v.site.name).toBe('Range');
+    for (const k of ['hypotheses', 'runs', 'sweep']) expect(k in v).toBe(false);
+    expect(v.report).toEqual({
+      notes: '',
+      dataSources: ['Radar log'],
+      truth: { source: 'GPS', intervalS: 20, stationKeys: [] },
+    });
+    const rest = withoutV7(v);
+    const want = withoutV7(base);
+    expect(rest).toEqual({ ...want, report: v.report });
+  });
+
+  it('keeps a collection the v6 record already has', () => {
+    const v = parseVignette({ ...smallV6(), collection: 'Toughstump' });
+    expect([v.collection, v.site.name]).toEqual(['Toughstump', 'Range']);
+  });
+
+  it('refuses a class outside the catalog', () => {
+    expect(() => parseVignette({ ...small(), class: 'Tank' })).toThrow(/class/);
+  });
+});
 
 describe('vignette schema', () => {
   it('round-trips a small vignette', () => {

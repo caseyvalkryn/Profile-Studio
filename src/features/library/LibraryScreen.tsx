@@ -1,8 +1,10 @@
-// The Library workspace (spec section 7), a port of legacy/js/51-panel-collect.js: New first, the
-// templates in one row, saved profiles below grouped by site (newest group first, newest profile
-// first), search over id, name, site and question. Per card: Open, Brief, Duplicate, Export,
-// Delete with an inline Yes or No row, then undo for 8 s. Import and Export library. The bar has
-// no title: the workspace segment names the screen (principle 5.1).
+// The Library workspace (spec section 7, the mockup's Collect): New first, the templates in one
+// row, saved profiles below grouped by collection (the open profile's group first, then by name;
+// newest profile first), search over id, name, question, class and collection. Per card: the
+// thumbnail from its first card, name, question, the line "id vN · class · n cards · n paths",
+// then Open, Brief, Duplicate, Export, Delete with an inline Yes or No row, then undo for 8 s.
+// Import and Export library. The bar has no title: the workspace segment names the screen
+// (principle 5.1).
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { get, shortcutLabel } from '../../commands/registry';
@@ -19,7 +21,7 @@ import {
 } from '../../state/persist';
 import { Button, Menu, Tooltip } from '../../ui';
 import { focusRing } from '../../ui/focus';
-import { absoluteTime, relativeTime } from './format';
+import { absoluteTime, metaLine, relativeTime } from './format';
 import { SEARCH_ID } from './commands';
 import { exportLibraryFile, exportProfileFile, importText } from './io';
 import {
@@ -36,8 +38,10 @@ import type { Template } from './types';
 /** How long a deleted profile can be restored. */
 export const UNDO_MS = 8000;
 
-/** The group heading for profiles whose site has no name. */
-export const NO_SITE = 'No site';
+/** The group heading for profiles with no collection. */
+export const NO_COLLECTION = 'No collection';
+
+const headingOf = (collection: string) => collection || NO_COLLECTION;
 
 const STEP_LABEL: Record<Step, string> = {
   find: 'Find',
@@ -60,32 +64,31 @@ function matches(query: string, ...texts: string[]): boolean {
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /**
- * Group the listing by site, as legacy `Sl.library` groups by collection: the open profile's
- * site first, then by the newest profile in the group, then by name. Profiles stay newest first.
+ * Group the listing by collection (mockup drawCollect): the open profile's collection first, then
+ * by heading name. Profiles stay newest first.
  */
-export function groupBySite(
+export function groupByCollection(
   list: VignetteListing[],
-  activeSite: string | null,
-): { site: string; profiles: VignetteListing[] }[] {
+  activeCollection: string | null,
+): { collection: string; profiles: VignetteListing[] }[] {
   const groups = new Map<string, VignetteListing[]>();
   for (const s of list) {
-    const g = groups.get(s.site);
+    const g = groups.get(s.collection);
     if (g) g.push(s);
-    else groups.set(s.site, [s]);
+    else groups.set(s.collection, [s]);
   }
-  const out = [...groups].map(([site, profiles]) => ({
-    site,
+  const out = [...groups].map(([collection, profiles]) => ({
+    collection,
     profiles: [...profiles].sort((a, b) =>
       a.updated < b.updated ? 1 : a.updated > b.updated ? -1 : a.id < b.id ? -1 : 1,
     ),
   }));
   return out.sort((a, b) => {
-    if (a.site === activeSite) return -1;
-    if (b.site === activeSite) return 1;
-    const na = a.profiles[0]!.updated;
-    const nb = b.profiles[0]!.updated;
-    if (na !== nb) return na < nb ? 1 : -1;
-    return a.site < b.site ? -1 : a.site > b.site ? 1 : 0;
+    if (a.collection === activeCollection) return -1;
+    if (b.collection === activeCollection) return 1;
+    const ha = headingOf(a.collection);
+    const hb = headingOf(b.collection);
+    return ha < hb ? -1 : ha > hb ? 1 : 0;
   });
 }
 
@@ -105,7 +108,6 @@ function SavedCard({
   asking: boolean;
   onAction: (a: CardAction) => void;
 }) {
-  const question = v?.questions.find((q) => q.text)?.text ?? '';
   const act = (label: string, a: CardAction, id?: string) => (
     <Button
       key={label}
@@ -132,29 +134,26 @@ function SavedCard({
       }}
       className={`flex min-w-0 flex-col gap-1.5 rounded-md border border-surface-3 bg-surface-1 p-2.5 aria-[current=true]:border-accent ${focusRing}`}
     >
-      <div className="h-[150px] overflow-hidden rounded-sm border border-surface-3">
+      <div className="aspect-[5/3] overflow-hidden rounded-sm border border-surface-3">
         {v ? (
-          <Thumbnail vignette={v} title={`${s.name} map`} />
+          <Thumbnail vignette={v} title={`${s.name} ${s.firstCard ? 'first card' : 'map'}`} />
         ) : (
-          <ThumbnailPlaceholder title={`${s.name} map`} />
+          <ThumbnailPlaceholder title={`${s.name} ${s.firstCard ? 'first card' : 'map'}`} />
         )}
       </div>
       <h3 className="m-0 truncate text-sm font-medium" title={s.name}>
         {s.name}
       </h3>
-      <p className="m-0 line-clamp-2 min-h-8 text-xs text-muted">{question}</p>
-      <div className="flex items-baseline gap-2 text-xs text-muted">
-        <span className="truncate font-mono">{s.id}</span>
-        {v ? (
-          <span className="shrink-0 font-mono">{plural(v.cards.length, 'card', 'cards')}</span>
-        ) : null}
-        <span className="flex-1" />
-        <Tooltip content={absoluteTime(s.updated)}>
-          <span tabIndex={0} className={`shrink-0 font-mono ${focusRing}`}>
-            {relativeTime(s.updated)}
-          </span>
-        </Tooltip>
-      </div>
+      <p className="m-0 line-clamp-2 min-h-8 text-xs text-muted">{s.question}</p>
+      <Tooltip content={`Saved ${relativeTime(s.updated)}, ${absoluteTime(s.updated)}`}>
+        <span
+          tabIndex={0}
+          data-testid="saved-meta"
+          className={`min-w-0 font-mono text-xs break-words text-muted ${focusRing}`}
+        >
+          {metaLine(s)}
+        </span>
+      </Tooltip>
       <div className="flex min-w-0 items-center gap-0.5">
         {asking ? (
           <>
@@ -184,7 +183,7 @@ function SavedCard({
 export default function LibraryScreen({ templates = [] }: { templates?: Template[] }) {
   const navigate = useNavigate();
   const go = useCallback((path: string) => void navigate(path), [navigate]);
-  const activeSite = useDocument((s) => s.doc?.site.name ?? null);
+  const activeCollection = useDocument((s) => s.doc?.collection ?? null);
   const openId = useDocument((s) => s.doc?.id ?? null);
   const changed = useLibraryRequests((s) => s.changed);
   const [query, setQuery] = useState('');
@@ -222,7 +221,7 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
     };
   }, [changed]);
 
-  // Load each saved profile once per `updated`, for its thumbnail and its question text.
+  // Load each saved profile once per `updated`, for its thumbnail: the render needs the scene.
   const requested = useRef(new Set<string>());
   useEffect(() => {
     for (const s of saved) {
@@ -275,6 +274,7 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
       id: await nextProfileId(),
       name: `${v.name} copy`,
       updated: new Date().toISOString(),
+      version: 1,
     };
     await saveVignette(copy);
     setMessage(`${copy.name} added.`);
@@ -326,15 +326,14 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
 
   const shownTemplates = ordered.filter((t) => matches(query, t.name, t.question));
   const listed = saved.filter((s) => pending?.id !== s.id);
-  const shownSaved = listed.filter((s) => {
-    const v = loaded[s.id];
-    return matches(query, s.id, s.name, s.site, ...(v ? v.questions.map((q) => q.text) : []));
-  });
-  const groups = groupBySite(shownSaved, activeSite);
-  const nSites = new Set(listed.map((s) => s.site)).size;
+  const shownSaved = listed.filter((s) =>
+    matches(query, s.id, s.name, s.question, s.class, s.collection),
+  );
+  const groups = groupByCollection(shownSaved, activeCollection);
+  const nCollections = new Set(listed.map((s) => s.collection)).size;
   const count = query.trim()
     ? `${shownSaved.length} of ${plural(listed.length, 'profile', 'profiles')}`
-    : `${plural(listed.length, 'profile', 'profiles')}, ${plural(nSites, 'site', 'sites')}`;
+    : `${plural(listed.length, 'profile', 'profiles')} · ${plural(nCollections, 'collection', 'collections')}`;
 
   const onCardAction = (s: VignetteListing, a: CardAction) => {
     if (a === 'open') void openSaved(s.id);
@@ -408,7 +407,7 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
           id={SEARCH_ID}
           type="search"
           aria-label="Search profiles"
-          placeholder="Search question, name, site"
+          placeholder="Search question, name, class, collection"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className={`h-7 w-72 min-w-0 rounded-sm border border-surface-3 bg-surface-1 px-2 text-sm placeholder:text-muted ${focusRing}`}
@@ -443,7 +442,7 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
             {message}
           </span>
         ) : null}
-        <span className="ml-auto text-xs text-muted" data-testid="library-count">
+        <span className="text-xs text-muted" data-testid="library-count">
           {count}
         </span>
       </div>
@@ -502,9 +501,9 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
           <p className="py-6 text-sm text-muted">No profile matches. Clear the search.</p>
         ) : (
           groups.map((g) => (
-            <section key={g.site} aria-label={g.site || NO_SITE} className="mb-5">
+            <section key={g.collection} aria-label={headingOf(g.collection)} className="mb-5">
               <h2 className="ps-t-label mt-0 mb-2">
-                {g.site || NO_SITE}
+                {headingOf(g.collection)}
                 <span className="ml-1.5 font-mono tracking-normal">{g.profiles.length}</span>
               </h2>
               <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">

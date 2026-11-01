@@ -1,4 +1,4 @@
-// Time labels for the saved list: relative on the row, absolute in the tooltip.
+// Labels for the saved list: the metadata line, and the saved time for its tooltip.
 
 /** "just now", "5 min ago", "2 h ago", "3 d ago", then the date. */
 export function relativeTime(iso: string, now: number = Date.now()): string {
@@ -18,4 +18,22 @@ export function relativeTime(iso: string, now: number = Date.now()): string {
 export function absoluteTime(iso: string): string {
   const t = Date.parse(iso);
   return Number.isNaN(t) ? iso : new Date(t).toLocaleString();
+}
+
+const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/** The card's metadata line (mockup drawCollect): "PROF-1 v3 · Counter-UAS · 3 cards · 1 path". */
+export function metaLine(l: {
+  id: string;
+  version: number;
+  class: string;
+  cards: number;
+  paths: number;
+}): string {
+  return [
+    `${l.id} v${l.version}`,
+    l.class,
+    count(l.cards, 'card', 'cards'),
+    count(l.paths, 'path', 'paths'),
+  ].join(' · ');
 }

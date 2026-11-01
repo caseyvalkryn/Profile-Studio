@@ -22,9 +22,7 @@ vi.mock('../../state/persist', async (orig) => {
     loadVignette: vi.fn(async (id: string) => store.get(id) ?? null),
     deleteVignette: vi.fn(async (id: string) => void store.delete(id)),
     listVignettes: vi.fn(async () =>
-      [...store.values()]
-        .map((v) => ({ id: v.id, name: v.name, updated: v.updated, site: v.site.name }))
-        .sort((a, b) => (a.updated < b.updated ? 1 : -1)),
+      [...store.values()].map(real.listingOf).sort((a, b) => (a.updated < b.updated ? 1 : -1)),
     ),
   };
 });
@@ -70,15 +68,23 @@ function renderLibrary(templates = TEMPLATES) {
 const savedNames = () =>
   screen.queryAllByTestId('saved-card').map((r) => within(r).getByRole('heading').textContent);
 
-function seedSaved(name: string, updated: string, question = '', site?: string) {
+function seedSaved(
+  name: string,
+  updated: string,
+  question = '',
+  collection = '',
+  over: Partial<Vignette> = {},
+) {
   const v = testVignette({
     id: `id-${name}`,
     name,
     updated,
+    collection,
     questions: question ? [{ key: `q-${name}`, id: 'Q-01', text: question, note: '' }] : [],
+    ...over,
   });
-  if (site) v.site = { ...v.site, name: site };
   store.set(v.id, v);
+  return v;
 }
 
 const cardOf = (name: string) =>
@@ -198,11 +204,11 @@ describe('LibraryScreen', () => {
     expect(await screen.findByText('This file is not JSON.')).toBeInTheDocument();
   });
 
-  it('search narrows templates and saved profiles by name, question, site and id', async () => {
+  it('search narrows templates and saved profiles by name, question, collection, class and id', async () => {
     seedSaved('Range day', '2026-10-20T00:00:00Z', 'How far out does the radar detect?');
     seedSaved('Swarm night', '2026-10-21T00:00:00Z', '', 'North range');
     renderLibrary();
-    await waitFor(() => expect(savedNames()).toEqual(['Swarm night', 'Range day']));
+    await waitFor(() => expect(savedNames()).toEqual(['Range day', 'Swarm night']));
     const search = screen.getByLabelText('Search profiles');
 
     fireEvent.change(search, { target: { value: 'north range' } });
@@ -223,17 +229,74 @@ describe('LibraryScreen', () => {
 
     fireEvent.change(search, { target: { value: 'swarm' } });
     expect(savedNames()).toEqual(['Swarm night']);
+
+    fireEvent.change(search, { target: { value: 'custom' } });
+    expect(savedNames()).toEqual(['Range day', 'Swarm night']);
   });
 
-  it('groups saved profiles by site, newest group first', async () => {
+  it('groups saved profiles by collection, sections by name, newest profile first', async () => {
+    seedSaved('South', '2026-10-25T00:00:00Z', '', 'South range');
     seedSaved('Old north', '2026-10-01T00:00:00Z', '', 'North range');
-    seedSaved('South', '2026-10-10T00:00:00Z', '', 'South range');
+    seedSaved('Loose', '2026-10-30T00:00:00Z');
     seedSaved('New north', '2026-10-20T00:00:00Z', '', 'North range');
     renderLibrary();
-    await waitFor(() => expect(savedNames()).toEqual(['New north', 'Old north', 'South']));
+    await waitFor(() => expect(savedNames()).toEqual(['Loose', 'New north', 'Old north', 'South']));
     const groups = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'));
-    expect(groups).toEqual(['Templates', 'Saved profiles', 'North range', 'South range']);
-    expect(screen.getByTestId('library-count')).toHaveTextContent('3 profiles, 2 sites');
+    expect(groups).toEqual([
+      'Templates',
+      'Saved profiles',
+      'No collection',
+      'North range',
+      'South range',
+    ]);
+    expect(screen.getByTestId('library-count')).toHaveTextContent('4 profiles · 3 collections');
+  });
+
+  it('shows the metadata line "id vN · class · n cards · n paths"', async () => {
+    const v = seedSaved('Alpha', '2026-10-20T00:00:00Z', '', 'Range', {
+      class: 'Counter-UAS',
+      version: 3,
+    });
+    v.threats = v.threats.slice(0, 1);
+    renderLibrary();
+    await waitFor(() => expect(savedNames()).toEqual(['Alpha']));
+    expect(within(cardOf('Alpha')).getByTestId('saved-meta')).toHaveTextContent(
+      'id-Alpha v3 · Counter-UAS · 0 cards · 1 path',
+    );
+  });
+
+  it('draws the thumbnail from the first card when the profile has one', async () => {
+    const base = testVignette();
+    const card = {
+      key: 'c1',
+      id: 'c1',
+      name: 'Side',
+      view: {
+        kind: 'elevation' as const,
+        centre: { x: 0, y: 0 },
+        zoom: 1,
+        yawDeg: -35,
+        pitchDeg: 55,
+        ref: 'asset',
+        elevationMode: 'fromAsset' as const,
+      },
+      layers: {},
+      displays: { timeline: false, chart: false, readout: false },
+      clip: null,
+      focus: [],
+      tS: null,
+      caption: '',
+      notes: '',
+    };
+    seedSaved('Carded', '2026-10-21T00:00:00Z', '', '', { cards: [card] });
+    seedSaved('Plain', '2026-10-20T00:00:00Z', '', '', { areas: base.areas });
+    renderLibrary();
+    const svgOf = (name: string) => screen.getByRole('img', { name }).querySelector('svg');
+    await waitFor(() => expect(svgOf('Carded first card')).not.toBeNull());
+    expect(svgOf('Carded first card')!.getAttribute('data-proj')).toBe('elev');
+    await waitFor(() => expect(svgOf('Plain map')).not.toBeNull());
+    expect(svgOf('Plain map')!.getAttribute('data-proj')).toBe('plan');
+    expect(within(cardOf('Carded')).getByTestId('saved-meta')).toHaveTextContent('1 card ·');
   });
 
   it('New in a fresh store opens Build with Untitled profile and one defended asset', async () => {

@@ -26,6 +26,7 @@ export const fiberFpv: Template = {
     const m = setting('1.1.1', '>=', 90, '%');
     const path = terrainFollowingIngress({ x: 2400, y: -2400 }, ASSET, 40, 60, 600, 10);
     return vignette({
+      class: 'Counter-UAS',
       name: 'Fiber FPV, no RF',
       questions: [Q],
       threats: [threat('T1', 'g1-fpv-fiber', path, 15)],

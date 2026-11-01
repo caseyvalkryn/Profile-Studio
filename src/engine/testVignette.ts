@@ -68,9 +68,11 @@ export function testVignette(over: Partial<Vignette> = {}): Vignette {
     id: 'V-test',
     name: 'test vignette',
     updated: '2026-10-30T00:00:00Z',
+    collection: '',
+    class: 'Custom',
+    version: 1,
     site: { name: 'site', lat: 35, lon: -117, elevM: 700 },
     questions: [],
-    hypotheses: [],
     threats: [testThreat('T-01', 'g1-quad-isr'), testThreat('T-02', 'g1-fpv-fiber', 5000, 60)],
     sensors: [
       testSensor('S-01', 'radar', 5000),
@@ -117,13 +119,10 @@ export function testVignette(over: Partial<Vignette> = {}): Vignette {
       { id: '1.1.2', op: '>=', threshold: 3000, unit: 'm' },
       { id: '3.1.2', op: '>=', threshold: 70, unit: '%' },
     ],
-    runs: [],
     report: {
-      summary: '',
       notes: '',
       dataSources: [],
       truth: { source: '', intervalS: 1, stationKeys: [] },
-      slides: [],
     },
     ...over,
   };

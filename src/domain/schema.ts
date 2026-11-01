@@ -3,7 +3,7 @@
 
 import { z } from 'zod';
 import { AUTHORED_EVENT_TYPES, LAYER_IDS, NODE_DEFAULTS, RATES } from './catalog';
-import { migrateV5ToV6 } from './migrateV5';
+import { migrateToV7 } from './migrateV5';
 import type {
   Area,
   AuthoredEvent,
@@ -14,21 +14,18 @@ import type {
   Effector,
   HeightPlane,
   Entered,
-  Hypothesis,
   MeasureSetting,
   Node,
   NodeKind,
   Question,
   ReportDraft,
-  RunRow,
-  RunSummary,
   Sensor,
   SensorModel,
   Threat,
   Vignette,
   Waypoint,
 } from './types';
-import { SCHEMA } from './types';
+import { PROFILE_CLASSES, SCHEMA } from './types';
 
 const num = z.number().finite();
 const key = z.string().min(1);
@@ -253,71 +250,10 @@ export const measureSettingSchema: z.ZodType<MeasureSetting> = z.object({
   unit: z.string(),
 });
 
-/** @deprecated: removed in v7 (plan 10.5). Parses the field on stored v6 records. */
-export const hypothesisSchema: z.ZodType<Hypothesis> = z.object({
-  key,
-  id: z.string(),
-  question: z.string(),
-  measure: z.string(),
-  op,
-  value: num,
-  prediction: z.object({ low: num, high: num }).nullable(),
-  lockedAt: z.string().nullable(),
-});
-
-const numOrNull = num.nullable();
-
-/** @deprecated: removed in v7 (plan 10.5). Parses the field on stored v6 records. */
-export const runRowSchema: z.ZodType<RunRow> = z.object({
-  run: z.number().int().min(0),
-  threat: z.string(),
-  stage_reached: z.enum(['none', 'detect', 'track', 'classify', 'identify', 'engage', 'defeat']),
-  detect_range_m: numOrNull,
-  detect_alt_m: numOrNull,
-  track_continuity_pct: numOrNull,
-  track_error_m: numOrNull,
-  id_range_m: numOrNull,
-  id_time_s: numOrNull,
-  identified_ok: z.boolean().nullable(),
-  engagement_range_m: numOrNull,
-  time_to_intercept_s: numOrNull,
-  outcome: z.enum(['Success', 'Miss', 'No Attempt']),
-});
-
-/** @deprecated: removed in v7 (plan 10.5). Parses the field on stored v6 records. */
-export const runSummarySchema: z.ZodType<RunSummary> = z.object({
-  key,
-  id: z.string(),
-  createdAt: z.string(),
-  n: z.number().int().min(0),
-  seed: z.number().int(),
-  rows: z.array(runRowSchema),
-  /** @deprecated: removed in v7 (plan 10.5). */
-  predictions: z
-    .array(
-      z.object({
-        hypothesis: z.string(),
-        measure: z.string().optional(),
-        op: op.optional(),
-        value: num.optional(),
-        low: num,
-        high: num,
-      }),
-    )
-    .optional(),
-  note: z.string().optional(),
-});
-
 export const reportDraftSchema: z.ZodType<ReportDraft> = z.object({
-  summary: z.string(),
   notes: z.string(),
   dataSources: z.array(z.string()),
   truth: z.object({ source: z.string(), intervalS: num.min(0), stationKeys: z.array(z.string()) }),
-  slides: z.array(z.object({ key, name: z.string(), caption: z.string(), notes: z.string() })),
-  /** @deprecated: removed in v7 (plan 10.5). */
-  sections: z.record(z.string(), z.string()).optional(),
-  /** @deprecated: removed in v7 (plan 10.5). */
-  charts: z.array(z.string()).optional(),
 });
 
 export const vignetteSchema: z.ZodType<Vignette> = z.object({
@@ -325,6 +261,9 @@ export const vignetteSchema: z.ZodType<Vignette> = z.object({
   id: z.string().min(1, 'The profile has no id.'),
   name: z.string(),
   updated: z.string(),
+  collection: z.string(),
+  class: z.enum(PROFILE_CLASSES, { message: 'The class is not in the catalog.' }),
+  version: z.number().int().min(1),
   site: z.object({
     name: z.string(),
     lat: num.min(-90).max(90),
@@ -332,8 +271,6 @@ export const vignetteSchema: z.ZodType<Vignette> = z.object({
     elevM: num,
   }),
   questions: z.array(questionSchema),
-  /** @deprecated: removed in v7 (plan 10.5). */
-  hypotheses: z.array(hypothesisSchema),
   threats: z.array(threatSchema),
   sensors: z.array(sensorSchema),
   effectors: z.array(effectorSchema),
@@ -346,43 +283,20 @@ export const vignetteSchema: z.ZodType<Vignette> = z.object({
   debrief: debriefSchema.nullable(),
   chainTime: z.object({ decisionS: num.min(0), assignS: num.min(0) }),
   measures: z.array(measureSettingSchema),
-  /** @deprecated: removed in v7 (plan 10.5). */
-  runs: z.array(runSummarySchema),
   report: reportDraftSchema,
-  /** @deprecated: removed in v7 (plan 10.5). */
-  sweep: z
-    .object({
-      factors: z
-        .array(
-          z.object({
-            kind: z.enum([
-              'threat-speed',
-              'threat-altitude',
-              'approach-bearing',
-              'sensor-range',
-              'sensor-position-offset',
-            ]),
-            levels: z.array(num).min(1),
-            target: z.string().optional(),
-          }),
-        )
-        .min(1)
-        .max(2),
-    })
-    .optional(),
 });
 
 /**
- * Parse and validate a vignette. A `profile-studio/5` record is migrated to v6 first
- * (migrateV5ToV6). Throws an Error whose message lists each problem and its path.
+ * Parse and validate a vignette. A `profile-studio/5` or `/6` record is migrated to v7 first
+ * (migrateToV7). Throws an Error whose message lists each problem and its path.
  */
 export function parseVignette(input: unknown): Vignette {
-  const r = vignetteSchema.safeParse(migrateV5ToV6(input));
+  const r = vignetteSchema.safeParse(migrateToV7(input));
   if (!r.success) throw new Error(`This is not a valid profile.\n${z.prettifyError(r.error)}`);
   return r.data;
 }
 
-/** True for a valid v6 record only; a v5 record needs parseVignette to migrate it. */
+/** True for a valid v7 record only; a v5 or v6 record needs parseVignette to migrate it. */
 export function isVignette(input: unknown): input is Vignette {
   return vignetteSchema.safeParse(input).success;
 }

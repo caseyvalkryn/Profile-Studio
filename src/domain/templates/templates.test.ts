@@ -39,10 +39,11 @@ describe('TEMPLATES', () => {
     expect(templateById('blank')?.question).toBe('');
   });
 
-  it('every make() passes parseVignette with schema profile-studio/6', () => {
+  it('every make() passes parseVignette with schema profile-studio/7', () => {
     for (const t of TEMPLATES) {
       const v = parseVignette(t.make());
-      expect(v.schema).toBe('profile-studio/6');
+      expect(v.schema).toBe('profile-studio/7');
+      expect([v.collection, v.version]).toEqual(['', 1]);
       expect([v.planes, v.events, v.snapshots, v.cards, v.debrief]).toEqual([[], [], [], [], null]);
       expect(v.threats.every((x) => x.group === '')).toBe(true);
       expect(parseVignette(JSON.parse(JSON.stringify(v)))).toEqual(v);
@@ -85,11 +86,23 @@ describe('TEMPLATES', () => {
     }
   });
 
-  it('every template but Blank has Q-01 and no hypothesis, in the DroneScore unit (plan 10.1)', () => {
+  it('gives each template the class of its row (spec section 9)', () => {
+    expect(Object.fromEntries(TEMPLATES.map((t) => [t.id, t.make().class]))).toEqual({
+      'point-defence': 'Counter-UAS',
+      'hover-track-hold': 'Counter-UAS',
+      'swarm-split': 'Multi-aircraft',
+      'delta-wing-owa': 'One-way attack',
+      'fiber-fpv': 'Counter-UAS',
+      'surrogate-racetrack': 'Surrogate',
+      'detection-range-sweep': 'Counter-UAS',
+      blank: 'Custom',
+    });
+  });
+
+  it('every template but Blank has Q-01, in the DroneScore unit (plan 10.1)', () => {
     for (const t of RUNNABLE) {
       const v = t.make();
       expect(v.questions.map((q) => q.id)).toEqual(['Q-01']);
-      expect([v.hypotheses, v.runs]).toEqual([[], []]);
       for (const m of v.measures) expect(m.unit).toBe(measureById(m.id)!.unit);
       expect(t.question).toBe(v.questions[0]!.text);
     }

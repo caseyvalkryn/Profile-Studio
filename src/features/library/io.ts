@@ -4,8 +4,8 @@
 //
 //   importText(text)          Parse and store a file's text. Toasts the count; returns problems.
 //   pickAndImport()           Ask for a file, then importText.
-//   libraryText(current?)     The library export JSON, every record v6, the open profile fresh.
-//   profileText(v)            One profile's JSON.
+//   libraryText(current?)     The library export JSON, every record v7, the open profile fresh.
+//   profileText(v)            One profile's JSON, with `timed` on each threat.
 //   exportLibraryFile()       Download the library as `profile-library.json`.
 //   exportProfileFile(v)      Download one profile as `<name>.json`.
 //   fileName(name), download(name, text)   The one file-name rule and the one download helper.
@@ -45,7 +45,7 @@ export function download(name: string, text: string): void {
   URL.revokeObjectURL(url);
 }
 
-/** The schema's version number for dialog labels: 'profile-studio/6' reads 6. */
+/** The schema's version number for dialog labels: 'profile-studio/7' reads 7. */
 export const schemaVersion = (): string => String(SCHEMA).split('/').pop() ?? '';
 
 export const profileText = (v: Vignette): string => exportJson(v);

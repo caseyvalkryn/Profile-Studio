@@ -26,6 +26,7 @@ export const detectionRangeSweep: Template = {
     const Q = q();
     const m = setting('1.1.2', '>=', 3000, 'm');
     const v = vignette({
+      class: 'Counter-UAS',
       name: 'Detection range sweep',
       questions: [Q],
       threats: [threat('T1', 'g1-quad-isr', directApproach({ x: 0, y: 5500 }, ASSET, 120))],

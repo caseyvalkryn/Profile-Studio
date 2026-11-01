@@ -1,6 +1,7 @@
 // The open vignette with undo and redo on immer patches (spec section 8, Undo).
 // Every edit that changes the document is one undo step. A drag is one step. Selection, view and
-// time live in ui.ts. `updated` is stamped outside history, so undo never rewinds it.
+// time live in ui.ts. `updated` and `version` are stamped outside history, so undo never rewinds
+// them: `version` rises by one where a committed edit is pushed (an edit, or the end of a drag).
 import {
   applyPatches,
   enablePatches,
@@ -54,6 +55,13 @@ function stamp(v: Vignette): Vignette {
   });
 }
 
+/** The document with `version` one higher. Applied as an edit is committed, never recorded. */
+function bump(v: Vignette): Vignette {
+  return produce(v, (d) => {
+    d.version = (d.version || 1) + 1;
+  });
+}
+
 function derived(past: Entry[], future: Entry[]) {
   return {
     past,
@@ -65,10 +73,12 @@ function derived(past: Entry[], future: Entry[]) {
 }
 
 export const useDocument = create<DocumentState>()((set, get) => {
+  // One committed edit: one undo step and one version.
   const push = (entry: Entry) => {
     if (entry.patches.length === 0) return;
     const past = [...get().past, entry].slice(-HISTORY_LIMIT);
-    set(derived(past, []));
+    const doc = get().doc;
+    set({ ...(doc ? { doc: bump(doc) } : {}), ...derived(past, []) });
   };
 
   return {

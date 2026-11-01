@@ -116,7 +116,7 @@ type Vignette = {
   chainTime: { decisionS: number; assignS: number }   // Target step inputs for the preview
   measures: MeasureSetting[]       // the measures of performance, with thresholds
   runs: RunSummary[]               // v6 only, deprecated; dropped in v7
-  report: ReportDraft              // v6: dataSources is the data products list; v7 keeps that and drops the rest
+  report: ReportDraft              // dataSources is the data products list; v7 keeps it, truth and notes, drops the rest
 }
 type Area = { id: string; kind: 'asset'|'wez'|'nfz'|'ref'; label: string
   pts: { x: number; y: number }[]; zMinM: number; zMaxM: number }
@@ -169,8 +169,9 @@ Upgrade rules for the record:
    session memory only and are not part of the record or of IndexedDB.
 3. Cards are `Vignette.cards`. `report.dataSources` is the data products list.
 4. The schema stamp is `profile-studio/6`. A v5 record migrates with empty lists and a null
-   debrief. v7 (lane 10.5) adds `collection`, `class` and `version`, keeps the data products
-   and drops the run fields. A v6 record migrates without loss.
+   debrief. v7 (lane 10.5) adds `collection`, `class` and `version`, keeps the data products,
+   the telemetry (`report.truth`) and the import notes (`report.notes`), and drops the run fields.
+   A v6 record migrates without loss.
 
 ## 6. Engine
 

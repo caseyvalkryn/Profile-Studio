@@ -23,6 +23,7 @@ export const pointDefence: Template = {
     const Q = q();
     const m112 = setting('1.1.2', '>=', 3000, 'm');
     return vignette({
+      class: 'Counter-UAS',
       name: 'Point defence, single quadrotor',
       questions: [Q],
       threats: [threat('T1', 'g1-quad-isr', directApproach({ x: 3100, y: 3000 }, ASSET, 120))],
