@@ -4,8 +4,24 @@
 // Readout text (legacy `readout(store, text)`) goes to the board store's `readout` line; toasts
 // to the shell toast.
 import type { Draft } from 'immer';
-import { AREA_DEFAULTS, AREA_LABELS, SENSOR_DEFAULTS, EFFECTOR_DEFAULTS, DEFAULT_PK, defaultSensorModel, archetypeById } from '../../../domain/catalog';
-import type { AreaKind, EffectorKind, NodeKind, SensorKind, Vignette, Waypoint } from '../../../domain/types';
+import {
+  AREA_DEFAULTS,
+  AREA_LABELS,
+  SENSOR_DEFAULTS,
+  EFFECTOR_DEFAULTS,
+  DEFAULT_PK,
+  defaultSensorModel,
+  archetypeById,
+  NODE_DEFAULTS,
+} from '../../../domain/catalog';
+import type {
+  AreaKind,
+  EffectorKind,
+  NodeKind,
+  SensorKind,
+  Vignette,
+  Waypoint,
+} from '../../../domain/types';
 import { newKey, nextId } from '../../../domain/ids';
 import { bearingTo, posAt, type Pt3 } from '../../../engine/geo';
 import type { Derived } from '../../../engine/derived';
@@ -74,7 +90,15 @@ export function current(): { doc: Vignette; rec: Scene; d: Derived } | null {
 
 function displayIds(doc: Vignette): string[] {
   const out: string[] = [];
-  for (const list of [doc.threats, doc.sensors, doc.effectors, doc.nodes, doc.areas, doc.planes, doc.events])
+  for (const list of [
+    doc.threats,
+    doc.sensors,
+    doc.effectors,
+    doc.nodes,
+    doc.areas,
+    doc.planes,
+    doc.events,
+  ])
     for (const x of list) out.push(x.id);
   return out;
 }
@@ -174,8 +198,18 @@ function addSystem(placing: BoardPlacing, world: PlanPt): string | null {
     range = def.rangeM;
     edit('add ' + id, (c) => {
       c.sensors.push({
-        key, id, kind, x, y, z: 2, rangeM: def.rangeM, ...el, fovDeg: def.fovDeg,
-        bearingDeg: brgTo(def.fovDeg), model: defaultSensorModel(kind, def.rangeM), entered: {},
+        key,
+        id,
+        kind,
+        x,
+        y,
+        z: 2,
+        rangeM: def.rangeM,
+        ...el,
+        fovDeg: def.fovDeg,
+        bearingDeg: brgTo(def.fovDeg),
+        model: defaultSensorModel(kind, def.rangeM),
+        entered: {},
       });
     });
   } else if (placing.group === 'effector') {
@@ -185,15 +219,35 @@ function addSystem(placing: BoardPlacing, world: PlanPt): string | null {
     range = def.rangeM;
     edit('add ' + id, (c) => {
       c.effectors.push({
-        key, id, kind, x, y, z: 2, rangeM: def.rangeM, fovDeg: def.fovDeg,
-        bearingDeg: brgTo(def.fovDeg), timeToEffectS: def.timeToEffectS, pk: DEFAULT_PK, entered: {},
+        key,
+        id,
+        kind,
+        x,
+        y,
+        z: 2,
+        rangeM: def.rangeM,
+        fovDeg: def.fovDeg,
+        bearingDeg: brgTo(def.fovDeg),
+        timeToEffectS: def.timeToEffectS,
+        pk: DEFAULT_PK,
+        entered: {},
       });
     });
   } else {
     const kind = placing.sysKind as NodeKind;
     id = nextId(kind, ids);
     edit('add ' + id, (c) => {
-      c.nodes.push({ key, id, kind, x, y, z: 0, rangeM: 0 });
+      c.nodes.push({
+        key,
+        id,
+        kind,
+        x,
+        y,
+        z: 0,
+        rangeM: 0,
+        fovDeg: NODE_DEFAULTS[kind].fovDeg,
+        bearingDeg: NODE_DEFAULTS[kind].bearingDeg,
+      });
     });
   }
   useBoard.getState().set({ placing: null });
@@ -210,7 +264,15 @@ function addVolume(kind: AreaKind, pts: readonly (readonly [number, number])[]):
   const id = nextId(kind, displayIds(cur.doc));
   const rounded = pts.map((q) => [Math.round(q[0]), Math.round(q[1])] as [number, number]);
   edit('add ' + id, (c) => {
-    c.areas.push({ key, id, kind, label: AREA_LABELS[kind], pts: rounded, zMinM: 0, zMaxM: AREA_DEFAULTS[kind].zMaxM });
+    c.areas.push({
+      key,
+      id,
+      kind,
+      label: AREA_LABELS[kind],
+      pts: rounded,
+      zMinM: 0,
+      zMaxM: AREA_DEFAULTS[kind].zMaxM,
+    });
   });
   useBoard.getState().set({ placing: null });
   select([key]);
@@ -296,10 +358,17 @@ export function placeAt(world: World, opts: PlaceOpts = {}): boolean {
     if (opts.rect) {
       const A = opts.rect.a;
       const B = opts.rect.b;
-      addVolume(kind, [[A.x, A.y], [B.x, A.y], [B.x, B.y], [A.x, B.y]]);
+      addVolume(kind, [
+        [A.x, A.y],
+        [B.x, A.y],
+        [B.x, B.y],
+        [A.x, B.y],
+      ]);
       return true;
     }
-    const vp = ((p.pts || []) as Pt[]).concat([{ x: Math.round(world.x), y: Math.round(world.y), z: 0, hold: 0 }]);
+    const vp = ((p.pts || []) as Pt[]).concat([
+      { x: Math.round(world.x), y: Math.round(world.y), z: 0, hold: 0 },
+    ]);
     board.set({ placing: { ...p, pts: vp } });
     if (opts.dbl) return finishPlacing();
     return false;
@@ -334,7 +403,13 @@ export function finishPlacing(): boolean {
     const type = p.arch || '';
     const key = newKey();
     const id = nextId('threat', displayIds(cur.doc));
-    const path: Waypoint[] = pts.map((q) => ({ key: newKey(), x: q.x, y: q.y, z: q.z || 0, holdS: q.hold || 0 }));
+    const path: Waypoint[] = pts.map((q) => ({
+      key: newKey(),
+      x: q.x,
+      y: q.y,
+      z: q.z || 0,
+      holdS: q.hold || 0,
+    }));
     edit('add ' + id, (c) => {
       c.threats.push({ key, id, type, path, group: '' });
     });
@@ -352,7 +427,10 @@ export function finishPlacing(): boolean {
       readout('Add three or more points.');
       return false;
     }
-    addVolume(p.volKind as AreaKind, vp.map((q) => [q.x, q.y] as [number, number]));
+    addVolume(
+      p.volKind as AreaKind,
+      vp.map((q) => [q.x, q.y] as [number, number]),
+    );
     return true;
   }
   board.set({ placing: null });
@@ -427,7 +505,13 @@ export function deltasOf(
     }
     const w0 = d0.window && d0.window[pid];
     const w1 = d1.window && d1.window[pid];
-    if (w0 && w1 && w0.geometric != null && w1.geometric != null && Math.abs(w1.geometric - w0.geometric) >= 0.05) {
+    if (
+      w0 &&
+      w1 &&
+      w0.geometric != null &&
+      w1.geometric != null &&
+      Math.abs(w1.geometric - w0.geometric) >= 0.05
+    ) {
       const dw = w1.geometric - w0.geometric;
       parts.push('window ' + signed(dw) + ' s');
       if (Math.abs(dw) > lv) {
@@ -435,7 +519,13 @@ export function deltasOf(
         largest = pid + ' window ' + signed(dw) + ' s';
       }
     }
-    if (w0 && w1 && w0.margin != null && w1.margin != null && Math.abs(w1.margin - w0.margin) >= 0.5) {
+    if (
+      w0 &&
+      w1 &&
+      w0.margin != null &&
+      w1.margin != null &&
+      Math.abs(w1.margin - w0.margin) >= 0.5
+    ) {
       const dm = w1.margin - w0.margin;
       parts.push('margin ' + signedClock(dm));
       if (Math.abs(dm) > lv) {
@@ -449,9 +539,17 @@ export function deltasOf(
 }
 
 const LABELS: Record<string, string> = {
-  range: 'set {id} range', arcEnd0: 'set {id} sector', arcEnd1: 'set {id} sector', arcMid: 'set {id} bearing',
-  elRay0: 'set {id} elevation limits', elRay1: 'set {id} elevation limits', hold: 'set {id} hold',
-  insert: 'add point to {id}', edge: 'add vertex to {id}', top: 'set {id} top', line: 'move {id}',
+  range: 'set {id} range',
+  arcEnd0: 'set {id} sector',
+  arcEnd1: 'set {id} sector',
+  arcMid: 'set {id} bearing',
+  elRay0: 'set {id} elevation limits',
+  elRay1: 'set {id} elevation limits',
+  hold: 'set {id} hold',
+  insert: 'add point to {id}',
+  edge: 'add vertex to {id}',
+  top: 'set {id} top',
+  line: 'move {id}',
 };
 
 export type DragMove = { label: string; deltas: Delta[]; largest: string | null };
@@ -468,8 +566,15 @@ export type DragHandle = {
 };
 
 type SysLike = {
-  x: number; y: number; z: number; rangeM: number; fovDeg?: number; bearingDeg?: number;
-  elMinDeg?: number; elMaxDeg?: number; minRangeM?: number;
+  x: number;
+  y: number;
+  z: number;
+  rangeM: number;
+  fovDeg?: number;
+  bearingDeg?: number;
+  elMinDeg?: number;
+  elMaxDeg?: number;
+  minRangeM?: number;
 };
 function sysOf(c: Draft<Vignette>, key: string): SysLike | null {
   const f = find(c, key);
@@ -492,11 +597,17 @@ export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragH
   if (!key) return null;
   const sc = rec.scene;
   const obj =
-    kind === 'system' ? sc.systems.find((x) => x.id === id) :
-    kind === 'path' ? sc.paths.find((x) => x.id === id) :
-    kind === 'volume' ? sc.volumes.find((x) => x.id === id) :
-    kind === 'plane' ? sc.planes.find((x) => x.id === id) :
-    kind === 'event' ? rec.events.find((x) => x.id === id) : null;
+    kind === 'system'
+      ? sc.systems.find((x) => x.id === id)
+      : kind === 'path'
+        ? sc.paths.find((x) => x.id === id)
+        : kind === 'volume'
+          ? sc.volumes.find((x) => x.id === id)
+          : kind === 'plane'
+            ? sc.planes.find((x) => x.id === id)
+            : kind === 'event'
+              ? rec.events.find((x) => x.id === id)
+              : null;
   if (!obj) return null;
   if (kind === 'path' && i == null && role !== 'insert') return null;
   if (kind === 'event') role = 'bead';
@@ -520,17 +631,25 @@ export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragH
   let done = false;
 
   // the pre-drag record of the dragged object, for the arc end and volume move roles
-  let orig: { bearing: number; fov: number; pts: [number, number][] } = { bearing: 0, fov: 0, pts: [] };
+  let orig: { bearing: number; fov: number; pts: [number, number][] } = {
+    bearing: 0,
+    fov: 0,
+    pts: [],
+  };
   if (kind === 'system') {
-    const s = obj as typeof sc.systems[number];
+    const s = obj as (typeof sc.systems)[number];
     orig = { bearing: s.bearing, fov: s.fov, pts: [] };
   } else if (kind === 'volume') {
-    orig = { bearing: 0, fov: 0, pts: (obj as typeof sc.volumes[number]).pts.map((q) => [q[0], q[1]]) };
+    orig = {
+      bearing: 0,
+      fov: 0,
+      pts: (obj as (typeof sc.volumes)[number]).pts.map((q) => [q[0], q[1]]),
+    };
   }
 
   // insert and edge add their point once, at drag start
   if (kind === 'path' && role === 'insert') {
-    const p = obj as typeof sc.paths[number];
+    const p = obj as (typeof sc.paths)[number];
     const a = p.pts[i!];
     const b = p.pts[i! + 1];
     if (!a || !b) {
@@ -539,7 +658,13 @@ export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragH
       setDragBaseline(null);
       return null;
     }
-    const mid: Waypoint = { key: newKey(), x: Math.round((a.x + b.x) / 2), y: Math.round((a.y + b.y) / 2), z: Math.round((a.z + b.z) / 2), holdS: 0 };
+    const mid: Waypoint = {
+      key: newKey(),
+      x: Math.round((a.x + b.x) / 2),
+      y: Math.round((a.y + b.y) / 2),
+      z: Math.round((a.z + b.z) / 2),
+      holdS: 0,
+    };
     const at = i! + 1;
     docStore.updateDrag((c) => {
       const f = find(c, key);
@@ -548,7 +673,7 @@ export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragH
     i = at;
     role = 'centre';
   } else if (kind === 'volume' && role === 'edge') {
-    const v = obj as typeof sc.volumes[number];
+    const v = obj as (typeof sc.volumes)[number];
     const va = v.pts[i!]!;
     const vb = v.pts[(i! + 1) % v.pts.length]!;
     const vm: [number, number] = [Math.round((va[0] + vb[0]) / 2), Math.round((va[1] + vb[1]) / 2)];
@@ -570,13 +695,23 @@ export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragH
 
   function apply(c: Draft<Vignette>, w: World, mods: Modifiers, snapOn: boolean): string {
     const sceneNow = boardScene(c as Vignette);
-    const ctx = { derived: d0, scene: sceneNow.scene, cam, modifiers: mods, exclude: id, ext, units, from: null as PlanPt | null };
+    const ctx = {
+      derived: d0,
+      scene: sceneNow.scene,
+      cam,
+      modifiers: mods,
+      exclude: id,
+      ext,
+      units,
+      from: null as PlanPt | null,
+    };
     const snP = (pt: PlanPt, from?: PlanPt | null) => {
       if (!snapOn) return { x: pt.x, y: pt.y, label: null as string | null };
       ctx.from = from || null;
       return snap(pt, ctx);
     };
-    const snE = (pt: { r: number; z: number }) => (snapOn ? snap(pt, ctx) : { r: pt.r, z: pt.z, label: null });
+    const snE = (pt: { r: number; z: number }) =>
+      snapOn ? snap(pt, ctx) : { r: pt.r, z: pt.z, label: null };
     if (kind === 'system') {
       const sy = sysOf(c, key);
       if (!sy) return '';
@@ -590,12 +725,19 @@ export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragH
         const q = snP(w);
         sy.x = Math.round(q.x);
         sy.y = Math.round(q.y);
-        const lbl = dragLabel('centre', sid, { r: hyp(sy.x, sy.y, o.x, o.y), brg: bearing(o, sy) }, units);
+        const lbl = dragLabel(
+          'centre',
+          sid,
+          { r: hyp(sy.x, sy.y, o.x, o.y), brg: bearing(o, sy) },
+          units,
+        );
         return q.label ? lbl + ' ' + q.label : lbl;
       }
       if (role === 'range') {
         const dist = isElev(w)
-          ? ref === id ? Math.hypot(w.r, w.z - sy.z) : Math.abs(w.r - sysR(sy))
+          ? ref === id
+            ? Math.hypot(w.r, w.z - sy.z)
+            : Math.abs(w.r - sysR(sy))
           : hyp(w.x, w.y, sy.x, sy.y);
         const rv = snapOn ? Math.max(step, Math.round(dist / step) * step) : Math.round(dist);
         sy.rangeM = Math.max(rv, (sy.minRangeM || 0) + 1);
@@ -655,7 +797,12 @@ export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragH
       const qq = snP(w, prev ? { x: prev.x, y: prev.y } : null);
       pt.x = Math.round(qq.x);
       pt.y = Math.round(qq.y);
-      const lbl = dragLabel('centre', { id: id + ' point ' + (i + 1) }, { r: hyp(pt.x, pt.y, o.x, o.y), brg: bearing(o, pt) }, units);
+      const lbl = dragLabel(
+        'centre',
+        { id: id + ' point ' + (i + 1) },
+        { r: hyp(pt.x, pt.y, o.x, o.y), brg: bearing(o, pt) },
+        units,
+      );
       return qq.label ? lbl + ' ' + qq.label : lbl;
     }
     if (kind === 'volume') {
@@ -680,7 +827,9 @@ export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragH
         dx = Math.round(dx / step) * step;
         dy = Math.round(dy / step) * step;
       }
-      vo.pts = orig.pts.map((q) => [Math.round(q[0] + dx), Math.round(q[1] + dy)] as [number, number]);
+      vo.pts = orig.pts.map(
+        (q) => [Math.round(q[0] + dx), Math.round(q[1] + dy)] as [number, number],
+      );
       return 'move ' + id + ' ' + makeUnits(units).h(Math.hypot(dx, dy));
     }
     if (kind === 'plane') {
@@ -712,8 +861,13 @@ export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragH
   };
 
   const drag: DragHandle = {
-    kind, id, role, label: label0,
-    get i() { return i; },
+    kind,
+    id,
+    role,
+    label: label0,
+    get i() {
+      return i;
+    },
     move(w, mods) {
       if (done || !w) return { label: '', deltas: [], largest: null };
       const m = mods || {};
@@ -760,26 +914,43 @@ export function nudge(dx: number, dy: number): boolean {
   edit('move ' + sel.id, (c) => {
     if (sel.kind === 'system') {
       const o = sysOf(c, key);
-      if (o) { o.x += mx; o.y += my; ok = true; }
+      if (o) {
+        o.x += mx;
+        o.y += my;
+        ok = true;
+      }
     } else if (sel.kind === 'path') {
       const f = find(c, key);
       const t = f && f.kind === 'threat' ? f.value : f && f.kind === 'waypoint' ? f.threat : null;
       if (t) {
-        t.path.forEach((p, k) => { if (i == null || i === k) { p.x += mx; p.y += my; } });
+        t.path.forEach((p, k) => {
+          if (i == null || i === k) {
+            p.x += mx;
+            p.y += my;
+          }
+        });
         ok = true;
       }
     } else if (sel.kind === 'volume') {
       const f = find(c, key);
       if (f && f.kind === 'area') {
-        f.value.pts = f.value.pts.map((p, k) => (i == null || i === k ? [p[0] + mx, p[1] + my] : p));
+        f.value.pts = f.value.pts.map((p, k) =>
+          i == null || i === k ? [p[0] + mx, p[1] + my] : p,
+        );
         ok = true;
       }
     } else if (sel.kind === 'plane') {
       const o = c.planes.find((x) => x.key === key);
-      if (o) { o.zM = Math.max(0, o.zM + dy * 10); ok = true; }
+      if (o) {
+        o.zM = Math.max(0, o.zM + dy * 10);
+        ok = true;
+      }
     } else if (sel.kind === 'event') {
       const o = c.events.find((x) => x.key === key);
-      if (o) { o.tS = Math.max(0, round1(o.tS + dx)); ok = true; }
+      if (o) {
+        o.tS = Math.max(0, round1(o.tS + dx));
+        ok = true;
+      }
     }
   });
   return ok;
@@ -803,19 +974,28 @@ export function anchor(world: PlanPt, cam: Cam | null | undefined): RulerEnd {
       if (!tm || !tm.length) continue;
       const pos = posAt(tm, t);
       const dd = hyp(pos.x, pos.y, world.x, world.y);
-      if (dd <= bd) { bd = dd; best = { x: pos.x, y: pos.y, kind: 'path', id: p.id }; }
+      if (dd <= bd) {
+        bd = dd;
+        best = { x: pos.x, y: pos.y, kind: 'path', id: p.id };
+      }
     }
   }
   if (best) return best;
   for (const s of rec.scene.systems) {
     const dd = hyp(s.x, s.y, world.x, world.y);
-    if (dd <= bd) { bd = dd; best = { x: s.x, y: s.y, kind: 'system', id: s.id }; }
+    if (dd <= bd) {
+      bd = dd;
+      best = { x: s.x, y: s.y, kind: 'system', id: s.id };
+    }
   }
   if (best) return best;
   for (const p of rec.scene.paths) {
     p.pts.forEach((q) => {
       const dd = hyp(q.x, q.y, world.x, world.y);
-      if (dd <= bd) { bd = dd; best = { x: q.x, y: q.y, kind: 'wp', id: p.id }; }
+      if (dd <= bd) {
+        bd = dd;
+        best = { x: q.x, y: q.y, kind: 'wp', id: p.id };
+      }
     });
   }
   return best || out;
@@ -824,7 +1004,10 @@ export function anchor(world: PlanPt, cam: Cam | null | undefined): RulerEnd {
 export const ruler = {
   toggle(): boolean {
     const b = useBoard.getState();
-    if (b.ruler) { b.set({ ruler: null }); return false; }
+    if (b.ruler) {
+      b.set({ ruler: null });
+      return false;
+    }
     b.set({ placing: null, ruler: { a: null, b: null, done: false } });
     return true;
   },
@@ -833,7 +1016,10 @@ export const ruler = {
     if (!world || isElev(world)) return;
     const b = useBoard.getState();
     const r = b.ruler;
-    if (r && r.a && !r.done) { b.set({ ruler: { a: r.a, b: anchor(world, cam), done: false } }); return; }
+    if (r && r.a && !r.done) {
+      b.set({ ruler: { a: r.a, b: anchor(world, cam), done: false } });
+      return;
+    }
     const a = anchor(world, cam);
     b.set({ ruler: { a, b: { x: a.x, y: a.y }, done: false } });
   },
@@ -862,7 +1048,12 @@ export const ruler = {
 
 // ---------------------------------------------------------------- viewer zoom and pan (5.8)
 
-export function zoom(factor: number, aboutSx?: number | null, aboutSy?: number | null, cam?: Cam | null): void {
+export function zoom(
+  factor: number,
+  aboutSx?: number | null,
+  aboutSy?: number | null,
+  cam?: Cam | null,
+): void {
   const b = useBoard.getState();
   const z = clamp(b.zoom * factor, 0.5, 8);
   const sx = aboutSx == null ? (cam && cam.W ? cam.W / 2 : 0) : aboutSx;
