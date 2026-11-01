@@ -8,7 +8,9 @@ import {
   exportLibrary,
   flushAutosave,
   importJson,
+  lastListing,
   listVignettes,
+  listWithRecords,
   loadVignette,
   saveVignette,
   setDb,
@@ -144,6 +146,53 @@ describe('vignette store functions (mocked idb)', () => {
     expect((await loadVignette('a'))?.name).toBe('A');
     await deleteVignette('a');
     expect(await loadVignette('a')).toBeNull();
+  });
+
+  it('a save, a duplicate and a delete keep the cached listing current (11.F, N-05)', async () => {
+    const db = mockDb();
+    setDb(db);
+    await saveVignette(
+      testVignette({ id: 'a', collection: 'Range A', updated: '2026-01-01T00:00:00Z' }),
+    );
+    await listVignettes();
+    expect(db.getAll).toHaveBeenCalledTimes(1);
+    await saveVignette(
+      testVignette({ id: 'b', collection: 'Range B', updated: '2026-02-01T00:00:00Z' }),
+    );
+    expect(lastListing()!.map((l) => [l.id, l.collection])).toEqual([
+      ['b', 'Range B'],
+      ['a', 'Range A'],
+    ]);
+    await saveVignette(
+      testVignette({ id: 'a', collection: 'Range C', updated: '2026-03-01T00:00:00Z' }),
+    );
+    expect(lastListing()!.map((l) => [l.id, l.collection])).toEqual([
+      ['a', 'Range C'],
+      ['b', 'Range B'],
+    ]);
+    await deleteVignette('b');
+    expect(lastListing()!.map((l) => l.id)).toEqual(['a']);
+    expect(db.getAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('listWithRecords reads the store once and parses each record once per updated (11.1)', async () => {
+    const db = mockDb();
+    setDb(db);
+    await saveVignette(testVignette({ id: 'a', name: 'A', updated: '2026-01-01T00:00:00Z' }));
+    await saveVignette(testVignette({ id: 'b', name: 'B', updated: '2026-02-01T00:00:00Z' }));
+    await saveVignette({ id: 'bad', name: 'Bad', updated: '2025-01-01T00:00:00Z' } as Vignette);
+    const one = await listWithRecords();
+    expect(db.getAll).toHaveBeenCalledTimes(1);
+    expect(db.get).not.toHaveBeenCalled();
+    expect(one.list.map((l) => l.id)).toEqual(['b', 'a', 'bad']);
+    expect(Object.keys(one.records).sort()).toEqual(['a', 'b']);
+    expect(lastListing()).toBe(one.list);
+    // unchanged records come back from the cache; an edited one parses again
+    await saveVignette(testVignette({ id: 'a', name: 'A2', updated: '2026-03-01T00:00:00Z' }));
+    const two = await listWithRecords();
+    expect(two.records.b).toBe(one.records.b);
+    expect(two.records.a).not.toBe(one.records.a);
+    expect(two.records.a!.name).toBe('A2');
   });
 
   it('lists what the Library card needs, a stored v6 record under its site name', async () => {

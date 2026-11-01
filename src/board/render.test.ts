@@ -300,6 +300,40 @@ const PHASE_10_DEVIATIONS: readonly LegacyPatch[] = [
     'if (!ctx.thumb) out += S("text", { x: t.px, y: r1(f.y1 + 14),',
     'if (!ctx.thumb && t.v !== 0) out += S("text", { x: t.px, y: r1(f.y1 + 14),',
   ],
+  // Lane 11.1 item 7: the label drops 8 px inside the frame top (was 12) and, when it would sit
+  // within 10 px above the top height tick, keeps the axis title's 10 px gap above that tick.
+  [
+    '43-layer-reach.js',
+    'top = [tp[0], Math.max(tp[1] - 4, cam.frame.y0 + 12)];',
+    'var yt = cam.axes.yTicks, tk = yt.length ? yt[yt.length - 1].px : null,' +
+      ' ty = Math.max(tp[1] - 4, cam.frame.y0 + 8);' +
+      ' if (tk !== null && ty > tk - 10 && ty <= tk && tk - 10 >= cam.frame.y0 + 8) ty = tk - 10;' +
+      ' top = [tp[0], ty];',
+  ],
+  // Lane 11.1 item 8: the board label "MAX RG" reads "Max range" (user decision, 2026-11-01).
+  [
+    '43-layer-reach.js',
+    'ctx.sym.textBox(top[0], top[1], "MAX RG", 10, "middle"), svg: ctx.sym.label(top[0], top[1], "MAX RG",',
+    'ctx.sym.textBox(top[0], top[1], "Max range", 10, "middle"), svg: ctx.sym.label(top[0], top[1], "Max range",',
+  ],
+  // Lane 11.F F-01: only the max range ring (plan circle or sector, Elevation arc) carries
+  // data-role="range", the one reach part a press off the glyph drags as range.
+  [
+    '43-layer-reach.js',
+    'at = { "data-k": "system", "data-id": s.id }, top;',
+    'at = { "data-k": "system", "data-id": s.id }, rg = Object.assign({}, at, { "data-role": "range" }), top;',
+  ],
+  [
+    '43-layer-reach.js',
+    'if (d) out += S("path", Object.assign({ d: d, class: c }, at));',
+    'if (d) out += S("path", Object.assign({ d: d, class: c }, rg));',
+  ],
+  ['43-layer-reach.js', 'r: r1(R), class: c }, at));', 'r: r1(R), class: c }, rg));'],
+  [
+    '43-layer-reach.js',
+    'if (arc) out += S("polyline", Object.assign({ points: arc, class: c }, at));',
+    'if (arc) out += S("polyline", Object.assign({ points: arc, class: c }, rg));',
+  ],
   // F-11: directed energy draws the EW ring, as the mockup's "ring ew".
   [
     '43-layer-reach.js',

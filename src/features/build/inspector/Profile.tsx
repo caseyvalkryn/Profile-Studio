@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { newKey, nextId } from '../../../domain/ids';
 import { PROFILE_CLASSES, type Vignette } from '../../../domain/types';
-import { listVignettes } from '../../../state/persist';
+import { lastListing, listVignettes } from '../../../state/persist';
 import { usePreview } from '../../../state/document';
 import { useUi, type Units } from '../../../state/ui';
 import { hText, parseIds, parseValue } from './parse';
@@ -12,10 +12,16 @@ import { Choice, edit, F, Field, Hint, Mini, NumField, Remove, Sec, useSuffix } 
 const CLASS_OPTIONS = PROFILE_CLASSES.map((c) => [c, c] as const);
 const COLLECTIONS_LIST = 'inspector-collections';
 
-/** The collections in the stored library and the open profile, sorted, for the datalist. */
+/**
+ * The collections in the stored library and the open profile, sorted, for the datalist. The
+ * listing the session already read serves (the Library's or the start's); with none, one read.
+ */
 function useCollections(current: string): string[] {
-  const [stored, setStored] = useState<string[]>([]);
+  const [stored, setStored] = useState<string[]>(
+    () => lastListing()?.map((x) => x.collection) ?? [],
+  );
   useEffect(() => {
+    if (lastListing()) return;
     let live = true;
     listVignettes()
       .then((l) => {

@@ -223,6 +223,9 @@ export class BoardGestures {
           last.hits.find(
             (x) => x.kind === kind && x.id === id && String(x.i == null ? '' : x.i) === (i || ''),
           ) || null;
+        // a system's reach drawing: only the max range ring is the range drag (F-01)
+        if (h && kind === 'system' && n.closest('[data-layer="reach"], .ly-reach'))
+          h = { ...h, part: n.getAttribute('data-role') === 'range' ? 'range' : 'reach' };
       }
     }
     return h;
@@ -519,7 +522,7 @@ export class BoardGestures {
       const hit = pend.hit || null;
       if (useDocument.getState().doc && this.draggable(hit) && pend.w0 && last) {
         if (hit!.role !== 'insert' && hit!.role !== 'edge') this.select(hit);
-        this.drag = beginDrag(hit, pend.w0, last.cam);
+        this.drag = beginDrag(hit, pend.w0, last.cam, pend.touch);
         pend.type = this.drag ? 'drag' : pend.touch ? 'pan' : 'none';
       } else {
         pend.type = pend.touch ? 'pan' : 'none';
@@ -897,6 +900,8 @@ export function hintText(placing: BoardPlacing | null, rulerOn: boolean, camKind
   const p = placing;
   if (p && p.kind !== 'formation') {
     if (p.kind !== 'event' && camKind !== 'plan') return 'Press P to add in Plan.';
+    if (p.kind === 'aircraft' && p.pathId)
+      return `Pick a point to add a waypoint to ${p.pathId}. Double-click or press Enter or Escape to end.`;
     if (p.kind === 'aircraft')
       return (
         (p.pts && p.pts.length

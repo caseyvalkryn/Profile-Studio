@@ -1,7 +1,12 @@
+import { cameras, render } from '../../board';
+import type { Card } from '../../domain/types';
+import { boardDerived, boardScene } from '../build/board/derived';
 import { BOARD_DEFAULTS, useBoard } from '../build/board/store';
 import { useDocument } from '../../state/document';
 import { UI_DEFAULTS, useUi } from '../../state/ui';
+import { useToast } from '../shell/toastStore';
 import {
+  ADDED_TOAST_3D,
   addCard,
   applyCard,
   cardFromBuild,
@@ -15,6 +20,8 @@ import {
   step,
 } from './cards';
 import { testDeck } from './testDeck';
+import { toCardRec } from './toCardRec';
+import { applyCard as openInBuild, setBoardCam } from '../build/cards/cards';
 
 beforeEach(() => {
   useUi.setState(UI_DEFAULTS);
@@ -77,6 +84,41 @@ describe('the Build stash', () => {
       py: 6,
       layers: { labels: false },
     });
+  });
+});
+
+describe('the card frame (lane 11.1)', () => {
+  it('a card added from a stashed Plan view keeps its zoom and centre', () => {
+    useBoard.getState().set({ zoom: 1, px: 0, py: 0 });
+    expect(cardFromBuild(doc()).view).toMatchObject({ centre: { x: 0, y: 0 }, zoom: 1 });
+    useBoard.getState().set({ zoom: 2, px: 0, py: 0 });
+    stashBuild();
+    useBoard.getState().set({ zoom: 1 }); // the live board moved on; the stash is the source
+    addCard();
+    const c = doc().cards.at(-1)!;
+    expect(c.view.zoom).toBe(2);
+    useUi.getState().setBuildStash(null);
+    // a pan right by 200 px moves the middle of the board west of the fitted middle
+    useBoard.getState().set({ zoom: 1, px: 200, py: 0 });
+    const v = cardFromBuild(doc()).view;
+    expect(v.centre.x).toBeLessThan(0);
+    expect(v.centre.y).toBe(0);
+  });
+
+  it('a card added from a stashed 3D view keeps the fitted frame and says so', () => {
+    useUi.getState().setView('3d');
+    useBoard.getState().set({ zoom: 2, px: 30, py: -10, yaw: 15, pitch: 50 });
+    stashBuild();
+    addCard();
+    const c = doc().cards.at(-1)!;
+    expect(c.view).toMatchObject({
+      kind: '3d',
+      centre: { x: 0, y: 0 },
+      zoom: 1,
+      yawDeg: 15,
+      pitchDeg: 50,
+    });
+    expect(useToast.getState().text).toBe(ADDED_TOAST_3D);
   });
 });
 
@@ -154,5 +196,74 @@ describe('card edits', () => {
     expect(cardFromBuild(doc()).tS).toBeNull();
     useUi.getState().setTimeOn(true);
     expect(cardFromBuild(doc()).tS).toBe(50);
+  });
+});
+
+describe('the card frame on the stage, the strip and print (lane 11.F, F-02)', () => {
+  const SZ = { W: 800, H: 450 };
+  // S-01's glyph centre in the card render, less the middle of the render
+  function glyph(card: Card): [number, number] {
+    const svg = render.card(boardScene(doc()), boardDerived(doc()), toCardRec(doc(), card), SZ);
+    const m = svg.match(
+      /data-id="S-01" data-role="centre"><g[^>]*><circle cx="([-\d.]+)" cy="([-\d.]+)"/,
+    );
+    if (!m) throw new Error('no S-01 glyph');
+    return [Number(m[1]) - SZ.W / 2, Number(m[2]) - SZ.H / 2];
+  }
+  const at = (view: Partial<Card['view']>): Card => {
+    const c = doc().cards[0]!;
+    return { ...c, view: { ...c.view, ...view } };
+  };
+
+  it('draws a Plan card at its stored zoom and centre, and a 3D card at its default view', () => {
+    expect(doc().cards[0]!.view.kind).toBe('plan');
+    expect(toCardRec(doc(), at({ zoom: 2, centre: { x: 100, y: -50 } })).cam).toMatchObject({
+      zoom: 2,
+      centre: { x: 100, y: -50 },
+    });
+    const [fx, fy] = glyph(at({ zoom: 1, centre: { x: 0, y: 0 } }));
+    const [zx, zy] = glyph(at({ zoom: 2, centre: { x: 0, y: 0 } }));
+    expect(zx).toBeCloseTo(2 * fx, 0);
+    expect(zy).toBeCloseTo(2 * fy, 0);
+    // the centre 100 m east puts the middle of the render 100 m east: S-01 moves west on screen
+    const [cx, cy] = glyph(at({ zoom: 2, centre: { x: 100, y: 0 } }));
+    expect(cx).toBeLessThan(zx - 1);
+    expect(cy).toBeCloseTo(zy, 0);
+    const cam = cameras.get('plan').setup(boardScene(doc()).scene, boardDerived(doc()), SZ, {
+      zoom: 2,
+      ref: 'asset',
+    });
+    expect(zx - cx).toBeCloseTo(100 * cam.scale, 0);
+    // 3D ignores the stored frame: the same render at any zoom and centre
+    const d3 = doc().cards[1]!;
+    expect(d3.view.kind).toBe('3d');
+    const r = (c: Card) =>
+      render.card(boardScene(doc()), boardDerived(doc()), toCardRec(doc(), c), SZ);
+    expect(r({ ...d3, view: { ...d3.view, zoom: 3, centre: { x: 500, y: 0 } } })).toBe(r(d3));
+  });
+
+  it('opens in Build (card.open) at the frame the stage draws', () => {
+    const c = at({ zoom: 2, centre: { x: 100, y: -40 } });
+    const cam = cameras.get('plan').setup(boardScene(doc()).scene, boardDerived(doc()), SZ, {});
+    setBoardCam(() => ({ cam, W: SZ.W, H: SZ.H }));
+    try {
+      openInBuild(c);
+    } finally {
+      setBoardCam(() => null);
+    }
+    const b = useBoard.getState();
+    expect(b.zoom).toBe(2);
+    const svg = render.scene(
+      boardScene(doc()),
+      { proj: 'plan', zoom: b.zoom, px: b.px, py: b.py, ref: b.ref, layers: c.layers },
+      SZ,
+      { derived: boardDerived(doc()) },
+    ).svg;
+    const m = svg.match(
+      /data-id="S-01" data-role="centre"><g[^>]*><circle cx="([-\d.]+)" cy="([-\d.]+)"/,
+    )!;
+    const [gx, gy] = glyph(c);
+    expect(Number(m[1]) - SZ.W / 2).toBeCloseTo(gx, 0);
+    expect(Number(m[2]) - SZ.H / 2).toBeCloseTo(gy, 0);
   });
 });

@@ -93,16 +93,19 @@ register({
       const on = active(ctx, s);
       const c = ringClass(ctx, s, on);
       const at = { 'data-k': 'system', 'data-id': s.id };
+      // only the max range ring is the range drag off the glyph (lane 11.F, F-01); the sector
+      // edges, the min range ring and the limit rays select the system and start nothing
+      const rg = { ...at, 'data-role': 'range' };
       let top: number[] | null;
       if (cam.kind === 'plan') {
         const ce = cam.project(s.x, s.y, 0);
         const R = s.range * cam.scale;
         const d = planShape(ce, R, s);
-        if (d) out += S('path', Object.assign({ d, class: c }, at));
+        if (d) out += S('path', Object.assign({ d, class: c }, rg));
         else
           out += S(
             'circle',
-            Object.assign({ cx: r1(ce[0]), cy: r1(ce[1]), r: r1(R), class: c }, at),
+            Object.assign({ cx: r1(ce[0]), cy: r1(ce[1]), r: r1(R), class: c }, rg),
           );
         if (s.rmin > 0)
           out += S(
@@ -118,7 +121,7 @@ register({
         const rs = Math.hypot(s.x - o.x, s.y - o.y);
         const zs = s.z || 0;
         const arc = elevArc(cam, rs, zs, s.range);
-        if (arc) out += S('polyline', Object.assign({ points: arc, class: c }, at));
+        if (arc) out += S('polyline', Object.assign({ points: arc, class: c }, rg));
         if (s.rmin > 0) {
           const inner = elevArc(cam, rs, zs, s.rmin);
           if (inner) out += S('polyline', Object.assign({ points: inner, class: c + ' rmin' }, at));
@@ -147,8 +150,13 @@ register({
           });
         }
         const tp = cam.projectRZ!(rs, Math.min(cam.maxZ!, zs + s.range));
-        // clamped to the frame top, MAX RG drops inside the frame, clear of the axis title (F-06)
-        top = [tp[0], Math.max(tp[1] - 4, cam.frame.y0 + 12)];
+        // clamped to the frame top, Max range drops inside the frame, clear of the axis title
+        // (F-06), and keeps the axis title's 10 px gap above the top height tick (lane 11.1)
+        const yt = cam.axes.yTicks;
+        const tk = yt.length ? yt[yt.length - 1]!.px : null;
+        let ty = Math.max(tp[1] - 4, cam.frame.y0 + 8);
+        if (tk !== null && ty > tk - 10 && ty <= tk && tk - 10 >= cam.frame.y0 + 8) ty = tk - 10;
+        top = [tp[0], ty];
       } else {
         const full = !(s.fov < 360);
         const n = 64;
@@ -167,8 +175,8 @@ register({
         ctx.label({
           p: 3,
           id: s.id,
-          box: ctx.sym.textBox(top[0]!, top[1]!, 'MAX RG', 10, 'middle'),
-          svg: ctx.sym.label(top[0]!, top[1]!, 'MAX RG', 'small mr' + ctx.dim(s.id), 'middle'),
+          box: ctx.sym.textBox(top[0]!, top[1]!, 'Max range', 10, 'middle'),
+          svg: ctx.sym.label(top[0]!, top[1]!, 'Max range', 'small mr' + ctx.dim(s.id), 'middle'),
         });
       }
     }

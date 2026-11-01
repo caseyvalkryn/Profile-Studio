@@ -29,7 +29,7 @@ describe('Brief workspace', () => {
     expect(cards[0]).toHaveAttribute('aria-current', 'true');
     expect(cards[1]).not.toHaveAttribute('aria-current');
     expect(cards[1]!.querySelector('svg.board.thumb')?.getAttribute('data-proj')).toBe('axon');
-    expect(within(cards[1]!).getByText('3D · t+200 s · T-01')).toBeInTheDocument();
+    expect(within(cards[1]!).getByText('3D · t+200 s · default 3D view · T-01')).toBeInTheDocument();
     expect(stageProj()).toBe('plan');
     expect(useUi.getState().view).toBe('plan');
   });

@@ -195,6 +195,10 @@ export default function Board({ width, height }: BoardProps) {
     // a placement that ends clears the armed item, the tool and the drawing flag
     const u3 = useBoard.subscribe((s, prev) => {
       if (s.placing === prev.placing) return;
+      // an append that starts drops an earlier readout, so its hint shows until the first point
+      const pid = s.placing && s.placing.kind === 'aircraft' ? s.placing.pathId : undefined;
+      if (pid && s.readout && !(prev.placing && prev.placing.pathId === pid))
+        useBoard.getState().set({ readout: null });
       const ui = useUi.getState();
       const qa = useQuickAdd.getState();
       if (!s.placing) {
@@ -220,7 +224,11 @@ export default function Board({ width, height }: BoardProps) {
 
   const hasDoc = useDocument((s) => !!s.doc);
   const hint = hintText(placing, rulerOn, VIEW_TO_CAM[view]);
-  const msg = hint || (readout ? readout.text : '');
+  // in an append (placing.pathId) the leg readout of the last added waypoint shows over the hint
+  const msg =
+    placing && placing.kind === 'aircraft' && placing.pathId && readout
+      ? readout.text
+      : hint || (readout ? readout.text : '');
 
   return (
     <div

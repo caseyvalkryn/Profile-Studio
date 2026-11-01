@@ -506,6 +506,162 @@ describe('Board', () => {
     });
   });
 
+  it('a press on the ring of an unselected system drags its range, not its centre (lane 11.1)', () => {
+    const { stage, container } = mount();
+    expect(useUi.getState().selectedKeys).toEqual([]);
+    const ring = container.querySelector(
+      'g[data-layer="reach"] [data-role="range"][data-id="S-02"]',
+    )!;
+    expect(ring).toBeTruthy();
+    const s0 = useDocument.getState().doc!.sensors[1]!;
+    const [rx, ry] = project(s0.x + s0.rangeM, s0.y);
+    const past = useDocument.getState().past.length;
+    fireEvent.pointerDown(ring, {
+      clientX: rx,
+      clientY: ry,
+      button: 0,
+      pointerId: 1,
+      pointerType: 'mouse',
+      isPrimary: true,
+    });
+    move(stage, rx + 20, ry);
+    move(stage, rx + 40, ry);
+    up(stage, rx + 40, ry);
+    const s1 = useDocument.getState().doc!.sensors[1]!;
+    expect(useUi.getState().selectedKeys).toEqual([s1.key]);
+    expect([s1.x, s1.y]).toEqual([s0.x, s0.y]);
+    expect(s1.rangeM).toBeGreaterThan(s0.rangeM);
+    expect(useDocument.getState().past.length).toBe(past + 1);
+    expect(useDocument.getState().history.at(-1)).toMatch(/set S-02 range/);
+  });
+
+  it('a press on a sector edge or the min range ring selects the system and starts nothing (11.F)', () => {
+    act(() =>
+      useDocument.getState().edit('Set sector', (d) => {
+        d.sensors[1]!.fovDeg = 60;
+        d.sensors[1]!.bearingDeg = 90;
+        d.sensors[1]!.minRangeM = 1800;
+      }),
+    );
+    const { stage, container } = mount();
+    const s0 = useDocument.getState().doc!.sensors[1]!;
+    const reach = (sel: string) =>
+      container.querySelector(`g[data-layer="reach"] ${sel}[data-id="S-02"]`)!;
+    // the reach layer redraws on a selection change: query its elements before each press
+    const sector = () => reach('path[data-role="range"]');
+    const rmin = () => reach('circle.rmin');
+    expect(sector()).toBeTruthy();
+    expect(rmin().getAttribute('data-role')).toBeNull();
+    const past = useDocument.getState().past.length;
+    const press = (el: Element, x: number, y: number) => {
+      fireEvent.pointerDown(el, {
+        clientX: x,
+        clientY: y,
+        button: 0,
+        pointerId: 1,
+        pointerType: 'mouse',
+        isPrimary: true,
+      });
+      move(stage, x + 3, y);
+      move(stage, x + 30, y + 10);
+      up(stage, x + 30, y + 10);
+    };
+    // 40 % along the north edge of the sector (bearing 90, half width 30 degrees)
+    const a = (30 * Math.PI) / 180;
+    const [ex, ey] = project(s0.x + 1000 * Math.cos(a), s0.y + 1000 * Math.sin(a));
+    press(sector(), ex, ey);
+    let s1 = useDocument.getState().doc!.sensors[1]!;
+    expect(useUi.getState().selectedKeys).toEqual([s1.key]);
+    expect([s1.x, s1.y, s1.rangeM, s1.minRangeM]).toEqual([s0.x, s0.y, 2500, 1800]);
+    expect(useDocument.getState().past.length).toBe(past);
+    act(() => useUi.getState().setSelection([]));
+    const [mx, my] = project(s0.x + 1800, s0.y);
+    press(rmin(), mx, my);
+    s1 = useDocument.getState().doc!.sensors[1]!;
+    expect(useUi.getState().selectedKeys).toEqual([s1.key]);
+    expect([s1.x, s1.y, s1.rangeM, s1.minRangeM]).toEqual([s0.x, s0.y, 2500, 1800]);
+    expect(useDocument.getState().past.length).toBe(past);
+    // the sector's arc is the ring: a press there drags the range
+    const [rx, ry] = project(s0.x + 2500, s0.y);
+    press(sector(), rx, ry);
+    s1 = useDocument.getState().doc!.sensors[1]!;
+    expect(s1.rangeM).toBeGreaterThan(2500);
+    expect([s1.x, s1.y]).toEqual([s0.x, s0.y]);
+    expect(useDocument.getState().past.length).toBe(past + 1);
+  });
+
+  it('a placement with a pathId appends waypoints to that threat (lane 11.1)', () => {
+    const { stage } = mount();
+    const t0 = useDocument.getState().doc!.threats[0]!;
+    const n0 = t0.path.length;
+    const lastZ = t0.path[n0 - 1]!.z;
+    const threats0 = useDocument.getState().doc!.threats.length;
+    act(() =>
+      useBoard
+        .getState()
+        .set({ placing: { kind: 'aircraft', arch: t0.type, pts: [], pathId: t0.id } }),
+    );
+    const [ax, ay] = project(1200, 800);
+    click(stage, ax, ay);
+    const [bx, by] = project(1500, 400);
+    click(stage, bx, by);
+    let t1 = useDocument.getState().doc!.threats[0]!;
+    expect(t1.path.length).toBe(n0 + 2);
+    expect(t1.path[n0]!.z).toBe(lastZ);
+    expect(useBoard.getState().placing?.pathId).toBe(t0.id);
+    expect(useUi.getState().selectedKeys).toEqual([t0.key]);
+    // one undo step per waypoint
+    act(() => useDocument.getState().undo());
+    t1 = useDocument.getState().doc!.threats[0]!;
+    expect(t1.path.length).toBe(n0 + 1);
+    // Enter (finish) ends the placement and adds no threat
+    act(() => useUi.getState().signalPath('finish'));
+    expect(useBoard.getState().placing).toBeNull();
+    expect(useDocument.getState().doc!.threats.length).toBe(threats0);
+    expect(useDocument.getState().doc!.threats[0]!.path.length).toBe(n0 + 1);
+  });
+
+  it('an append names its path in the hint, shows the leg readout and Escape clears it (11.F)', () => {
+    const { stage, getByTestId } = mount();
+    const t0 = useDocument.getState().doc!.threats[0]!;
+    act(() => useBoard.getState().set({ readout: { text: 'stale', level: 'info' } }));
+    act(() =>
+      useBoard
+        .getState()
+        .set({ placing: { kind: 'aircraft', arch: t0.type, pts: [], pathId: t0.id } }),
+    );
+    expect(getByTestId('board-msg').textContent).toBe(
+      `Pick a point to add a waypoint to ${t0.id}. Double-click or press Enter or Escape to end.`,
+    );
+    const [ax, ay] = project(1200, 800);
+    click(stage, ax, ay);
+    const leg = useBoard.getState().readout!.text;
+    expect(leg).toMatch(/ s$/);
+    expect(getByTestId('board-msg').textContent).toBe(leg);
+    act(() => {
+      cancel();
+    });
+    expect(useBoard.getState().placing).toBeNull();
+    expect(useBoard.getState().readout).toBeNull();
+    expect(getByTestId('board-msg').textContent).toBe('');
+    expect(useDocument.getState().doc!.threats[0]!.path.length).toBe(t0.path.length + 1);
+  });
+
+  it('a placement without a pathId still draws a new threat', () => {
+    const { stage } = mount();
+    const threats0 = useDocument.getState().doc!.threats.length;
+    act(() =>
+      useBoard.getState().set({ placing: { kind: 'aircraft', arch: 'g1-quad-isr', pts: [] } }),
+    );
+    const [ax, ay] = project(1200, 800);
+    click(stage, ax, ay);
+    const [bx, by] = project(1500, 400);
+    click(stage, bx, by);
+    act(() => useUi.getState().signalPath('finish'));
+    expect(useDocument.getState().doc!.threats.length).toBe(threats0 + 1);
+    expect(useDocument.getState().doc!.threats.at(-1)!.path.length).toBe(2);
+  });
+
   it('time off renders the board with t null; T turns it on', () => {
     const { h } = mount();
     expect(useUi.getState().timeOn).toBe(false);

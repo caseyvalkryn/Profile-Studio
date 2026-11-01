@@ -24,6 +24,12 @@ vi.mock('../../state/persist', async (orig) => {
     listVignettes: vi.fn(async () =>
       [...store.values()].map(real.listingOf).sort((a, b) => (a.updated < b.updated ? 1 : -1)),
     ),
+    listWithRecords: vi.fn(async () => ({
+      list: [...store.values()]
+        .map(real.listingOf)
+        .sort((a, b) => (a.updated < b.updated ? 1 : -1)),
+      records: Object.fromEntries([...store.values()].map((v) => [v.id, structuredClone(v)])),
+    })),
   };
 });
 const persist = await import('../../state/persist');
@@ -297,6 +303,9 @@ describe('LibraryScreen', () => {
     await waitFor(() => expect(svgOf('Plain map')).not.toBeNull());
     expect(svgOf('Plain map')!.getAttribute('data-proj')).toBe('plan');
     expect(within(cardOf('Carded')).getByTestId('saved-meta')).toHaveTextContent('1 card ·');
+    // one store read draws every thumbnail: no load per profile (lane 11.1)
+    expect(persist.loadVignette).not.toHaveBeenCalled();
+    expect(persist.listWithRecords).toHaveBeenCalledTimes(1);
   });
 
   it('New in a fresh store opens Build with Untitled profile and one defended asset', async () => {

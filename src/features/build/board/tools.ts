@@ -327,6 +327,9 @@ export function placeAt(world: World, opts: PlaceOpts = {}): boolean {
       readout('Press P to add in Plan.');
       return false;
     }
+    // Add waypoints on a selected threat (mockup line 438): each click appends one waypoint to that
+    // path at its last height, as one undo step; the placement stays armed until it finishes.
+    if (p.pathId) return appendTo(p.pathId, world, opts.dbl === true);
     const pts = ((p.pts || []) as Pt[]).concat([
       { x: Math.round(world.x), y: Math.round(world.y), z: cruiseHeight(p.arch), hold: 0 },
     ]);
@@ -387,12 +390,46 @@ export function placeAt(world: World, opts: PlaceOpts = {}): boolean {
   return false;
 }
 
+/** One waypoint appended to the threat `pathId` (its display id). A press on the last waypoint adds
+ *  nothing, so the two clicks of a double click add one point. */
+function appendTo(pathId: string, world: PlanPt, dbl: boolean): boolean {
+  const cur = current();
+  const threat = cur ? cur.doc.threats.find((t) => t.id === pathId) : undefined;
+  if (!threat) {
+    useBoard.getState().set({ placing: null });
+    return false;
+  }
+  const x = Math.round(world.x);
+  const y = Math.round(world.y);
+  const last = threat.path[threat.path.length - 1];
+  if (!last || last.x !== x || last.y !== y) {
+    const z = last ? last.z : cruiseHeight(threat.type);
+    edit('add waypoint to ' + pathId, (c) => {
+      const t = c.threats.find((q) => q.key === threat.key);
+      if (t) t.path.push({ key: newKey(), x, y, z, holdS: 0 });
+    });
+    select([threat.key], { key: threat.key, i: threat.path.length });
+    if (last) {
+      const units = useUi.getState().units;
+      const a = { x: last.x, y: last.y, z: last.z, hold: 0 };
+      readout(legText({ kind: 'aircraft', arch: threat.type, pts: [a] }, { x, y, z }, units));
+    }
+  }
+  return dbl ? finishPlacing() : false;
+}
+
 /** Legacy tools.finishPlacing. */
 export function finishPlacing(): boolean {
   const board = useBoard.getState();
   const p = board.placing;
   const cur = current();
   if (!p || !cur) return false;
+  if (p.kind === 'aircraft' && p.pathId) {
+    // the waypoints went into the path as they were placed: the placement only ends
+    board.set({ placing: null });
+    readout('');
+    return true;
+  }
   if (p.kind === 'aircraft') {
     const pts = dedupe((p.pts || []) as Pt[]);
     if (!pts.length) {
@@ -441,12 +478,55 @@ export function cancelPlacing(): boolean {
   const board = useBoard.getState();
   const p = board.placing;
   if (!p) return false;
+  // an append keeps the waypoints it added; finishPlacing ends it and clears the leg readout
+  if (p.kind === 'aircraft' && p.pathId) return finishPlacing();
   if (p.kind === 'aircraft' && dedupe((p.pts || []) as Pt[]).length >= 2) return finishPlacing();
   board.set({ placing: null });
   return true;
 }
 
 // ---------------------------------------------------------------- drags
+
+/** The press at `world` in screen pixels. */
+function screenAt(world: World, cam: Cam): [number, number] | null {
+  if (isElev(world)) return cam.projectRZ ? cam.projectRZ(world.r, world.z) : null;
+  const p = cam.project(world.x, world.y, 0);
+  return [p[0]!, p[1]!];
+}
+
+/** True when the press at `world` lies outside the glyph hit of a system: its radius plus the
+ *  hit tolerance of `hitAt` (gestures.ts), 7 px for a mouse and 14 px for touch. */
+function offGlyph(hit: Hit, world: World, cam: Cam, touch: boolean): boolean {
+  const s = screenAt(world, cam);
+  if (!s) return false;
+  return Math.hypot(s[0] - hit.sx, s[1] - hit.sy) > (hit.r || 0) + (touch ? 14 : 7);
+}
+
+/** True when the press lies on the max range arc of `sys`, within the hit tolerance: a press on
+ *  a sector's straight edge or inside its fill is not on the ring. */
+function onRing(
+  sys: { x: number; y: number; z?: number; range: number },
+  world: World,
+  cam: Cam,
+  touch: boolean,
+): boolean {
+  const s = screenAt(world, cam);
+  if (!s) return false;
+  const tol = touch ? 14 : 7;
+  let p: number[];
+  if (isElev(world)) {
+    if (!cam.projectRZ) return false;
+    const o = cam.origin;
+    const rs = Math.hypot(sys.x - o.x, sys.y - o.y);
+    const zs = sys.z || 0;
+    const a = Math.atan2(world.z - zs, world.r - rs);
+    p = cam.projectRZ(rs + sys.range * Math.cos(a), zs + sys.range * Math.sin(a));
+  } else {
+    const a = Math.atan2(world.y - sys.y, world.x - sys.x);
+    p = cam.project(sys.x + sys.range * Math.cos(a), sys.y + sys.range * Math.sin(a), 0);
+  }
+  return Math.hypot(s[0] - p[0]!, s[1] - p[1]!) <= tol;
+}
 
 function affectedPaths(kind: string, id: string, rec: Scene): string[] {
   if (kind === 'path') return [id];
@@ -583,7 +663,12 @@ function sysOf(c: Draft<Vignette>, key: string): SysLike | null {
 }
 
 // returns null for a hit that has no drag (a path line, a group)
-export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragHandle | null {
+export function beginDrag(
+  hit: Hit | null,
+  world: World | null,
+  cam: Cam,
+  touch = false,
+): DragHandle | null {
   if (!hit || !world) return null;
   const cur = current();
   if (!cur) return null;
@@ -591,6 +676,15 @@ export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragH
   const kind = hit.kind === 'wp' ? 'path' : hit.kind === 'vertex' ? 'volume' : hit.kind;
   const id = hit.id;
   let role = hit.role || 'centre';
+  // A press on a system's reach drawing resolves to the system's centre hit, marked with the part
+  // it landed on (gestures.ts hitAt). Off the glyph, the max range ring is the range drag
+  // (principle 2.3: drag a ring to set range); every other part (a sector edge, the min range
+  // ring, a limit ray) selects the system and starts nothing (lane 11.F, F-01).
+  if (kind === 'system' && hit.part && offGlyph(hit, world, cam, touch)) {
+    const sys = cur.rec.scene.systems.find((x) => x.id === id);
+    if (hit.part !== 'range' || !sys || !onRing(sys, world, cam, touch)) return null;
+    role = 'range';
+  }
   let i: number | null = hit.i == null ? null : Number(hit.i);
   const key = hit.key || '';
   if (!key) return null;

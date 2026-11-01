@@ -74,7 +74,7 @@ controls stay out of the way until you need them.
    and the two thumbnails, the asset library, the whole-scene inspector and the top bar. The
    five layer toggles sit in the bar. Every other control opens by its key or from the palette.
    A hidden control is never a missing feature.
-9. Two typefaces: Archivo for text and JetBrains Mono for numbers, both bundled, weights 400
+9. Two typefaces: Geist for text and Geist Mono for numbers, both bundled, weights 400
    and 500 only. Five sizes, each with its line height: 11/14, 12/16, 13/18, 14/20, 17/24 px.
    Tabular numerals. Three stroke weights: 0.75, 1.25 and 2.25 px. Nothing else.
 10. One icon set, Lucide. An icon sits beside its label. An icon alone has a tooltip. Board

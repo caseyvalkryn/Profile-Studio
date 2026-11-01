@@ -138,7 +138,7 @@ export function Item(props: {
       <div
         aria-current={props.current ? 'true' : undefined}
         className={`flex items-start gap-1.5 rounded-[4px] px-1.5 py-1.5 hover:bg-surface-3 ${
-          props.current ? 'bg-surface-2 shadow-[inset_2px_0_0_var(--accent)]' : ''
+          props.current ? 'bg-surface-3 shadow-[inset_2px_0_0_var(--accent)]' : ''
         }`}
       >
         <button
