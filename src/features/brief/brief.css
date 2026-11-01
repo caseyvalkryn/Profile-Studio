@@ -46,26 +46,8 @@
 }
 
 @media print {
-  /* The light theme on paper, whatever the screen theme (the light values of src/styles/tokens.css). */
-  :root,
-  :root[data-theme='dark'] {
-    --surface-0: #f6f7f8;
-    --surface-1: #ffffff;
-    --surface-2: #eceef1;
-    --surface-3: #dde1e6;
-    --text: #1b1f24;
-    --text-muted: #5b6470;
-    --text-subtle: #7b7d73;
-    --accent: #2563eb;
-    --accent-text: #ffffff;
-    --state-covered: #15803d;
-    --state-warning: #b45309;
-    --state-hostile: #c81e1e;
-    --state-inconclusive: #b07d00;
-    --chart-mark: #2a78d6;
-    --chart-band: rgba(42, 120, 214, 0.16);
-    color-scheme: light;
-  }
+  /* The light theme on paper: the dark token blocks in src/styles/tokens.css are screen-only,
+     so print reads the light :root values. */
   @page {
     size: landscape;
     margin: 12mm;

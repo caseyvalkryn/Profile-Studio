@@ -126,11 +126,11 @@ export function Field(props: FieldProps) {
 
   return (
     <div className={`flex flex-col gap-1 ${className}`}>
-      <label htmlFor={id} className="text-xs text-muted">
+      <label htmlFor={id} className="text-data text-muted">
         {label}
       </label>
       <div
-        className={`flex h-7 items-center rounded-sm border border-surface-3 bg-surface-1 focus-within:border-accent ${
+        className={`flex h-ctl items-center rounded-sm border border-rule-strong bg-surface-2 focus-within:border-accent ${
           disabled ? 'opacity-50' : ''
         }`}
       >
@@ -149,18 +149,18 @@ export function Field(props: FieldProps) {
             commit();
           }}
           onKeyDown={onKeyDown}
-          className={`h-full min-w-[6ch] flex-1 rounded-sm bg-transparent px-2 text-sm text-text ${
+          className={`h-full min-w-[6ch] flex-1 rounded-sm bg-transparent px-2 text-body text-text ${
             numeric ? 'font-mono tabular-nums' : ''
           } placeholder:text-muted ${focusRing} focus-visible:ring-0`}
         />
         {unit ? (
-          <span id={unitId} className="pr-2 font-mono text-xs text-muted select-none">
+          <span id={unitId} className="pr-2 font-mono text-data text-muted select-none">
             {unit}
           </span>
         ) : null}
       </div>
       {source ? (
-        <p id={sourceId} className="text-[11px] text-muted">
+        <p id={sourceId} className="text-micro text-muted">
           {source}
         </p>
       ) : null}

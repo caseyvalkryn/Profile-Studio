@@ -170,13 +170,17 @@ function ProfileName() {
   );
 }
 
-/** The id. Legacy adds "v<n>"; the v6 record has no version (spec section 5), so none shows. */
+/**
+ * The mono id beside the name (mockup lines 201 and 377: "PROF-1 v3"). The version is not on the
+ * record yet; lane 10.5 adds `version` and the orchestrator appends " v<n>" inside this span.
+ */
 function ProfileId() {
   const id = useDocument((s) => s.doc?.id);
   if (id === undefined) return null;
   return (
-    <span className="ps-t-id" style={{ color: 'var(--ps-t2)' }}>
+    <span className="tb-id">
       {id}
+      {/* version: " v<n>" goes here once the record carries it (lane 10.5) */}
     </span>
   );
 }

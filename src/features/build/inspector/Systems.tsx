@@ -91,6 +91,12 @@ export function Systems({ v }: { v: Vignette }) {
                   id={b.id}
                   current={current}
                   onSelect={() => toggle(b.key, current)}
+                  lead={
+                    <span
+                      aria-hidden
+                      className="mt-[5px] inline-block size-2 shrink-0 bg-[var(--friend)]"
+                    />
+                  }
                   title={
                     <>
                       {b.id}

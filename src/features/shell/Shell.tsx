@@ -1,6 +1,6 @@
 // The app frame (legacy `legacy/css/app.css` and `50-panels.js` slots): the top bar, then the
 // columns: the rail (asset list, 232 px), the centre (the workspace over the strip) and the
-// right column (inspector, 320 px). A slot renders only when a workspace gives it content and
+// right column (inspector, 320 px; the inspector carries its own landmark). A slot renders only when a workspace gives it content and
 // its `ui.panels` field is on. The overlay host takes popovers and the tip; the phone bottom
 // sheet takes the side panels at 600 px and narrower. The shell also mounts the dialogs, the
 // toast, the palette and the cheat sheet once.
@@ -77,9 +77,8 @@ export default function Shell({ status, rail, right, strip, sheet, children }: S
           {strip && panels.timeline ? <div className="ps-strip">{strip}</div> : null}
         </div>
         {right && panels.inspector ? (
-          <aside className="ps-right" aria-label="Inspector">
-            {right}
-          </aside>
+          // A plain column: the inspector inside it is the landmark named "Inspector".
+          <div className="ps-right">{right}</div>
         ) : null}
       </div>
       <div className="ps-overlay" id="ps-overlay" />

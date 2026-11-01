@@ -1,27 +1,39 @@
 /* Design tokens. Source: docs/design-principles.md section 5.
    Four surfaces, one accent, two radii, mono for data, sans for UI.
-   Type and layout tokens are ported one to one from legacy/css/tokens.css (lane 9.1.1);
-   the legacy palette is not ported (artifact study, decision 4). */
+   Type and layout tokens are ported one to one from legacy/css/tokens.css (lane 9.1.1). The
+   palette is the warm paper and graphite of legacy/css/tokens.css and the mockup :root
+   (legacy/mockup-v3.html lines 7 to 23; plan phase 10 decision 3, lane 10.6). Where the two
+   differ the mockup wins (hostile #d43725, not #b8382a).
+
+   The dark blocks are screen-only, so print always takes the light values below (the Brief
+   deck, src/features/brief/brief.css). */
 
 :root {
-  --surface-0: #f6f7f8; /* app background */
-  --surface-1: #ffffff; /* panels, top bar */
-  --surface-2: #eceef1; /* raised controls, hover */
-  --surface-3: #dde1e6; /* borders, dividers */
-  --text: #1b1f24;
-  --text-muted: #5b6470;
-  --text-subtle: #7b7d73; /* third text step: labels, hints, keys (legacy --t3) */
-  --accent: #2563eb; /* selection and current time only */
-  --accent-text: #ffffff;
-  --state-covered: #15803d; /* a reach that holds a threat at the current time */
-  --state-warning: #b45309; /* a value that needs attention, such as a missing source note */
-  --state-hostile: #c81e1e; /* a hostile track or threat */
-  --state-meets: #0ca30c; /* evaluation states, dataviz status palette */
-  --state-not-meet: #d03b3b;
-  --state-inconclusive: #b07d00;
-  --chart-mark: #2a78d6;
-  --chart-band: rgba(42, 120, 214, 0.16);
-  --chart-grid: var(--surface-3);
+  /* surfaces: board, panel, sunken, rule (legacy and mockup names in the comments) */
+  --surface-0: #eeebe4; /* --board: app and board background */
+  --surface-1: #f7f5f0; /* --panel: panels, top bar, dialogs */
+  --surface-2: #e4e0d8; /* --sunken: inputs, pressed and highlighted rows, hover */
+  --surface-3: #d8d3c9; /* --rule: borders, dividers */
+  --rule-strong: #b0aa9e; /* input and control borders, axes */
+  --text: #212220; /* --t1 */
+  --text-muted: #4e504b; /* --t2 */
+  --text-subtle: #7b7d73; /* --t3: labels, hints, keys */
+  --accent: #2862b0; /* selection and current time only */
+  --accent-text: #eeebe4; /* --accent-ink */
+  --elev: 0 8px 24px rgba(33, 34, 32, 0.12);
+  /* affiliation inks (mockup :root) */
+  --hostile: #d43725;
+  --friend: #2862b0;
+  --neutral: #98691b;
+  --ew: #227f8c;
+  --ghost: #767d84;
+  --nominal: #378154;
+  --warn: #a86e00; /* legacy --warn; the mockup has none */
+  --grid: #e2ded5;
+  /* states point at the inks */
+  --state-covered: var(--nominal); /* a reach that holds a threat at the current time */
+  --state-warning: var(--warn); /* a value that needs attention, such as a missing source note */
+  --state-hostile: var(--hostile); /* a hostile track or threat */
   --radius-sm: 4px;
   --radius-md: 8px;
   /* strokes */
@@ -60,7 +72,8 @@
   /* controls and rows */
   --ctl: 28px; /* buttons, inputs, selects, chips row */
   --ctl-dense: 24px; /* inspector inputs, table cell inputs, chips */
-  --ctl-mini: 22px; /* .mini */
+  --ctl-seg: 26px; /* segment buttons inside their 1 px frame (mockup .seg) */
+  --ctl-mini: 24px; /* .mini */
   --row: 24px; /* one-line list row */
   --row-2: 40px; /* two-line list row */
   --row-px: 8px; /* row side padding */
@@ -69,44 +82,54 @@
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
+@media screen and (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --surface-0: #0f1115;
-    --surface-1: #161a20;
-    --surface-2: #1e232b;
-    --surface-3: #2b313b;
-    --text: #e6e9ee;
-    --text-muted: #9aa3af;
+    --surface-0: #121313;
+    --surface-1: #191a1a;
+    --surface-2: #0e0f0f;
+    --surface-3: #2a2c2b;
+    --rule-strong: #454846;
+    --text: #ebe9e3;
+    --text-muted: #a9a9a3;
     --text-subtle: #8c8e88;
-    --accent: #4f8cff;
-    --accent-text: #0f1115;
-    --state-covered: #4ade80;
-    --state-warning: #fbbf24;
-    --state-hostile: #f87171;
-    --state-inconclusive: #fab219;
-    --chart-mark: #3987e5;
-    --chart-band: rgba(57, 135, 229, 0.22);
+    --accent: #7ba7e8;
+    --accent-text: #121313;
+    --elev: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --hostile: #e46f62;
+    --friend: #7fbfe6;
+    --neutral: #e6cf5a;
+    --ew: #5ad1e0;
+    --ghost: #6a7178;
+    --nominal: #7fc39a;
+    --warn: #e6cf5a;
+    --grid: #1d1f1e;
     color-scheme: dark;
   }
 }
 
-:root[data-theme='dark'] {
-  --surface-0: #0f1115;
-  --surface-1: #161a20;
-  --surface-2: #1e232b;
-  --surface-3: #2b313b;
-  --text: #e6e9ee;
-  --text-muted: #9aa3af;
-  --text-subtle: #8c8e88;
-  --accent: #4f8cff;
-  --accent-text: #0f1115;
-  --state-covered: #4ade80;
-  --state-warning: #fbbf24;
-  --state-hostile: #f87171;
-  --state-inconclusive: #fab219;
-  --chart-mark: #3987e5;
-  --chart-band: rgba(57, 135, 229, 0.22);
-  color-scheme: dark;
+@media screen {
+  :root[data-theme='dark'] {
+    --surface-0: #121313;
+    --surface-1: #191a1a;
+    --surface-2: #0e0f0f;
+    --surface-3: #2a2c2b;
+    --rule-strong: #454846;
+    --text: #ebe9e3;
+    --text-muted: #a9a9a3;
+    --text-subtle: #8c8e88;
+    --accent: #7ba7e8;
+    --accent-text: #121313;
+    --elev: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --hostile: #e46f62;
+    --friend: #7fbfe6;
+    --neutral: #e6cf5a;
+    --ew: #5ad1e0;
+    --ghost: #6a7178;
+    --nominal: #7fc39a;
+    --warn: #e6cf5a;
+    --grid: #1d1f1e;
+    color-scheme: dark;
+  }
 }
 
 @media (pointer: coarse) {
@@ -116,6 +139,7 @@
     --row-2: 52px;
     --ctl: 44px;
     --ctl-dense: 36px;
+    --ctl-seg: 42px;
     --ctl-mini: 28px;
   }
 }
@@ -128,6 +152,7 @@
     --row-2: 52px;
     --ctl: 36px;
     --ctl-dense: 32px;
+    --ctl-seg: 34px;
     --ctl-mini: 28px;
   }
 }

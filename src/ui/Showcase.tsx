@@ -39,7 +39,6 @@ const PALETTE_ITEMS: PaletteItem[] = [
     disabledReason: 'Nothing selected',
     onSelect: noop,
   },
-  { id: 'run.run', label: 'Run', group: 'Run', shortcut: '⌘↵', onSelect: noop },
   { id: 'view.fit', label: 'Fit view', group: 'View', shortcut: 'F', onSelect: noop },
 ];
 
@@ -61,8 +60,8 @@ export function Showcase() {
           <Button variant="default" size="sm" tooltip="Fit view" shortcut="F">
             Fit
           </Button>
-          <Button variant="accent" tooltip="Run the profile" shortcut="⌘↵">
-            Run
+          <Button variant="accent" tooltip="Save the current view as a card">
+            Save card
           </Button>
           <Tooltip content="Units toggle" shortcut="U">
             <span tabIndex={0} className="text-xs text-muted">

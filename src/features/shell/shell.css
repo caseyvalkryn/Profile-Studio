@@ -2,19 +2,22 @@
    shared control classes) and the panel styles of 51-panel-topbar.js, 51-panel-help.js and
    51-panel-dialog.js. Legacy colour names map onto the MVP surfaces: panel and raised are
    surface-1, sunken is surface-2, rule is surface-3, t1 is text, t2 is text-muted, t3 is
-   text-subtle. Layout and type tokens come from src/styles/tokens.css (lane 9.1.1). */
+   text-subtle. Layout and type tokens come from src/styles/tokens.css (lane 9.1.1). The control
+   look is the mockup's (legacy/mockup-v3.html lines 25 to 59, lane 10.6): 28 px buttons with a
+   500 weight, 26 px segment buttons in a 1 px frame, the pressed segment in graphite, hover on
+   the rule colour, inputs sunken with the strong rule. */
 
 /* On the root, not .ps-app: dialogs and menus render in a portal outside the app frame. */
 :root {
   --ps-rule: var(--surface-3);
-  --ps-rule-strong: color-mix(in srgb, var(--text-muted) 45%, var(--surface-3));
+  --ps-rule-strong: var(--rule-strong);
   --ps-panel: var(--surface-1);
   --ps-raised: var(--surface-1);
   --ps-sunken: var(--surface-2);
   --ps-t1: var(--text);
   --ps-t2: var(--text-muted);
   --ps-t3: var(--text-subtle);
-  --ps-elev: 0 8px 24px rgb(0 0 0 / 0.12);
+  --ps-elev: var(--elev);
   --ps-top: var(--top);
   --ps-ctl: var(--ctl);
 }
@@ -42,7 +45,8 @@
   display: flex;
   align-items: stretch;
   min-width: 0;
-  height: calc(100vh - var(--ps-top));
+  flex: 1 1 0;
+  min-height: 0;
 }
 .ps-rail {
   flex: 0 0 var(--col-list);
@@ -212,17 +216,18 @@
   padding: 0 10px;
   font: inherit;
   font-size: var(--fs-3);
+  font-weight: var(--fw-med);
   line-height: 1;
   white-space: nowrap;
   color: var(--ps-t1);
-  background: var(--ps-raised);
+  background: transparent;
   border: 1px solid var(--ps-rule-strong);
   border-radius: 4px;
   cursor: pointer;
   text-decoration: none;
 }
-.ps-btn:hover {
-  border-color: var(--ps-t3);
+.ps-btn:not([disabled]):not([aria-disabled='true']):hover {
+  background: var(--ps-rule);
 }
 .ps-btn[disabled],
 .ps-btn[aria-disabled='true'] {
@@ -234,16 +239,23 @@
   background: var(--accent);
   border-color: var(--accent);
 }
+.ps-btn.primary:not([disabled]):not([aria-disabled='true']):hover {
+  background: var(--accent);
+  filter: brightness(1.08);
+}
 .ps-btn.quiet {
   background: none;
-  border-width: 0;
-  padding: 1px 11px;
+  border-color: transparent;
   color: var(--ps-t2);
 }
 .ps-btn.quiet:not([disabled]):not([aria-disabled='true']):hover {
   color: var(--ps-t1);
-  border: 1px solid var(--ps-rule);
-  padding: 0 10px;
+  background: var(--ps-rule);
+}
+.ps-btn.mini {
+  height: var(--ctl-mini);
+  padding: 0 8px;
+  font-size: var(--fs-2);
 }
 .ps-btn:focus-visible,
 .ps-input:focus-visible {
@@ -253,28 +265,26 @@
 .ps-seg {
   display: inline-flex;
   align-items: stretch;
+  flex: 0 0 auto;
+  border: 1px solid var(--ps-rule-strong);
+  border-radius: 4px;
+  overflow: hidden;
 }
 .ps-seg > .ps-btn {
+  height: var(--ctl-seg);
+  border: 0;
   border-radius: 0;
-  margin-left: -1px;
-  background: var(--ps-panel);
-  color: var(--ps-t2);
-}
-.ps-seg > .ps-btn:first-child {
-  margin-left: 0;
-  border-radius: 4px 0 0 4px;
-}
-.ps-seg > .ps-btn:last-child {
-  border-radius: 0 4px 4px 0;
+  font-size: var(--fs-2);
+  color: var(--ps-t1);
 }
 .ps-seg > .ps-btn[aria-pressed='true'],
 .ps-seg > .ps-btn[aria-current='page'] {
-  position: relative;
-  z-index: 1;
-  color: var(--ps-t1);
-  background: var(--ps-sunken);
-  border-color: var(--ps-t3);
-  font-weight: var(--fw-med);
+  color: var(--surface-0);
+  background: var(--ps-t1);
+}
+.ps-seg > .ps-btn[aria-pressed='true']:hover,
+.ps-seg > .ps-btn[aria-current='page']:hover {
+  background: var(--ps-t1);
 }
 .ps-input {
   font: inherit;
@@ -282,8 +292,8 @@
   background: var(--ps-sunken);
   color: var(--ps-t1);
   border: 1px solid var(--ps-rule-strong);
-  border-radius: 3px;
-  padding: 3px 6px;
+  border-radius: 4px;
+  padding: 3px 8px;
   min-height: var(--ps-ctl);
   max-width: 100%;
 }
@@ -338,7 +348,7 @@ textarea.ps-input {
 .tb-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   min-height: var(--ps-top);
   padding: 6px 0;
   min-width: 0;
@@ -354,10 +364,15 @@ textarea.ps-input {
   flex: 1 1 auto;
   min-width: 0;
 }
+.tb-id {
+  font: var(--fw) var(--fs-2) / var(--lh-2) var(--mono);
+  font-variant-numeric: var(--tnum);
+  color: var(--ps-t3);
+  white-space: nowrap;
+}
 .tb-name {
   flex: 1 1 auto;
-  min-width: 80px;
-  max-width: 420px;
+  min-width: 80px; /* grows like the mockup's name, so the id sits beside the actions */
   background: transparent;
   border-color: transparent;
 }
@@ -369,7 +384,7 @@ textarea.ps-input {
 .tb-acts {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   flex: 0 0 auto;
 }
 .tb-split {
@@ -389,10 +404,12 @@ textarea.ps-input {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-@media (max-width: 600px) {
+/* Under 900 px the bar wraps as the mockup does at 860 px: height auto, the name on its own row. */
+@media (max-width: 899px) {
   .tb-bar {
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
+    padding: 8px 0;
   }
   .tb-prof {
     order: 3;
@@ -400,7 +417,11 @@ textarea.ps-input {
   }
   .tb-acts {
     margin-left: auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
+}
+@media (max-width: 600px) {
   .tb-undo,
   .tb-redo,
   .tb-import,
@@ -489,7 +510,7 @@ textarea.ps-input {
   color: var(--text);
   border: 1px solid var(--surface-3);
   border-radius: 6px;
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+  box-shadow: var(--ps-elev);
   outline: none;
   /* The portal sits outside .ps-app, so the body text role is set here. */
   font: var(--fw) var(--fs-3) / var(--lh-3) var(--ui);
@@ -561,7 +582,7 @@ textarea.ps-input {
   color: var(--text);
   border: 1px solid var(--surface-3);
   border-radius: 4px;
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+  box-shadow: var(--ps-elev);
   pointer-events: none;
   transition: opacity 0.2s;
 }
