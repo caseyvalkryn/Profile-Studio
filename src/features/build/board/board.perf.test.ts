@@ -90,6 +90,7 @@ describe('board performance, 40 threats and 15 sensors', () => {
   });
 
   it('writes a time tick to the DOM in under 16 ms', () => {
+    useUi.setState({ timeOn: true });
     render(createElement(Board, { width: 1440, height: 900 }));
     act(() => boardFlush());
     const h = [...mounted][0]!.renderer;

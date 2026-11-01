@@ -30,15 +30,20 @@ function shortcutOf(id: string): string | undefined {
   return c ? shortcutLabel(c) || undefined : undefined;
 }
 
+/** A step button: runs its command and turns the time cursor on. */
 function TimeButton({ id, label }: { id: string; label: string }) {
   const c = get(id);
+  const setTimeOn = useUi((s) => s.setTimeOn);
   return (
     <Button
       size="sm"
       tooltip={c?.label ?? label}
       shortcut={shortcutOf(id)}
       aria-label={c?.label ?? label}
-      onClick={() => execute(id)}
+      onClick={() => {
+        execute(id);
+        setTimeOn(true);
+      }}
     >
       <span className="font-mono">{label}</span>
     </Button>
@@ -51,11 +56,18 @@ export default function Timeline({ width: fixedWidth }: TimelineProps) {
   const preview = usePreview();
   const run = useActiveRun();
   const tS = useUi((s) => s.tS);
+  const timeOn = useUi((s) => s.timeOn);
   const playing = useUi((s) => s.playing);
   const rate = useUi((s) => s.rate);
   const loop = useUi((s) => s.loop);
   const selectedKeys = useUi((s) => s.selectedKeys);
-  const setTime = useUi((s) => s.setTime);
+  const setTimeRaw = useUi((s) => s.setTime);
+  const setTimeOn = useUi((s) => s.setTimeOn);
+  // a scrub turns the time cursor on
+  const setTime = (t: number) => {
+    setTimeRaw(t);
+    setTimeOn(true);
+  };
   const setRate = useUi((s) => s.setRate);
   const [ref, size] = useSize<HTMLDivElement>({ width: fixedWidth });
   const [menuT, setMenuT] = useState<number | null>(null);
@@ -149,7 +161,7 @@ export default function Timeline({ width: fixedWidth }: TimelineProps) {
         <TimeButton id="time.forward1" label="+1" />
         <TimeButton id="time.forward10" label="+10" />
         <span className="ml-2 font-mono text-xs" data-testid="timeline-clock">
-          {fmtTime(tS)}
+          {timeOn ? fmtTime(tS) : 'time off'}
         </span>
         <span className="font-mono text-xs text-muted">/ {fmtTime(tmaxS)}</span>
         {loop ? (
@@ -199,13 +211,15 @@ export default function Timeline({ width: fixedWidth }: TimelineProps) {
                   />
                 ) : null}
                 {axisMarks}
-                <g pointerEvents="none">
-                  <line x1={x(tS)} x2={x(tS)} y1={0} y2={AXIS_H} className="stroke-accent" />
-                  <path
-                    d={`M ${x(tS) - 4} 0 L ${x(tS) + 4} 0 L ${x(tS)} 6 Z`}
-                    className="fill-accent"
-                  />
-                </g>
+                {timeOn ? (
+                  <g pointerEvents="none">
+                    <line x1={x(tS)} x2={x(tS)} y1={0} y2={AXIS_H} className="stroke-accent" />
+                    <path
+                      d={`M ${x(tS) - 4} 0 L ${x(tS) + 4} 0 L ${x(tS)} 6 Z`}
+                      className="fill-accent"
+                    />
+                  </g>
+                ) : null}
               </svg>
               <svg
                 width={width}
@@ -347,13 +361,15 @@ export default function Timeline({ width: fixedWidth }: TimelineProps) {
                     </g>
                   );
                 })}
-                <g data-testid="timeline-playhead" pointerEvents="none">
-                  <line x1={x(tS)} x2={x(tS)} y1={0} y2={height} className="stroke-accent" />
-                  <path
-                    d={`M ${x(tS) - 4} 0 L ${x(tS) + 4} 0 L ${x(tS)} 6 Z`}
-                    className="fill-accent"
-                  />
-                </g>
+                {timeOn ? (
+                  <g data-testid="timeline-playhead" pointerEvents="none">
+                    <line x1={x(tS)} x2={x(tS)} y1={0} y2={height} className="stroke-accent" />
+                    <path
+                      d={`M ${x(tS) - 4} 0 L ${x(tS) + 4} 0 L ${x(tS)} 6 Z`}
+                      className="fill-accent"
+                    />
+                  </g>
+                ) : null}
               </svg>
             </>
           ) : null}

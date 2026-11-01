@@ -51,11 +51,14 @@ function CommandButton({
   label,
   variant,
   pressed,
+  onRun,
 }: {
   id: string;
   label: string;
   variant?: 'quiet' | 'accent';
   pressed?: boolean;
+  /** Runs in place of the command, under the command's when() (a segment that sets one value). */
+  onRun?: () => void;
 }) {
   const ok = useWhen(id);
   const reasonId = useId();
@@ -72,7 +75,9 @@ function CommandButton({
         aria-pressed={pressed}
         aria-describedby={disabled ? reasonId : undefined}
         onClick={() => {
-          if (!disabled) execute(id);
+          if (disabled) return;
+          if (onRun) onRun();
+          else execute(id);
         }}
         className={`inline-flex h-6 shrink-0 items-center rounded-sm px-2 text-xs select-none ${
           variant === 'accent'
@@ -216,6 +221,29 @@ function BuildBar() {
         <CommandButton id="view.elevation" label="Elevation" pressed={view === 'elevation'} />
         <CommandButton id="view.3d" label="3D" pressed={view === '3d'} />
       </div>
+      {view === 'elevation' ? <ElevationModeSegments /> : null}
+    </div>
+  );
+}
+
+/** From asset | Along path, bound to ui.elevationMode; shown while the view is Elevation. */
+function ElevationModeSegments() {
+  const mode = useUi((s) => s.elevationMode);
+  const setMode = useUi((s) => s.setElevationMode);
+  return (
+    <div className="flex items-center gap-0.5" role="group" aria-label="Elevation mode">
+      <CommandButton
+        id="view.elevationMode"
+        label="From asset"
+        pressed={mode === 'fromAsset'}
+        onRun={() => setMode('fromAsset')}
+      />
+      <CommandButton
+        id="view.elevationMode"
+        label="Along path"
+        pressed={mode === 'alongPath'}
+        onRun={() => setMode('alongPath')}
+      />
     </div>
   );
 }

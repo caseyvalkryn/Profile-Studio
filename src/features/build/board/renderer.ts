@@ -4,6 +4,7 @@
 // layers that read time (`opts.only`). The hit list is kept from the last full render.
 import { VIEW_TO_CAM, render, type Hit, type Scene, type Sel, type Size } from '../../../board';
 import type { Cam } from '../../../board/cameras';
+import { bounds as geoBounds, type Bounds } from '../../../board/geo';
 import { list, type CtxField, type Ghost } from '../../../board/layers';
 import type { BoardView, Fragment } from '../../../board/render';
 import type { Derived } from '../../../engine/derived';
@@ -40,6 +41,8 @@ export class BoardRenderer {
   private frag = new Map<string, string>();
   private sig: Sig | null = null;
   private raf = 0;
+  /** The record id the sticky camera bounds belong to; a new id drops them. */
+  private lastRecId: string | null = null;
   private unsub: (() => void)[] = [];
   last: Last | null = null;
   /** Count of DOM writes per layer, for tests. */
@@ -92,6 +95,7 @@ export class BoardRenderer {
   view(rec: Scene, size: Size): { view: BoardView; sig: Sig; ghost: Ghost | null } {
     const ui = useUi.getState();
     const b = useBoard.getState();
+    const bounds = this.stickyBounds(rec);
     const d = boardDerived(useDocument.getState().doc!);
     const proj = VIEW_TO_CAM[ui.view];
     const sel = selFromKey(rec, ui.selectedKeys[0], b.selIndex);
@@ -102,13 +106,13 @@ export class BoardRenderer {
       yaw: b.yaw,
       pitch: b.pitch,
       ref: b.ref,
-      bounds: b.bounds || undefined,
+      bounds,
       zoom: b.zoom,
       px: b.px,
       py: b.py,
       units: ui.units,
       layers: b.layers,
-      t: ui.tS,
+      t: ui.timeOn ? ui.tS : null,
       sel,
       hover,
       focus: [],
@@ -120,14 +124,14 @@ export class BoardRenderer {
       path,
     };
     const camSig = [proj, size.W, size.H, b.zoom, b.px, b.py, b.yaw, b.pitch, b.ref, ui.elevationMode, path,
-      b.bounds ? b.bounds.cx + ',' + b.bounds.cy + ',' + b.bounds.ext : '', rec.id].join('|');
+      bounds.cx + ',' + bounds.cy + ',' + bounds.ext, rec.id].join('|');
     const origin = d.origin;
     const sig: Sig = {
       profile: rec,
       scene: rec.scene,
       derived: d,
       cam: camSig,
-      t: ui.tS,
+      t: ui.timeOn ? ui.tS : null,
       sel: sel.kind + '|' + sel.id + '|' + sel.i,
       hover: hover.kind + '|' + hover.id + '|' + hover.i,
       focus: '',
@@ -143,6 +147,24 @@ export class BoardRenderer {
       origin: origin.x + ',' + origin.y + ',' + origin.z,
     };
     return { view, sig, ghost: b.ghost };
+  }
+
+  /**
+   * The camera bounds (useBoard.bounds). They stick across edits so an add or a drag does not
+   * refit the camera; Fit (null) or another record id recomputes them from the scene. Deviation:
+   * legacy 44-render.js recomputes PS.geo.bounds on every render.
+   */
+  private stickyBounds(rec: Scene): Bounds {
+    let b = useBoard.getState().bounds;
+    if (rec.id !== this.lastRecId) {
+      this.lastRecId = rec.id;
+      b = null;
+    }
+    if (!b) {
+      b = geoBounds(rec.scene);
+      useBoard.getState().set({ bounds: b });
+    }
+    return b;
   }
 
   render(): void {
