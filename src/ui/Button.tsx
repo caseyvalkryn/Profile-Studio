@@ -6,7 +6,7 @@ export type ButtonVariant = 'quiet' | 'default' | 'accent';
 export type ButtonSize = 'sm' | 'md';
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  /** Quiet is the default. Accent is for the one primary action (Run). */
+  /** Quiet is the default. Accent is for the one primary action. */
   variant?: ButtonVariant;
   size?: ButtonSize;
   icon?: ReactNode;
@@ -15,14 +15,14 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const VARIANT: Record<ButtonVariant, string> = {
-  quiet: 'border border-transparent bg-transparent text-text hover:bg-surface-2',
-  default: 'border border-surface-3 bg-surface-1 text-text hover:bg-surface-2',
+  quiet: 'border border-transparent bg-transparent text-text hover:bg-surface-3',
+  default: 'border border-rule-strong bg-transparent text-text hover:bg-surface-3',
   accent: 'border border-accent bg-accent text-accent-text hover:opacity-90',
 };
 
 const SIZE: Record<ButtonSize, string> = {
-  sm: 'h-6 gap-1 px-1.5 text-xs',
-  md: 'h-7 gap-1.5 px-2.5 text-sm',
+  sm: 'h-ctl-mini gap-1 px-2 text-data font-medium',
+  md: 'h-ctl gap-1.5 px-2.5 text-body font-medium',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(

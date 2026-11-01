@@ -16,6 +16,8 @@
   --color-muted: var(--text-muted);
   --color-accent: var(--accent);
   --color-accent-text: var(--accent-text);
+  --color-subtle: var(--text-subtle);
+  --color-rule-strong: var(--rule-strong);
   --color-state-covered: var(--state-covered);
   --color-state-warning: var(--state-warning);
   --radius-sm: var(--radius-sm);
@@ -52,6 +54,7 @@
   --spacing-hit: var(--hit);
   --spacing-ctl: var(--ctl);
   --spacing-ctl-dense: var(--ctl-dense);
+  --spacing-ctl-seg: var(--ctl-seg);
   --spacing-ctl-mini: var(--ctl-mini);
   --spacing-row: var(--row);
   --spacing-row-2: var(--row-2);

@@ -1,10 +1,11 @@
-/* Board SVG styles, legacy css/board.css one to one (lane 9.2.2). The rules below the token block
-   are the legacy rules unchanged, so the legacy class names stay (elev and axon cameras, vol for
-   areas, sys for systems, af for aircraft frames). The chart rules stay for the strip lane.
+/* Board SVG styles, legacy css/board.css one to one (lane 9.2.2), with the mockup's affiliation
+   inks (legacy/mockup-v3.html lines 104 to 124; lane 10.6). The legacy class names stay (elev and
+   axon cameras, vol for areas, sys for systems, af for aircraft frames). The chart rules stay for
+   the strip lane.
 
-   Token block: the legacy board tokens, scoped to the board and chart SVG. Where the MVP has the
-   colour (src/styles/tokens.css) the legacy name points at the MVP token; elsewhere it keeps the
-   legacy value, with the legacy dark value under the MVP theme selectors. */
+   Token block: the inks are global (src/styles/tokens.css: --hostile, --friend, --neutral, --ew,
+   --ghost, --nominal, --warn, --grid, --rule-strong). The legacy names below are the board-only
+   inks with no mockup token; their dark values are screen-only, like the theme. */
 
 svg.board,
 svg.chart {
@@ -12,53 +13,33 @@ svg.chart {
   --t1: var(--text);
   --t2: var(--text-muted);
   --t3: var(--text-subtle);
-  --hostile: var(--state-hostile);
-  --warn: var(--state-warning);
-  --rule-strong: #b0aa9e;
-  --unknown: #98691b;
-  --friend: #2862b0;
-  --ew: #227f8c;
-  --control: #3a3c38;
+  --unknown: var(--neutral);
   --select: var(--accent); /* tokens.css: the accent is selection and current time only */
+  --control: #3a3c38;
   --datablock: #4e504b;
   --link: #8a8d86;
-  --ghost: #767d84;
   --killx: #4e504b;
-  --nominal: #378154;
-  --grid: #e2ded5;
   --tint-cover: color-mix(in srgb, var(--friend) 8%, transparent);
   --tint-wez: color-mix(in srgb, var(--hostile) 7%, transparent);
   --tint-window: color-mix(in srgb, var(--nominal) 10%, transparent);
 }
 
-@media (prefers-color-scheme: dark) {
+@media screen and (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) :is(svg.board, svg.chart) {
-    --rule-strong: #454846;
-    --unknown: #e6cf5a;
-    --friend: #7fbfe6;
-    --ew: #5ad1e0;
     --control: #ebe9e3;
     --datablock: #b7bdb2;
     --link: #8a9199;
-    --ghost: #6a7178;
     --killx: #cfd4cc;
-    --nominal: #7fc39a;
-    --grid: #1d1f1e;
   }
 }
 
-:root[data-theme='dark'] :is(svg.board, svg.chart) {
-  --rule-strong: #454846;
-  --unknown: #e6cf5a;
-  --friend: #7fbfe6;
-  --ew: #5ad1e0;
-  --control: #ebe9e3;
-  --datablock: #b7bdb2;
-  --link: #8a9199;
-  --ghost: #6a7178;
-  --killx: #cfd4cc;
-  --nominal: #7fc39a;
-  --grid: #1d1f1e;
+@media screen {
+  :root[data-theme='dark'] :is(svg.board, svg.chart) {
+    --control: #ebe9e3;
+    --datablock: #b7bdb2;
+    --link: #8a9199;
+    --killx: #cfd4cc;
+  }
 }
 
 /* ---------------------------------------------------------------- legacy rules */
@@ -190,10 +171,13 @@ svg.board .hint {
 
 /* volumes and planes */
 :where(svg.board, svg.chart) .vol {
-  stroke-width: var(--w2);
+  stroke: var(--neutral);
+  stroke-width: var(--w1);
+  stroke-dasharray: 2 3;
 }
 :where(svg.board, svg.chart) .vol-asset {
   stroke: var(--friend);
+  stroke-dasharray: none;
 }
 :where(svg.board, svg.chart) .vol-wez {
   stroke: var(--hostile);
@@ -206,7 +190,6 @@ svg.board .hint {
 }
 :where(svg.board, svg.chart) .vol-ref {
   stroke: var(--ghost);
-  stroke-dasharray: 6 4;
 }
 :where(svg.board, svg.chart) .vol.flat {
   stroke-width: var(--w3);
@@ -220,7 +203,7 @@ svg.board .hint {
 }
 :where(svg.board, svg.chart) .plane {
   stroke: var(--ghost);
-  stroke-width: var(--w2);
+  stroke-width: var(--w1);
   stroke-dasharray: 6 4;
 }
 :where(svg.board, svg.chart) .plane.sel {
@@ -233,23 +216,22 @@ svg.board .pl {
 
 /* reach rings */
 :where(svg.board, svg.chart) .ring {
+  stroke: var(--friend);
   stroke-width: var(--w2);
+  stroke-dasharray: 4 4;
+  opacity: 0.8;
   pointer-events: visibleStroke;
 }
-:where(svg.board, svg.chart) .rg-sensor {
-  stroke: var(--friend);
-  stroke-dasharray: 6 4;
-}
+:where(svg.board, svg.chart) .rg-sensor,
 :where(svg.board, svg.chart) .rg-eff {
-  stroke: var(--control);
-  stroke-dasharray: 8 5;
+  stroke: var(--friend);
 }
 :where(svg.board, svg.chart) .rg-ew {
   stroke: var(--ew);
-  stroke-dasharray: 8 5;
 }
 :where(svg.board, svg.chart) .ring.on {
   stroke-dasharray: none;
+  opacity: 1;
 }
 :where(svg.board, svg.chart) .rg-sensor.on {
   fill: var(--tint-cover);
@@ -296,11 +278,12 @@ svg.board .gt {
 svg.board .gf-ew .gt {
   fill: var(--ew);
 }
-:where(svg.board, svg.chart) .gf-kinetic .gfk,
-:where(svg.board, svg.chart) .gf-kinetic .gg,
 :where(svg.board, svg.chart) .gf-de .gfk,
 :where(svg.board, svg.chart) .gf-de .gg {
-  stroke: var(--control);
+  stroke: var(--ew);
+}
+svg.board .gf-de .gt {
+  fill: var(--ew);
 }
 :where(svg.board, svg.chart) .gf-tspi .gfk,
 :where(svg.board, svg.chart) .gfk.gf-tspi {
@@ -331,7 +314,6 @@ svg.board .sl {
 :where(svg.board, svg.chart) .route {
   stroke: var(--ink, var(--hostile));
   stroke-width: var(--w2);
-  opacity: 0.7;
 }
 :where(svg.board, svg.chart) .route.w1 {
   stroke-width: var(--w1);
@@ -340,11 +322,11 @@ svg.board .sl {
   stroke-width: var(--w3);
 }
 :where(svg.board, svg.chart) .path.sel .route {
-  opacity: 1;
   stroke-width: var(--w3);
 }
 :where(svg.board, svg.chart) .path.hov .route {
-  opacity: 0.9;
+  stroke-width: var(--w3);
+  opacity: 0.75;
 }
 :where(svg.board, svg.chart) .shadow {
   stroke: var(--rule-strong);
@@ -352,9 +334,9 @@ svg.board .sl {
   stroke-dasharray: 2 3;
 }
 :where(svg.board, svg.chart) .drop {
-  stroke: var(--rule-strong);
+  stroke: var(--hostile);
+  stroke-opacity: 0.3;
   stroke-width: var(--w1);
-  stroke-dasharray: 2 2;
 }
 svg.board .wpd {
   fill: var(--board);
@@ -376,7 +358,7 @@ svg.board .wpn {
 /* envelopes */
 :where(svg.board, svg.chart) .hull {
   stroke: var(--hostile);
-  stroke-width: var(--w2);
+  stroke-width: var(--w1);
   stroke-dasharray: 3 3;
   fill: color-mix(in srgb, var(--hostile) 6%, transparent);
 }
@@ -394,9 +376,9 @@ svg.board .tel {
   stroke: none;
 }
 :where(svg.board, svg.chart) .tell {
-  stroke: var(--link);
+  stroke: var(--ew);
   stroke-width: var(--w1);
-  stroke-dasharray: 1 3;
+  stroke-dasharray: 1.5 3;
 }
 svg.board .flsq {
   fill: none;

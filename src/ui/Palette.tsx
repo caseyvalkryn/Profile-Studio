@@ -115,7 +115,7 @@ export function Palette({
                 <button
                   type="button"
                   onClick={onShowAll}
-                  className="mr-2 h-6 rounded-sm px-2 text-xs text-muted hover:bg-surface-2 hover:text-text"
+                  className="mr-2 h-ctl-mini rounded-sm px-2 text-data text-muted hover:bg-surface-3 hover:text-text"
                 >
                   All
                 </button>

@@ -15,10 +15,10 @@ export type MenuParts = {
   Portal: ComponentType<RDM.DropdownMenuPortalProps>;
 };
 
-export const menuContentClass = `z-50 min-w-44 rounded-md border border-surface-3 bg-surface-1 p-1 text-sm text-text shadow-md ${popIn}`;
+export const menuContentClass = `z-50 min-w-44 rounded-md border border-surface-3 bg-surface-1 p-1 text-body text-text shadow-md ${popIn}`;
 
 const itemClass =
-  'flex h-7 cursor-default items-center gap-4 rounded-sm px-2 outline-none select-none data-[highlighted]:bg-surface-2 data-[highlighted]:ring-1 data-[highlighted]:ring-accent data-[disabled]:text-muted';
+  'flex h-ctl cursor-default items-center gap-4 rounded-sm px-2 outline-none select-none data-[highlighted]:bg-surface-2 data-[highlighted]:ring-1 data-[highlighted]:ring-accent data-[disabled]:text-muted';
 
 function Row({ label, right }: { label: string; right?: ReactNode }) {
   return (
