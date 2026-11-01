@@ -506,6 +506,81 @@ describe('Board', () => {
     });
   });
 
+  it('a press on the ring of an unselected system drags its range, not its centre (lane 11.1)', () => {
+    const { stage, container } = mount();
+    expect(useUi.getState().selectedKeys).toEqual([]);
+    const ring = container.querySelector(
+      'g[data-layer="reach"] [data-k="system"][data-id="S-02"]',
+    )!;
+    expect(ring).toBeTruthy();
+    const s0 = useDocument.getState().doc!.sensors[1]!;
+    const [rx, ry] = project(s0.x + s0.rangeM, s0.y);
+    const past = useDocument.getState().past.length;
+    fireEvent.pointerDown(ring, {
+      clientX: rx,
+      clientY: ry,
+      button: 0,
+      pointerId: 1,
+      pointerType: 'mouse',
+      isPrimary: true,
+    });
+    move(stage, rx + 20, ry);
+    move(stage, rx + 40, ry);
+    up(stage, rx + 40, ry);
+    const s1 = useDocument.getState().doc!.sensors[1]!;
+    expect(useUi.getState().selectedKeys).toEqual([s1.key]);
+    expect([s1.x, s1.y]).toEqual([s0.x, s0.y]);
+    expect(s1.rangeM).toBeGreaterThan(s0.rangeM);
+    expect(useDocument.getState().past.length).toBe(past + 1);
+    expect(useDocument.getState().history.at(-1)).toMatch(/set S-02 range/);
+  });
+
+  it('a placement with a pathId appends waypoints to that threat (lane 11.1)', () => {
+    const { stage } = mount();
+    const t0 = useDocument.getState().doc!.threats[0]!;
+    const n0 = t0.path.length;
+    const lastZ = t0.path[n0 - 1]!.z;
+    const threats0 = useDocument.getState().doc!.threats.length;
+    act(() =>
+      useBoard
+        .getState()
+        .set({ placing: { kind: 'aircraft', arch: t0.type, pts: [], pathId: t0.id } }),
+    );
+    const [ax, ay] = project(1200, 800);
+    click(stage, ax, ay);
+    const [bx, by] = project(1500, 400);
+    click(stage, bx, by);
+    let t1 = useDocument.getState().doc!.threats[0]!;
+    expect(t1.path.length).toBe(n0 + 2);
+    expect(t1.path[n0]!.z).toBe(lastZ);
+    expect(useBoard.getState().placing?.pathId).toBe(t0.id);
+    expect(useUi.getState().selectedKeys).toEqual([t0.key]);
+    // one undo step per waypoint
+    act(() => useDocument.getState().undo());
+    t1 = useDocument.getState().doc!.threats[0]!;
+    expect(t1.path.length).toBe(n0 + 1);
+    // Enter (finish) ends the placement and adds no threat
+    act(() => useUi.getState().signalPath('finish'));
+    expect(useBoard.getState().placing).toBeNull();
+    expect(useDocument.getState().doc!.threats.length).toBe(threats0);
+    expect(useDocument.getState().doc!.threats[0]!.path.length).toBe(n0 + 1);
+  });
+
+  it('a placement without a pathId still draws a new threat', () => {
+    const { stage } = mount();
+    const threats0 = useDocument.getState().doc!.threats.length;
+    act(() =>
+      useBoard.getState().set({ placing: { kind: 'aircraft', arch: 'g1-quad-isr', pts: [] } }),
+    );
+    const [ax, ay] = project(1200, 800);
+    click(stage, ax, ay);
+    const [bx, by] = project(1500, 400);
+    click(stage, bx, by);
+    act(() => useUi.getState().signalPath('finish'));
+    expect(useDocument.getState().doc!.threats.length).toBe(threats0 + 1);
+    expect(useDocument.getState().doc!.threats.at(-1)!.path.length).toBe(2);
+  });
+
   it('time off renders the board with t null; T turns it on', () => {
     const { h } = mount();
     expect(useUi.getState().timeOn).toBe(false);

@@ -300,6 +300,22 @@ const PHASE_10_DEVIATIONS: readonly LegacyPatch[] = [
     'if (!ctx.thumb) out += S("text", { x: t.px, y: r1(f.y1 + 14),',
     'if (!ctx.thumb && t.v !== 0) out += S("text", { x: t.px, y: r1(f.y1 + 14),',
   ],
+  // Lane 11.1 item 7: the label drops 8 px inside the frame top (was 12) and, when it would sit
+  // within 10 px above the top height tick, keeps the axis title's 10 px gap above that tick.
+  [
+    '43-layer-reach.js',
+    'top = [tp[0], Math.max(tp[1] - 4, cam.frame.y0 + 12)];',
+    'var yt = cam.axes.yTicks, tk = yt.length ? yt[yt.length - 1].px : null,' +
+      ' ty = Math.max(tp[1] - 4, cam.frame.y0 + 8);' +
+      ' if (tk !== null && ty > tk - 10 && ty <= tk && tk - 10 >= cam.frame.y0 + 8) ty = tk - 10;' +
+      ' top = [tp[0], ty];',
+  ],
+  // Lane 11.1 item 8: the board label "MAX RG" reads "Max range" (user decision, 2026-11-01).
+  [
+    '43-layer-reach.js',
+    'ctx.sym.textBox(top[0], top[1], "MAX RG", 10, "middle"), svg: ctx.sym.label(top[0], top[1], "MAX RG",',
+    'ctx.sym.textBox(top[0], top[1], "Max range", 10, "middle"), svg: ctx.sym.label(top[0], top[1], "Max range",',
+  ],
   // F-11: directed energy draws the EW ring, as the mockup's "ring ew".
   [
     '43-layer-reach.js',

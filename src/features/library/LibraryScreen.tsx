@@ -14,7 +14,7 @@ import { useDocument } from '../../state/document';
 import {
   deleteVignette,
   flushAutosave,
-  listVignettes,
+  listWithRecords,
   loadVignette,
   saveVignette,
   type VignetteListing,
@@ -207,35 +207,27 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
     return out;
   }, [ordered]);
 
+  // One store read gives the listing and the records the thumbnails draw (lane 11.1).
   const refresh = useCallback(async () => {
-    setSaved(await listVignettes());
+    const { list, records } = await listWithRecords();
+    setSaved(list);
+    setLoaded(records);
   }, []);
 
   useEffect(() => {
     let live = true;
     // Write an edit made less than 500 ms before the route change first (review 7.R F-06).
     void flushAutosave()
-      .then(() => listVignettes())
-      .then((list) => {
-        if (live) setSaved(list);
+      .then(() => listWithRecords())
+      .then(({ list, records }) => {
+        if (!live) return;
+        setSaved(list);
+        setLoaded(records);
       });
     return () => {
       live = false;
     };
   }, [changed]);
-
-  // Load each saved profile once per `updated`, for its thumbnail: the render needs the scene.
-  const requested = useRef(new Set<string>());
-  useEffect(() => {
-    for (const s of saved) {
-      const tag = `${s.id}@${s.updated}`;
-      if (requested.current.has(tag)) continue;
-      requested.current.add(tag);
-      void loadVignette(s.id).then((v) => {
-        if (v) setLoaded((m) => ({ ...m, [v.id]: v }));
-      });
-    }
-  }, [saved]);
 
   // Focus moves between Delete and the confirm row, as in the legacy panel.
   useEffect(() => {

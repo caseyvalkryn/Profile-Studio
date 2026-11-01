@@ -9,7 +9,8 @@ import { newKey } from '../../domain/ids';
 import { CAM_TO_VIEW, type CamKind } from '../../board';
 import { useBoard } from '../build/board/store';
 import { boardScene } from '../build/board/derived';
-import { applyCard as applyToBuild, nextCardId } from '../build/cards/cards';
+import { applyCard as applyToBuild, cardViewOf, nextCardId } from '../build/cards/cards';
+import { showToast } from '../shell/toastStore';
 import { useDocument, type Recipe } from '../../state/document';
 import { useUi, type BuildStash, type View } from '../../state/ui';
 import { idMaps } from './toCardRec';
@@ -105,25 +106,17 @@ export function restoreBuild(): void {
 
 /**
  * A card from a Build view: the stash while Brief is open (the view the user left), else the live
- * Build stores. The board's `ref` is a display id; the card stores the key.
+ * Build stores. The centre and zoom are the stash's (a 3D card keeps the fitted frame); the
+ * board's `ref` is a display id and the card stores the key.
  */
 export function cardFromBuild(v: Vignette, from: BuildStash = snapshotBuild()): Card {
-  const { keyOfId } = idMaps(boardScene(v));
   const layers: Partial<Record<LayerId, boolean>> = {};
   for (const [k, on] of Object.entries(from.layers)) layers[k as LayerId] = on;
   return {
     key: newKey(),
     id: nextCardId(v.cards),
     name: `Card ${v.cards.length + 1}`,
-    view: {
-      kind: from.view,
-      centre: { x: 0, y: 0 },
-      zoom: 1,
-      yawDeg: from.yaw,
-      pitchDeg: from.pitch,
-      ref: from.ref === 'asset' ? 'asset' : (keyOfId.get(from.ref) ?? 'asset'),
-      elevationMode: from.elevationMode,
-    },
+    view: cardViewOf(v, from),
     layers,
     displays: { timeline: false, chart: false, readout: false },
     clip: null,
@@ -143,9 +136,13 @@ export function addCard(): void {
     d.cards.push(card);
   });
   useUi.getState().setCardKey(card.key);
+  if (card.view.kind === '3d') showToast(ADDED_TOAST_3D);
   const next = doc();
   if (next) applyCard(next, card);
 }
+
+/** 3D has no inverse camera, so a card added from a 3D view keeps the fitted frame. */
+export const ADDED_TOAST_3D = 'Card added at the fitted 3D frame.';
 
 /** Move the current card up (-1) or down (+1) in the deck; one undo step. */
 export function moveCard(d: -1 | 1): void {
