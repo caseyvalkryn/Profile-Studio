@@ -14,7 +14,7 @@ import { M_PER_NM } from '../shared/units';
 import BuildWorkspace from './BuildWorkspace';
 import { cancel } from './board/Board';
 import { useBoard, BOARD_DEFAULTS } from './board/store';
-import { saveCard, SAVED_TOAST } from './cards/cards';
+import { saveCard, SAVED_TOAST, SAVED_TOAST_3D } from './cards/cards';
 
 const reset = () =>
   act(() => {
@@ -338,15 +338,16 @@ describe('Build bar, scrub, thumbnails and cards (lane 10.3)', () => {
     expect(thumbs.queryByRole('button', { name: 'Elevation thumbnail' })).toBeNull();
   });
 
-  it('Add waypoints selects the first threat and arms the path placement', () => {
+  it('Add waypoints arms the path placement on the selected threat', () => {
     act(() => useDocument.getState().open(testVignette()));
     render(<BuildWorkspace />);
     const doc = useDocument.getState().doc!;
+    act(() => useUi.getState().setSelection([doc.threats[0]!.key]));
     const btn = screen.getByRole('button', { name: 'Add waypoints' });
     fireEvent.click(btn);
-    expect(useUi.getState().selectedKeys).toEqual([doc.threats[0]!.key]);
     expect(useUi.getState().armed).toEqual({ group: 'threat', type: doc.threats[0]!.type });
     expect(useBoard.getState().placing?.kind).toBe('aircraft');
+    expect(useBoard.getState().placing?.pathId).toBe(doc.threats[0]!.id);
     expect(btn).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(btn);
     expect(useBoard.getState().placing).toBeNull();
@@ -392,9 +393,12 @@ describe('Build bar, scrub, thumbnails and cards (lane 10.3)', () => {
       pitchDeg: 40,
       ref: doc0.sensors[0]!.key,
       elevationMode: 'fromAsset',
+      // 3D has no inverse camera: the card keeps the fitted frame and the toast says so (11.1)
+      centre: { x: 0, y: 0 },
+      zoom: 1,
     });
     expect(useDocument.getState().history.at(-1)).toBe('Save card');
-    expect(useToast.getState().text).toBe(SAVED_TOAST);
+    expect(useToast.getState().text).toBe(SAVED_TOAST_3D);
     // The bar button saves the next one, with time off.
     act(() => useUi.getState().setTimeOn(false));
     fireEvent.click(screen.getByRole('button', { name: 'Save as card' }));
@@ -412,6 +416,7 @@ describe('Build bar, scrub, thumbnails and cards (lane 10.3)', () => {
     saveCard(null);
     const c = saveCard(a)!;
     expect(useDocument.getState().doc!.cards.map((x) => x.key)[1]).toBe(c);
+    expect(useToast.getState().text).toBe(SAVED_TOAST);
   });
 
   it('the card commands open, duplicate, move and delete, each in one undo step', () => {

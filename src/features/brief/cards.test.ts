@@ -1,7 +1,9 @@
 import { BOARD_DEFAULTS, useBoard } from '../build/board/store';
 import { useDocument } from '../../state/document';
 import { UI_DEFAULTS, useUi } from '../../state/ui';
+import { useToast } from '../shell/toastStore';
 import {
+  ADDED_TOAST_3D,
   addCard,
   applyCard,
   cardFromBuild,
@@ -77,6 +79,41 @@ describe('the Build stash', () => {
       py: 6,
       layers: { labels: false },
     });
+  });
+});
+
+describe('the card frame (lane 11.1)', () => {
+  it('a card added from a stashed Plan view keeps its zoom and centre', () => {
+    useBoard.getState().set({ zoom: 1, px: 0, py: 0 });
+    expect(cardFromBuild(doc()).view).toMatchObject({ centre: { x: 0, y: 0 }, zoom: 1 });
+    useBoard.getState().set({ zoom: 2, px: 0, py: 0 });
+    stashBuild();
+    useBoard.getState().set({ zoom: 1 }); // the live board moved on; the stash is the source
+    addCard();
+    const c = doc().cards.at(-1)!;
+    expect(c.view.zoom).toBe(2);
+    useUi.getState().setBuildStash(null);
+    // a pan right by 200 px moves the middle of the board west of the fitted middle
+    useBoard.getState().set({ zoom: 1, px: 200, py: 0 });
+    const v = cardFromBuild(doc()).view;
+    expect(v.centre.x).toBeLessThan(0);
+    expect(v.centre.y).toBe(0);
+  });
+
+  it('a card added from a stashed 3D view keeps the fitted frame and says so', () => {
+    useUi.getState().setView('3d');
+    useBoard.getState().set({ zoom: 2, px: 30, py: -10, yaw: 15, pitch: 50 });
+    stashBuild();
+    addCard();
+    const c = doc().cards.at(-1)!;
+    expect(c.view).toMatchObject({
+      kind: '3d',
+      centre: { x: 0, y: 0 },
+      zoom: 1,
+      yawDeg: 15,
+      pitchDeg: 50,
+    });
+    expect(useToast.getState().text).toBe(ADDED_TOAST_3D);
   });
 });
 

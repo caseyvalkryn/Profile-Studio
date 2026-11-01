@@ -134,9 +134,10 @@ function ElevationModeSegments() {
 }
 
 /**
- * Add waypoints (mockup `t-wp`): arms the path placement. With no threat selected, the first
- * threat is selected so the inspector and the readout follow it; the placement draws a new path
- * of that threat's type (the board has no append-to-path placement yet).
+ * Add waypoints (mockup `t-wp`, line 445): arms the path placement. With a threat selected, each
+ * click on the plan appends a waypoint to that threat's path (placing.pathId); with none selected,
+ * the clicks draw a new threat. The placing is set before ui.armed, so the board's armed sync
+ * keeps it (same kind) and does not replace it with a new-threat placing.
  */
 export function toggleAddWaypoints(): void {
   const ui = useUi.getState();
@@ -148,10 +149,13 @@ export function toggleAddWaypoints(): void {
   }
   const doc = useDocument.getState().doc;
   if (!doc) return;
-  let threat = doc.threats.find((t) => ui.selectedKeys.includes(t.key));
-  if (!threat && doc.threats.length > 0) {
-    threat = doc.threats[0]!;
-    ui.setSelection([threat.key]);
+  const threat = doc.threats.find((t) => ui.selectedKeys.includes(t.key));
+  if (threat) {
+    b.set({
+      placing: { kind: 'aircraft', arch: threat.type, pts: [], pathId: threat.id },
+      ruler: null,
+    });
+    ui.setDrawing(true);
   }
   ui.setArmed({ group: 'threat', type: threat?.type ?? DEFAULT_THREAT_TYPE });
   ui.setTool('path');

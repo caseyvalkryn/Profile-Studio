@@ -98,13 +98,59 @@ export async function loadVignette(id: string): Promise<Vignette | null> {
   return parseVignette(v);
 }
 
+const newestFirst = (a: VignetteListing, b: VignetteListing) =>
+  a.updated < b.updated ? 1 : a.updated > b.updated ? -1 : 0;
+
+/** The last listing read this session, so a screen that only needs it does not read again. */
+let listed: VignetteListing[] | null = null;
+
+/** The listing the last read returned, or null before the first read. */
+export function lastListing(): VignetteListing[] | null {
+  return listed;
+}
+
 /** Saved vignettes, newest first. */
 export async function listVignettes(): Promise<VignetteListing[]> {
   const all = await (await getDb()).getAll('vignettes');
   for (const v of all) storedIds.add(v.id);
-  return all
-    .map(listingOf)
-    .sort((a, b) => (a.updated < b.updated ? 1 : a.updated > b.updated ? -1 : 0));
+  listed = all.map(listingOf).sort(newestFirst);
+  return listed;
+}
+
+/** Parsed records by id, kept while the stored `updated` is the same. Read-only: thumbnails. */
+const parsedCache = new Map<string, { updated: string; v: Vignette | null }>();
+
+function parsedOf(raw: Vignette): Vignette | null {
+  const hit = parsedCache.get(raw.id);
+  if (hit && hit.updated === raw.updated) return hit.v;
+  let v: Vignette | null;
+  try {
+    v = parseVignette(raw);
+  } catch {
+    v = null; // a record that does not parse lists, and draws the placeholder
+  }
+  parsedCache.set(raw.id, { updated: raw.updated, v });
+  return v;
+}
+
+/**
+ * The Library's one read: the listing, newest first, and each record parsed for its thumbnail
+ * (absent when it does not parse). Parses are cached per id and `updated`, so a return to the
+ * Library parses only what changed. The records are shared: do not edit them.
+ */
+export async function listWithRecords(): Promise<{
+  list: VignetteListing[];
+  records: Record<string, Vignette>;
+}> {
+  const all = await (await getDb()).getAll('vignettes');
+  const records: Record<string, Vignette> = {};
+  for (const raw of all) {
+    storedIds.add(raw.id);
+    const v = parsedOf(raw);
+    if (v) records[raw.id] = v;
+  }
+  listed = all.map(listingOf).sort(newestFirst);
+  return { list: listed, records };
 }
 
 /** Every stored profile, newest first, parsed: a record stored at v5 or v6 comes back as v7. */
@@ -119,6 +165,7 @@ export async function loadAllVignettes(): Promise<Vignette[]> {
 export async function deleteVignette(id: string): Promise<void> {
   await (await getDb()).delete('vignettes', id);
   storedIds.delete(id);
+  parsedCache.delete(id);
 }
 
 /** A waypoint as exported: x, y, z, arrive, depart, in whole metres and seconds. */

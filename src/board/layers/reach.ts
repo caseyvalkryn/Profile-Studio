@@ -147,8 +147,13 @@ register({
           });
         }
         const tp = cam.projectRZ!(rs, Math.min(cam.maxZ!, zs + s.range));
-        // clamped to the frame top, MAX RG drops inside the frame, clear of the axis title (F-06)
-        top = [tp[0], Math.max(tp[1] - 4, cam.frame.y0 + 12)];
+        // clamped to the frame top, Max range drops inside the frame, clear of the axis title
+        // (F-06), and keeps the axis title's 10 px gap above the top height tick (lane 11.1)
+        const yt = cam.axes.yTicks;
+        const tk = yt.length ? yt[yt.length - 1]!.px : null;
+        let ty = Math.max(tp[1] - 4, cam.frame.y0 + 8);
+        if (tk !== null && ty > tk - 10 && ty <= tk && tk - 10 >= cam.frame.y0 + 8) ty = tk - 10;
+        top = [tp[0], ty];
       } else {
         const full = !(s.fov < 360);
         const n = 64;
@@ -167,8 +172,8 @@ register({
         ctx.label({
           p: 3,
           id: s.id,
-          box: ctx.sym.textBox(top[0]!, top[1]!, 'MAX RG', 10, 'middle'),
-          svg: ctx.sym.label(top[0]!, top[1]!, 'MAX RG', 'small mr' + ctx.dim(s.id), 'middle'),
+          box: ctx.sym.textBox(top[0]!, top[1]!, 'Max range', 10, 'middle'),
+          svg: ctx.sym.label(top[0]!, top[1]!, 'Max range', 'small mr' + ctx.dim(s.id), 'middle'),
         });
       }
     }

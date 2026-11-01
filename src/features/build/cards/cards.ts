@@ -13,6 +13,8 @@ import { useBoard } from '../board/store';
 import { toggledLayers } from '../bar/layers';
 
 export const SAVED_TOAST = 'Card saved. Write its caption in Brief.';
+/** 3D has no inverse camera, so a 3D card keeps the fitted frame, not the pan and zoom. */
+export const SAVED_TOAST_3D = 'Card saved at the fitted 3D frame. Write its caption in Brief.';
 
 /** The lowest unused `c<n>` (spec section 3 item 5), minted as every other display id. */
 export function nextCardId(cards: readonly Card[]): string {
@@ -58,17 +60,30 @@ type CamParams = {
 };
 
 /** A camera of the profile at a zoom and pan, the same one the board would set up. */
-function camAt(doc: Vignette, p: CamParams, size: { W: number; H: number }, zoom: number) {
+function camAt(
+  doc: Vignette,
+  p: CamParams,
+  size: { W: number; H: number },
+  zoom: number,
+  px = 0,
+  py = 0,
+) {
   return cameras.get(VIEW_TO_CAM[p.kind]).setup(boardScene(doc).scene, boardDerived(doc), size, {
     yaw: p.yawDeg,
     pitch: p.pitchDeg,
     ref: p.ref,
     bounds: useBoard.getState().bounds ?? undefined,
     zoom,
-    px: 0,
-    py: 0,
+    px,
+    py,
     elevationMode: p.elevationMode,
   });
+}
+
+/** The board's size: the mounted board's last render, else the size the board last had (Brief). */
+function boardSize(): { W: number; H: number } {
+  const last = boardCam();
+  return last ? { W: last.W, H: last.H } : useBoard.getState().size;
 }
 
 /** The world point at screen (sx, sy): plan x, y or elevation r, z; null in 3D. */
@@ -85,30 +100,65 @@ function screenOf(cam: Cam, w: { x: number; y: number }): [number, number] {
 
 /**
  * CardView.centre: the pan from the fitted view in metres (types.ts), the world point at the
- * middle of the board now less the one at the middle of the fitted view. {0, 0} in 3D, whose
- * camera has no inverse.
+ * middle of the board at this zoom and pan less the one at the middle of the fitted view.
  */
-function boardCentre(doc: Vignette, p: CamParams): { x: number; y: number } {
-  const last = boardCam();
-  if (!last) return { x: 0, y: 0 };
-  const now = worldAt(last.cam, last.W / 2, last.H / 2);
-  const fit = worldAt(camAt(doc, p, last, 1), last.W / 2, last.H / 2);
+function centreOf(
+  doc: Vignette,
+  p: CamParams,
+  zoom: number,
+  px: number,
+  py: number,
+): { x: number; y: number } {
+  const size = boardSize();
+  const now = worldAt(camAt(doc, p, size, zoom, px, py), size.W / 2, size.H / 2);
+  const fit = worldAt(camAt(doc, p, size, 1), size.W / 2, size.H / 2);
   if (!now || !fit) return { x: 0, y: 0 };
   return { x: Math.round(now.x - fit.x), y: Math.round(now.y - fit.y) };
+}
+
+/** A Build camera: the live board's, or the one Brief stashed on entry. `ref` is a display id. */
+export type BuildCam = {
+  view: CardView['kind'];
+  yaw: number;
+  pitch: number;
+  ref: string;
+  elevationMode: CardView['elevationMode'];
+  zoom: number;
+  px: number;
+  py: number;
+};
+
+/**
+ * The card view of a Build camera. Plan and Elevation keep the centre and zoom; 3D, whose camera
+ * has no inverse, keeps the fitted frame (centre 0, 0, zoom 1) and its yaw and pitch.
+ */
+export function cardViewOf(doc: Vignette, c: BuildCam): CardView {
+  const p: CamParams = {
+    kind: c.view,
+    yawDeg: c.yaw,
+    pitchDeg: c.pitch,
+    ref: c.ref,
+    elevationMode: c.elevationMode,
+  };
+  const ref = refToKey(doc, c.ref);
+  if (c.view === '3d') return { ...p, ref, centre: { x: 0, y: 0 }, zoom: 1 };
+  return { ...p, ref, centre: centreOf(doc, p, c.zoom, c.px, c.py), zoom: c.zoom };
 }
 
 /** The card view of the board now. */
 export function cardViewNow(doc: Vignette): CardView {
   const ui = useUi.getState();
   const b = useBoard.getState();
-  const p: CamParams = {
-    kind: ui.view,
-    yawDeg: b.yaw,
-    pitchDeg: b.pitch,
+  return cardViewOf(doc, {
+    view: ui.view,
+    yaw: b.yaw,
+    pitch: b.pitch,
     ref: b.ref,
     elevationMode: ui.elevationMode,
-  };
-  return { ...p, centre: boardCentre(doc, p), zoom: b.zoom, ref: refToKey(doc, b.ref) };
+    zoom: b.zoom,
+    px: b.px,
+    py: b.py,
+  });
 }
 
 /** A card of the board now. Focus is the selection without waypoints (mockup line 406). */
@@ -143,7 +193,7 @@ export function saveCard(afterKey: string | null = null): string | null {
     if (i >= 0) d.cards.splice(i + 1, 0, card);
     else d.cards.push(card);
   });
-  showToast(SAVED_TOAST);
+  showToast(card.view.kind === '3d' ? SAVED_TOAST_3D : SAVED_TOAST);
   return card.key;
 }
 
