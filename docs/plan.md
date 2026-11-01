@@ -361,8 +361,9 @@ is a source of parts.
 Build, Brief), 3 (warm palette), 4 (whole-scene inspector), the "Envelopes" layer name and the
 hint grey `--text-subtle` #696b61.
 
-**Waiting on the user.** Approval of phase 10; the push of `rebuild/mvp`; the merge to `main`.
-Then the next phase: the deferred list at the end of section 6 (each item returns only when the
+**Approved.** Phase 10 was approved by the user on 2026-11-01 and `rebuild/mvp` pushed to
+`origin`. The merge to `main` waits ("Not now": `main` stays the legacy baseline until the user
+has used the product). Then the next phase: the deferred list at the end of section 6 (each item returns only when the
 user asks), or phase 8 (the vos port, a separate plan).
 
 **Orchestrator prompt.** Paste this to start the next session:
@@ -411,7 +412,7 @@ merges to `main` with pushes, the Playwright Chromium download. 2026-10-31: the 
 the push of the phase 9 plan. 2026-11-01: the pivot (phase 10), decision 1 ("Delete it"),
 decision 3 ("Yes, warm palette"), the kickoff prompt (decisions 2 and 4; lanes 10.2 to 10.F
 with their commits and `--no-ff` merges into `rebuild/mvp`), "Envelopes" kept, the hint grey
-darkened to AA; no push, no install, no merge to `main`.
+darkened to AA, phase 10 approved, the push of `rebuild/mvp`; no install, no merge to `main`.
 
 **How to run a lane.** `git worktree add .worktrees/<id> -b lane/<id> rebuild/mvp`, then
 `npm ci --offline` there (stop and ask if it tries to fetch). Parallel lanes each run the full
