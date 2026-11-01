@@ -174,13 +174,14 @@ function ProfileName() {
  * The mono id beside the name (mockup lines 201 and 377: "PROF-1 v3"). The version is not on the
  * record yet; lane 10.5 adds `version` and the orchestrator appends " v<n>" inside this span.
  */
+/** "PROF-1 v3": the id and the version counter, as the mockup's `p-id` (line 377). */
 function ProfileId() {
   const id = useDocument((s) => s.doc?.id);
+  const version = useDocument((s) => s.doc?.version);
   if (id === undefined) return null;
   return (
     <span className="tb-id">
-      {id}
-      {/* version: " v<n>" goes here once the record carries it (lane 10.5) */}
+      {id} v{version ?? 1}
     </span>
   );
 }
