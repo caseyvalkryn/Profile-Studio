@@ -113,6 +113,30 @@ describe('Timeline', () => {
     expect(useUi.getState().tS).toBeCloseTo(p.tmaxS / 2, 6);
   });
 
+  it('time off hides the cursor and says so; a scrub turns time on', () => {
+    const p = previewOf(useDocument.getState().doc!);
+    render(<Timeline width={W} />);
+    expect(useUi.getState().timeOn).toBe(false);
+    expect(screen.getByTestId('timeline-clock').textContent).toBe('time off');
+    expect(screen.queryByTestId('timeline-playhead')).toBeNull();
+    fireEvent.pointerDown(screen.getByTestId('timeline-svg'), {
+      clientX: px(p.tmaxS / 2, p.tmaxS),
+      button: 0,
+      pointerId: 1,
+    });
+    expect(useUi.getState().timeOn).toBe(true);
+    expect(screen.getByTestId('timeline-clock').textContent).toBe(fmtTime(useUi.getState().tS));
+    expect(screen.getByTestId('timeline-playhead')).toBeInTheDocument();
+  });
+
+  it('play turns time on', () => {
+    render(<Timeline width={W} />);
+    act(() => useUi.getState().setPlaying(true));
+    expect(useUi.getState().timeOn).toBe(true);
+    act(() => useUi.getState().setPlaying(false));
+    expect(useUi.getState().timeOn).toBe(true);
+  });
+
   it('keeps a copy of the time axis in a sticky strip above the rows (review 7.R F-08)', () => {
     const p = previewOf(useDocument.getState().doc!);
     render(<Timeline width={W} />);

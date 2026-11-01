@@ -20,8 +20,7 @@ test('12.3 Right-click on empty map, Add 3D radar here places a radar at the cli
   const after = await assetCentres(page);
   const [newId, label] = [...after].find(([id]) => !before.has(id))!;
   expect(newId).toMatch(/^RDR-\d+$/);
-  // The board fits the grown scene, so the point is read in the new geometry.
-  const g2 = await mapGeom(page);
-  expect(Math.abs(g2.box.x + label.x - (g2.origin.x + atM.x * g2.pxPerM))).toBeLessThanOrEqual(3);
-  expect(Math.abs(g2.box.y + label.y - (g2.origin.y - atM.y * g2.pxPerM))).toBeLessThanOrEqual(3);
+  // The camera keeps its bounds on an add, so the point is read in the original geometry.
+  expect(Math.abs(g.box.x + label.x - at.x)).toBeLessThanOrEqual(3);
+  expect(Math.abs(g.box.y + label.y - at.y)).toBeLessThanOrEqual(3);
 });

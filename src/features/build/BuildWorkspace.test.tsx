@@ -63,6 +63,37 @@ describe('Build workspace', () => {
     expect(within(view).getByRole('button', { name: '3D' })).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it('Elevation opens From asset and shows the mode segments only in Elevation', () => {
+    act(() => useDocument.getState().open(testVignette()));
+    render(<BuildWorkspace />);
+    expect(useUi.getState().elevationMode).toBe('fromAsset');
+    expect(screen.queryByRole('group', { name: 'Elevation mode' })).toBeNull();
+    fireEvent.click(within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name: 'Elevation' }));
+    const seg = screen.getByRole('group', { name: 'Elevation mode' });
+    expect(within(seg).getByRole('button', { name: 'From asset' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(within(seg).getByRole('button', { name: 'Along path' }));
+    expect(useUi.getState().elevationMode).toBe('alongPath');
+    // a pressed segment keeps its mode
+    fireEvent.click(within(seg).getByRole('button', { name: 'Along path' }));
+    expect(useUi.getState().elevationMode).toBe('alongPath');
+    expect(within(seg).getByRole('button', { name: 'Along path' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('T turns the time cursor on and off', () => {
+    act(() => useDocument.getState().open(testVignette()));
+    const unbind = bindKeys(window);
+    render(<BuildWorkspace />);
+    const tl = screen.getByRole('region', { name: 'Timeline' });
+    expect(useUi.getState().timeOn).toBe(false);
+    expect(within(tl).getByText('time off')).toBeInTheDocument();
+    act(() => void fireEvent.keyDown(window, { key: 't' }));
+    expect(useUi.getState().timeOn).toBe(true);
+    expect(within(tl).queryByText('time off')).toBeNull();
+    act(() => void fireEvent.keyDown(window, { key: 't' }));
+    expect(useUi.getState().timeOn).toBe(false);
+    unbind();
+  });
+
   it('the Ref select writes the board reference', () => {
     act(() => useDocument.getState().open(testVignette()));
     act(() => useBoard.setState({ ...BOARD_DEFAULTS }));

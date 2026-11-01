@@ -91,6 +91,11 @@ export type UiState = {
   /** Set by the board while a repeat click can cycle a stack; null otherwise. A selection of another key clears it. */
   stack: StackPosition | null;
   tS: number;
+  /**
+   * The time cursor (T). Off (legacy and mockup default) draws every path in full with no track
+   * frames; the board reads t only while it is on. Scrub, step, play and set-here turn it on.
+   */
+  timeOn: boolean;
   playing: boolean;
   loop: LoopRange | null;
   rate: number;
@@ -117,6 +122,8 @@ export type UiState = {
   signalPath: (action: PathSignal['action']) => void;
   setStack: (stack: StackPosition | null) => void;
   setTime: (tS: number) => void;
+  setTimeOn: (on: boolean) => void;
+  /** Playing turns the time cursor on. */
   setPlaying: (playing: boolean) => void;
   setLoop: (loop: LoopRange | null) => void;
   setRate: (rate: number) => void;
@@ -146,6 +153,7 @@ export const UI_DEFAULTS = {
   pathSignal: { seq: 0, action: 'cancel' } as PathSignal,
   stack: null as StackPosition | null,
   tS: 0,
+  timeOn: false,
   playing: false,
   loop: null,
   rate: 1,
@@ -160,7 +168,8 @@ export const UI_DEFAULTS = {
   workspace: 'build',
   panels: PANEL_DEFAULTS,
   stripTab: 'timeline' as StripTab,
-  elevationMode: 'alongPath' as ElevationMode,
+  // legacy opens Elevation as range from the asset
+  elevationMode: 'fromAsset' as ElevationMode,
   clipboard: [] as Clip[],
   fitSeq: 0,
 } satisfies Partial<UiState>;
@@ -180,7 +189,8 @@ export const useUi = create<UiState>()((set) => ({
   signalPath: (action) => set((s) => ({ pathSignal: { seq: s.pathSignal.seq + 1, action } })),
   setStack: (stack) => set({ stack }),
   setTime: (tS) => set({ tS: Math.max(0, tS) }),
-  setPlaying: (playing) => set({ playing }),
+  setTimeOn: (timeOn) => set({ timeOn }),
+  setPlaying: (playing) => set(playing ? { playing, timeOn: true } : { playing }),
   setLoop: (loop) => set({ loop }),
   setRate: (rate) => set({ rate }),
   setView: (view) => set({ view }),

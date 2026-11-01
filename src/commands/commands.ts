@@ -237,6 +237,7 @@ function endTime(ctx: CommandContext): number {
 
 function stepTime(ctx: CommandContext, ds: number) {
   const t = Math.min(Math.max(0, ctx.ui.tS + ds), Math.max(endTime(ctx), 0));
+  if (!ctx.ui.timeOn) ctx.ui.setTimeOn(true);
   ctx.ui.setTime(t);
 }
 
@@ -854,6 +855,18 @@ const COMMANDS: Command[] = [
     run: (ctx) => ctx.ui.setView('elevation'),
   },
   {
+    id: 'view.elevationMode',
+    label: 'Elevation mode',
+    group: 'view',
+    workspaces: BUILD,
+    when: needDoc,
+    run: (ctx) => {
+      const mode = ctx.ui.elevationMode === 'fromAsset' ? 'alongPath' : 'fromAsset';
+      ctx.ui.setElevationMode(mode);
+      showToast(mode === 'fromAsset' ? 'Elevation from asset' : 'Elevation along path');
+    },
+  },
+  {
     id: 'help.shortcuts',
     label: 'Shortcut sheet',
     group: 'help',
@@ -875,7 +888,10 @@ const COMMANDS: Command[] = [
     group: 'time',
     shortcut: 'Home',
     when: needDoc,
-    run: (ctx) => ctx.ui.setTime(0),
+    run: (ctx) => {
+      if (!ctx.ui.timeOn) ctx.ui.setTimeOn(true);
+      ctx.ui.setTime(0);
+    },
   },
   {
     id: 'time.end',
@@ -883,16 +899,23 @@ const COMMANDS: Command[] = [
     group: 'time',
     shortcut: 'End',
     when: needDoc,
-    run: (ctx) => ctx.ui.setTime(Math.max(endTime(ctx), 0)),
+    run: (ctx) => {
+      if (!ctx.ui.timeOn) ctx.ui.setTimeOn(true);
+      ctx.ui.setTime(Math.max(endTime(ctx), 0));
+    },
   },
   {
     id: 'time.cursor',
-    label: 'Time cursor on or off',
+    label: 'Time cursor',
     group: 'time',
     shortcut: 'T',
     workspaces: BUILD_BRIEF,
-    when: () => 'The time cursor arrives with the time engine, lane 9.3.2',
-    run: () => {},
+    when: needDoc,
+    run: (ctx) => {
+      const on = !ctx.ui.timeOn;
+      ctx.ui.setTimeOn(on);
+      showToast(on ? 'Time cursor on' : 'Time cursor off');
+    },
   },
   {
     id: 'time.prevEvent',
@@ -1058,7 +1081,9 @@ const COMMANDS: Command[] = [
       const doc = docOf(ctx);
       if (!p || !doc) return;
       const t = p.tS != null ? p.tS : timeNear(doc, p);
-      if (t != null) ctx.ui.setTime(t);
+      if (t == null) return;
+      ctx.ui.setTime(t);
+      ctx.ui.setTimeOn(true);
     },
   },
   {

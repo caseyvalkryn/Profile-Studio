@@ -38,7 +38,10 @@ export type BoardState = {
   pitch: number;
   /** Range reference: 'asset' or a system display id. */
   ref: string;
-  /** Frozen scene bounds during a drag (legacy `ui.ghost.before`); null follows the scene. */
+  /**
+   * The sticky camera bounds: set from the scene on the first render of a record and kept across
+   * edits and drags. Fit sets null so the next render recomputes; another record id does too.
+   */
   bounds: Bounds | null;
   ruler: Ruler | null;
   placing: BoardPlacing | null;

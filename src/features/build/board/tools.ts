@@ -614,7 +614,12 @@ export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragH
   if (kind === 'plane' && !isElev(world)) return null;
 
   const d0 = cur.d;
-  const b0 = geoBounds(sc);
+  // the sticky camera bounds; compute and keep them when none are set yet
+  let b0 = useBoard.getState().bounds;
+  if (!b0) {
+    b0 = geoBounds(sc);
+    useBoard.getState().set({ bounds: b0 });
+  }
   const ext = b0.ext;
   const step = snapStep(ext);
   const label0 = (LABELS[role] || 'move {id}').replace('{id}', id);
@@ -626,7 +631,7 @@ export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragH
 
   docStore.beginDrag(label0);
   const ghost: Ghost = { rec, derived: { timed: d0.timed } };
-  useBoard.getState().set({ ghost, ghostLabel: null, bounds: b0 });
+  useBoard.getState().set({ ghost, ghostLabel: null });
   setDragBaseline(doc);
   let done = false;
 
@@ -654,7 +659,7 @@ export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragH
     const b = p.pts[i! + 1];
     if (!a || !b) {
       docStore.cancelDrag();
-      useBoard.getState().set({ ghost: null, bounds: null });
+      useBoard.getState().set({ ghost: null });
       setDragBaseline(null);
       return null;
     }
@@ -856,7 +861,7 @@ export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragH
   }
 
   const finish = () => {
-    useBoard.getState().set({ ghost: null, ghostLabel: null, bounds: null, dragLabel: null });
+    useBoard.getState().set({ ghost: null, ghostLabel: null, dragLabel: null });
     setDragBaseline(null);
   };
 

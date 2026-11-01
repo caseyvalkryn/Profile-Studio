@@ -3,7 +3,8 @@ import { vi } from 'vitest';
 import '../../../ui/test-utils';
 import { cameras } from '../../../board';
 import { makeUnits } from '../../../board/format';
-import { testVignette } from '../../../engine/testVignette';
+import { bounds as geoBounds } from '../../../board/geo';
+import { testSensor, testVignette } from '../../../engine/testVignette';
 import { useDocument } from '../../../state/document';
 import { UI_DEFAULTS, useUi } from '../../../state/ui';
 import { useReadout } from '../readout/store';
@@ -12,6 +13,7 @@ import Board, { cancel, mounted } from './Board';
 import { boardCommands } from './commands';
 import { boardFlush } from './renderer';
 import { BOARD_DEFAULTS, useBoard } from './store';
+import { fit } from './tools';
 
 const W = 900;
 const H = 600;
@@ -67,6 +69,7 @@ describe('Board', () => {
   });
 
   it('renders one group per layer and rewrites only the layers whose inputs changed', () => {
+    useUi.setState({ timeOn: true });
     const { h, container } = mount();
     const groups = [...container.querySelectorAll('svg.board > g[data-layer]')].map((g) => g.getAttribute('data-layer'));
     expect(groups).toContain('systems');
@@ -128,11 +131,13 @@ describe('Board', () => {
     const rh = hitOf('system', 'S-02', 'range');
     const past = useDocument.getState().past.length;
     const doc0 = useDocument.getState().doc!;
+    const bounds0 = useBoard.getState().bounds;
+    expect(bounds0).not.toBeNull();
     down(stage, rh.sx, rh.sy);
     move(stage, rh.sx + 30, rh.sy);
     expect(useBoard.getState().ghost).not.toBeNull();
     expect(useBoard.getState().ghost!.rec.scene.systems.find((s) => s.id === 'S-02')!.range).toBe(2500);
-    expect(useBoard.getState().bounds).not.toBeNull();
+    expect(useBoard.getState().bounds).toBe(bounds0);
     expect(useReadout.getState().dragBase).toBe(doc0);
     const label = useBoard.getState().dragLabel!;
     expect(label.text).toMatch(/^S-02 /);
@@ -143,7 +148,8 @@ describe('Board', () => {
     expect(useDocument.getState().past.length).toBe(past + 1);
     expect(useDocument.getState().doc!.sensors[1]!.rangeM).toBe(r1);
     expect(useBoard.getState().ghost).toBeNull();
-    expect(useBoard.getState().bounds).toBeNull();
+    // the camera bounds stick past the drag end
+    expect(useBoard.getState().bounds).toBe(bounds0);
     expect(spy).toHaveBeenLastCalledWith(null);
     expect(useDocument.getState().history.at(-1)).toMatch(/set S-02 range/);
     act(() => useDocument.getState().undo());
@@ -370,5 +376,69 @@ describe('Board', () => {
     expect(useBoard.getState().pointer).toMatchObject({ clientX: sx, clientY: sy });
     fireEvent.pointerLeave(stage);
     expect(useBoard.getState().pointer).toBeNull();
+  });
+  describe('sticky camera bounds', () => {
+    const camOf = () => {
+      const cam = [...mounted][0]!.renderer.last!.cam;
+      return { scale: cam.scale, origin: cam.project(0, 0) };
+    };
+    const addFar = () =>
+      act(() =>
+        useDocument.getState().edit('add S-09', (d) => {
+          d.sensors.push(testSensor('S-09', 'radar', 4000, { x: 6000, y: 0 }));
+        }),
+      );
+
+    it('adding a sensor 6 km out with a 4 km ring keeps the plan camera', () => {
+      mount();
+      const before = camOf();
+      const b0 = useBoard.getState().bounds!;
+      addFar();
+      act(() => boardFlush());
+      // the scene grew: a refit would change the camera
+      expect(geoBounds([...mounted][0]!.renderer.last!.rec.scene)).not.toEqual(b0);
+      expect(useBoard.getState().bounds).toBe(b0);
+      const after = camOf();
+      expect(after.scale).toBe(before.scale);
+      expect(after.origin).toEqual(before.origin);
+    });
+
+    it('fit() recomputes the bounds from the scene', () => {
+      mount();
+      const before = camOf();
+      addFar();
+      act(() => boardFlush());
+      act(() => fit());
+      act(() => boardFlush());
+      const rec = [...mounted][0]!.renderer.last!.rec;
+      expect(useBoard.getState().bounds).toEqual(geoBounds(rec.scene));
+      expect(camOf().scale).toBeLessThan(before.scale);
+    });
+
+    it('opening a second profile recomputes the bounds', () => {
+      mount();
+      const b0 = useBoard.getState().bounds!;
+      act(() =>
+        useDocument.getState().open(
+          testVignette({ id: 'V-two', sensors: [testSensor('S-01', 'radar', 12000, { x: 3000, y: 0 })] }),
+        ),
+      );
+      act(() => boardFlush());
+      const rec = [...mounted][0]!.renderer.last!.rec;
+      expect(rec.id).toBe('V-two');
+      expect(useBoard.getState().bounds).toEqual(geoBounds(rec.scene));
+      expect(useBoard.getState().bounds).not.toEqual(b0);
+    });
+  });
+
+  it('time off renders the board with t null; T turns it on', () => {
+    const { h } = mount();
+    expect(useUi.getState().timeOn).toBe(false);
+    const rec = h.last!.rec;
+    expect(h.view(rec, { W, H }).view.t).toBeNull();
+    act(() => useUi.getState().setTime(30));
+    expect(h.view(rec, { W, H }).view.t).toBeNull();
+    act(() => useUi.getState().setTimeOn(true));
+    expect(h.view(rec, { W, H }).view.t).toBe(30);
   });
 });
