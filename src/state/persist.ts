@@ -88,6 +88,8 @@ const storedIds = new Set<string>();
 export async function saveVignette(v: Vignette): Promise<void> {
   await (await getDb()).put('vignettes', v);
   storedIds.add(v.id);
+  // keep the cached listing current (a save, a duplicate), so the collections list is (N-05)
+  if (listed) listed = [...listed.filter((x) => x.id !== v.id), listingOf(v)].sort(newestFirst);
 }
 
 export async function loadVignette(id: string): Promise<Vignette | null> {
@@ -166,6 +168,7 @@ export async function deleteVignette(id: string): Promise<void> {
   await (await getDb()).delete('vignettes', id);
   storedIds.delete(id);
   parsedCache.delete(id);
+  if (listed) listed = listed.filter((x) => x.id !== id);
 }
 
 /** A waypoint as exported: x, y, z, arrive, depart, in whole metres and seconds. */

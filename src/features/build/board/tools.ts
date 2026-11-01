@@ -478,6 +478,8 @@ export function cancelPlacing(): boolean {
   const board = useBoard.getState();
   const p = board.placing;
   if (!p) return false;
+  // an append keeps the waypoints it added; finishPlacing ends it and clears the leg readout
+  if (p.kind === 'aircraft' && p.pathId) return finishPlacing();
   if (p.kind === 'aircraft' && dedupe((p.pts || []) as Pt[]).length >= 2) return finishPlacing();
   board.set({ placing: null });
   return true;
@@ -485,16 +487,45 @@ export function cancelPlacing(): boolean {
 
 // ---------------------------------------------------------------- drags
 
-/** True when the press at `world` lies outside the glyph hit of a system (its radius plus the
- *  touch tolerance), so the press was on the ring. */
-function offGlyph(hit: Hit, world: World, cam: Cam): boolean {
-  const s = isElev(world)
-    ? cam.projectRZ
-      ? cam.projectRZ(world.r, world.z)
-      : null
-    : cam.project(world.x, world.y, 0);
+/** The press at `world` in screen pixels. */
+function screenAt(world: World, cam: Cam): [number, number] | null {
+  if (isElev(world)) return cam.projectRZ ? cam.projectRZ(world.r, world.z) : null;
+  const p = cam.project(world.x, world.y, 0);
+  return [p[0]!, p[1]!];
+}
+
+/** True when the press at `world` lies outside the glyph hit of a system: its radius plus the
+ *  hit tolerance of `hitAt` (gestures.ts), 7 px for a mouse and 14 px for touch. */
+function offGlyph(hit: Hit, world: World, cam: Cam, touch: boolean): boolean {
+  const s = screenAt(world, cam);
   if (!s) return false;
-  return Math.hypot(s[0] - hit.sx, s[1] - hit.sy) > (hit.r || 7) + 14;
+  return Math.hypot(s[0] - hit.sx, s[1] - hit.sy) > (hit.r || 0) + (touch ? 14 : 7);
+}
+
+/** True when the press lies on the max range arc of `sys`, within the hit tolerance: a press on
+ *  a sector's straight edge or inside its fill is not on the ring. */
+function onRing(
+  sys: { x: number; y: number; z?: number; range: number },
+  world: World,
+  cam: Cam,
+  touch: boolean,
+): boolean {
+  const s = screenAt(world, cam);
+  if (!s) return false;
+  const tol = touch ? 14 : 7;
+  let p: number[];
+  if (isElev(world)) {
+    if (!cam.projectRZ) return false;
+    const o = cam.origin;
+    const rs = Math.hypot(sys.x - o.x, sys.y - o.y);
+    const zs = sys.z || 0;
+    const a = Math.atan2(world.z - zs, world.r - rs);
+    p = cam.projectRZ(rs + sys.range * Math.cos(a), zs + sys.range * Math.sin(a));
+  } else {
+    const a = Math.atan2(world.y - sys.y, world.x - sys.x);
+    p = cam.project(sys.x + sys.range * Math.cos(a), sys.y + sys.range * Math.sin(a), 0);
+  }
+  return Math.hypot(s[0] - p[0]!, s[1] - p[1]!) <= tol;
 }
 
 function affectedPaths(kind: string, id: string, rec: Scene): string[] {
@@ -632,7 +663,12 @@ function sysOf(c: Draft<Vignette>, key: string): SysLike | null {
 }
 
 // returns null for a hit that has no drag (a path line, a group)
-export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragHandle | null {
+export function beginDrag(
+  hit: Hit | null,
+  world: World | null,
+  cam: Cam,
+  touch = false,
+): DragHandle | null {
   if (!hit || !world) return null;
   const cur = current();
   if (!cur) return null;
@@ -640,10 +676,15 @@ export function beginDrag(hit: Hit | null, world: World | null, cam: Cam): DragH
   const kind = hit.kind === 'wp' ? 'path' : hit.kind === 'vertex' ? 'volume' : hit.kind;
   const id = hit.id;
   let role = hit.role || 'centre';
-  // A press on a system's ring resolves to the system's centre hit (the ring carries data-k but
-  // no role). Off the glyph, it is the range drag (principle 2.3: drag a ring to set range), not
-  // a centre move that jumps the system to the cursor.
-  if (kind === 'system' && role === 'centre' && offGlyph(hit, world, cam)) role = 'range';
+  // A press on a system's reach drawing resolves to the system's centre hit, marked with the part
+  // it landed on (gestures.ts hitAt). Off the glyph, the max range ring is the range drag
+  // (principle 2.3: drag a ring to set range); every other part (a sector edge, the min range
+  // ring, a limit ray) selects the system and starts nothing (lane 11.F, F-01).
+  if (kind === 'system' && hit.part && offGlyph(hit, world, cam, touch)) {
+    const sys = cur.rec.scene.systems.find((x) => x.id === id);
+    if (hit.part !== 'range' || !sys || !onRing(sys, world, cam, touch)) return null;
+    role = 'range';
+  }
   let i: number | null = hit.i == null ? null : Number(hit.i);
   const key = hit.key || '';
   if (!key) return null;

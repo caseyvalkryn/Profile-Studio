@@ -93,16 +93,19 @@ register({
       const on = active(ctx, s);
       const c = ringClass(ctx, s, on);
       const at = { 'data-k': 'system', 'data-id': s.id };
+      // only the max range ring is the range drag off the glyph (lane 11.F, F-01); the sector
+      // edges, the min range ring and the limit rays select the system and start nothing
+      const rg = { ...at, 'data-role': 'range' };
       let top: number[] | null;
       if (cam.kind === 'plan') {
         const ce = cam.project(s.x, s.y, 0);
         const R = s.range * cam.scale;
         const d = planShape(ce, R, s);
-        if (d) out += S('path', Object.assign({ d, class: c }, at));
+        if (d) out += S('path', Object.assign({ d, class: c }, rg));
         else
           out += S(
             'circle',
-            Object.assign({ cx: r1(ce[0]), cy: r1(ce[1]), r: r1(R), class: c }, at),
+            Object.assign({ cx: r1(ce[0]), cy: r1(ce[1]), r: r1(R), class: c }, rg),
           );
         if (s.rmin > 0)
           out += S(
@@ -118,7 +121,7 @@ register({
         const rs = Math.hypot(s.x - o.x, s.y - o.y);
         const zs = s.z || 0;
         const arc = elevArc(cam, rs, zs, s.range);
-        if (arc) out += S('polyline', Object.assign({ points: arc, class: c }, at));
+        if (arc) out += S('polyline', Object.assign({ points: arc, class: c }, rg));
         if (s.rmin > 0) {
           const inner = elevArc(cam, rs, zs, s.rmin);
           if (inner) out += S('polyline', Object.assign({ points: inner, class: c + ' rmin' }, at));

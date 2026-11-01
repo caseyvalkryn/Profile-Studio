@@ -260,8 +260,52 @@ export function card(
       focus: cd.focus || [],
       t: cd.t == null ? null : cd.t,
     };
+    if (c && c.zoom != null && view.proj !== 'axon')
+      Object.assign(view, framePan(record, derived, view, c, sz, !!thumb));
   }
   return scene(record, view, sz, { derived, thumb: !!thumb, edit: false }).svg;
+}
+
+/**
+ * The zoom and pan that draw a card's stored frame at this size (lane 11.F, F-02): the world point
+ * at the middle of the fitted view plus the card's centre goes to the middle of the render, as
+ * Build's card.open does on the board (features/build/cards/cards.ts panFor). 3D keeps its fit.
+ */
+function framePan(
+  record: Scene,
+  derived: DerivedView,
+  view: BoardView,
+  c: CardRec['cam'],
+  sz: Size,
+  thumb: boolean,
+): { zoom: number; px: number; py: number } {
+  const zoom = c.zoom!;
+  const ctr = c.centre || { x: 0, y: 0 };
+  const kind: CamKind = view.proj === 'elev' ? 'elev' : 'plan';
+  const at = (z: number) =>
+    cameras.get(kind).setup(
+      record.scene,
+      derived,
+      sz,
+      {
+        yaw: view.yaw,
+        pitch: view.pitch,
+        ref: view.ref || 'asset',
+        bounds: geoBounds(record.scene),
+        zoom: z,
+        px: 0,
+        py: 0,
+        elevationMode: view.elevationMode,
+      },
+      { thumb },
+    );
+  const fit = at(1).unproject(sz.W / 2, sz.H / 2);
+  if (!fit) return { zoom, px: 0, py: 0 };
+  const cam = at(zoom);
+  const w =
+    'r' in fit ? { a: fit.r + ctr.x, b: fit.z + ctr.y } : { a: fit.x + ctr.x, b: fit.y + ctr.y };
+  const s = kind === 'elev' && cam.projectRZ ? cam.projectRZ(w.a, w.b) : cam.project(w.a, w.b, 0);
+  return { zoom, px: sz.W / 2 - s[0]!, py: sz.H / 2 - s[1]! };
 }
 
 // ---------------------------------------------------------------- hit test
