@@ -3,16 +3,18 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { App } from '../../App';
 import { registerCommands, setBoardCancel } from '../../commands/commands';
+import { currentContext, execute, get } from '../../commands/registry';
 import { bindKeys } from '../../commands/keys';
 import { testVignette } from '../../engine/testVignette';
 import { useDocument } from '../../state/document';
 import { UI_DEFAULTS, useUi } from '../../state/ui';
+import { useLibraryRequests } from '../library/newProfile';
+import { useToast } from '../shell/toastStore';
 import { M_PER_NM } from '../shared/units';
 import BuildWorkspace from './BuildWorkspace';
 import { cancel } from './board/Board';
-import { boardDerived } from './board/derived';
 import { useBoard, BOARD_DEFAULTS } from './board/store';
-import { hText } from './inspector/parse';
+import { saveCard, SAVED_TOAST } from './cards/cards';
 
 const reset = () =>
   act(() => {
@@ -30,16 +32,21 @@ const renderApp = () =>
 describe('Build workspace', () => {
   beforeEach(reset);
 
-  it('renders the rail, the board in the map region, the inspector and the timeline', () => {
+  it('renders the rail, the bar, the map, the scrub, the thumbnails and the inspector', () => {
     act(() => useDocument.getState().open(testVignette()));
     render(<BuildWorkspace />);
     expect(screen.getByRole('navigation', { name: 'Scene' })).toBeInTheDocument();
+    expect(screen.getByRole('toolbar', { name: 'Build bar' })).toBeInTheDocument();
     const map = screen.getByRole('region', { name: 'Map' });
     expect(within(map).getByTestId('board-stage')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Time' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Other views' })).toBeInTheDocument();
     expect(screen.getByRole('complementary', { name: 'Inspector' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Timeline' })).toBeInTheDocument();
-    // The readout panel is off by default (legacy).
+    // Lane 10.3: no timeline, no readout panel, no Fit, Ref or units in the bar.
+    expect(screen.queryByRole('region', { name: 'Timeline' })).toBeNull();
     expect(screen.queryByRole('region', { name: 'Readout' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Fit' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Ref' })).toBeNull();
   });
 
   it('the 3D button switches the board to the 3D view', () => {
@@ -84,23 +91,32 @@ describe('Build workspace', () => {
     act(() => useDocument.getState().open(testVignette()));
     const unbind = bindKeys(window);
     render(<BuildWorkspace />);
-    const tl = screen.getByRole('region', { name: 'Timeline' });
+    const value = screen.getByTestId('scrub-value');
     expect(useUi.getState().timeOn).toBe(false);
-    expect(within(tl).getByText('time off')).toBeInTheDocument();
+    expect(value).toHaveTextContent('full run');
     act(() => void fireEvent.keyDown(window, { key: 't' }));
     expect(useUi.getState().timeOn).toBe(true);
-    expect(within(tl).queryByText('time off')).toBeNull();
+    expect(value).toHaveTextContent(/^\d+ s$/);
     act(() => void fireEvent.keyDown(window, { key: 't' }));
     expect(useUi.getState().timeOn).toBe(false);
     unbind();
   });
 
-  it('the Ref select writes the board reference', () => {
+  it('view.ref cycles the range reference and names it in its label', () => {
+    registerCommands();
     act(() => useDocument.getState().open(testVignette()));
     act(() => useBoard.setState({ ...BOARD_DEFAULTS }));
-    render(<BuildWorkspace />);
-    fireEvent.change(screen.getByRole('combobox', { name: 'Ref' }), { target: { value: 'S-01' } });
-    expect(useBoard.getState().ref).toBe('S-01');
+    const doc = useDocument.getState().doc!;
+    const ids = [...doc.sensors, ...doc.effectors, ...doc.nodes].map((x) => x.id);
+    expect(get('view.ref')!.label).toBe('Range reference: asset');
+    act(() => void execute('view.ref'));
+    expect(useBoard.getState().ref).toBe('asset-edge');
+    expect(get('view.ref')!.label).toBe('Range reference: asset edge');
+    act(() => void execute('view.ref'));
+    expect(useBoard.getState().ref).toBe(ids[0]);
+    for (let i = 1; i < ids.length; i++) act(() => void execute('view.ref'));
+    act(() => void execute('view.ref'));
+    expect(useBoard.getState().ref).toBe('asset');
   });
 
   it('the palette opens on Cmd+K and lists Undo with its shortcut', async () => {
@@ -132,7 +148,8 @@ describe('Build workspace', () => {
     render(<BuildWorkspace />);
     // Unfocused fields show readout precision (F-09): 5000 m is 2.70 nm.
     expect(screen.getByLabelText('Range')).toHaveValue((5000 / M_PER_NM).toFixed(2));
-    fireEvent.click(screen.getByRole('button', { name: 'nm · ft · kt' }));
+    registerCommands();
+    act(() => void execute('view.units'));
     expect(useUi.getState().units).toBe('si');
     expect(screen.getByLabelText('Range')).toHaveValue('5.00');
   });
@@ -220,7 +237,7 @@ describe('Escape order (edit.escape)', () => {
   });
 });
 
-describe('readout panel', () => {
+describe('Build bar, scrub, thumbnails and cards (lane 10.3)', () => {
   let unbind: () => void;
   beforeEach(() => {
     reset();
@@ -230,35 +247,227 @@ describe('readout panel', () => {
   });
   afterEach(() => unbind());
 
-  it('K shows and hides the readout above the inspector', () => {
+  const withEvent = () => {
+    const v = testVignette();
+    v.events = [
+      {
+        key: 'k-e1',
+        id: 'e1',
+        tS: 40,
+        type: 'detect',
+        label: 'First detection',
+        threatKey: v.threats[0]!.key,
+        sensorKey: null,
+      },
+    ];
+    return v;
+  };
+
+  it('the readout reads the scene, then the selected threat in the display units', () => {
     act(() => useDocument.getState().open(testVignette()));
     render(<BuildWorkspace />);
-    expect(screen.queryByRole('region', { name: 'Readout' })).toBeNull();
-    act(() => void fireEvent.keyDown(window, { key: 'k' }));
-    expect(useUi.getState().panels.readout).toBe(true);
-    expect(screen.getByRole('region', { name: 'Readout' })).toBeInTheDocument();
-    act(() => void fireEvent.keyDown(window, { key: 'k' }));
-    expect(screen.queryByRole('region', { name: 'Readout' })).toBeNull();
+    const doc = useDocument.getState().doc!;
+    const line = screen.getByTestId('bar-readout');
+    expect(line).toHaveTextContent(
+      new RegExp(`^${doc.threats.length} paths? · 0 events · \\d+ s$`),
+    );
+    act(() => useUi.getState().setSelection([doc.threats[0]!.key]));
+    expect(line).toHaveTextContent(
+      new RegExp(`^${doc.threats[0]!.id} · [\\d.]+ nm · \\d+ kt · \\d+ s$`),
+    );
+    act(() => useUi.getState().setUnits('si'));
+    expect(line).toHaveTextContent(/ km · \d+ m\/s · /);
   });
 
-  it('shows derived.at for the selected threat (range from the board reference)', () => {
-    act(() => {
-      useDocument.getState().open(testVignette());
-      useUi.getState().setSelection(['k-T-01']);
-      useUi.getState().setTime(30);
-      useUi.getState().togglePanel('readout');
-    });
+  it('the scrub: Time turns time on, the range sets ui.tS and is off while time is off', () => {
+    act(() => useDocument.getState().open(testVignette()));
+    render(<BuildWorkspace />);
+    const range = screen.getByRole('slider', { name: 'Scene time' });
+    expect(range).toBeDisabled();
+    expect(Number(range.getAttribute('max'))).toBeGreaterThanOrEqual(60);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Time' }));
+    expect(useUi.getState().timeOn).toBe(true);
+    expect(range).toBeEnabled();
+    fireEvent.change(range, { target: { value: '42' } });
+    expect(useUi.getState().tS).toBe(42);
+    expect(screen.getByTestId('scrub-value')).toHaveTextContent('42 s');
+  });
+
+  it('a bead sits at its event time; a click sets the time there and selects the event', () => {
+    act(() => useDocument.getState().open(withEvent()));
+    render(<BuildWorkspace />);
+    const bead = screen.getByTestId('scrub-bead');
+    expect(bead).toHaveAttribute('title', 'First detection');
+    fireEvent.click(bead);
+    expect(useUi.getState().timeOn).toBe(true);
+    expect(useUi.getState().tS).toBe(40);
+    expect(useUi.getState().selectedKeys).toEqual(['k-e1']);
+  });
+
+  it('the five layer toggles write the board layers; Telemetry drives telemetry and target', () => {
+    act(() => useDocument.getState().open(testVignette()));
+    render(<BuildWorkspace />);
+    const group = screen.getByRole('group', { name: 'Layers' });
+    const boxes = within(group).getAllByRole('checkbox');
+    expect(boxes.map((b) => b.parentElement!.textContent)).toEqual([
+      'Reach',
+      'Events',
+      'Envelopes',
+      'Telemetry',
+      'Labels',
+    ]);
+    const tele = within(group).getByRole('checkbox', { name: 'Telemetry' });
+    expect(tele).not.toBeChecked();
+    fireEvent.click(tele);
+    expect(useBoard.getState().layers).toMatchObject({ telemetry: true, target: true });
+    fireEvent.click(within(group).getByRole('checkbox', { name: 'Reach' }));
+    expect(useBoard.getState().layers.reach).toBe(false);
+  });
+
+  it('the thumbnails render the two other cameras; a click switches the view', () => {
+    act(() => useDocument.getState().open(testVignette()));
+    render(<BuildWorkspace />);
+    const thumbs = within(screen.getByRole('group', { name: 'Other views' }));
+    expect(thumbs.queryByRole('button', { name: 'Plan thumbnail' })).toBeNull();
+    const elev = thumbs.getByRole('button', { name: 'Elevation thumbnail' });
+    expect(thumbs.getByRole('button', { name: '3D thumbnail' })).toBeInTheDocument();
+    expect(elev.querySelector('svg.board.thumb')).not.toBeNull();
+    fireEvent.click(elev);
+    expect(useUi.getState().view).toBe('elevation');
+    expect(thumbs.getByRole('button', { name: 'Plan thumbnail' })).toBeInTheDocument();
+    expect(thumbs.queryByRole('button', { name: 'Elevation thumbnail' })).toBeNull();
+  });
+
+  it('Add waypoints selects the first threat and arms the path placement', () => {
+    act(() => useDocument.getState().open(testVignette()));
     render(<BuildWorkspace />);
     const doc = useDocument.getState().doc!;
-    const r = boardDerived(doc).at('T-01', 30, 'asset')!.r;
-    const line = screen.getByRole('listitem', { name: 'T-01 readout' });
-    expect(line).toHaveTextContent(hText(r, useUi.getState().units));
-    // With S-01 as the reference the range is measured from S-01.
-    act(() => useBoard.getState().set({ ref: 'S-01' }));
-    act(() => useUi.getState().setTime(31));
-    const r2 = boardDerived(doc).at('T-01', 31, 'S-01')!.r;
-    expect(screen.getByRole('listitem', { name: 'T-01 readout' })).toHaveTextContent(
-      hText(r2, useUi.getState().units),
-    );
+    const btn = screen.getByRole('button', { name: 'Add waypoints' });
+    fireEvent.click(btn);
+    expect(useUi.getState().selectedKeys).toEqual([doc.threats[0]!.key]);
+    expect(useUi.getState().armed).toEqual({ group: 'threat', type: doc.threats[0]!.type });
+    expect(useBoard.getState().placing?.kind).toBe('aircraft');
+    expect(btn).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(btn);
+    expect(useBoard.getState().placing).toBeNull();
+    expect(btn).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('C saves the view as a card in one undo step and toasts', () => {
+    act(() => useDocument.getState().open(testVignette()));
+    render(<BuildWorkspace />);
+    const doc0 = useDocument.getState().doc!;
+    act(() => {
+      useUi.getState().setView('3d');
+      useUi.getState().setTimeOn(true);
+      useUi.getState().setTime(200);
+      useUi.getState().setSelection([doc0.threats[0]!.key]);
+      useBoard.getState().set({ yaw: -20, pitch: 40, ref: doc0.sensors[0]!.id });
+    });
+    act(() => void fireEvent.keyDown(window, { key: 'c' }));
+    const doc = useDocument.getState().doc!;
+    expect(doc.cards).toHaveLength(1);
+    const c = doc.cards[0]!;
+    expect(c).toMatchObject({
+      id: 'c1',
+      name: 'Card 1',
+      tS: 200,
+      focus: [doc0.threats[0]!.key],
+      displays: { timeline: false, chart: false, readout: false },
+      clip: null,
+      caption: '',
+      notes: '',
+      layers: {
+        reach: true,
+        events: true,
+        envelopes: true,
+        telemetry: false,
+        target: true,
+        labels: true,
+      },
+    });
+    expect(c.view).toMatchObject({
+      kind: '3d',
+      yawDeg: -20,
+      pitchDeg: 40,
+      ref: doc0.sensors[0]!.key,
+      elevationMode: 'fromAsset',
+    });
+    expect(useDocument.getState().history.at(-1)).toBe('Save card');
+    expect(useToast.getState().text).toBe(SAVED_TOAST);
+    // The bar button saves the next one, with time off.
+    act(() => useUi.getState().setTimeOn(false));
+    fireEvent.click(screen.getByRole('button', { name: 'Save as card' }));
+    expect(useDocument.getState().doc!.cards.map((x) => [x.id, x.name, x.tS])).toEqual([
+      ['c1', 'Card 1', 200],
+      ['c2', 'Card 2', null],
+    ]);
+    act(() => useDocument.getState().undo());
+    expect(useDocument.getState().doc!.cards).toHaveLength(1);
+  });
+
+  it('saveCard(afterKey) places the card after that one', () => {
+    act(() => useDocument.getState().open(testVignette()));
+    const a = saveCard(null)!;
+    saveCard(null);
+    const c = saveCard(a)!;
+    expect(useDocument.getState().doc!.cards.map((x) => x.key)[1]).toBe(c);
+  });
+
+  it('the card commands open, duplicate, move and delete, each in one undo step', () => {
+    act(() => useDocument.getState().open(testVignette()));
+    const k1 = saveCard(null)!;
+    act(() => {
+      useUi.getState().setView('elevation');
+      useUi.getState().setTimeOn(true);
+      useUi.getState().setTime(90);
+    });
+    const k2 = saveCard(null)!;
+    const ids = () => useDocument.getState().doc!.cards.map((x) => x.id);
+    const last = () => useDocument.getState().history.at(-1);
+    // The card menu targets a card through the selection (menu targetContext).
+    const run = (id: string, key: string) =>
+      act(() => {
+        useUi.getState().setSelection([key]);
+        execute(id, currentContext(), key);
+      });
+
+    run('card.open', k1);
+    expect(useUi.getState().view).toBe('plan');
+    expect(useUi.getState().timeOn).toBe(false);
+    run('card.open', k2);
+    expect(useUi.getState().view).toBe('elevation');
+    expect(useUi.getState().tS).toBe(90);
+
+    run('card.duplicate', k1);
+    expect(ids()).toEqual(['c1', 'c3', 'c2']);
+    expect(last()).toBe('duplicate card c1');
+
+    run('card.moveDown', k1);
+    expect(ids()).toEqual(['c3', 'c1', 'c2']);
+    expect(last()).toBe('move card c1 down');
+    run('card.moveUp', k2);
+    expect(ids()).toEqual(['c3', 'c2', 'c1']);
+    expect(last()).toBe('move card c2 up');
+
+    run('card.delete', k2);
+    expect(ids()).toEqual(['c3', 'c1']);
+    expect(last()).toBe('delete card c2');
+    act(() => useDocument.getState().undo());
+    expect(ids()).toEqual(['c3', 'c2', 'c1']);
+
+    act(() => useUi.getState().setSelection([]));
+    expect(get('card.delete')!.when(currentContext())).toBe('Select a card first');
+  });
+
+  it('Open in Brief asks the shell for /brief', () => {
+    act(() => useDocument.getState().open(testVignette()));
+    const k = saveCard(null)!;
+    act(() => {
+      useUi.getState().setSelection([k]);
+      execute('card.openInBrief', currentContext(), k);
+    });
+    expect(useLibraryRequests.getState().route?.path).toBe('/brief');
+    expect(useUi.getState().selectedKeys).toEqual([k]);
   });
 });

@@ -38,6 +38,7 @@ import { libraryCommands } from '../features/library/commands';
 import { chips, defaultLayers } from '../board';
 import { boardCommands } from '../features/build/board/commands';
 import { useBoard } from '../features/build/board/store';
+import { cardCommands } from '../features/build/cards/commands';
 import { menuCommands } from '../features/build/menu/commands';
 import { paletteCommands } from '../features/build/palette/commands';
 import { railCommands } from '../features/build/rail/commands';
@@ -925,14 +926,8 @@ const COMMANDS: Command[] = [
   ...paletteCommands,
   ...menuCommands,
   ...boardCommands,
-  {
-    id: 'card.save',
-    label: 'Save the view as a card',
-    group: 'view',
-    shortcut: 'C',
-    when: () => 'Cards arrive in lane 9.4.1',
-    run: () => {},
-  },
+  // Lane 10.3: Save as card (C) and the range reference cycle (view.ref).
+  ...cardCommands,
 
   // file. New, New from template, Export library and the Library's `/` search come from the
   // Library (lane 9.1.4, review 9.1 F-19, F-20). `file.export` is "Export" (the dialog);

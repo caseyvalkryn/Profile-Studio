@@ -8,6 +8,7 @@ import { dist3, posAt } from '../../../engine/geo';
 import type { Preview } from '../../../engine/preview';
 import { previewOf } from '../../../state/document';
 import { addHeightPlane, selectedThreatKey } from '../palette/pick';
+import { cardMenuCommands } from '../cards/commands';
 import { openQuickAdd } from '../palette/store';
 import { EVENT_NAMES, EVENT_TYPES, tText } from '../rail/format';
 
@@ -155,15 +156,6 @@ export function splitAssignment(
 
 const edit = (ctx: CommandContext, label: string, recipe: (d: Draft<Vignette>) => void) =>
   ctx.document.edit(label, recipe);
-
-const stub = (id: string, label: string): Command => ({
-  id,
-  label,
-  group: 'view',
-  workspaces: ['build'],
-  when: () => CARDS_LATER,
-  run: () => {},
-});
 
 export const menuCommands: Command[] = [
   {
@@ -368,12 +360,7 @@ export const menuCommands: Command[] = [
       ctx.ui.setSelection([]);
     },
   },
-  stub('card.open', 'Open'),
-  stub('card.openInBrief', 'Open in Brief'),
-  stub('card.duplicate', 'Duplicate'),
-  stub('card.moveUp', 'Move up'),
-  stub('card.moveDown', 'Move down'),
-  stub('card.delete', 'Delete card'),
+  ...cardMenuCommands,
 ];
 
 /** Menu targets per new command, including kinds AssetKind does not have yet. */

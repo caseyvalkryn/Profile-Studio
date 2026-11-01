@@ -1,5 +1,6 @@
-// The playback clock. One requestAnimationFrame loop for the whole app, however many components
-// call usePlayback(). It advances useUi.tS by dt times rate while playing.
+// The playback clock (from the timeline, deleted in lane 10.3; the scrub mounts it now). One
+// requestAnimationFrame loop for the whole app, however many components call usePlayback(). It
+// advances useUi.tS by dt times rate while playing.
 import { useEffect } from 'react';
 import { previewOf, useDocument } from '../../../state/document';
 import { useUi, type LoopRange } from '../../../state/ui';

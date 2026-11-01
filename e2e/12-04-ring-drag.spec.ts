@@ -5,17 +5,19 @@ import { mapGeom, M_PER_NM, num, openTemplate, POINT_DEFENCE } from './helpers';
 // DOM change it causes. One retry absorbs a slow first frame on a busy machine.
 test.describe.configure({ retries: 1 });
 
-test('12.4 Dragging a sensor ring changes range. The preview and the timeline update within 100 ms.', async ({
+// Lane 10.3 removed the timeline. The preview's first-see ticks on the board (events layer,
+// `line.fst`, drawn from preview.first) are the preview measure the drag must move in time.
+test('12.4 Dragging a sensor ring changes range. The preview and the first-see ticks update within 100 ms.', async ({
   page,
 }) => {
   await openTemplate(page, POINT_DEFENCE);
   const g = await mapGeom(page);
   const inspector = page.getByRole('complementary', { name: 'Inspector' });
-  const findMark = page.locator(
-    '[data-testid="timeline-mark"][data-kind="preview"][data-step="find"]',
-  );
-  const findBefore = await findMark.getAttribute('aria-label');
-  expect(findBefore).toMatch(/^Find t\+/);
+  const ticks = page.locator('g[data-layer="events"] line.fst');
+  const tickPos = () =>
+    ticks.evaluateAll((ls) => ls.map((l) => `${l.getAttribute('x1')},${l.getAttribute('y1')}`));
+  await expect(ticks.first()).toBeAttached();
+  const ticksBefore = await tickPos();
 
   // RDR-1 sits at the origin with a 4000 m ring. Selecting it shows the range handle, due east
   // on an omni ring (src/board handles layer, legacy).
@@ -33,12 +35,9 @@ test('12.4 Dragging a sensor ring changes range. The preview and the timeline up
         childList: true,
         characterData: true,
         attributes: true,
-        attributeFilter: ['aria-label', 'x'],
+        attributeFilter: ['aria-label', 'x', 'x1', 'y1'],
       });
-    watch(
-      document.querySelector('[data-testid="timeline-row"]')?.closest('svg') ?? null,
-      w.__lat.tl,
-    );
+    watch(document.querySelector('g[data-layer="events"]'), w.__lat.tl);
     watch(document.querySelector('[data-testid="board-label"]'), w.__lat.tip);
   });
 
@@ -64,20 +63,20 @@ test('12.4 Dragging a sensor ring changes range. The preview and the timeline up
   expect(lat.move.length).toBe(1);
   const moveAt = lat.move[0]!;
   expect(moveAt).toBeGreaterThan(t0);
-  const timeline = (lat.tl.find((t) => t >= moveAt) ?? Infinity) - moveAt;
+  const ticksMs = (lat.tl.find((t) => t >= moveAt) ?? Infinity) - moveAt;
   const tip = (lat.tip.find((t) => t >= moveAt) ?? Infinity) - moveAt;
   test.info().annotations.push({
     type: 'latency',
-    description: `timeline ${timeline.toFixed(1)} ms, value readout ${tip.toFixed(1)} ms`,
+    description: `first-see ticks ${ticksMs.toFixed(1)} ms, value readout ${tip.toFixed(1)} ms`,
   });
   console.log(
-    `12.4 latency: timeline ${timeline.toFixed(1)} ms, value readout ${tip.toFixed(1)} ms`,
+    `12.4 latency: first-see ticks ${ticksMs.toFixed(1)} ms, value readout ${tip.toFixed(1)} ms`,
   );
-  expect(timeline).toBeLessThan(100);
+  expect(ticksMs).toBeLessThan(100);
   expect(tip).toBeLessThan(100);
 
-  // The range changed and the Find mark moved earlier along the timeline.
+  // The range changed and the first-see ticks moved out along the paths.
   const range = inspector.getByLabel('Range', { exact: true });
   expect(await num(range)).toBeCloseTo(6000 / M_PER_NM, 1);
-  await expect(findMark).not.toHaveAttribute('aria-label', findBefore!);
+  expect(await tickPos()).not.toEqual(ticksBefore);
 });
