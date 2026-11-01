@@ -338,13 +338,14 @@ removed from the tree on 2026-11-01 (`git show 70caf07` has them); the findings 
 | 10.R | done | ac28e3d | `reviews/phase-10.md`: 0 blockers, 3 majors (3D drag on a sensor orbits with no edit prompt; event labels lose the declutter to track datablocks, so a focused event has no label on the Brief stage; the perf spec stops at the inspector Range field and still watches the removed timeline), 9 minors, 21 notes; acceptance 2 to 25 pass except item 13 (the drag prompt) and item 21 (partial); first-use walk met in 5 actions; budgets pass (entry 224.7 kB gzip, 60 fps ring drag, 20-page PDF 162 ms); 76 browser screenshots `R-*.jpg` |
 | 10.D | done | 474b20a | user decisions from the review notes: "Envelopes" kept (N-05, skill note added); `--text-subtle` #696b61 in the light theme at 4.97:1 (N-04) |
 | 10.F | done | 130ca87 | all 12 findings fixed and 8 notes closed: the 3D drag prompt "Edit in Plan (1) or Elevation (2)" (item 13 passes), focused and event labels lead the declutter (legacy byte parity kept through per-finding source patches in `render.test.ts`; 34 snapshots updated), the perf spec runs to the end with every section 11 budget met headless (SwiftShader) and headed (M4 Pro), user-worded disabled reasons, five dead panel toggles and `stripTab` removed, MAX RG and the zero tick, rail names wrap, "full run" on one line, print hides the toast, Brief mini buttons, DE rings in the ew ink, hover to surface-3, `Swatch` friend and neutral, `Field.list`, Undo names its step, Library thumbnails edge to edge, `readout/store.ts` deleted; 52 unit files, 465 tests, 7 e2e; entry 717 kB raw, 231.9 kB gzip; nine `after-10F-*.jpg` |
+| 10.F2 | done | 20694b7 | Enter in an inspector field blurs the input after the commit, so the next Cmd+Z is the app's undo, not the input's native undo (the 10.F follow-up); 52 unit files, 466 tests, 7 e2e; entry 231.9 kB gzip |
 
 ## 8. Handoff
 
 State on 2026-11-01, end of the tenth session. `rebuild/mvp` holds phase 10 whole: lanes 10.1
-to 10.6, the review 10.R, the fix lane 10.F and three wiring commits (section 7; the 10.F merge
-is 130ca87), with the gate green: 52 unit files, 465 tests, 7 Playwright specs on `vite
-preview`, build; entry 717 kB raw, 231.9 kB gzip (budget 300). Spec section 12 items 2, 3, 4,
+to 10.6, the review 10.R, the fix lanes 10.F and 10.F2 and three wiring commits (section 7; the
+10.F2 merge is 20694b7), with the gate green: 52 unit files, 466 tests, 7 Playwright specs on
+`vite preview`, build; entry 717 kB raw, 231.9 kB gzip (budget 300). Spec section 12 items 2, 3, 4,
 9, 10 and 12 to 25 pass (`reviews/phase-10.md`; items 13 and 21 after 10.F). The first-use goal
 is met in five actions. Every section 11 budget is met headless and headed. Tag `pre-pivot`
 (d1f56d1) holds the last head with the run and score code. No lane is in flight; no worktree
@@ -374,7 +375,7 @@ branch rebuild/mvp. Read CLAUDE.md, docs/design-principles.md, docs/spec.md, the
 sections 1 to 5, phase 10 in section 6, then 7 and 8. Start the dev server from
 .claude/launch.json ("dev", port 5174) and use the product at / beside the mockup at
 /legacy/mockup-v3.html for ten minutes. Run `npm run gate` to confirm the baseline: 52 unit
-files, 465 tests, 7 Playwright specs, build. Read reviews/phase-10.md and the open items in
+files, 466 tests, 7 Playwright specs, build. Read reviews/phase-10.md and the open items in
 plan section 8. Then ask me which open items and which deferred items (plan section 6) come
 next, cut them as lanes under plan section 5, and bring me the result for approval.
 
@@ -425,11 +426,7 @@ section 7. Workers are picked by `~/.claude/rules/delegation.md`.
 **Open items.** Each came from a worker report or the review. Items phase 10 closed are gone;
 `git show 0b216e2:docs/plan.md` has the list before 10.F.
 
-From 10.F (follow-ups it found and did not do):
-- Cmd+Z while an inspector field still has focus after Enter runs the browser's native input
-  undo, which writes a new "set RDR-1 range" step (the value changed and the version rose while
-  the app's Redo stayed empty). The field should blur on Enter, or the key handler should take
-  Cmd+Z before the input. A real defect; the first item of the next fix lane.
+From 10.F (follow-ups it found and did not do; the Cmd+Z defect was fixed in 10.F2):
 - The selected inspector row is `bg-surface-2` (sunken); the mockup uses the rule colour.
 - `.ps-strip` rules remain in `shell.css` and `brief.css` with no element.
 - A press on the ring of a system that is not selected moves its centre to the cursor
