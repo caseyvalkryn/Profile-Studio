@@ -440,12 +440,12 @@ removed from the tree on 2026-11-01 (`git show 70caf07` has them); the findings 
 | 11.2 | done | 9122b24 | Geist and Geist Mono (`@fontsource/geist`, `@fontsource/geist-mono` 5.3.0, OFL) replace Archivo and JetBrains Mono: the user picked from the shortlist of four (Geist, Instrument Sans, Manrope, Recursive) on `reviews/phase-11/type-choices.html`, the one approved download; old packages uninstalled offline; `base.css` imports and `tokens.css` families; tabular figures confirmed at 12 px (tnum takes effect); x-height 0.530 against Archivo 0.526 and Geist Mono 0.530 against JetBrains Mono 0.550, no size step crosses half a pixel, so the five sizes and line heights stay; `--strip` and `--spacing-strip` removed with their last user; principle 5.9 amended (spec section 7 names no family); 52 unit files, 466 tests, 7 e2e on the lane; entry 231.86 kB gzip, 100 kB of woff2 outside the entry; 13 screenshots `reviews/phase-11/type-before-*.jpg` and `type-after-*.jpg` |
 | 11.R | done | 4d340b5 | `reviews/phase-11.md`: 0 blockers, 2 majors (every reach element carries the range role, so a press on a sector edge, the min range ring or a limit ray sets max range to the press distance; `render.card` drops the card's zoom and centre, so the Brief stage, thumbnails and print draw every card at the fitted frame), 5 minors (the append hint, the leg readout left by Escape, the 3D note in a toast only, the `offGlyph` tolerance, "fitted 3D frame" wording), 10 notes; the Geist lane clean in light, dark and print; ring drag, selected row, append, Library thumbnails and the entry budget pass; 28 screenshots `R-*.jpg` |
 | 11.F | done | 23d7e2b | all 7 findings and N-05 fixed: the range role only on the max range ring (`data-role="range"` in `reach.ts`, `Hit.part` in `hitAt`, the arc test in `beginDrag`; a press on a sector edge, the min range ring or a limit ray selects and starts nothing); the card's zoom and centre in `CardRec.cam`, drawn by `render.card` on the Brief stage, the strip thumbnails and print, 3D cards keep the default view; the append hint names the path and the leg readout shows after the first point; Escape ends an append and clears the readout; the 3D note in the strip line, the toasts without "fitted"; `offGlyph` on the `hitAt` tolerance with the touch flag; `saveVignette` and `deleteVignette` keep the cached listing current; four parity patches; 54 unit files, 481 tests, 7 e2e; entry 233.04 kB gzip; seven `after-11F-*.jpg`; open: the Library thumbnail draws the first card at the fitted frame (`scene.ts` has no frame); the Elevation limit rays are covered by code only |
-| 11.M | done | main | phase 11 merge into `main` approved by the user on 2026-11-01; `rebuild/mvp` merged `--no-ff` into `main` with this handoff; the gate run on `main`; not pushed |
+| 11.M | done | main | phase 11 merge into `main` approved by the user on 2026-11-01; `rebuild/mvp` merged `--no-ff` into `main` with this handoff; the gate run on `main`; both branches pushed on 2026-11-01 |
 
 ## 8. Handoff
 
 State on 2026-11-01, end of the eleventh session. Phase 11 is done, approved for the merge and
-merged into `main` (section 7, row 11.M). `rebuild/mvp` and `main` hold the same tree: lanes
+merged into `main` and pushed (section 7, row 11.M). `rebuild/mvp` and `main` hold the same tree: lanes
 11.1 and 11.2, the review 11.R and the fix lane 11.F, with the gate green: 54 unit files, 481
 tests, 7 Playwright specs on `vite preview`, build; entry 720 kB raw, 233.0 kB gzip (budget
 300); 100 kB of Geist woff2 outside the entry. The type is Geist and Geist Mono (section 1,
@@ -528,8 +528,7 @@ with their commits and `--no-ff` merges into `rebuild/mvp`), "Envelopes" kept, t
 darkened to AA, phase 10 approved, two pushes of `rebuild/mvp`, the merge into `main` and its push; no install. Later on 2026-11-01 (phase 11): the two
 word choices ("C2 and TSPI" kept, "Max range"), the download of `@fontsource/geist` and
 `@fontsource/geist-mono` (the user's pick of Geist from the specimen page
-`reviews/phase-11/type-choices.html`), the merge of phase 11 into `main`. No push of phase 11
-was approved.
+`reviews/phase-11/type-choices.html`), the merge of phase 11 into `main`, the push of both branches.
 
 **How to run a lane.** `git worktree add .worktrees/<id> -b lane/<id> rebuild/mvp`, then
 `npm ci --offline` there (stop and ask if it tries to fetch). Parallel lanes each run the full
