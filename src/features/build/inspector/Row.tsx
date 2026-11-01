@@ -305,8 +305,10 @@ export function Field(props: {
           onChange={(e) => input(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
+              // Blur commits (onBlur) and returns focus to the page, so the next Cmd+Z is the
+              // app's undo, not the input's native undo (review 10.R follow-up, lane 10.F2).
               e.preventDefault();
-              commit();
+              e.currentTarget.blur();
             } else if (e.key === 'Escape') revert();
           }}
           className={`${CONTROL} ${font}`}
