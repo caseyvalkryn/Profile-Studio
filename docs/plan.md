@@ -21,6 +21,8 @@ These are settled. Do not reopen them without the user.
 | Purpose | A polished profile mockup tool: create, iterate and brief test profiles. Not a place to run tests | User, 2026-11-01 (phase 10) |
 | Run and score code | Deleted in lane 10.1 (phase 10 decision 1); tag `pre-pivot` keeps it one checkout away | User, 2026-11-01 |
 | Palette | Warm paper and graphite with affiliation inks, from `legacy/css/tokens.css` and the mockup `:root`, in lane 10.6 (phase 10 decision 3) | User, 2026-11-01 |
+| Mode names | Library, Build, Brief (phase 10 decision 2). The mockup's Collect, Compose, Brief set the direction, not the words | User, 2026-11-01 (kickoff prompt) |
+| Inspector | The whole-scene inspector replaces the selection inspector (phase 10 decision 4). The selected object's row expands; nothing is lost | User, 2026-11-01 (kickoff prompt) |
 
 ## 2. Stack
 
@@ -150,8 +152,7 @@ chain time, compare, sweep, the Monte Carlo worker and `src/engine/sim` (18.3k l
 measures of performance list (`docs/reference/dronescore-measures.md`, the 67-row table in
 `src/domain`); the scorecard goes.
 
-**Decisions** (each is a row in section 1 once taken; 2 and 4 are confirmed by the kickoff
-prompt in section 8):
+**Decisions** (each is a row in section 1; all four are taken as of 2026-11-01):
 
 1. Delete the run and score code, or hide it behind a flag. Decided 2026-11-01: delete. Git
    keeps it (tag `pre-pivot` at d1f56d1). A hidden workspace is not simple, and the entry
