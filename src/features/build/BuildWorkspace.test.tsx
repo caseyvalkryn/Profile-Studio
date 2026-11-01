@@ -60,7 +60,10 @@ describe('Build workspace', () => {
     const view = screen.getByRole('group', { name: 'View' });
     fireEvent.click(within(view).getByRole('button', { name: '3D' }));
     expect(useUi.getState().view).toBe('3d');
-    expect(within(view).getByRole('button', { name: '3D' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(view).getByRole('button', { name: '3D' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
   });
 
   it('Elevation opens From asset and shows the mode segments only in Elevation', () => {
@@ -68,15 +71,25 @@ describe('Build workspace', () => {
     render(<BuildWorkspace />);
     expect(useUi.getState().elevationMode).toBe('fromAsset');
     expect(screen.queryByRole('group', { name: 'Elevation mode' })).toBeNull();
-    fireEvent.click(within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name: 'Elevation' }));
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'View' })).getByRole('button', {
+        name: 'Elevation',
+      }),
+    );
     const seg = screen.getByRole('group', { name: 'Elevation mode' });
-    expect(within(seg).getByRole('button', { name: 'From asset' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(seg).getByRole('button', { name: 'From asset' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
     fireEvent.click(within(seg).getByRole('button', { name: 'Along path' }));
     expect(useUi.getState().elevationMode).toBe('alongPath');
     // a pressed segment keeps its mode
     fireEvent.click(within(seg).getByRole('button', { name: 'Along path' }));
     expect(useUi.getState().elevationMode).toBe('alongPath');
-    expect(within(seg).getByRole('button', { name: 'Along path' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(seg).getByRole('button', { name: 'Along path' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
   });
 
   it('T turns the time cursor on and off', () => {

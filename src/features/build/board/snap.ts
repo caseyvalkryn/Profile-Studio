@@ -29,7 +29,14 @@ export function snapStep(ext: number): number {
   return gridStep(ext) / 5;
 }
 
-export function nearestOnSeg(px: number, py: number, ax: number, ay: number, bx: number, by: number) {
+export function nearestOnSeg(
+  px: number,
+  py: number,
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+) {
   const dx = bx - ax;
   const dy = by - ay;
   const L = dx * dx + dy * dy || 1;
@@ -278,7 +285,11 @@ export function snap(world: World, context: SnapContext): Snapped | SnappedElev 
   }
   // grid
   const step = snapStep(context.ext || geoBounds(scene).ext);
-  return { x: Math.round(world.x / step) * step, y: Math.round(world.y / step) * step, label: null };
+  return {
+    x: Math.round(world.x / step) * step,
+    y: Math.round(world.y / step) * step,
+    label: null,
+  };
 }
 
 export type Crossing = { t: number; system: string; kind: 'in' | 'out' };

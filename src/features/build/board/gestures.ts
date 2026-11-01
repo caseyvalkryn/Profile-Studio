@@ -75,7 +75,10 @@ function sameHit(a: Hit | null, b: Hit | null): boolean {
 }
 
 /** The menu kind for a hit (null = empty board). */
-export function menuKindOf(hit: Hit | null, rec: { scene: { systems: { id: string; kind: string }[] } } | null): MenuKind {
+export function menuKindOf(
+  hit: Hit | null,
+  rec: { scene: { systems: { id: string; kind: string }[] } } | null,
+): MenuKind {
   if (!hit) return 'map';
   if (hit.kind === 'path') return hit.i != null ? 'waypoint' : 'threat';
   if (hit.kind === 'system') {
@@ -288,7 +291,8 @@ export class BoardGestures {
       id === 'asset' || id === 'asset-edge'
         ? '<span class="t-sub">from ' + esc(name) + '</span>'
         : '<span class="t-sub">from</span> <span class="t-mono-id t-sec">' + esc(name) + '</span>';
-    if (isElev(w)) return esc(U.h(Math.abs(w.r)) + '  ' + U.v(Math.max(0, w.z), 'AGL')) + '  ' + from;
+    if (isElev(w))
+      return esc(U.h(Math.abs(w.r)) + '  ' + U.v(Math.max(0, w.z), 'AGL')) + '  ' + from;
     const sel = this.renderer.last ? this.renderer.last.sel : { kind: null, id: null };
     const o = cur.d.originAt(id, sel.kind === 'path' ? sel.id : null, useUi.getState().tS);
     const r = Math.hypot(w.x - o.x, w.y - o.y);
@@ -322,7 +326,8 @@ export class BoardGestures {
   }
   private draggable(h: Hit | null): boolean {
     if (!h) return false;
-    if (h.role === 'insert' || h.role === 'edge' || h.role === 'bead' || h.role === 'hold') return true;
+    if (h.role === 'insert' || h.role === 'edge' || h.role === 'bead' || h.role === 'hold')
+      return true;
     if (h.kind === 'system') return h.role != null;
     if (h.kind === 'event') return true;
     if (h.kind === 'path') return h.i != null;
@@ -355,12 +360,17 @@ export class BoardGestures {
       }
     }
     const w = this.worldAt(this.local(ev));
-    const pointer: Pointer | null = w && !isElev(w) ? { x: w.x, y: w.y, tS: useUi.getState().tS } : null;
+    const pointer: Pointer | null =
+      w && !isElev(w) ? { x: w.x, y: w.y, tS: useUi.getState().tS } : null;
     this.onMenu({ kind, target, pointer, clientX: ev.clientX, clientY: ev.clientY });
   }
 
   // ---------------------------------------------------------- placement ghost
-  private placingCursor(p: BoardPlacing, w: World | null, ev: { altKey: boolean; shiftKey: boolean }) {
+  private placingCursor(
+    p: BoardPlacing,
+    w: World | null,
+    ev: { altKey: boolean; shiftKey: boolean },
+  ) {
     if (p.kind === 'formation' || p.kind === 'event' || !w || isElev(w)) return null;
     const cur = current();
     const last = this.renderer.last;
@@ -387,7 +397,15 @@ export class BoardGestures {
     const cur = current();
     const last = this.renderer.last;
     if (!w || isElev(w)) return null;
-    if (!p || useBoard.getState().snap === false || ev.altKey || p.kind === 'event' || !cur || !last) return w;
+    if (
+      !p ||
+      useBoard.getState().snap === false ||
+      ev.altKey ||
+      p.kind === 'event' ||
+      !cur ||
+      !last
+    )
+      return w;
     const pts = (p.pts || []) as PlanPt[];
     const sp = snap(w, {
       scene: cur.rec.scene,
@@ -416,7 +434,11 @@ export class BoardGestures {
       this.pend = null;
       const a = this.pointers[Number(ids[0])]!;
       const b = this.pointers[Number(ids[1])]!;
-      this.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+      this.pinch = {
+        d: Math.hypot(a.x - b.x, a.y - b.y) || 1,
+        mx: (a.x + b.x) / 2,
+        my: (a.y + b.y) / 2,
+      };
       return;
     }
     if (ids.length > 2) return;
@@ -429,7 +451,16 @@ export class BoardGestures {
     const cam = last && last.cam;
     const w = this.worldAt(p);
     const b = useBoard.getState();
-    const base: Pend = { id: ev.pointerId, x0: ev.clientX, y0: ev.clientY, p0: p, w0: w, moved: false, touch, type: 'none' };
+    const base: Pend = {
+      id: ev.pointerId,
+      x0: ev.clientX,
+      y0: ev.clientY,
+      p0: p,
+      w0: w,
+      moved: false,
+      touch,
+      type: 'none',
+    };
 
     if (ev.button === 1 || this.spaceDown) {
       ev.preventDefault();
@@ -446,7 +477,11 @@ export class BoardGestures {
         this.pend = { ...base, type: 'none' };
         return;
       }
-      this.pend = { ...base, type: 'place', rectOk: b.placing.kind === 'volume' && !(b.placing.pts && b.placing.pts.length) };
+      this.pend = {
+        ...base,
+        type: 'place',
+        rectOk: b.placing.kind === 'volume' && !(b.placing.pts && b.placing.pts.length),
+      };
       return;
     }
     if (b.ruler) {
@@ -533,7 +568,8 @@ export class BoardGestures {
       // hover and placement ghost, no button down
       if (b.placing && b.placing.kind !== 'formation' && b.placing.kind !== 'event') {
         const cur = this.placingCursor(b.placing, w, ev);
-        const prev = b.placing.cur as { x: number; y: number; label?: string | null } | null | undefined;
+        const prev = b.placing.cur as
+          { x: number; y: number; label?: string | null } | null | undefined;
         if (cur && (!prev || prev.x !== cur.x || prev.y !== cur.y || prev.label !== cur.label)) {
           b.set({ placing: { ...b.placing, cur: { x: cur.x, y: cur.y }, label: cur.label } });
         }
@@ -542,7 +578,15 @@ export class BoardGestures {
       }
       if (!this.el.label.classList.contains('hidden')) this.showLabel('', p);
       // two-click ruler: the free end follows the pointer until the second click
-      if (b.ruler && b.ruler.a && !b.ruler.done && w && !isElev(w) && last && last.cam.kind === 'plan') {
+      if (
+        b.ruler &&
+        b.ruler.a &&
+        !b.ruler.done &&
+        w &&
+        !isElev(w) &&
+        last &&
+        last.cam.kind === 'plan'
+      ) {
         ruler.move(w, last.cam);
         return;
       }
@@ -568,10 +612,22 @@ export class BoardGestures {
     } else if (pend.type === 'pan' && pend.view) {
       const rr = this.el.stage.getBoundingClientRect();
       const kk = last && rr.width ? last.W / rr.width : 1;
-      b.set({ zoom: pend.view.zoom, px: pend.view.px + (ev.clientX - pend.x0) * kk, py: pend.view.py + (ev.clientY - pend.y0) * kk });
+      b.set({
+        zoom: pend.view.zoom,
+        px: pend.view.px + (ev.clientX - pend.x0) * kk,
+        py: pend.view.py + (ev.clientY - pend.y0) * kk,
+      });
     } else if (pend.type === 'rotate') {
-      const r = cameras.axon.rotate(pend.yaw == null ? -35 : pend.yaw, pend.pitch == null ? 55 : pend.pitch, ev.clientX - pend.x0, ev.clientY - pend.y0);
-      b.set({ yaw: Math.round(r.yaw * 10) / 10, pitch: Math.round(clamp(r.pitch, 8, 86) * 10) / 10 });
+      const r = cameras.axon.rotate(
+        pend.yaw == null ? -35 : pend.yaw,
+        pend.pitch == null ? 55 : pend.pitch,
+        ev.clientX - pend.x0,
+        ev.clientY - pend.y0,
+      );
+      b.set({
+        yaw: Math.round(r.yaw * 10) / 10,
+        pitch: Math.round(clamp(r.pitch, 8, 86) * 10) / 10,
+      });
     } else if (pend.type === 'ruler') {
       if (w && !isElev(w) && last) ruler.move(w, last.cam);
     } else if (pend.type === 'rect') {
@@ -770,7 +826,13 @@ export class BoardGestures {
     if (ev.key !== ' ') return;
     const a = document.activeElement;
     const tag = a ? String(a.tagName || '').toLowerCase() : '';
-    if (tag === 'input' || tag === 'textarea' || tag === 'select' || (a && (a as HTMLElement).isContentEditable)) return;
+    if (
+      tag === 'input' ||
+      tag === 'textarea' ||
+      tag === 'select' ||
+      (a && (a as HTMLElement).isContentEditable)
+    )
+      return;
     this.spaceDown = ev.type === 'keydown';
     if (this.overStage && ev.type === 'keydown' && !ev.metaKey && !ev.ctrlKey && !ev.altKey) {
       ev.preventDefault();
@@ -788,7 +850,11 @@ export class BoardGestures {
       ev.preventDefault();
       return;
     }
-    if (ev.key === 'Enter' && b.placing && (b.placing.kind === 'aircraft' || b.placing.kind === 'volume')) {
+    if (
+      ev.key === 'Enter' &&
+      b.placing &&
+      (b.placing.kind === 'aircraft' || b.placing.kind === 'volume')
+    ) {
       finishPlacing();
       this.hideLabel();
       ev.preventDefault();
@@ -799,7 +865,9 @@ export class BoardGestures {
       const r = execute(nk, undefined, ev.shiftKey ? 'large' : undefined);
       if (r !== true) {
         // not registered (before lane 9.2.6): nudge directly
-        const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[ev.key as 'ArrowLeft'];
+        const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[
+          ev.key as 'ArrowLeft'
+        ];
         const k = ev.shiftKey ? 5 : 1;
         nudge(d[0]! * k, d[1]! * k);
       }
@@ -823,16 +891,21 @@ export function hintText(placing: BoardPlacing | null, rulerOn: boolean, camKind
   if (p && p.kind !== 'formation') {
     if (p.kind !== 'event' && camKind !== 'plan') return 'Press P to add in Plan.';
     if (p.kind === 'aircraft')
-      return (p.pts && p.pts.length
-        ? 'Pick a point to add a waypoint. Double-click or press Enter to end the flight path.'
-        : 'Pick a point to place the start waypoint.') + ' Press Escape to cancel.';
+      return (
+        (p.pts && p.pts.length
+          ? 'Pick a point to add a waypoint. Double-click or press Enter to end the flight path.'
+          : 'Pick a point to place the start waypoint.') + ' Press Escape to cancel.'
+      );
     if (p.kind === 'volume')
       return 'Pick a point to place a vertex. Double-click or press Enter to close the area. Or drag a rectangle. Press Escape to cancel.';
     if (p.kind === 'system') return 'Pick a point to place it. Press Escape to cancel.';
-    if (p.kind === 'event') return 'Pick a point on a flight path to place the event. Press Escape to cancel.';
+    if (p.kind === 'event')
+      return 'Pick a point on a flight path to place the event. Press Escape to cancel.';
     return '';
   }
   if (rulerOn)
-    return camKind !== 'plan' ? 'Press P to use the ruler.' : 'Drag, or click two points, to measure. Press M to close the ruler.';
+    return camKind !== 'plan'
+      ? 'Press P to use the ruler.'
+      : 'Drag, or click two points, to measure. Press M to close the ruler.';
   return '';
 }

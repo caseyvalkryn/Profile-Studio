@@ -68,7 +68,10 @@ const LIB_GROUP: Record<LibraryItem['group'], AddGroupId> = {
 function systemData(rangeM: number, fovDeg: number, units: Units): [string, string] {
   if (!(rangeM > 0)) return ['', 'no reach'];
   const fov = fovDeg < 360 ? `  ${fovDeg}°` : '';
-  return [hDist(rangeM, units) + fov, hDist(rangeM, units) + (fovDeg < 360 ? `, ${fovDeg}° sector` : ', omni')];
+  return [
+    hDist(rangeM, units) + fov,
+    hDist(rangeM, units) + (fovDeg < 360 ? `, ${fovDeg}° sector` : ', omni'),
+  ];
 }
 
 function libraryRow(item: LibraryItem, units: Units): AddRow {

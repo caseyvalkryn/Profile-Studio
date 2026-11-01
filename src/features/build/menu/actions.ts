@@ -174,11 +174,7 @@ function action(id: string, label: string | undefined, ctx: CommandContext, arg?
 }
 
 /** The right-click items for a target, in order, with the reason on each disabled one. */
-export function actionsFor(
-  kind: MenuKind,
-  target: MenuTarget,
-  ctx: CommandContext,
-): MenuAction[] {
+export function actionsFor(kind: MenuKind, target: MenuTarget, ctx: CommandContext): MenuAction[] {
   if (!ctx.document.doc) return [];
   const c = targetContext(kind, target, ctx);
   const arg = kind === 'group' ? target.letter : undefined;

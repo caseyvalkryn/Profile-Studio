@@ -29,6 +29,13 @@ It is delivered as a one-to-one port of the legacy interface onto the MVP engine
 phase 9). Scope and decisions are in `docs/reference/artifact-study.md`. The first-use goal does
 not change.
 
+**Pivot (2026-11-01).** The user set the purpose: Profile Studio creates, iterates and briefs
+test profiles as interactive, detailed mockups. It plans real tests; it does not run them. The
+product is a more polished version of the v3 mockup `legacy/mockup-v3.html`. Lane 10.1
+(`docs/plan.md` phase 10) amends sections 1, 4, 6, 7, 11 and 12 to that purpose once the user
+confirms the cut of the run and score surface. Until then the sections below describe the
+build as it stands.
+
 ## 2. Terms
 
 Use these words in the UI. One word for one thing. The code keeps the type names it has:

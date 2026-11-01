@@ -112,11 +112,20 @@ describe('board performance, 40 threats and 15 sensors', () => {
     const h = [...mounted][0]!;
     useUi.getState().setSelection(['s1']);
     boardFlush();
-    const hit = h.renderer.last!.hits.find((x) => x.kind === 'system' && x.id === 'S2' && x.role === 'range')!;
+    const hit = h.renderer.last!.hits.find(
+      (x) => x.kind === 'system' && x.id === 'S2' && x.role === 'range',
+    )!;
     expect(hit).toBeTruthy();
     const ev = (type: string, x: number, y: number) =>
       stage.dispatchEvent(
-        new PointerEvent(type, { clientX: x, clientY: y, button: 0, pointerId: 1, pointerType: 'mouse', bubbles: true }),
+        new PointerEvent(type, {
+          clientX: x,
+          clientY: y,
+          button: 0,
+          pointerId: 1,
+          pointerType: 'mouse',
+          bubbles: true,
+        }),
       );
     ev('pointerdown', hit.sx, hit.sy);
     ev('pointermove', hit.sx + 10, hit.sy);

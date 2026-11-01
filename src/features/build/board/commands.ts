@@ -8,7 +8,11 @@ import { nudge, zoom } from './tools';
 
 const needDoc = (ctx: CommandContext) => (ctx.document.doc ? true : 'Open a vignette first');
 const needSel = (ctx: CommandContext) =>
-  ctx.document.doc ? (ctx.ui.selectedKeys.length ? true : 'Select an object first') : 'Open a vignette first';
+  ctx.document.doc
+    ? ctx.ui.selectedKeys.length
+      ? true
+      : 'Select an object first'
+    : 'Open a vignette first';
 
 export const boardCommands: Command[] = [
   {

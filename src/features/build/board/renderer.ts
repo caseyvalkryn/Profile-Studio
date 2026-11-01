@@ -123,8 +123,21 @@ export class BoardRenderer {
       elevationMode: ui.elevationMode,
       path,
     };
-    const camSig = [proj, size.W, size.H, b.zoom, b.px, b.py, b.yaw, b.pitch, b.ref, ui.elevationMode, path,
-      bounds.cx + ',' + bounds.cy + ',' + bounds.ext, rec.id].join('|');
+    const camSig = [
+      proj,
+      size.W,
+      size.H,
+      b.zoom,
+      b.px,
+      b.py,
+      b.yaw,
+      b.pitch,
+      b.ref,
+      ui.elevationMode,
+      path,
+      bounds.cx + ',' + bounds.cy + ',' + bounds.ext,
+      rec.id,
+    ].join('|');
     const origin = d.origin;
     const sig: Sig = {
       profile: rec,
@@ -184,7 +197,8 @@ export class BoardRenderer {
     if (this.sig) {
       for (const k of Object.keys(sig) as CtxField[]) if (sig[k] !== this.sig[k]) changed.add(k);
     }
-    const tick = !!this.sig && this.last && changed.size > 0 && [...changed].every((k) => TICK_FIELDS.has(k));
+    const tick =
+      !!this.sig && this.last && changed.size > 0 && [...changed].every((k) => TICK_FIELDS.has(k));
     if (this.sig && this.last && changed.size === 0) return;
     let only: string[] | undefined;
     if (tick) {
@@ -214,7 +228,15 @@ export class BoardRenderer {
       this.svg.setAttribute('data-proj', out.cam.kind);
       this.svg.setAttribute('role', 'img');
       this.svg.setAttribute('aria-label', ARIA[out.cam.kind] || ARIA.plan!);
-      this.last = { cam: out.cam, hits: out.hits, W: size.W, H: size.H, rec, d, sel: view.sel as Sel };
+      this.last = {
+        cam: out.cam,
+        hits: out.hits,
+        W: size.W,
+        H: size.H,
+        rec,
+        d,
+        sel: view.sel as Sel,
+      };
     } else if (this.last) {
       this.last = { ...this.last, cam: out.cam, rec, d };
     }

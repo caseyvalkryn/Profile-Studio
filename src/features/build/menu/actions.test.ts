@@ -111,11 +111,7 @@ describe('actionsFor', () => {
   it('shows Move to geometry only when the event has a warning', () => {
     const e1 = keyOf('e1');
     setEventWarnings(() => [{ eventKey: e1, tGeoS: 31.5, text: 'e1 is before first see' }]);
-    expect(labels('event', 'e1')).toEqual([
-      'Change type',
-      'Move to geometry',
-      'Delete',
-    ]);
+    expect(labels('event', 'e1')).toEqual(['Change type', 'Move to geometry', 'Delete']);
     act(
       () =>
         void runAction(

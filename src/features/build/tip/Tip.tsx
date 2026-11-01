@@ -37,14 +37,17 @@ export function Tip({ pointer, bounds }: TipProps) {
   }, [hoverKey]);
 
   const content =
-    shownKey && shownKey === hoverKey && doc
-      ? tipContent(doc, preview, shownKey, units, tS)
-      : null;
+    shownKey && shownKey === hoverKey && doc ? tipContent(doc, preview, shownKey, units, tS) : null;
 
   useLayoutEffect(() => {
     const el = box.current;
     if (!el || !pointer) return;
-    const rect = bounds ?? { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+    const rect = bounds ?? {
+      left: 0,
+      top: 0,
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
     const p = placeTip(rect, pointer, { w: el.offsetWidth || 200, h: el.offsetHeight || 40 });
     el.style.transform = `translate(${p.x}px, ${p.y}px)`;
   });
@@ -74,7 +77,9 @@ export function Tip({ pointer, bounds }: TipProps) {
       {content.rows.map((r, i) => (
         <div
           key={i}
-          className={r.warn ? 'whitespace-normal text-state-warning' : 'whitespace-nowrap text-muted'}
+          className={
+            r.warn ? 'whitespace-normal text-state-warning' : 'whitespace-nowrap text-muted'
+          }
         >
           {r.parts
             ? r.parts.map((p, j) => (

@@ -5,19 +5,14 @@ import type { Vignette } from '../../../domain/types';
 import { rangeAt } from '../../../engine/geo';
 import type { Preview } from '../../../engine/preview';
 import type { Units } from '../../../state/ui';
-import {
-  areaText,
-  EVENT_NAMES,
-  hDist,
-  polygonArea,
-  spd,
-  tText,
-  vHeight,
-} from '../rail/format';
+import { areaText, EVENT_NAMES, hDist, polygonArea, spd, tText, vHeight } from '../rail/format';
 import { warningsFor } from '../menu/commands';
 
 export type TipRow = { parts?: string[]; text?: string; warn?: boolean };
-export type TipContent = { head: { id: string | null; name: string; pre?: boolean }; rows: TipRow[] };
+export type TipContent = {
+  head: { id: string | null; name: string; pre?: boolean };
+  rows: TipRow[];
+};
 
 /** The hover key of a threat group, such as `group:A`. */
 export const groupHoverKey = (letter: string) => `group:${letter}`;
@@ -67,7 +62,9 @@ export function tipContent(
 
   const sys = [...doc.sensors, ...doc.effectors, ...doc.nodes].find((s) => s.key === hoverKey);
   if (sys) {
-    rows.push(sys.rangeM > 0 ? { parts: ['Range', hDist(sys.rangeM, units)] } : { text: 'No reach' });
+    rows.push(
+      sys.rangeM > 0 ? { parts: ['Range', hDist(sys.rangeM, units)] } : { text: 'No reach' },
+    );
     // The threat nearest the system at the time cursor (0 when off).
     let best: { key: string; id: string } | null = null;
     let bd = Infinity;

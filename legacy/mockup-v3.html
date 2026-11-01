@@ -1,0 +1,541 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Profile Studio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: mode bar; Compose = rail, board, inspector; Brief = card strip, stage, notes; Collect = grid. Tokens follow the RangeBoard sheet: warm graphite night, paper day, affiliation inks on the board, three line weights. */
+:root{
+  --board:#eeebe4; --panel:#f7f5f0; --sunken:#e4e0d8; --raised:#fbfaf7;
+  --rule:#d8d3c9; --rule-strong:#b0aa9e; --t1:#212220; --t2:#4e504b; --t3:#7b7d73;
+  --accent:#2862b0; --accent-ink:#eeebe4;
+  --hostile:#d43725; --friend:#2862b0; --neutral:#98691b; --ew:#227f8c; --ghost:#767d84; --nominal:#378154;
+  --grid:#e2ded5; --elev:0 8px 24px rgba(33,34,32,.12);
+  --ui:"Archivo",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --w1:.75; --w2:1.25; --w3:2.25;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --board:#121313; --panel:#191a1a; --sunken:#0e0f0f; --raised:#202121; --rule:#2a2c2b; --rule-strong:#454846; --t1:#ebe9e3; --t2:#a9a9a3; --t3:#8c8e88;
+  --accent:#7ba7e8; --accent-ink:#121313; --hostile:#e46f62; --friend:#7fbfe6; --neutral:#e6cf5a; --ew:#5ad1e0; --ghost:#6a7178; --nominal:#7fc39a;
+  --grid:#1d1f1e; --elev:0 8px 24px rgba(0,0,0,.45); color-scheme:dark } }
+:root[data-theme="dark"]{
+  --board:#121313; --panel:#191a1a; --sunken:#0e0f0f; --raised:#202121; --rule:#2a2c2b; --rule-strong:#454846; --t1:#ebe9e3; --t2:#a9a9a3; --t3:#8c8e88;
+  --accent:#7ba7e8; --accent-ink:#121313; --hostile:#e46f62; --friend:#7fbfe6; --neutral:#e6cf5a; --ew:#5ad1e0; --ghost:#6a7178; --nominal:#7fc39a;
+  --grid:#1d1f1e; --elev:0 8px 24px rgba(0,0,0,.45); color-scheme:dark }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--board);color:var(--t1);font:14px/1.45 var(--ui);padding-block:0;padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px))}
+h1,h2,h3,p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:transparent;border:1px solid transparent;border-radius:4px;height:28px;padding:0 10px;font-weight:500;white-space:nowrap}
+button:hover{background:var(--rule)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button.primary{background:var(--accent);color:var(--accent-ink)} button.primary:hover{filter:brightness(1.08)}
+button.quiet{border-color:var(--rule-strong)}
+button.mini{height:24px;padding:0 8px;font-size:12px;border-color:var(--rule-strong)}
+button.x{color:var(--t3);border-color:transparent;padding:0 6px}
+button.danger{color:var(--hostile)}
+input,select,textarea{background:var(--sunken);border:1px solid var(--rule-strong);border-radius:4px;height:28px;padding:0 8px;min-width:0;width:100%}
+textarea{height:auto;padding:6px 8px;resize:vertical;line-height:1.4}
+input[type=number]{font-family:var(--mono);font-size:12.5px}
+input[type=range]{height:20px;padding:0;background:transparent;border:0}
+input[type=checkbox]{width:auto;height:auto;margin:0}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.lbl{font-size:12px;font-weight:500;color:var(--t3)}
+.hint{font-size:12px;color:var(--t2)}
+.chk{display:inline-flex;gap:6px;align-items:center;font-size:12.5px;color:var(--t2);cursor:pointer}
+.seg{display:inline-flex;border:1px solid var(--rule-strong);border-radius:4px;overflow:hidden}
+.seg button{height:26px;border:0;border-radius:0;padding:0 10px;font-size:12.5px}
+.seg button[aria-pressed="true"]{background:var(--t1);color:var(--board)}
+
+/* Top bar */
+.top{display:flex;align-items:center;gap:14px;height:48px;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--rule);background:var(--panel)}
+.top .brand{font-weight:500;white-space:nowrap}
+.top .name{flex:1;min-width:0;display:flex;align-items:center;gap:8px}
+.top .name input{height:30px;font-size:15px;font-weight:500;background:transparent;border-color:transparent;padding:0 6px}
+.top .name input:hover,.top .name input:focus{background:var(--sunken);border-color:var(--rule-strong)}
+.top .name .id{font-family:var(--mono);font-size:12px;color:var(--t3);white-space:nowrap}
+.top .actions{display:flex;gap:4px}
+@media (max-width:860px){.top{height:auto;flex-wrap:wrap;padding-block:8px;gap:8px}.top .name{flex-basis:100%;order:3}}
+
+/* Compose */
+.compose{display:grid;grid-template-columns:236px minmax(0,1fr) 340px;height:calc(100% - 48px);min-height:0}
+@media (max-width:1100px){.compose{grid-template-columns:200px minmax(0,1fr) 300px}}
+@media (max-width:860px){.compose{display:flex;flex-direction:column;height:auto}}
+.rail,.inspector{background:var(--panel);overflow:auto;min-width:0}
+.rail{border-right:1px solid var(--rule);padding:12px 12px 24px max(12px,env(safe-area-inset-left,0px))}
+.inspector{border-left:1px solid var(--rule);padding:12px max(12px,env(safe-area-inset-right,0px)) 40px 12px}
+@media (max-width:860px){.rail{border-right:0;border-bottom:1px solid var(--rule)}.inspector{border-left:0;border-top:1px solid var(--rule)}}
+.rail .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.lst{display:flex;flex-direction:column}
+.lst .g{font-size:11px;font-weight:500;color:var(--t3);padding:10px 6px 4px}
+.lst .g small{font-weight:400;font-family:var(--mono);margin-left:6px}
+.lst .row{display:grid;grid-template-columns:1fr auto;gap:0 8px;padding:6px 8px;border-radius:4px;align-items:center;cursor:pointer}
+.lst .row:hover{background:var(--rule)}
+.lst .row[aria-current="true"]{background:var(--rule);box-shadow:inset 2px 0 0 var(--accent)}
+.lst .row .n{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lst .row .m{font-family:var(--mono);font-size:11px;color:var(--t3);grid-column:1/3}
+.lst .row .m a{color:var(--t3)}
+.lst .row button{grid-row:1/3;align-self:center}
+.sw{display:inline-block;width:8px;height:8px;vertical-align:middle;margin-right:7px}
+.sw.h{background:var(--hostile)} .sw.f{background:var(--friend)} .sw.n{border:1px solid var(--neutral)} .sw.g{border:1px dashed var(--ghost)}
+.board{display:flex;flex-direction:column;min-width:0;min-height:0;padding:10px 14px 14px}
+.board .bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.board .bar .grp{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.board .read{font-family:var(--mono);font-size:11.5px;color:var(--t3)}
+.scrub{display:flex;align-items:center;gap:8px;margin-top:8px}
+.scrub input[type=range]{flex:1}
+.scrub .t{font-family:var(--mono);font-size:12px;width:56px;text-align:right}
+.stage{flex:1 1 auto;min-height:320px;position:relative}
+.stage svg{width:100%;height:100%;display:block;touch-action:none}
+.stage svg[data-proj="axon"]{cursor:grab}
+.stage svg.add{cursor:crosshair}
+.thumbs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+.thumbs button{height:auto;padding:0;border:1px solid var(--rule);border-radius:4px;overflow:hidden;background:var(--panel);text-align:left}
+.thumbs button:hover{border-color:var(--rule-strong)}
+.thumbs button svg{width:100%;height:auto;display:block;pointer-events:none}
+.thumbs button span{display:block;font-size:11px;font-weight:500;color:var(--t3);padding:4px 8px;border-top:1px solid var(--rule)}
+@media (max-width:860px){.stage{min-height:380px}}
+
+/* SVG ink: three weights, horizontal labels, affiliation inks */
+svg text{font-family:var(--mono);font-size:10.5px;fill:var(--t3);user-select:none}
+svg .t1{fill:var(--t1)}
+svg .grid{stroke:var(--grid);stroke-width:var(--w1)}
+svg .axis{stroke:var(--rule-strong);stroke-width:var(--w1)}
+svg .w1{stroke-width:var(--w1)} svg .w2{stroke-width:var(--w2)} svg .w3{stroke-width:var(--w3)}
+svg .friend{stroke:var(--friend);fill:none} svg .friendf{fill:var(--friend)}
+svg .ring{stroke:var(--friend);stroke-dasharray:4 4;fill:none;opacity:.8} svg .ring.ew{stroke:var(--ew)}
+svg .fov{fill:var(--friend);opacity:.07;stroke:none}
+svg .hostile{stroke:var(--hostile);fill:none} svg .hostilef{fill:var(--hostile)}
+svg .ghost{stroke:var(--ghost);fill:none}
+svg .dim{opacity:.32}
+svg .wp{fill:var(--board);stroke:var(--hostile);stroke-width:var(--w2);cursor:move} svg .wp.sel{fill:var(--hostile)}
+svg .hd{fill:var(--board);stroke:var(--hostile);stroke-width:var(--w2)}
+svg .vol{stroke:var(--neutral);stroke-dasharray:2 3;fill:none;stroke-width:var(--w1)} svg .vol.asset{stroke:var(--friend);stroke-dasharray:none} svg .vol.ref{stroke:var(--ghost)} svg .vol.sel{stroke-width:var(--w3)}
+svg .plane{stroke:var(--ghost);stroke-dasharray:6 4;fill:none;stroke-width:var(--w1)}
+svg .hull{stroke:var(--hostile);stroke-dasharray:3 3;fill:var(--hostile);fill-opacity:.06;stroke-width:var(--w1)}
+svg .drop{stroke:var(--hostile);stroke-opacity:.3;stroke-width:var(--w1)}
+svg .ev{fill:var(--board);stroke:var(--t1);stroke-width:var(--w2);cursor:ew-resize} svg .ev.sel{stroke:var(--accent);stroke-width:var(--w3)}
+svg .evt{fill:var(--t1);font-weight:500}
+svg .ph{fill:var(--friend);opacity:.16} svg .ph.e{fill:var(--hostile);opacity:.2}
+svg .selring{fill:none;stroke:var(--accent);stroke-width:var(--w2)}
+svg .blue{cursor:move}
+svg .tel{fill:var(--ghost)} svg .tell{stroke:var(--ew);stroke-dasharray:1.5 3;fill:none;stroke-width:var(--w1)}
+svg .cap{font-family:var(--ui);font-size:13px;fill:var(--t1)}
+
+/* Inspector */
+.sec{border-top:1px solid var(--rule);padding:10px 0 6px} .sec:first-child{border-top:0;padding-top:0}
+.sec .h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:6px}
+.sec .h h2{font-size:12px;font-weight:500;color:var(--t3)}
+.f{display:grid;grid-template-columns:88px 1fr;gap:6px 8px;align-items:center;margin-bottom:6px}
+.f.c3{grid-template-columns:88px 1fr 1fr}
+.f .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item{display:grid;grid-template-columns:1fr auto;gap:2px 6px;padding:6px 6px;border-radius:4px;align-items:center;cursor:pointer}
+.item:hover{background:var(--rule)}
+.item[aria-current="true"]{background:var(--rule);box-shadow:inset 2px 0 0 var(--accent)}
+.item .n{font-size:13px;font-weight:500}
+.item .m{font-family:var(--mono);font-size:11px;color:var(--t3);grid-column:1/3}
+.sub{padding:4px 6px 10px}
+.wpt{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;margin:4px 0}
+.wpt th{font-weight:500;color:var(--t3);text-align:left;padding:2px 4px;font-size:11px}
+.wpt td{padding:1px 2px} .wpt input{height:24px;padding:0 5px;font-size:12px}
+.wpt td.i{color:var(--t3);width:20px;text-align:center} .wpt td.b{width:26px}
+.wpt tr[aria-current="true"] td{background:var(--rule)}
+.tags{display:flex;flex-direction:column;gap:4px} .tags .tag{display:flex;gap:4px} .tags .tag input{height:26px;font-size:13px}
+.evrow{display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center;padding:4px 6px;border-radius:4px;cursor:pointer}
+.evrow:hover{background:var(--rule)}
+.evrow[aria-current="true"]{background:var(--rule);box-shadow:inset 2px 0 0 var(--accent)}
+.evrow .t{font-family:var(--mono);font-size:12px;width:46px;text-align:right;color:var(--t2)} .evrow .n{font-size:13px}
+
+/* Brief */
+.brief{display:grid;grid-template-columns:220px minmax(0,1fr) 300px;height:calc(100% - 48px);min-height:0}
+@media (max-width:1000px){.brief{display:flex;flex-direction:column;height:auto}}
+.cards{background:var(--panel);border-right:1px solid var(--rule);overflow:auto;padding:12px 10px 24px max(10px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:8px}
+.cards .card{border:1px solid var(--rule);border-radius:4px;background:var(--board);text-align:left;height:auto;padding:0;overflow:hidden;display:block;width:100%}
+.cards .card[aria-current="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.cards .card svg{width:100%;height:auto;display:block;pointer-events:none}
+.cards .card span{display:block;padding:5px 8px;border-top:1px solid var(--rule);font-size:12px;font-weight:500;background:var(--panel)}
+.cards .card span small{display:block;font-family:var(--mono);font-size:10.5px;color:var(--t3);font-weight:400}
+.show{display:flex;flex-direction:column;min-width:0;min-height:0;padding:14px 18px 16px}
+.show .bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.show .bar h2{font-size:15px;font-weight:500}
+.show .bar .k{font-family:var(--mono);font-size:12px;color:var(--t3)}
+.show .stage{flex:1 1 auto;min-height:360px}
+.show .stage svg{cursor:default}
+.show .cap{font-size:15px;line-height:1.5;max-width:72ch;padding:10px 2px 0;min-height:30px}
+.notes{background:var(--panel);border-left:1px solid var(--rule);overflow:auto;padding:12px max(12px,env(safe-area-inset-right,0px)) 32px 12px}
+@media (max-width:1000px){.cards{border-right:0;border-bottom:1px solid var(--rule);flex-direction:row;overflow-x:auto}.cards .card{min-width:180px}.notes{border-left:0;border-top:1px solid var(--rule)}.show .stage{min-height:380px}}
+
+/* Collect */
+.collect{padding:16px max(18px,env(safe-area-inset-right,0px)) 40px max(18px,env(safe-area-inset-left,0px));overflow:auto;height:calc(100% - 48px)}
+@media (max-width:860px){.collect{height:auto}}
+.collect .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.collect .bar input[type=search]{width:260px;max-width:100%}
+.coll{margin-bottom:22px}
+.coll h2{font-size:13px;font-weight:500;color:var(--t3);margin-bottom:8px;display:flex;gap:10px;align-items:baseline}
+.coll h2 small{font-family:var(--mono);font-weight:400;font-size:11px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.pc{background:var(--panel);border:1px solid var(--rule);border-radius:4px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.pc[aria-current="true"]{border-color:var(--accent)}
+.pc .pic{background:var(--board);border-bottom:1px solid var(--rule);cursor:pointer} .pc .pic svg{width:100%;height:auto;display:block}
+.pc .body{padding:10px 12px 8px;display:flex;flex-direction:column;gap:4px;flex:1}
+.pc .n{font-weight:500;font-size:13.5px;cursor:pointer}
+.pc .q{font-size:12.5px;color:var(--t2);line-height:1.4}
+.pc .m{font-family:var(--mono);font-size:11px;color:var(--t3)}
+.pc .acts{display:flex;gap:2px;padding:4px 6px;border-top:1px solid var(--rule)}
+.pc .acts button{height:26px;padding:0 8px;font-size:12px}
+
+/* Modal, toast */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.32);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.dlg{background:var(--raised);border:1px solid var(--rule-strong);border-radius:6px;box-shadow:var(--elev);width:min(720px,100%);max-height:90vh;display:flex;flex-direction:column;gap:10px;padding:14px}
+.dlg h2{font-size:15px;font-weight:500}
+.dlg textarea{font-family:var(--mono);font-size:12px;min-height:260px;flex:1}
+.dlg .row{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+.toast{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--raised);border:1px solid var(--rule-strong);border-radius:6px;box-shadow:var(--elev);padding:8px 14px;font-size:13px;z-index:30}
+@media (prefers-reduced-motion:no-preference){.dlg{animation:rise .16s ease-out}@keyframes rise{from{opacity:0;transform:translateY(4px)}}}
+</style>
+
+<div class="top">
+  <div class="brand">Profile Studio</div>
+  <div class="seg" id="modeseg"><button data-mode="compose" aria-pressed="true">Compose</button><button data-mode="brief" aria-pressed="false">Brief</button><button data-mode="collect" aria-pressed="false">Collect</button></div>
+  <div class="name"><input id="p-name" aria-label="Profile name"><span class="id" id="p-id"></span></div>
+  <div class="actions"><button id="b-export" class="quiet">Export</button><button id="b-import" class="quiet">Import</button></div>
+</div>
+
+<div id="root"></div>
+<div id="modal"></div>
+
+<script>
+// ===================== Catalog: Groups 1 to 3 archetypes =====================
+// Bands derive from the RangeBoard UAS library and open-source references; every entry is a class, not a product.
+const GROUPS={1:{w:"under 20 lb",alt:"under 1,200 ft AGL",spd:"under 100 kt"},2:{w:"21 to 55 lb",alt:"under 3,500 ft AGL",spd:"under 250 kt"},3:{w:"56 to 1,320 lb",alt:"under 18,000 ft MSL",spd:"under 250 kt"}};
+const CATALOG=[
+ {id:"g1-quad-isr",group:1,name:"Quadrotor ISR",airframe:"multirotor",role:"isr",cruise:12,vmax:21,alt:[30,400],endurance:[20,55],prop:"electric",link:"RF 2.4/5.8 GHz + GNSS, return home on loss",sig:"Sub-0.05 m² RCS; the video downlink is the main cue",behaviors:["hover and stare","ingress below 120 m","waypoint orbit","payload drop from hover"],src:"https://drdrone.ca/pages/dji-mavic-3-technical-specifications"},
+ {id:"g1-fpv-rf",group:1,name:"FPV attack, RF manual",airframe:"multirotor",role:"one-way-attack",cruise:25,vmax:42,alt:[2,100],endurance:[3,15],prop:"electric",link:"900 MHz or 2.4 GHz control, 5.8 GHz video, manual pilot",sig:"Smallest RCS in the catalog; analog video is the primary RF cue",behaviors:["nap of the earth ingress","terminal dive","route ambush loiter","machine vision terminal lock"],src:"https://euromaidanpress.com/2024/01/25/how-fpv-drones-became-ukraine-top-weapon/"},
+ {id:"g1-fpv-fiber",group:1,name:"FPV attack, fiber optic",airframe:"multirotor",role:"one-way-attack",cruise:15,vmax:30,alt:[2,60],endurance:[5,20],prop:"electric",link:"Fiber tether 10 to 20 km, no RF emission",sig:"Zero RF signature; RF detection and jamming do not apply",behaviors:["RF silent ingress","GPS denied manual flight","terrain and culvert follow","land, wait, relaunch"],src:"https://news.liga.net/en/amp/politics/news/defense-ministry-approves-new-ukrainian-fiber-optic-drone-photos-and-specifications"},
+ {id:"g1-swarm-quad",group:1,name:"Swarm element quadrotor",airframe:"multirotor",role:"swarm-element",cruise:14,vmax:25,alt:[30,300],endurance:[10,30],prop:"electric",link:"Mesh RF + GNSS waypoint, onboard autonomy",sig:"Each element near invisible; the aggregate saturates trackers",behaviors:["mass launch","formation ingress then split","multi axis time on target","retask on attrition"],src:"https://defensescoop.com/?p=77283"},
+ {id:"g2-heavy-multirotor",group:2,name:"Heavy lift multirotor bomber",airframe:"multirotor",role:"strike",cruise:12,vmax:22,alt:[50,400],endurance:[20,40],prop:"electric",link:"RF + GNSS, often relayed over LTE or SATCOM",sig:"Largest rotorcraft RCS, loud low frequency acoustic",behaviors:["night approach 100 to 400 m","hover drop","mothership release of FPVs","slow loaded transit"],src:"https://rubryka.com/en/2026/01/30/dron-bomber-vampire/"},
+ {id:"g2-vtol-isr",group:2,name:"VTOL fixed wing ISR",airframe:"vtol-hybrid",role:"isr",cruise:17,vmax:25,alt:[300,1800],endurance:[120,180],prop:"electric",link:"RF datalink + GNSS",sig:"Small RCS, distinct rotor acoustic in transition",behaviors:["vertical launch from a clearing","persistent racetrack","standoff 20 to 50 km"],src:"https://www.janes.com/"},
+ {id:"g2-fw-isr",group:2,name:"Fixed wing ISR, catapult",airframe:"fixed-wing",role:"isr",cruise:25,vmax:42,alt:[500,2000],endurance:[240,960],prop:"piston",link:"RF datalink to 120 km + GNSS/INS autonomous",sig:"Small RCS; piston engine gives acoustic and IR cue",behaviors:["racetrack orbit 1 to 2 km AGL","artillery spotting","ISR plus relay pair","GPS denied dead reckoning"],src:"https://www.globalsecurity.org/military/world/russia/orlan-10-specs.htm"},
+ {id:"g2-lm-xwing",group:2,name:"Loitering munition, X wing",airframe:"fixed-wing",role:"loitering-munition",cruise:27,vmax:80,alt:[100,3000],endurance:[30,60],prop:"electric",link:"RF video link, man in the loop terminal + GNSS/INS",sig:"Low RCS, quiet loiter; terminal dive to 80 m/s compresses the window",behaviors:["catapult launch","loiter 30 to 40 min","operator lock then steep dive","cued by separate ISR"],src:"https://www.globalsecurity.org/military/world/russia/lancet-specs.htm"},
+ {id:"g3-delta-owa",group:3,name:"Delta wing one way attack, piston",airframe:"delta-wing",role:"one-way-attack",cruise:46,vmax:52,alt:[50,4000],endurance:[300,840],prop:"piston",link:"GNSS/INS autonomous, no link",sig:"Low RCS for size; loud piston acoustic; RF silent unless modem fitted",behaviors:["terrain following ingress 50 to 200 m","dogleg route","climb then steep terminal dive","salvo, multi axis arrival"],src:"https://missilethreat.csis.org/missile/shahed-131-and-136/"},
+ {id:"g3-foam-decoy",group:3,name:"Foam delta wing decoy",airframe:"delta-wing",role:"decoy",cruise:35,vmax:44,alt:[100,3000],endurance:[120,240],prop:"piston",link:"GNSS waypoint + mesh modem relay",sig:"Lowest RCS of the delta wings yet shaped to read as an attack track",behaviors:["lead the strike to saturate defenses","mesh relay","decoy formation around real OWA"],src:"https://en.wikipedia.org/wiki/Gerbera_(drone)"},
+ {id:"g3-jet-owa",group:3,name:"Turbine one way attack",airframe:"delta-wing",role:"one-way-attack",cruise:95,vmax:125,alt:[100,9000],endurance:[120,300],prop:"turbine",link:"GNSS/INS autonomous, optional terminal seeker",sig:"Highest IR signature; closing speed halves the engagement window",behaviors:["high speed dash","high cruise then dive","low terminal run","mixed salvo with piston OWA and decoys"],src:"https://missilethreat.csis.org/missile/shahed-238/"},
+ {id:"g3-vtol-hybrid",group:3,name:"VTOL hybrid fixed wing, ISR or strike",airframe:"vtol-hybrid",role:"isr",cruise:30,vmax:40,alt:[300,3000],endurance:[120,300],prop:"hybrid",link:"RF + GNSS/INS, autonomous on link loss",sig:"Moderate RCS at 3 to 5 m span; rotor acoustic in transition",behaviors:["vertical launch from a confined site","long range autonomous ingress","vertical terminal descent"],src:"https://www.muginuav.com/mugin-5-pro-5000mm-vtol-uav-platform-8-motor-mounts/"},
+ {id:"g3-target-piston",group:3,name:"Piston target drone, surrogate",airframe:"fixed-wing",role:"surrogate",cruise:33,vmax:65,alt:[100,4900],endurance:[60,480],prop:"piston",link:"RF command link + GPS autopilot, scripted profiles",sig:"Surrogate for Group 2 and 3 fixed wing; RCS and IR can be augmented",behaviors:["catapult launch","straight and level presentation","low ingress 100 to 300 m","weave","augmented RCS or towed target"],src:"https://designation-systems.net/dusrm/m-170.html"}
+];
+const SYS_KINDS=[["radar","3D radar"],["rf","RF detector"],["eoir","EO/IR"],["acoustic","Acoustic"],["ew","RF effector"],["kinetic","Kinetic effector"],["de","Directed energy"],["c2","C2 node"],["truth","Truth station"]];
+const VOL_KINDS=[["asset","Defended asset"],["wez","Engagement zone"],["nfz","No fly volume"],["ref","Reference pattern"]];
+const EV_TYPES={detect:"D",track:"T",id:"I",engage:"E",split:"S",merge:"M",loiter:"L",terminal:"X",checkpoint:"C"};
+const EV_NAMES={detect:"Detect",track:"Track init",id:"Identify",engage:"Engage",split:"Split",merge:"Merge",loiter:"Loiter",terminal:"Terminal",checkpoint:"Checkpoint"};
+const CLASSES=["Counter-UAS","Multi-aircraft","One-way attack","Surrogate","Custom"];
+const LAYER_DEFS=[["reach","Reach"],["events","Events"],["envelopes","Envelopes"],["telemetry","Telemetry"],["labels","Labels"]];
+const defLayers=()=>({reach:true,events:true,envelopes:true,telemetry:false,labels:true});
+
+// ===================== Seed collection =====================
+function seed(){ const sq=r=>[[-r,-r],[r,-r],[r,r],[-r,r]]; const cam=(proj,yaw=-35,pitch=55)=>({proj,yaw,pitch});
+ return [
+ {id:"CUAS-001",v:3,name:"Single Group 1 ingress with loiter",cls:"Counter-UAS",collection:"Toughstump",purpose:"How does one track hand off from detect to effect, and does the track hold through a hover?",
+  scene:{aircraft:[{id:"T1",arch:"g1-quad-isr"}],
+   systems:[{id:"RDR-1",kind:"radar",x:0,y:0,range:4000,fov:360,bearing:0},{id:"RF-1",kind:"rf",x:180,y:-90,range:3000,fov:360,bearing:0},{id:"EO-1",kind:"eoir",x:-140,y:70,range:2500,fov:30,bearing:45},{id:"EW-1",kind:"ew",x:0,y:0,range:1500,fov:360,bearing:0}],
+   volumes:[{id:"DA",kind:"asset",label:"Defended asset",pts:sq(250),zmax:0}],planes:[{id:"P1",label:"120 m ceiling",z:120}],
+   paths:[{id:"T1",aircraft:"T1",group:"",pts:[{x:3100,y:3000,z:120,hold:0},{x:1900,y:2650,z:120,hold:0},{x:1500,y:1500,z:120,hold:60},{x:180,y:160,z:120,hold:0}]}]},
+  events:[{id:"e1",t:28,type:"detect",label:"Radar detect",path:"T1"},{id:"e2",t:46,type:"track",label:"Track init",path:"T1"},{id:"e3",t:150,type:"id",label:"EO identify",path:"T1"},{id:"e4",t:178,type:"loiter",label:"Loiter 60 s",path:"T1"},{id:"e5",t:262,type:"engage",label:"EW engage",path:"T1"},{id:"e6",t:300,type:"checkpoint",label:"Lost link, return home",path:"T1"}],
+  telemetry:{truth:"Platform GPS, 10 Hz",interval:20,stations:["RDR-1"]},snapshots:[],
+  data:["Radar plots and tracks, 1 Hz","RF detections with bearing","EO/IR video with KLV metadata","Effector on and off log"],
+  mop:["Initial detection range at or above 3.0 km","Track continuity at or above 95 percent inside 3 km","Positive ID before 2.0 km","Effect observed within 20 s of engage"],
+  cards:[{id:"c1",name:"Overview",cam:cam("plan"),layers:{reach:true,events:true,envelopes:false,telemetry:false,labels:true},focus:[],t:null,caption:"One Group 1 quadrotor enters from the north east, loiters at 1.5 km, then runs at the asset. Every sensor ring is drawn to scale.",notes:"Say the ranges out loud. Radar 4 km, RF 3 km, EO 2.5 km, effector 1.5 km. The audience should see that the handoffs are a geometry problem before they are a software problem."},
+         {id:"c2",name:"The loiter",cam:cam("axon",-35,55),layers:{reach:false,events:true,envelopes:false,telemetry:false,labels:true},focus:["e4"],t:200,caption:"At t+200 s the aircraft is hovering. Track hold on a stationary target is the hard case for radar.",notes:"Pause here. Ask the evaluator what they expect the track quality to do during the hover."},
+         {id:"c3",name:"Engage and effect",cam:cam("plan"),layers:{reach:true,events:true,envelopes:false,telemetry:false,labels:true},focus:["e5","e6"],t:300,caption:"Engage at 1.5 km inside the effector ring. The measure is effect within 20 s: lost link and return home.",notes:"Close on the MOP list. Four measures, each with a threshold."}]},
+ {id:"MULTI-001",v:2,name:"Six Group 1, two elements, split then converge",cls:"Multi-aircraft",collection:"Toughstump",purpose:"How should a group of six read on scope, and when does one envelope become two?",
+  scene:{aircraft:[{id:"S",arch:"g1-swarm-quad"}],
+   systems:[{id:"RDR-1",kind:"radar",x:0,y:0,range:4000,fov:360,bearing:0},{id:"RF-1",kind:"rf",x:180,y:-90,range:3000,fov:360,bearing:0},{id:"EW-1",kind:"ew",x:0,y:0,range:1500,fov:360,bearing:0}],
+   volumes:[{id:"DA",kind:"asset",label:"Defended asset",pts:sq(250),zmax:0}],planes:[],
+   paths:[
+    {id:"A1",aircraft:"S",group:"A",pts:[{x:3200,y:2200,z:100,hold:0},{x:2100,y:1500,z:100,hold:0},{x:1200,y:1300,z:100,hold:0},{x:150,y:120,z:100,hold:0}]},
+    {id:"A2",aircraft:"S",group:"A",pts:[{x:3350,y:2350,z:110,hold:0},{x:2250,y:1650,z:110,hold:0},{x:1350,y:1450,z:110,hold:0},{x:120,y:180,z:110,hold:0}]},
+    {id:"A3",aircraft:"S",group:"A",pts:[{x:3050,y:2400,z:90,hold:0},{x:1950,y:1700,z:90,hold:0},{x:1050,y:1500,z:90,hold:0},{x:60,y:200,z:90,hold:0}]},
+    {id:"B1",aircraft:"S",group:"B",pts:[{x:3200,y:2200,z:100,hold:0},{x:2300,y:900,z:100,hold:0},{x:1200,y:-300,z:100,hold:0},{x:150,y:-120,z:100,hold:0}]},
+    {id:"B2",aircraft:"S",group:"B",pts:[{x:3350,y:2050,z:105,hold:0},{x:2450,y:750,z:105,hold:0},{x:1350,y:-450,z:105,hold:0},{x:200,y:-60,z:105,hold:0}]},
+    {id:"B3",aircraft:"S",group:"B",pts:[{x:3050,y:2050,z:95,hold:0},{x:2150,y:750,z:95,hold:0},{x:1050,y:-450,z:95,hold:0},{x:80,y:-200,z:95,hold:0}]}]},
+  events:[{id:"e1",t:24,type:"detect",label:"Cluster detect",path:"A1"},{id:"e2",t:60,type:"track",label:"Group track",path:"A2"},{id:"e3",t:95,type:"split",label:"Split, one to two",path:"B1"},{id:"e4",t:170,type:"engage",label:"EW engage element B",path:"B2"},{id:"e5",t:200,type:"engage",label:"EW engage element A",path:"A3"}],
+  telemetry:{truth:"Per airframe GPS, 10 Hz",interval:20,stations:["RDR-1"]},snapshots:[10,95,170],
+  data:["Radar group track and member tracks, 1 Hz","Track correlation log, member to group","Effector on and off log"],
+  mop:["Group track formed before 3.0 km","Correct element count within 10 s of split","Member count error at most 1 at all times","No defended asset entry by any airframe"],
+  cards:[{id:"c1",name:"One envelope",cam:cam("plan"),layers:{reach:true,events:false,envelopes:true,telemetry:false,labels:true},focus:[],t:10,caption:"At launch the six read as one cluster. The envelope is the object the operator should see first.",notes:"Do not show member tracks yet. The point is count, not individuals."},
+         {id:"c2",name:"The split",cam:cam("plan"),layers:{reach:false,events:true,envelopes:true,telemetry:false,labels:true},focus:["e3"],t:95,caption:"At t+95 s the envelope count goes from one to two. That moment is the split event, and it is what VAL should surface.",notes:"Ask: what does the C2 display do here today? Most show six tracks and leave the grouping to the operator."},
+         {id:"c3",name:"Selected member",cam:cam("axon",-50,50),layers:{reach:false,events:true,envelopes:false,telemetry:true,labels:true},focus:["B2"],t:170,caption:"Member B2 selected with the telemetry layer on. Truth samples every 20 s, truth station link drawn.",notes:"This card is the detail view: one member, its truth, its engage event."}]},
+ {id:"OWA-001",v:2,name:"Group 3 delta wing, low ingress, terminal dive",cls:"One-way attack",collection:"Toughstump",purpose:"Where in the geometry does the engage decision have to happen for a 46 m/s one way attack?",
+  scene:{aircraft:[{id:"T1",arch:"g3-delta-owa"}],
+   systems:[{id:"RDR-1",kind:"radar",x:0,y:0,range:9000,fov:360,bearing:0},{id:"EO-1",kind:"eoir",x:-140,y:70,range:5000,fov:30,bearing:225},{id:"KIN-1",kind:"kinetic",x:0,y:0,range:3000,fov:360,bearing:0}],
+   volumes:[{id:"DA",kind:"asset",label:"Defended asset",pts:sq(300),zmax:0},{id:"WEZ",kind:"wez",label:"Engagement zone",pts:[[-3000,-3000],[-300,-3000],[-300,-300],[-3000,-300]],zmax:1200}],planes:[{id:"P1",label:"300 m cruise",z:300}],
+   paths:[{id:"T1",aircraft:"T1",group:"",pts:[{x:-9200,y:-8200,z:300,hold:0},{x:-5000,y:-4400,z:300,hold:0},{x:-2400,y:-2100,z:260,hold:0},{x:-900,y:-800,z:150,hold:0},{x:-120,y:-100,z:20,hold:0}]}]},
+  events:[{id:"e1",t:40,type:"detect",label:"Radar detect",path:"T1"},{id:"e2",t:62,type:"track",label:"Track init",path:"T1"},{id:"e3",t:140,type:"id",label:"EO identify",path:"T1"},{id:"e4",t:175,type:"engage",label:"Kinetic engage",path:"T1"},{id:"e5",t:200,type:"terminal",label:"Terminal dive",path:"T1"}],
+  telemetry:{truth:"Platform GPS and IMU, 20 Hz",interval:20,stations:["RDR-1"]},snapshots:[],
+  data:["Radar plots and tracks, 2 Hz","EO/IR video with KLV metadata","Effector fire log with time of flight"],
+  mop:["Initial detection range at or above 8.0 km","Track quality at or above 0.8 through terminal phase","Engage decision at or above 2.5 km","Time from engage to effect at most 15 s"],
+  cards:[{id:"c1",name:"Overview",cam:cam("plan"),layers:{reach:true,events:true,envelopes:false,telemetry:false,labels:true},focus:[],t:null,caption:"A piston delta wing from 12 km out, low cruise at 300 m, into the south west engagement zone.",notes:"Scale matters here: the radar ring is 9 km. Let the empty space do the work."},
+         {id:"c2",name:"The dive",cam:cam("elev"),layers:{reach:true,events:true,envelopes:false,telemetry:false,labels:true},focus:["e4","e5"],t:null,caption:"Elevation carries the story. Level at 300 m, then the terminal dive from 2.4 km out.",notes:"Point at the engage event and the vertical kinetic reach line. The decision window is the gap between them."},
+         {id:"c3",name:"Engagement volume",cam:cam("axon",-125,40),layers:{reach:false,events:true,envelopes:false,telemetry:false,labels:true},focus:["WEZ"],t:180,caption:"The engagement zone as a volume to 1,200 m. The aircraft is inside it at t+180 s.",notes:"3D only because height matters here. Return to plan for the close."}]},
+ {id:"SURR-001",v:1,name:"Group 3 surrogate racetrack with truth",cls:"Surrogate",collection:"Reference",purpose:"How accurate is the sensor track against truth on a known pattern?",
+  scene:{aircraft:[{id:"T1",arch:"g3-target-piston"}],
+   systems:[{id:"RDR-1",kind:"radar",x:0,y:0,range:4000,fov:360,bearing:0},{id:"TM-1",kind:"truth",x:600,y:-400,range:3500,fov:360,bearing:0},{id:"RTK",kind:"truth",x:-500,y:-300,range:0,fov:0,bearing:0}],
+   volumes:[{id:"RT",kind:"ref",label:"Reference racetrack",pts:[[1000,-800],[2800,-800],[3100,-500],[3100,500],[2800,800],[1000,800],[700,500],[700,-500]],zmax:0}],planes:[{id:"P1",label:"300 m block",z:300}],
+   paths:[{id:"T1",aircraft:"T1",group:"",pts:[{x:1000,y:-800,z:300,hold:0},{x:2800,y:-800,z:300,hold:0},{x:3100,y:-500,z:300,hold:0},{x:3100,y:500,z:300,hold:0},{x:2800,y:800,z:300,hold:0},{x:1000,y:800,z:300,hold:0},{x:700,y:500,z:300,hold:0},{x:700,y:-500,z:300,hold:0},{x:1000,y:-800,z:300,hold:0}]}]},
+  events:[{id:"e1",t:0,type:"checkpoint",label:"Lap start",path:"T1"},{id:"e2",t:55,type:"checkpoint",label:"Straight 1 end",path:"T1"},{id:"e3",t:98,type:"checkpoint",label:"Far turn",path:"T1"},{id:"e4",t:165,type:"checkpoint",label:"Straight 2 end",path:"T1"},{id:"e5",t:220,type:"checkpoint",label:"Lap complete",path:"T1"}],
+  telemetry:{truth:"RTK GPS, 20 Hz, cm class",interval:10,stations:["TM-1","RTK"]},snapshots:[],
+  data:["RTK GPS truth, 20 Hz","Radar track, 1 Hz, with covariance","Telemetry link margin and packet loss","Time sync log, PTP"],
+  mop:["Track position error, 90th percentile, at most 15 m","Track latency at most 1.0 s","Telemetry packet loss at most 0.5 percent","Time sync error at most 10 ms"],
+  cards:[{id:"c1",name:"The yardstick",cam:cam("plan"),layers:{reach:false,events:false,envelopes:false,telemetry:true,labels:true},focus:["RT"],t:null,caption:"A surrogate flies a fixed racetrack at 300 m with RTK truth. The pattern is the yardstick for every track metric.",notes:"This is the telemetry chapter. The same layer applies to any profile in the collection."},
+         {id:"c2",name:"Truth at altitude",cam:cam("axon",-30,45),layers:{reach:false,events:true,envelopes:false,telemetry:true,labels:true},focus:[],t:98,caption:"Truth samples every 10 s. Two truth stations hold the aircraft at the far turn.",notes:"Height block shown by the reference plane."}]}
+ ]; }
+
+// ===================== State =====================
+const KEY="profileStudio.v3",$=id=>document.getElementById(id);
+let lib=[],activeId=null,mode="compose",cam={proj:"plan",yaw:-35,pitch:55},layers=defLayers(),focus=[],tNow=null,sel={kind:null,id:null,i:null},addMode=false,cardIx=0,railTab="scene",cur=null,frozen=null,filterQ="";
+function load(){ try{ const o=JSON.parse(localStorage.getItem(KEY)||"null"); if(o&&Array.isArray(o.lib)&&o.lib.length){ lib=o.lib; activeId=o.activeId; } }catch(_){} if(!lib.length){ lib=seed(); activeId=lib[0].id; } if(!lib.find(p=>p.id===activeId)) activeId=lib[0].id; }
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify({lib,activeId})); }catch(_){} }
+const P=()=>lib.find(p=>p.id===activeId);
+function touch(){ P()._dirty=true; save(); } function bump(){ const p=P(); if(p._dirty){ p.v=(p.v||1)+1; delete p._dirty; save(); } }
+const idx=(a,id)=>a.findIndex(x=>x.id===id); const uid=(pre,arr)=>{ let n=1; while(arr.find(x=>x.id===pre+n)) n++; return pre+n; };
+const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
+const S=(tag,a={},inner="")=>`<${tag} ${Object.entries(a).map(([k,v])=>`${k}="${v}"`).join(" ")}>${inner}</${tag}>`;
+const km=m=>(m/1000).toFixed(m%1000?1:0)+" km";
+function setPath(o,path,val){ const ks=path.split("."); let c=o; for(let i=0;i<ks.length-1;i++) c=c[ks[i]]; c[ks[ks.length-1]]=val; }
+function opt(list,val,fmt){ return list.map(x=>{ const [v,l]=Array.isArray(x)?x:[x,fmt?fmt(x):x]; return `<option value="${esc(v)}"${String(v)===String(val)?" selected":""}>${esc(l)}</option>`; }).join(""); }
+
+// ===================== Scene geometry =====================
+function archOf(p,path){ const ac=p.scene.aircraft.find(a=>a.id===path.aircraft)||p.scene.aircraft[0]; const a=CATALOG.find(c=>c.id===ac?.arch)||CATALOG[0]; return Object.assign({},a,ac||{}); }
+const speedOf=(p,path)=>path.speed||archOf(p,path).cruise||15;
+function timed(p,path){ const v=speedOf(p,path); let t=0,out=[]; path.pts.forEach((q,i)=>{ if(i>0){ const a=path.pts[i-1]; t+=Math.hypot(q.x-a.x,q.y-a.y,q.z-a.z)/v; } out.push({x:q.x,y:q.y,z:q.z,t0:t,t1:t+(q.hold||0)}); t+=(q.hold||0); }); return out; }
+function tmaxOf(p){ let m=0; p.scene.paths.forEach(pa=>{ const w=timed(p,pa); if(w.length) m=Math.max(m,w[w.length-1].t1); }); return Math.max(m,60); }
+function posAt(p,path,t){ const w=timed(p,path); if(!w.length) return {x:0,y:0,z:0,hx:1,hy:0}; const hd=(a,b)=>{ const L=Math.hypot(b.x-a.x,b.y-a.y)||1; return {hx:(b.x-a.x)/L,hy:(b.y-a.y)/L}; };
+  if(t<=w[0].t0) return Object.assign({},w[0],w[1]?hd(w[0],w[1]):{hx:1,hy:0});
+  for(let i=0;i<w.length;i++){ const a=w[i]; const b=w[i+1]; if(t<=a.t1) return Object.assign({},a,b?hd(a,b):{hx:1,hy:0}); if(!b) return Object.assign({},a,{hx:1,hy:0}); if(t<=b.t0){ const f=(t-a.t1)/Math.max(1e-6,b.t0-a.t1); return Object.assign({x:a.x+(b.x-a.x)*f,y:a.y+(b.y-a.y)*f,z:a.z+(b.z-a.z)*f},hd(a,b)); } } return Object.assign({},w[w.length-1],{hx:1,hy:0}); }
+function tAtPoint(p,path,x,y){ const w=timed(p,path); let best={d:1e18,t:0}; for(let i=0;i<w.length-1;i++){ const a=w[i],b=w[i+1],dx=b.x-a.x,dy=b.y-a.y,L=dx*dx+dy*dy||1; let f=((x-a.x)*dx+(y-a.y)*dy)/L; f=Math.max(0,Math.min(1,f)); const d=Math.hypot(a.x+dx*f-x,a.y+dy*f-y); if(d<best.d) best={d,t:a.t1+(b.t0-a.t1)*f}; } return best.t; }
+function hull(pts){ const s=[...pts].sort((a,b)=>a[0]-b[0]||a[1]-b[1]); if(s.length<3) return s; const cr=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]); const lo=[],up=[]; for(const q of s){ while(lo.length>1&&cr(lo[lo.length-2],lo[lo.length-1],q)<=0) lo.pop(); lo.push(q);} for(const q of s.reverse()){ while(up.length>1&&cr(up[up.length-2],up[up.length-1],q)<=0) up.pop(); up.push(q);} return lo.slice(0,-1).concat(up.slice(0,-1)); }
+const spread=g=>{ const xs=g.map(q=>q[0]),ys=g.map(q=>q[1]); return Math.hypot(Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys)); };
+function bounds(p){ if(frozen) return frozen; const s=p.scene; let xs=[],ys=[]; s.paths.forEach(t=>t.pts.forEach(q=>{xs.push(q.x);ys.push(q.y);})); s.systems.forEach(b=>{ xs.push(b.x-(b.range||0),b.x+(b.range||0)); ys.push(b.y-(b.range||0),b.y+(b.range||0)); }); s.volumes.forEach(z=>z.pts.forEach(q=>{xs.push(q[0]);ys.push(q[1]);})); if(!xs.length){xs=[-2000,2000];ys=[-2000,2000];} const a=Math.min(...xs),b=Math.max(...xs),c=Math.min(...ys),d=Math.max(...ys); return {cx:(a+b)/2,cy:(c+d)/2,ext:Math.max(b-a,d-c,1000)*1.1}; }
+const gstep=e=>e>24000?5000:e>12000?2000:e>4000?1000:500;
+function envelopesAt(p,t){ const by={}; p.scene.paths.forEach(pa=>{ const q=posAt(p,pa,t); (by[pa.group||"_"]=by[pa.group||"_"]||[]).push([q.x,q.y]); }); const all=Object.values(by).flat(); const groups=Object.values(by).filter(g=>g.length>1); const useAll=groups.length<2||spread(all)<1.6*Math.max(...groups.map(spread)); return (useAll?[all]:groups).map(hull).filter(h=>h.length>2); }
+
+// ===================== Renderer: one scene, three cameras =====================
+// opts: {proj,yaw,pitch,layers,focus,t,W,H,thumb,edit}
+function render(p,o){ const s=p.scene,L=o.layers,F=o.focus||[],th=o.thumb,ed=o.edit&&!th; const dimOf=id=>F.length&&!F.includes(id)&&!F.some(f=>p.events.find(e=>e.id===f&&e.path===id))?" dim":"";
+  const fmtEv=ev=>`${EV_TYPES[ev.type]} ${esc(ev.label)}`; let out="",inv={};
+  if(o.proj==="plan"){ const W=o.W,H=o.H,m=th?8:28,{cx,cy,ext}=bounds(p),k=(Math.min(W,H)-2*m)/ext,ox=(W-ext*k)/2,oy=(H-ext*k)/2; const X=x=>ox+(x-cx+ext/2)*k,Y=y=>H-oy-(y-cy+ext/2)*k; inv.xy=(sx,sy)=>({x:(sx-ox)/k+cx-ext/2,y:cy+ext/2-(H-oy-sy)/k});
+    const st=gstep(ext); for(let g=Math.ceil((cx-ext/2)/st)*st;g<=cx+ext/2;g+=st){ out+=S("line",{x1:X(g),y1:oy,x2:X(g),y2:H-oy,class:g===0?"axis":"grid"}); if(!th&&g!==0&&L.labels) out+=S("text",{x:X(g)+3,y:H-oy-4},g/1000+"k"); } for(let g=Math.ceil((cy-ext/2)/st)*st;g<=cy+ext/2;g+=st){ out+=S("line",{x1:ox,y1:Y(g),x2:W-ox,y2:Y(g),class:g===0?"axis":"grid"}); if(!th&&g!==0&&L.labels) out+=S("text",{x:ox+3,y:Y(g)-3},g/1000+"k"); } if(!th) out+=S("text",{x:W-ox-6,y:oy+14,"text-anchor":"end",class:"t1"},"N");
+    s.volumes.forEach(z=>{ const sl=ed&&sel.kind==="volume"&&sel.id===z.id; out+=S("polygon",{points:z.pts.map(q=>`${X(q[0])},${Y(q[1])}`).join(" "),class:"vol "+z.kind+(sl||F.includes(z.id)?" sel":"")+dimOf(z.id),"data-k":"volume","data-id":z.id}); if(!th&&L.labels){ const q=z.pts[0]; out+=S("text",{x:X(q[0])+4,y:Y(q[1])-4,class:dimOf(z.id)},esc(z.label)); } });
+    if(L.reach) s.systems.forEach(b=>{ if(!b.range) return; const cls="ring"+(["ew","de"].includes(b.kind)?" ew":"")+dimOf(b.id); if(!b.fov||b.fov>=360) out+=S("circle",{cx:X(b.x),cy:Y(b.y),r:b.range*k,class:cls}); else { const a0=(90-b.bearing-b.fov/2)*Math.PI/180,a1=(90-b.bearing+b.fov/2)*Math.PI/180,r=b.range*k,d=`M${X(b.x)},${Y(b.y)} L${X(b.x)+r*Math.cos(a1)},${Y(b.y)-r*Math.sin(a1)} A${r},${r} 0 ${b.fov>180?1:0} 1 ${X(b.x)+r*Math.cos(a0)},${Y(b.y)-r*Math.sin(a0)} Z`; out+=S("path",{d,class:"fov"+dimOf(b.id)})+S("path",{d,class:cls}); } if(!th&&L.labels) out+=S("text",{x:X(b.x)+b.range*k*.707+3,y:Y(b.y)-b.range*k*.707-3,class:dimOf(b.id)},`${b.id} ${km(b.range)}`); });
+    s.systems.forEach(b=>{ const x=X(b.x),y=Y(b.y),sl=ed&&sel.kind==="system"&&sel.id===b.id; out+=S("g",{class:"blue"+dimOf(b.id),"data-k":"system","data-id":b.id},S("circle",{cx:x,cy:y,r:th?2.5:5,class:"friend w2",style:"fill:var(--board)"})+S("circle",{cx:x,cy:y,r:th?1:1.6,class:"friendf"})+(sl?S("circle",{cx:x,cy:y,r:9,class:"selring"}):"")); });
+    if(L.envelopes){ const ts=o.t!=null?[o.t]:(p.snapshots||[]); ts.forEach(t=>{ envelopesAt(p,t).forEach(h=>out+=S("polygon",{points:h.map(q=>`${X(q[0])},${Y(q[1])}`).join(" "),class:"hull"})); if(!th&&L.labels&&o.t==null){ const q=posAt(p,s.paths[0],t); out+=S("text",{x:X(q.x)+6,y:Y(q.y)-8},`t+${Math.round(t)} s`); } }); }
+    s.paths.forEach(pa=>{ const w=timed(p,pa); if(!w.length) return; const sl=ed&&sel.kind==="path"&&sel.id===pa.id; const wt=F.includes(pa.id)?"w3":s.paths.length>1&&!sl?"w1":"w2"; out+=S("polyline",{points:w.map(q=>`${X(q.x)},${Y(q.y)}`).join(" "),class:"hostile "+wt+dimOf(pa.id),"data-k":"path","data-id":pa.id,style:"cursor:pointer"});
+      if(L.telemetry){ const tm=p.telemetry||{interval:20}; for(let t=0;t<=w[w.length-1].t1;t+=tm.interval||20){ const q=posAt(p,pa,t); out+=S("rect",{x:X(q.x)-1.2,y:Y(q.y)-1.2,width:2.4,height:2.4,class:"tel"+dimOf(pa.id)}); } }
+      const e=w[w.length-1]; if(o.t==null) out+=diamond(X(e.x),Y(e.y),th?3:5,dimOf(pa.id)); if(!th&&L.labels){ const a=w[0]; out+=S("text",{x:X(a.x)+6,y:Y(a.y)+12,class:"t1"+dimOf(pa.id)},pa.id); }
+      if(sl) w.forEach((q,i)=>{ out+=S("circle",{cx:X(q.x),cy:Y(q.y),r:5,class:"wp"+(sel.i===i?" sel":""),"data-k":"wp","data-id":pa.id,"data-i":i}); if(q.t1>q.t0) out+=S("circle",{cx:X(q.x),cy:Y(q.y),r:9,class:"hostile w1",style:"stroke-dasharray:2 2"}); }); });
+    if(o.t!=null) s.paths.forEach(pa=>{ const q=posAt(p,pa,o.t),v=speedOf(p,pa)*10*k,x=X(q.x),y=Y(q.y); out+=diamond(x,y,th?3:5,dimOf(pa.id))+S("line",{x1:x,y1:y,x2:x+q.hx*v,y2:y-q.hy*v,class:"hostile w2"+dimOf(pa.id)}); if(L.telemetry&&p.telemetry) (p.telemetry.stations||[]).forEach(id=>{ const b=s.systems.find(x=>x.id===id); if(b) out+=S("line",{x1:X(b.x),y1:Y(b.y),x2:x,y2:y,class:"tell"}); }); });
+    if(L.events) p.events.forEach(ev=>{ const pa=s.paths.find(x=>x.id===ev.path); if(!pa) return; const q=posAt(p,pa,ev.t),sl=ed&&sel.kind==="event"&&sel.id===ev.id,fo=F.includes(ev.id); out+=S("circle",{cx:X(q.x),cy:Y(q.y),r:th?3:5.5,class:"ev"+(sl||fo?" sel":"")+dimOf(ev.id),"data-k":"ev","data-id":ev.id}); if(!th&&L.labels) out+=S("text",{x:X(q.x)+9,y:Y(q.y)+3.5,class:"evt"+dimOf(ev.id)},fmtEv(ev)); });
+    return {svg:S("svg",{viewBox:`0 0 ${o.W} ${o.H}`,preserveAspectRatio:"xMidYMid meet","data-proj":"plan",class:ed&&addMode?"add":""},out),inv}; }
+
+  if(o.proj==="elev"){ const W=o.W,H=o.H,ml=th?8:52,mr=th?8:20,mt=th?8:24,mb=th?8:36,rng=q=>Math.hypot(q.x,q.y); let maxR=0,maxZ=0; s.paths.forEach(t=>t.pts.forEach(q=>{maxR=Math.max(maxR,rng(q));maxZ=Math.max(maxZ,q.z);})); s.systems.forEach(b=>maxR=Math.max(maxR,b.range||0)); s.volumes.forEach(z=>maxZ=Math.max(maxZ,z.zmax||0)); s.planes.forEach(z=>maxZ=Math.max(maxZ,z.z)); maxR=Math.max(maxR*1.05,1000); maxZ=Math.max(maxZ*1.3,150);
+    const X=r=>ml+r/maxR*(W-ml-mr),Y=z=>H-mb-z/maxZ*(H-mt-mb); inv.z=sy=>(H-mb-sy)/(H-mt-mb)*maxZ;
+    const rs=gstep(maxR); for(let g=0;g<=maxR;g+=rs){ out+=S("line",{x1:X(g),y1:mt,x2:X(g),y2:H-mb,class:"grid"}); if(!th&&L.labels) out+=S("text",{x:X(g),y:H-mb+14,"text-anchor":"middle"},g/1000+"k"); } const zs=maxZ>1500?500:maxZ>500?200:50; for(let g=0;g<=maxZ;g+=zs){ out+=S("line",{x1:ml,y1:Y(g),x2:W-mr,y2:Y(g),class:g===0?"axis":"grid"}); if(!th&&L.labels) out+=S("text",{x:ml-6,y:Y(g)+3.5,"text-anchor":"end"},g+" m"); }
+    s.planes.forEach(pl=>{ out+=S("line",{x1:ml,y1:Y(pl.z),x2:W-mr,y2:Y(pl.z),class:"plane"}); if(!th&&L.labels) out+=S("text",{x:W-mr-4,y:Y(pl.z)-4,"text-anchor":"end"},esc(pl.label)); });
+    s.volumes.forEach(z=>{ if(!z.zmax) return; const rs=z.pts.map(q=>Math.hypot(q[0],q[1])); out+=S("rect",{x:X(Math.min(...rs)),y:Y(z.zmax),width:X(Math.max(...rs))-X(Math.min(...rs)),height:Y(0)-Y(z.zmax),class:"vol "+z.kind+(F.includes(z.id)?" sel":"")+dimOf(z.id)}); });
+    if(L.reach) s.systems.forEach(b=>{ if(!b.range) return; out+=S("line",{x1:X(b.range),y1:mt,x2:X(b.range),y2:H-mb,class:"ring"+(["ew","de"].includes(b.kind)?" ew":"")+dimOf(b.id)}); if(!th&&L.labels) out+=S("text",{x:X(b.range)-3,y:mt+10,"text-anchor":"end",class:dimOf(b.id)},b.id); });
+    s.paths.forEach(pa=>{ const w=timed(p,pa); const sl=ed&&sel.kind==="path"&&sel.id===pa.id; const wt=F.includes(pa.id)?"w3":s.paths.length>1&&!sl?"w1":"w2"; out+=S("polyline",{points:w.map(q=>`${X(rng(q))},${Y(q.z)}`).join(" "),class:"hostile "+wt+dimOf(pa.id),"data-k":"path","data-id":pa.id,style:"cursor:pointer"}); w.forEach((q,i)=>{ if(sl) out+=S("circle",{cx:X(rng(q)),cy:Y(q.z),r:5,class:"wp"+(sel.i===i?" sel":""),"data-k":"wp","data-id":pa.id,"data-i":i,style:"cursor:ns-resize"}); else out+=S("circle",{cx:X(rng(q)),cy:Y(q.z),r:th?1.5:2,class:"hostilef"+dimOf(pa.id)}); }); if(o.t!=null){ const q=posAt(p,pa,o.t); out+=diamond(X(rng(q)),Y(q.z),th?3:5,dimOf(pa.id)); } });
+    if(L.events&&!th) p.events.forEach((ev,i)=>{ const pa=s.paths.find(x=>x.id===ev.path); if(!pa) return; const q=posAt(p,pa,ev.t),sl=ed&&sel.kind==="event"&&sel.id===ev.id,fo=F.includes(ev.id); out+=S("circle",{cx:X(rng(q)),cy:Y(q.z),r:5.5,class:"ev"+(sl||fo?" sel":"")+dimOf(ev.id),"data-k":"ev","data-id":ev.id,style:"cursor:pointer"}); if(L.labels) out+=S("text",{x:X(rng(q)),y:Y(q.z)-11-(i%2)*12,"text-anchor":"middle",class:"evt"+dimOf(ev.id)},fmtEv(ev)); });
+    if(!th&&L.labels) out+=S("text",{x:W-mr,y:H-6,"text-anchor":"end"},"range from site");
+    return {svg:S("svg",{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:"none","data-proj":"elev"},out),inv}; }
+
+  // axonometric
+  { const W=o.W,H=o.H,m=th?8:20,{cx,cy,ext}=bounds(p); let maxZ=1; s.paths.forEach(t=>t.pts.forEach(q=>maxZ=Math.max(maxZ,q.z))); s.volumes.forEach(z=>maxZ=Math.max(maxZ,z.zmax||0)); s.planes.forEach(z=>maxZ=Math.max(maxZ,z.z));
+    const zx=Math.max(1,Math.round(.14*ext/maxZ)),yaw=o.yaw*Math.PI/180,pitch=o.pitch*Math.PI/180,cyw=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+    const pr=(x,y,z)=>{ const dx=x-cx,dy=y-cy; return [dx*cyw-dy*sy,(dx*sy+dy*cyw)*sp+z*zx*cp]; }; const cs=[[cx-ext/2,cy-ext/2,0],[cx+ext/2,cy-ext/2,0],[cx+ext/2,cy+ext/2,0],[cx-ext/2,cy+ext/2,0],[cx,cy,maxZ]].map(c=>pr(...c)),xs=cs.map(c=>c[0]),ys=cs.map(c=>c[1]);
+    const k=Math.min((W-2*m)/(Math.max(...xs)-Math.min(...xs)),(H-2*m)/(Math.max(...ys)-Math.min(...ys))),ox=(Math.max(...xs)+Math.min(...xs))/2,oy=(Math.max(...ys)+Math.min(...ys))/2; const Pp=(x,y,z)=>{ const [a,b]=pr(x,y,z); return [W/2+(a-ox)*k,H/2-(b-oy)*k]; },pt=(x,y,z)=>Pp(x,y,z).join(",");
+    const st=gstep(ext),lo=cx-ext/2,hi=cx+ext/2,lo2=cy-ext/2,hi2=cy+ext/2; for(let g=Math.ceil(lo/st)*st;g<=hi;g+=st){ const a=Pp(g,lo2,0),b=Pp(g,hi2,0); out+=S("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],class:g===0?"axis":"grid"}); } for(let g=Math.ceil(lo2/st)*st;g<=hi2;g+=st){ const a=Pp(lo,g,0),b=Pp(hi,g,0); out+=S("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],class:g===0?"axis":"grid"}); }
+    s.planes.forEach(pl=>{ out+=S("polygon",{points:[[lo,lo2],[hi,lo2],[hi,hi2],[lo,hi2]].map(q=>pt(q[0],q[1],pl.z)).join(" "),class:"plane"}); if(!th&&L.labels){ const a=Pp(lo,hi2,pl.z); out+=S("text",{x:a[0]+4,y:a[1]-4},esc(pl.label)); } });
+    s.volumes.forEach(z=>{ const cls="vol "+z.kind+(F.includes(z.id)?" sel":"")+dimOf(z.id); out+=S("polygon",{points:z.pts.map(q=>pt(q[0],q[1],0)).join(" "),class:cls}); if(z.zmax){ out+=S("polygon",{points:z.pts.map(q=>pt(q[0],q[1],z.zmax)).join(" "),class:cls}); z.pts.forEach(q=>{ const a=Pp(q[0],q[1],0),b=Pp(q[0],q[1],z.zmax); out+=S("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],class:cls}); }); } if(!th&&L.labels){ const a=Pp(z.pts[0][0],z.pts[0][1],z.zmax||0); out+=S("text",{x:a[0]+4,y:a[1]-4,class:dimOf(z.id)},esc(z.label)); } });
+    if(L.reach) s.systems.forEach(b=>{ if(!b.range) return; const full=!b.fov||b.fov>=360,n=64,span=full?2*Math.PI:b.fov*Math.PI/180,a0=full?0:(90-b.bearing)*Math.PI/180-span/2; let pts=[]; for(let i=0;i<=n;i++){ const a=a0+span*i/n; pts.push(pt(b.x+b.range*Math.cos(a),b.y+b.range*Math.sin(a),0)); } if(!full) pts=[pt(b.x,b.y,0),...pts,pt(b.x,b.y,0)]; out+=S("polyline",{points:pts.join(" "),class:"ring"+(["ew","de"].includes(b.kind)?" ew":"")+dimOf(b.id)}); });
+    s.systems.forEach(b=>{ const [x,y]=Pp(b.x,b.y,0); out+=S("circle",{cx:x,cy:y,r:th?2:4,class:"friend w2"+dimOf(b.id),style:"fill:var(--board)"})+S("circle",{cx:x,cy:y,r:1.4,class:"friendf"+dimOf(b.id)}); if(!th&&L.labels) out+=S("text",{x:x+6,y:y+4,class:dimOf(b.id)},b.id); });
+    if(L.envelopes&&o.t!=null) envelopesAt(p,o.t).forEach(h=>out+=S("polygon",{points:h.map(q=>pt(q[0],q[1],0)).join(" "),class:"hull"}));
+    s.paths.forEach(pa=>{ const w=timed(p,pa); const wt=F.includes(pa.id)?"w3":s.paths.length>1&&!(ed&&sel.id===pa.id)?"w1":"w2"; w.forEach(q=>{ const a=Pp(q.x,q.y,q.z),b=Pp(q.x,q.y,0); out+=S("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],class:"drop"+dimOf(pa.id)}); }); out+=S("polyline",{points:w.map(q=>pt(q.x,q.y,0)).join(" "),class:"hostile w1"+dimOf(pa.id),style:"stroke-dasharray:2 3;opacity:.5"}); out+=S("polyline",{points:w.map(q=>pt(q.x,q.y,q.z)).join(" "),class:"hostile "+wt+dimOf(pa.id)}); w.forEach(q=>{ const a=Pp(q.x,q.y,q.z); out+=S("circle",{cx:a[0],cy:a[1],r:th?1.5:2.2,class:"hostilef"+dimOf(pa.id)}); });
+      if(L.telemetry){ const tm=p.telemetry||{interval:20}; for(let t=0;t<=w[w.length-1].t1;t+=tm.interval||20){ const q=posAt(p,pa,t),a=Pp(q.x,q.y,q.z); out+=S("rect",{x:a[0]-1.2,y:a[1]-1.2,width:2.4,height:2.4,class:"tel"+dimOf(pa.id)}); } }
+      if(!th&&L.labels&&w.length){ const a=Pp(w[0].x,w[0].y,w[0].z); out+=S("text",{x:a[0]+5,y:a[1]-5,class:"t1"+dimOf(pa.id)},pa.id); }
+      if(o.t!=null){ const q=posAt(p,pa,o.t),a=Pp(q.x,q.y,q.z),g=Pp(q.x,q.y,0); out+=S("line",{x1:a[0],y1:a[1],x2:g[0],y2:g[1],class:"hostile w1"+dimOf(pa.id)})+diamond(a[0],a[1],th?3:5,dimOf(pa.id)); if(L.telemetry&&p.telemetry) (p.telemetry.stations||[]).forEach(id=>{ const b=s.systems.find(x=>x.id===id); if(b){ const c=Pp(b.x,b.y,0); out+=S("line",{x1:c[0],y1:c[1],x2:a[0],y2:a[1],class:"tell"}); } }); } });
+    if(L.events&&!th) p.events.forEach(ev=>{ const pa=s.paths.find(x=>x.id===ev.path); if(!pa) return; const q=posAt(p,pa,ev.t),a=Pp(q.x,q.y,q.z),fo=F.includes(ev.id); out+=S("circle",{cx:a[0],cy:a[1],r:5.5,class:"ev"+(fo?" sel":"")+dimOf(ev.id)}); if(L.labels) out+=S("text",{x:a[0]+9,y:a[1]+3.5,class:"evt"+dimOf(ev.id)},fmtEv(ev)); });
+    if(!th&&L.labels) out+=S("text",{x:m,y:H-8},`vertical ×${zx}   yaw ${Math.round(o.yaw)}°   pitch ${Math.round(o.pitch)}°`);
+    return {svg:S("svg",{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:"xMidYMid meet","data-proj":"axon"},out),inv}; }
+}
+function diamond(x,y,r,extra=""){ return S("polygon",{points:`${x},${y-r} ${x+r},${y} ${x},${y+r} ${x-r},${y}`,class:"hd"+extra}); }
+const PROJ=[["plan","Plan"],["elev","Elevation"],["axon","Axonometric"]];
+function renderCard(p,c,W,H,thumb){ return render(p,{proj:c.cam.proj,yaw:c.cam.yaw,pitch:c.cam.pitch,layers:c.layers,focus:c.focus,t:c.t,W,H,thumb,edit:false}).svg; }
+
+// ===================== Mode shell =====================
+function setMode(m){ mode=m; [...$("modeseg").children].forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===m)); draw(); }
+$("modeseg").addEventListener("click",e=>{ const b=e.target.closest("[data-mode]"); if(b){ bump(); setMode(b.dataset.mode); } });
+function draw(){ $("p-name").value=P().name; $("p-id").textContent=`${P().id} v${P().v}`; $("p-name").disabled=mode==="collect"; if(mode==="compose") drawCompose(); else if(mode==="brief") drawBrief(); else drawCollect(); }
+$("p-name").addEventListener("input",e=>{ P().name=e.target.value; touch(); }); $("p-name").addEventListener("change",()=>{ bump(); if(mode==="compose") drawRail(); });
+
+// ===================== Compose =====================
+function drawCompose(){ $("root").innerHTML=`<div class="compose">
+  <aside class="rail"><div class="head"><div class="seg"><button data-rt="scene" aria-pressed="${railTab==="scene"}">Scene</button><button data-rt="catalog" aria-pressed="${railTab==="catalog"}">Catalog</button></div></div><div id="rail" class="lst"></div></aside>
+  <main class="board">
+    <div class="bar">
+      <div class="grp"><div class="seg" id="projseg">${PROJ.map(([v,l])=>`<button data-proj="${v}" aria-pressed="${cam.proj===v}">${l}</button>`).join("")}</div><button id="t-add" class="mini" aria-pressed="${addMode}">Add waypoints</button></div>
+      <div class="grp" id="layerbar">${LAYER_DEFS.map(([k,l])=>`<label class="chk"><input type="checkbox" data-layer="${k}"${layers[k]?" checked":""}>${l}</label>`).join("")}</div>
+      <div class="grp"><button id="t-card" class="quiet mini">Save as card</button><span class="read" id="readout"></span></div>
+    </div>
+    <div class="stage" id="stage"></div>
+    <div class="scrub"><label class="chk"><input type="checkbox" id="t-on"${tNow!=null?" checked":""}>Time</label><input type="range" id="t-rng" min="0" max="${Math.round(tmaxOf(P()))}" value="${tNow??0}"${tNow==null?" disabled":""} aria-label="Scene time"><span class="t" id="t-val">${tNow!=null?Math.round(tNow)+" s":"full run"}</span></div>
+    <div class="thumbs" id="thumbs"></div>
+  </main>
+  <aside class="inspector" id="inspector"></aside></div>`;
+  drawRail(); drawStage(); drawInspector(); wireCompose(); }
+function drawStage(){ const el=$("stage"); if(!el) return; const r=el.getBoundingClientRect(); cur=render(P(),{proj:cam.proj,yaw:cam.yaw,pitch:cam.pitch,layers,focus:[],t:tNow,W:Math.max(320,Math.round(r.width)),H:Math.max(300,Math.round(r.height)),thumb:false,edit:true}); el.innerHTML=cur.svg; readout();
+  const th=$("thumbs"); if(th) th.innerHTML=PROJ.filter(([v])=>v!==cam.proj).map(([v,l])=>`<button data-proj="${v}">${render(P(),{proj:v,yaw:cam.yaw,pitch:cam.pitch,layers,focus:[],t:tNow,W:300,H:170,thumb:true}).svg}<span>${l}</span></button>`).join(""); }
+function readout(){ const p=P(); const pa=sel.kind==="path"?p.scene.paths.find(t=>t.id===sel.id):null; let s=`${p.scene.paths.length} path${p.scene.paths.length===1?"":"s"} · ${p.events.length} events · ${Math.round(tmaxOf(p))} s`; if(pa){ const w=timed(p,pa); let d=0; for(let i=1;i<w.length;i++) d+=Math.hypot(w[i].x-w[i-1].x,w[i].y-w[i-1].y); s=`${pa.id} · ${km(d)} · ${speedOf(p,pa)} m/s · ${Math.round(w[w.length-1]?.t1||0)} s`; } const r=$("readout"); if(r) r.textContent=s; }
+function drawRail(){ const el=$("rail"); if(!el) return; const p=P(),s=p.scene;
+  if(railTab==="scene"){ const row=(k,id,n,m,sw)=>`<div class="row" data-sel="${k}" data-id="${id}" aria-current="${sel.kind===k&&sel.id===id}"><span class="n"><span class="sw ${sw}"></span>${esc(n)}</span><span class="m">${m}</span></div>`;
+    el.innerHTML=`<div class="g">Aircraft</div>`+s.aircraft.map(a=>{ const c=CATALOG.find(x=>x.id===a.arch)||CATALOG[0]; return `<div class="row"><span class="n">${esc(a.id)}</span><span class="m">G${c.group} ${esc(c.name)}</span></div>`; }).join("")
+      +`<div class="g">Paths</div>`+s.paths.map(t=>row("path",t.id,t.id+(t.group?` · ${t.group}`:""),`${esc(t.aircraft)} · ${t.pts.length} wp`,"h")).join("")
+      +`<div class="g">Systems</div>`+s.systems.map(b=>row("system",b.id,b.id,esc((SYS_KINDS.find(k=>k[0]===b.kind)||[])[1]||"")+(b.range?` · ${km(b.range)}`:""),"f")).join("")
+      +`<div class="g">Volumes</div>`+s.volumes.map(z=>row("volume",z.id,z.label,esc(z.kind)+(z.zmax?` · to ${z.zmax} m`:""),"n")).join("")
+      +`<div class="g">Reference planes</div>`+s.planes.map(z=>row("plane",z.id,z.label,`${z.z} m`,"g")).join("")
+      +`<div class="g">Cards</div>`+(p.cards||[]).map((c,i)=>`<div class="row" data-card="${i}"><span class="n">${esc(c.name)}</span><span class="m">${c.cam.proj}${c.t!=null?` · t+${c.t} s`:""}</span></div>`).join(""); }
+  else { const by={}; CATALOG.forEach(c=>(by[c.group]=by[c.group]||[]).push(c)); el.innerHTML=Object.entries(by).map(([g,cs])=>`<div class="g">Group ${g}<small>${GROUPS[g].w} · ${GROUPS[g].alt} · ${GROUPS[g].spd}</small></div>`+cs.map(c=>`<div class="row"><span class="n">${esc(c.name)}</span><button class="mini" data-add="${c.id}">Add path</button><span class="m">${c.cruise} m/s · ${c.alt[0]} to ${c.alt[1]} m · ${c.endurance[0]} to ${c.endurance[1]} min<br>${esc(c.link)}</span></div>`).join("")).join(""); } }
+function drawInspector(){ const el=$("inspector"); if(!el) return; const p=P(),s=p.scene; let h="";
+  h+=`<div class="sec"><div class="h"><h2>Purpose</h2></div><div class="f"><span class="lbl">Question</span><textarea data-b="purpose" rows="3">${esc(p.purpose)}</textarea></div><div class="f"><span class="lbl">Class</span><select data-b="cls">${opt(CLASSES,p.cls)}</select></div><div class="f"><span class="lbl">Collection</span><input data-b="collection" value="${esc(p.collection||"")}" list="colls"><datalist id="colls">${[...new Set(lib.map(x=>x.collection).filter(Boolean))].map(c=>`<option value="${esc(c)}">`).join("")}</datalist></div></div>`;
+  h+=`<div class="sec"><div class="h"><h2>Aircraft</h2><button class="mini" data-act="addAc">Add</button></div>`; s.aircraft.forEach((a,i)=>{ const c=CATALOG.find(x=>x.id===a.arch)||CATALOG[0]; h+=`<div class="f c3"><input class="mono" data-b="scene.aircraft.${i}.id" value="${esc(a.id)}" aria-label="Aircraft id"><select data-b="scene.aircraft.${i}.arch" style="grid-column:2/4">${opt(CATALOG.map(x=>[x.id,`G${x.group} · ${x.name}`]),a.arch)}</select></div><div class="f c3"><span class="lbl">Cruise m/s</span><input type="number" data-b="scene.aircraft.${i}.cruise" value="${a.cruise??c.cruise}" min="1"><button class="mini" data-act="delAc" data-i="${i}">Remove</button></div><p class="hint" style="margin-bottom:8px">${c.alt[0]} to ${c.alt[1]} m · ${esc(c.link)} · ${c.behaviors.join(", ")}. <a href="${esc(c.src)}" target="_blank" rel="noopener" style="color:var(--t3)">source</a></p>`; }); h+=`</div>`;
+  h+=`<div class="sec"><div class="h"><h2>Paths</h2><span><button class="mini" data-act="addPath">Add</button> <button class="mini" data-act="formation">Formation</button></span></div>`;
+  s.paths.forEach((pa,ti)=>{ const sl=sel.kind==="path"&&sel.id===pa.id,w=timed(p,pa); h+=`<div class="item" aria-current="${sl}" data-sel="path" data-id="${pa.id}"><span class="n"><span class="sw h"></span>${esc(pa.id)}${pa.group?` <span class="hint mono">group ${esc(pa.group)}</span>`:""}</span><button class="mini x" data-act="delPath" data-id="${pa.id}">×</button><span class="m">${esc(pa.aircraft)} · ${pa.pts.length} wp · ${Math.round(w[w.length-1]?.t1||0)} s</span></div>`;
+    if(sl){ h+=`<div class="sub"><div class="f c3"><span class="lbl">Aircraft · group</span><select data-b="scene.paths.${ti}.aircraft">${opt(s.aircraft.map(x=>x.id),pa.aircraft)}</select><input data-b="scene.paths.${ti}.group" value="${esc(pa.group||"")}" placeholder="group"></div><table class="wpt"><tr><th></th><th>x m</th><th>y m</th><th>alt m</th><th>hold s</th><th></th></tr>`; pa.pts.forEach((q,i)=>{ h+=`<tr data-wp="${i}" aria-current="${sel.i===i}"><td class="i">${i+1}</td><td><input type="number" data-b="scene.paths.${ti}.pts.${i}.x" value="${Math.round(q.x)}"></td><td><input type="number" data-b="scene.paths.${ti}.pts.${i}.y" value="${Math.round(q.y)}"></td><td><input type="number" data-b="scene.paths.${ti}.pts.${i}.z" value="${Math.round(q.z)}"></td><td><input type="number" data-b="scene.paths.${ti}.pts.${i}.hold" value="${q.hold||0}" min="0"></td><td class="b"><button class="mini x" data-act="delWp" data-id="${pa.id}" data-i="${i}">×</button></td></tr>`; }); h+=`</table><p class="hint">Times come from cruise speed and holds. Add waypoints on, then click the plan. Drag a point to move it; drag it in elevation to change height; double click to remove.</p></div>`; } }); h+=`</div>`;
+  h+=`<div class="sec"><div class="h"><h2>Systems</h2><button class="mini" data-act="addSys">Add</button></div>`; s.systems.forEach((b,i)=>{ const sl=sel.kind==="system"&&sel.id===b.id; h+=`<div class="item" aria-current="${sl}" data-sel="system" data-id="${b.id}"><span class="n"><span class="sw f"></span>${esc(b.id)} <span class="hint">${esc((SYS_KINDS.find(k=>k[0]===b.kind)||[])[1]||"")}</span></span><button class="mini x" data-act="delSys" data-id="${b.id}">×</button><span class="m">${Math.round(b.x)}, ${Math.round(b.y)} · ${b.range?km(b.range):"no reach"}${b.fov&&b.fov<360?` · ${b.fov}° at ${b.bearing}°`:""}</span></div>`; if(sl) h+=`<div class="sub"><div class="f c3"><input class="mono" data-b="scene.systems.${i}.id" value="${esc(b.id)}"><select data-b="scene.systems.${i}.kind" style="grid-column:2/4">${opt(SYS_KINDS,b.kind)}</select></div><div class="f c3"><span class="lbl">Position m</span><input type="number" data-b="scene.systems.${i}.x" value="${Math.round(b.x)}"><input type="number" data-b="scene.systems.${i}.y" value="${Math.round(b.y)}"></div><div class="f c3"><span class="lbl">Reach m</span><input type="number" data-b="scene.systems.${i}.range" value="${b.range||0}" min="0" step="100"><span></span></div><div class="f c3"><span class="lbl">FOV° · brg°</span><input type="number" data-b="scene.systems.${i}.fov" value="${b.fov||360}" min="1" max="360"><input type="number" data-b="scene.systems.${i}.bearing" value="${b.bearing||0}" min="0" max="359"></div></div>`; }); h+=`</div>`;
+  h+=`<div class="sec"><div class="h"><h2>Volumes</h2><button class="mini" data-act="addVol">Add</button></div>`; s.volumes.forEach((z,i)=>{ const sl=sel.kind==="volume"&&sel.id===z.id; h+=`<div class="item" aria-current="${sl}" data-sel="volume" data-id="${z.id}"><span class="n"><span class="sw n"></span>${esc(z.label)}</span><button class="mini x" data-act="delVol" data-id="${z.id}">×</button><span class="m">${esc(z.kind)} · ${z.pts.length} vertices${z.zmax?` · to ${z.zmax} m`:""}</span></div>`; if(sl) h+=`<div class="sub"><div class="f c3"><input data-b="scene.volumes.${i}.label" value="${esc(z.label)}"><select data-b="scene.volumes.${i}.kind" style="grid-column:2/4">${opt(VOL_KINDS,z.kind)}</select></div><div class="f"><span class="lbl">Top m</span><input type="number" data-b="scene.volumes.${i}.zmax" value="${z.zmax||0}" min="0" step="50"></div><div class="f"><span class="lbl">Vertices</span><textarea class="mono" data-b="scene.volumes.${i}.pts" rows="3" style="font-size:12px">${z.pts.map(q=>`${Math.round(q[0])}, ${Math.round(q[1])}`).join("\n")}</textarea></div><p class="hint">One vertex per line, x and y in metres. A top above 0 draws the volume in elevation and axonometric.</p></div>`; }); h+=`</div>`;
+  h+=`<div class="sec"><div class="h"><h2>Reference planes</h2><button class="mini" data-act="addPlane">Add</button></div>`; s.planes.forEach((z,i)=>{ h+=`<div class="f c3"><input data-b="scene.planes.${i}.label" value="${esc(z.label)}"><input type="number" data-b="scene.planes.${i}.z" value="${z.z}" min="0" step="10"><button class="mini x" data-act="delPlane" data-i="${i}">×</button></div>`; }); h+=`</div>`;
+  const tmax=Math.round(tmaxOf(p)); h+=`<div class="sec"><div class="h"><h2>Events</h2><button class="mini" data-act="addEvent">Add</button></div>`; [...p.events].sort((a,b)=>a.t-b.t).forEach(ev=>{ const i=idx(p.events,ev.id),sl=sel.kind==="event"&&sel.id===ev.id; h+=`<div class="evrow" aria-current="${sl}" data-sel="event" data-id="${ev.id}"><span class="t">${Math.round(ev.t)} s</span><span class="n">${EV_TYPES[ev.type]} ${esc(ev.label)} <span class="hint mono">${esc(ev.path)}</span></span><button class="mini x" data-act="delEvent" data-id="${ev.id}">×</button></div>`; if(sl) h+=`<div class="sub"><div class="f c3"><select data-b="events.${i}.type">${opt(Object.keys(EV_TYPES),ev.type,t=>EV_NAMES[t])}</select><input data-b="events.${i}.label" value="${esc(ev.label)}" style="grid-column:2/4"></div><div class="f c3"><span class="lbl">Path · t</span><select data-b="events.${i}.path">${opt(s.paths.map(t=>t.id),ev.path)}</select><input type="number" data-b="events.${i}.t" value="${Math.round(ev.t)}" min="0" max="${tmax}"></div><input type="range" data-b="events.${i}.t" min="0" max="${tmax}" value="${ev.t}" aria-label="Event time"><p class="hint">Or drag the event along its path on the plan.</p></div>`; }); h+=`</div>`;
+  const tm=p.telemetry||(p.telemetry={truth:"",interval:20,stations:[]}); h+=`<div class="sec"><div class="h"><h2>Telemetry layer</h2></div><div class="f"><span class="lbl">Truth source</span><input data-b="telemetry.truth" value="${esc(tm.truth)}" placeholder="RTK GPS, 20 Hz"></div><div class="f"><span class="lbl">Sample every s</span><input type="number" data-b="telemetry.interval" value="${tm.interval}" min="1"></div><div class="f"><span class="lbl">Stations</span><input class="mono" data-b="telemetry.stations" value="${(tm.stations||[]).join(", ")}" placeholder="TM-1, RTK"></div><div class="f"><span class="lbl">Envelopes at s</span><input class="mono" data-b="snapshots" value="${(p.snapshots||[]).join(", ")}" placeholder="10, 95"></div><p class="hint">The layer draws samples along every path and links stations to the aircraft when time is set. Envelopes use the time slider, or these snapshots when time is off.</p></div>`;
+  h+=`<div class="sec"><div class="h"><h2>Data products</h2><button class="mini" data-act="addList" data-l="data">Add</button></div><div class="tags">${p.data.map((d,i)=>`<div class="tag"><input data-b="data.${i}" value="${esc(d)}"><button class="mini x" data-act="delList" data-l="data" data-i="${i}">×</button></div>`).join("")}</div></div>`;
+  h+=`<div class="sec"><div class="h"><h2>Measures of performance</h2><button class="mini" data-act="addList" data-l="mop">Add</button></div><div class="tags">${p.mop.map((d,i)=>`<div class="tag"><input data-b="mop.${i}" value="${esc(d)}"><button class="mini x" data-act="delList" data-l="mop" data-i="${i}">×</button></div>`).join("")}</div></div>`;
+  el.innerHTML=h; }
+
+function wireCompose(){ const p=P();
+  $("rail").parentElement.querySelector(".seg").addEventListener("click",e=>{ const b=e.target.closest("[data-rt]"); if(!b) return; railTab=b.dataset.rt; [...b.parentElement.children].forEach(c=>c.setAttribute("aria-pressed",c===b)); drawRail(); });
+  $("rail").addEventListener("click",e=>{ const add=e.target.closest("[data-add]"); if(add){ addFromCatalog(add.dataset.add); return; } const c=e.target.closest("[data-card]"); if(c){ applyCard(P().cards[+c.dataset.card]); return; } const r=e.target.closest("[data-sel]"); if(r){ select(r.dataset.sel,r.dataset.id); } });
+  $("projseg").addEventListener("click",e=>{ const b=e.target.closest("[data-proj]"); if(!b) return; cam.proj=b.dataset.proj; [...$("projseg").children].forEach(c=>c.setAttribute("aria-pressed",c===b)); drawStage(); });
+  $("thumbs").addEventListener("click",e=>{ const b=e.target.closest("[data-proj]"); if(!b) return; cam.proj=b.dataset.proj; [...$("projseg").children].forEach(c=>c.setAttribute("aria-pressed",c.dataset.proj===cam.proj)); drawStage(); });
+  $("layerbar").addEventListener("change",e=>{ if(e.target.dataset.layer){ layers[e.target.dataset.layer]=e.target.checked; drawStage(); } });
+  $("t-add").onclick=()=>{ addMode=!addMode; $("t-add").setAttribute("aria-pressed",addMode); $("t-add").classList.toggle("primary",addMode); if(addMode&&sel.kind!=="path"&&P().scene.paths.length) select("path",P().scene.paths[0].id); else drawStage(); }; $("t-add").classList.toggle("primary",addMode);
+  $("t-on").onchange=e=>{ tNow=e.target.checked?+$("t-rng").value:null; $("t-rng").disabled=!e.target.checked; $("t-val").textContent=tNow!=null?Math.round(tNow)+" s":"full run"; drawStage(); };
+  $("t-rng").oninput=e=>{ tNow=+e.target.value; $("t-val").textContent=Math.round(tNow)+" s"; drawStage(); };
+  $("t-card").onclick=()=>{ const p=P(); p.cards=p.cards||[]; const id=uid("c",p.cards); const fo=sel.kind&&sel.kind!=="wp"?[sel.id]:[]; p.cards.push({id,name:`Card ${p.cards.length+1}`,cam:{proj:cam.proj,yaw:cam.yaw,pitch:cam.pitch},layers:Object.assign({},layers),focus:fo,t:tNow,caption:"",notes:""}); cardIx=p.cards.length-1; touch(); bump(); drawRail(); toast("Card saved. Write its caption in Brief."); };
+  wireStage(); wireInspector(); }
+function select(kind,id){ const same=sel.kind===kind&&sel.id===id; sel=same?{kind:null}:{kind,id,i:null}; drawRail(); drawInspector(); drawStage(); }
+function addFromCatalog(arch){ const p=P(),s=p.scene; let ac=s.aircraft.find(x=>x.arch===arch); if(!ac){ ac={id:uid("A",s.aircraft),arch}; s.aircraft.push(ac); } const c=CATALOG.find(x=>x.id===arch),id=uid("T",s.paths),n=s.paths.length; s.paths.push({id,aircraft:ac.id,group:"",pts:[{x:3000-n*300,y:2500+n*300,z:Math.round((c.alt[0]+c.alt[1])/4),hold:0},{x:200,y:200,z:Math.round(c.alt[0]+20),hold:0}]}); touch(); bump(); railTab="scene"; sel={kind:"path",id,i:null}; drawCompose(); toast(`${id} added. Turn on Add waypoints and click the plan to route it.`); }
+function applyCard(c){ if(!c) return; cam={proj:c.cam.proj,yaw:c.cam.yaw,pitch:c.cam.pitch}; layers=Object.assign(defLayers(),c.layers); tNow=c.t; sel={kind:null}; drawCompose(); }
+
+function wireStage(){ const el=$("stage"); let drag=null; const toSvg=(svg,e)=>{ const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); };
+  el.addEventListener("pointerdown",e=>{ const svg=el.querySelector("svg"); if(!svg) return; const p=P(),s=p.scene,g=e.target.closest("[data-k]"),k=g?.dataset.k;
+    if(cam.proj==="axon"){ drag={kind:"rot",x:e.clientX,y:e.clientY,yaw:cam.yaw,pitch:cam.pitch}; el.setPointerCapture(e.pointerId); return; }
+    frozen=bounds(p);
+    if(k==="wp"){ drag={kind:"wp",id:g.dataset.id,i:+g.dataset.i}; sel={kind:"path",id:g.dataset.id,i:+g.dataset.i}; }
+    else if(k==="ev"){ drag={kind:"ev",id:g.dataset.id}; sel={kind:"event",id:g.dataset.id}; }
+    else if(k==="system"&&cam.proj==="plan"){ drag={kind:"system",id:g.dataset.id}; sel={kind:"system",id:g.dataset.id}; }
+    else if(k==="path"||k==="volume"){ frozen=null; sel={kind:k,id:g.dataset.id,i:null}; drawRail(); drawInspector(); drawStage(); if(!(addMode&&k==="path")) return; }
+    else if(addMode&&cam.proj==="plan"&&sel.kind==="path"){ const pa=s.paths.find(t=>t.id===sel.id); const w=cur.inv.xy(toSvg(svg,e).x,toSvg(svg,e).y); const last=pa.pts[pa.pts.length-1]; pa.pts.push({x:Math.round(w.x),y:Math.round(w.y),z:last?last.z:100,hold:0}); sel.i=pa.pts.length-1; touch(); bump(); frozen=null; drawInspector(); drawStage(); return; }
+    else { frozen=null; if(sel.kind){ sel={kind:null}; drawRail(); drawInspector(); drawStage(); } return; }
+    el.setPointerCapture(e.pointerId); drawInspector(); drawStage(); });
+  el.addEventListener("pointermove",e=>{ if(!drag) return; const svg=el.querySelector("svg"),p=P(),s=p.scene;
+    if(drag.kind==="rot"){ cam.yaw=drag.yaw+(e.clientX-drag.x)*.45; cam.pitch=Math.min(86,Math.max(8,drag.pitch+(e.clientY-drag.y)*.35)); const r=el.getBoundingClientRect(); cur=render(p,{proj:"axon",yaw:cam.yaw,pitch:cam.pitch,layers,focus:[],t:tNow,W:Math.round(r.width),H:Math.round(r.height),edit:true}); el.innerHTML=cur.svg; return; }
+    const sv=toSvg(svg,e);
+    if(drag.kind==="wp"){ const q=s.paths.find(t=>t.id===drag.id).pts[drag.i]; if(cam.proj==="plan"){ const w=cur.inv.xy(sv.x,sv.y); q.x=Math.round(w.x); q.y=Math.round(w.y); } else q.z=Math.max(0,Math.round(cur.inv.z(sv.y))); }
+    if(drag.kind==="ev"){ const ev=p.events.find(x=>x.id===drag.id); if(cam.proj==="plan"){ const w=cur.inv.xy(sv.x,sv.y); ev.t=Math.round(tAtPoint(p,s.paths.find(t=>t.id===ev.path),w.x,w.y)); } else return; }
+    if(drag.kind==="system"){ const b=s.systems.find(x=>x.id===drag.id); const w=cur.inv.xy(sv.x,sv.y); b.x=Math.round(w.x); b.y=Math.round(w.y); }
+    touch(); const r=el.getBoundingClientRect(); cur=render(p,{proj:cam.proj,yaw:cam.yaw,pitch:cam.pitch,layers,focus:[],t:tNow,W:Math.round(r.width),H:Math.round(r.height),edit:true}); el.innerHTML=cur.svg; readout(); });
+  const end=()=>{ if(!drag) return; const was=drag.kind; drag=null; frozen=null; if(was!=="rot"){ bump(); drawRail(); drawInspector(); } drawStage(); };
+  el.addEventListener("pointerup",end); el.addEventListener("pointercancel",end);
+  el.addEventListener("dblclick",e=>{ const g=e.target.closest("[data-k=wp]"); if(!g) return; const pa=P().scene.paths.find(t=>t.id===g.dataset.id); if(pa.pts.length>1){ pa.pts.splice(+g.dataset.i,1); sel.i=null; touch(); bump(); drawInspector(); drawStage(); } });
+  window.onresize=()=>{ if(mode==="compose") drawStage(); if(mode==="brief") drawBriefStage(); }; }
+
+function wireInspector(){ const el=$("inspector");
+  el.addEventListener("input",e=>{ const t=e.target,b=t.dataset.b; if(!b) return; const p=P(); let v=t.value;
+    if(b==="snapshots") v=v.split(/[,\s]+/).filter(Boolean).map(Number).filter(n=>!isNaN(n)); else if(b==="telemetry.stations") v=v.split(/[,\s]+/).filter(Boolean); else if(b.endsWith(".pts")&&t.tagName==="TEXTAREA") v=v.split("\n").map(l=>l.split(/[,\s]+/).filter(Boolean).map(Number)).filter(q=>q.length===2&&q.every(n=>!isNaN(n))); else if(t.type==="number"||t.type==="range") v=t.value===""?0:Number(v);
+    setPath(p,b,v); if(/scene\.aircraft\.\d+\.arch$/.test(b)) delete p.scene.aircraft[+b.split(".")[2]].cruise;
+    if(/events\.\d+\.type$/.test(b)){ const i=+b.split(".")[1],lab=el.querySelector(`[data-b="events.${i}.label"]`); if(lab&&Object.values(EV_NAMES).includes(lab.value)){ lab.value=EV_NAMES[v]; p.events[i].label=lab.value; } }
+    if(t.type==="range"){ const num=el.querySelector(`input[type=number][data-b="${b}"]`); if(num) num.value=Math.round(v); }
+    touch(); drawStage(); if(b==="collection"||b==="cls") drawRail(); });
+  el.addEventListener("change",e=>{ const t=e.target,b=t.dataset.b; if(!b) return; bump(); const p=P(),s=p.scene; const [a0,a1,a2]=b.split(".");
+    if(a0==="scene"&&b.endsWith(".id")){ const col=s[a1],i=+a2,ids=col.map(x=>x.id); if(a1==="aircraft") s.paths.forEach(t=>{ if(!ids.includes(t.aircraft)) t.aircraft=col[i].id; }); if(a1==="paths") p.events.forEach(ev=>{ if(!ids.includes(ev.path)) ev.path=col[i].id; }); if(sel.id&&!ids.includes(sel.id)&&{paths:"path",systems:"system",volumes:"volume"}[a1]===sel.kind) sel.id=col[i].id; }
+    if(t.tagName==="SELECT"||b.endsWith(".id")) drawInspector(); drawRail(); drawStage(); });
+  el.addEventListener("click",e=>{ const p=P(),s=p.scene,a=e.target.closest("[data-act]"),r=e.target.closest("[data-sel]"),tr=e.target.closest("tr[data-wp]");
+    if(a){ const act=a.dataset.act,id=a.dataset.id,i=+a.dataset.i;
+      if(act==="addAc") s.aircraft.push({id:uid("A",s.aircraft),arch:"g1-quad-isr"});
+      if(act==="delAc"&&s.aircraft.length>1){ const gone=s.aircraft.splice(i,1)[0].id; s.paths.forEach(t=>{ if(t.aircraft===gone) t.aircraft=s.aircraft[0].id; }); }
+      if(act==="addPath"){ const nid=uid("T",s.paths); s.paths.push({id:nid,aircraft:s.aircraft[0].id,group:"",pts:[{x:2500,y:2500,z:100,hold:0},{x:200,y:200,z:100,hold:0}]}); sel={kind:"path",id:nid,i:null}; }
+      if(act==="formation"){ const base=s.paths.find(t=>t.id===sel.id); if(!base||base.pts.length<2){ toast("Select a path with at least two waypoints first."); return; } modal(`<h2>Formation from ${esc(base.id)}</h2><div class="f"><span class="lbl">Members</span><input type="number" id="m-n" value="3" min="2" max="12"></div><div class="f"><span class="lbl">Spacing m</span><input type="number" id="m-sp" value="120" min="5"></div><div class="f"><span class="lbl">Group</span><input id="m-el" value="${esc(base.group||"A")}"></div><div class="row"><button data-m="close">Cancel</button><button class="primary" id="m-go">Create</button></div>`); $("m-go").onclick=()=>{ const n=+$("m-n").value,sp=+$("m-sp").value,g=$("m-el").value,a=base.pts[0],b=base.pts[1],L=Math.hypot(b.x-a.x,b.y-a.y)||1,nx=-(b.y-a.y)/L,ny=(b.x-a.x)/L; base.group=g; for(let k=1;k<n;k++){ const off=sp*Math.ceil(k/2)*(k%2?1:-1); s.paths.push({id:uid(g,s.paths),aircraft:base.aircraft,group:g,pts:base.pts.map(q=>({x:Math.round(q.x+nx*off),y:Math.round(q.y+ny*off),z:q.z+(k%3-1)*5,hold:q.hold||0}))}); } if(!p.snapshots?.length) p.snapshots=[10,Math.round(tmaxOf(p)/2)]; $("modal").innerHTML=""; touch(); bump(); drawCompose(); }; return; }
+      if(act==="delPath"){ s.paths=s.paths.filter(t=>t.id!==id); p.events=p.events.filter(ev=>ev.path!==id); if(sel.id===id) sel={kind:null}; }
+      if(act==="delWp"){ const t=s.paths.find(t=>t.id===id); if(t.pts.length>1) t.pts.splice(i,1); sel.i=null; }
+      if(act==="addSys"){ const nid=uid("S",s.systems); s.systems.push({id:nid,kind:"radar",x:0,y:0,range:3000,fov:360,bearing:0}); sel={kind:"system",id:nid}; }
+      if(act==="delSys"){ s.systems=s.systems.filter(b=>b.id!==id); if(sel.id===id) sel={kind:null}; }
+      if(act==="addVol"){ const nid=uid("V",s.volumes); s.volumes.push({id:nid,kind:"wez",label:"Volume "+nid.slice(1),pts:[[-1500,-1500],[-500,-1500],[-500,-500],[-1500,-500]],zmax:0}); sel={kind:"volume",id:nid}; }
+      if(act==="delVol"){ s.volumes=s.volumes.filter(z=>z.id!==id); if(sel.id===id) sel={kind:null}; }
+      if(act==="addPlane") s.planes.push({id:uid("P",s.planes),label:"120 m ceiling",z:120});
+      if(act==="delPlane") s.planes.splice(i,1);
+      if(act==="addEvent"){ const nid=uid("e",p.events),pa=(sel.kind==="path"&&s.paths.find(t=>t.id===sel.id))||s.paths[0]; if(!pa){ toast("Add a path first."); return; } p.events.push({id:nid,t:Math.round(tmaxOf(p)/2),type:"detect",label:"Detect",path:pa.id}); sel={kind:"event",id:nid}; }
+      if(act==="delEvent"){ p.events=p.events.filter(ev=>ev.id!==id); if(sel.id===id) sel={kind:null}; }
+      if(act==="addList") p[a.dataset.l].push(""); if(act==="delList") p[a.dataset.l].splice(i,1);
+      touch(); bump(); drawRail(); drawInspector(); drawStage(); return; }
+    if(tr&&sel.kind==="path"){ sel.i=+tr.dataset.wp; drawInspector(); drawStage(); return; }
+    if(r&&!e.target.closest("input,select,textarea,button")) select(r.dataset.sel,r.dataset.id); }); }
+
+// ===================== Brief =====================
+function drawBrief(){ const p=P(); p.cards=p.cards||[]; cardIx=Math.min(cardIx,Math.max(0,p.cards.length-1)); const c=p.cards[cardIx];
+  $("root").innerHTML=`<div class="brief"><aside class="cards" id="cards"></aside><main class="show"><div class="bar"><h2 id="c-name"></h2><span class="k" id="c-k"></span><span><button id="c-prev" class="quiet mini">Previous</button> <button id="c-next" class="quiet mini">Next</button></span></div><div class="stage" id="bstage"></div><p class="cap" id="c-cap"></p></main>
+   <aside class="notes" id="notes"></aside></div>`;
+  drawCardStrip(); drawBriefStage(); drawNotes(); $("c-prev").onclick=()=>step(-1); $("c-next").onclick=()=>step(1);
+  $("cards").addEventListener("click",e=>{ const b=e.target.closest("[data-i]"); if(b){ cardIx=+b.dataset.i; drawCardStrip(); drawBriefStage(); drawNotes(); } }); }
+function step(d){ const n=(P().cards||[]).length; if(!n) return; cardIx=(cardIx+d+n)%n; drawCardStrip(); drawBriefStage(); drawNotes(); }
+function drawCardStrip(){ const p=P(); $("cards").innerHTML=(p.cards.length?p.cards.map((c,i)=>`<button class="card" data-i="${i}" aria-current="${i===cardIx}">${renderCard(p,c,300,170,true)}<span>${i+1}. ${esc(c.name)}<small>${c.cam.proj}${c.t!=null?` · t+${Math.round(c.t)} s`:""}${c.focus.length?` · ${c.focus.join(", ")}`:""}</small></span></button>`).join(""):`<p class="hint">No cards yet. In Compose, set the camera, layers, time and selection, then Save as card.</p>`)+`<button class="mini" id="c-add" style="margin-top:6px">Add card from current scene</button>`;
+  $("c-add").onclick=()=>{ const id=uid("c",p.cards); p.cards.push({id,name:`Card ${p.cards.length+1}`,cam:{proj:"plan",yaw:-35,pitch:55},layers:defLayers(),focus:[],t:null,caption:"",notes:""}); cardIx=p.cards.length-1; touch(); bump(); drawBrief(); }; }
+function drawBriefStage(){ const p=P(),c=p.cards[cardIx],el=$("bstage"); if(!el) return; if(!c){ el.innerHTML=""; $("c-name").textContent=p.name; $("c-k").textContent=""; $("c-cap").textContent=p.purpose; return; } const r=el.getBoundingClientRect(); el.innerHTML=renderCard(p,c,Math.max(320,Math.round(r.width)),Math.max(300,Math.round(r.height)),false); $("c-name").textContent=c.name; $("c-k").textContent=`${cardIx+1} of ${p.cards.length} · ${p.id}`; $("c-cap").textContent=c.caption||""; }
+function drawNotes(){ const p=P(),c=p.cards[cardIx],el=$("notes"); if(!c){ el.innerHTML=`<div class="sec"><div class="h"><h2>Purpose</h2></div><p>${esc(p.purpose)}</p></div>`; return; } const i=cardIx;
+  el.innerHTML=`<div class="sec"><div class="h"><h2>Card</h2><span><button class="mini" data-c="up">Up</button> <button class="mini" data-c="down">Down</button> <button class="mini x" data-c="del">Delete</button></span></div><div class="f"><span class="lbl">Name</span><input data-cb="name" value="${esc(c.name)}"></div><div class="f"><span class="lbl">Camera</span><select data-cb="cam.proj">${opt(PROJ,c.cam.proj)}</select></div><div class="f c3"><span class="lbl">Yaw · pitch</span><input type="number" data-cb="cam.yaw" value="${Math.round(c.cam.yaw)}"><input type="number" data-cb="cam.pitch" value="${Math.round(c.cam.pitch)}" min="8" max="86"></div><div class="f"><span class="lbl">Time s</span><input type="number" data-cb="t" value="${c.t??""}" placeholder="full run" min="0"></div><div class="f"><span class="lbl">Focus ids</span><input class="mono" data-cb="focus" value="${c.focus.join(", ")}" placeholder="T1, e4, WEZ"></div><div class="f"><span class="lbl">Layers</span><span>${LAYER_DEFS.map(([k,l])=>`<label class="chk" style="margin-right:8px"><input type="checkbox" data-cl="${k}"${c.layers[k]?" checked":""}>${l}</label>`).join("")}</span></div></div>
+  <div class="sec"><div class="h"><h2>Caption</h2></div><textarea data-cb="caption" rows="4">${esc(c.caption)}</textarea></div>
+  <div class="sec"><div class="h"><h2>Presenter notes</h2></div><textarea data-cb="notes" rows="8">${esc(c.notes)}</textarea></div>
+  <div class="sec"><div class="h"><h2>Purpose</h2></div><p class="hint">${esc(p.purpose)}</p></div>`;
+  el.oninput=e=>{ const t=e.target; if(t.dataset.cb){ let v=t.value; if(t.dataset.cb==="t") v=v===""?null:Number(v); else if(t.dataset.cb==="focus") v=v.split(/[,\s]+/).filter(Boolean); else if(t.type==="number") v=Number(v); setPath(c,t.dataset.cb,v); touch(); drawBriefStage(); if(t.dataset.cb==="name") drawCardStrip(); } if(t.dataset.cl){ c.layers[t.dataset.cl]=t.checked; touch(); drawBriefStage(); drawCardStrip(); } };
+  el.onchange=()=>{ bump(); drawCardStrip(); };
+  el.onclick=e=>{ const b=e.target.closest("[data-c]"); if(!b) return; const k=b.dataset.c; if(k==="del") p.cards.splice(i,1); if(k==="up"&&i>0){ [p.cards[i-1],p.cards[i]]=[p.cards[i],p.cards[i-1]]; cardIx=i-1; } if(k==="down"&&i<p.cards.length-1){ [p.cards[i+1],p.cards[i]]=[p.cards[i],p.cards[i+1]]; cardIx=i+1; } touch(); bump(); drawBrief(); }; }
+document.addEventListener("keydown",e=>{ if(e.target.matches("input,textarea,select")) return; if(mode==="brief"){ if(e.key==="ArrowRight"||e.key===" ") { step(1); e.preventDefault(); } if(e.key==="ArrowLeft") step(-1); } if(e.key==="Escape"){ if($("modal").innerHTML) $("modal").innerHTML=""; else if(mode==="compose"&&addMode) $("t-add").click(); else if(mode==="compose"&&sel.kind){ sel={kind:null}; drawRail(); drawInspector(); drawStage(); } } });
+
+// ===================== Collect =====================
+function drawCollect(){ const q=filterQ.toLowerCase(); const colls={}; lib.filter(p=>!q||[p.name,p.purpose,p.cls,p.collection,p.id].join(" ").toLowerCase().includes(q)).forEach(p=>(colls[p.collection||"Uncollected"]=colls[p.collection||"Uncollected"]||[]).push(p));
+  $("root").innerHTML=`<div class="collect"><div class="bar"><input type="search" id="q" placeholder="Search purpose, name, collection" value="${esc(filterQ)}" aria-label="Search profiles"><button id="b-new" class="primary">New profile</button><button id="b-import2" class="quiet">Import</button><span class="hint">${lib.length} profiles · ${Object.keys(colls).length} collections</span></div>`+
+   Object.entries(colls).sort().map(([c,ps])=>`<section class="coll"><h2>${esc(c)}<small>${ps.length}</small></h2><div class="grid">${ps.map(p=>{ const card=p.cards?.[0]; const pic=card?renderCard(p,card,300,160,true):render(p,{proj:"plan",yaw:-35,pitch:55,layers:defLayers(),focus:[],t:null,W:300,H:160,thumb:true}).svg; return `<article class="pc" aria-current="${p.id===activeId}"><div class="pic" data-open="${p.id}">${pic}</div><div class="body"><span class="n" data-open="${p.id}">${esc(p.name)}</span><span class="q">${esc(p.purpose||"")}</span><span class="m">${esc(p.id)} v${p.v} · ${esc(p.cls)} · ${(p.cards||[]).length} cards · ${p.scene.paths.length} paths</span></div><div class="acts"><button data-do="open" data-id="${p.id}">Compose</button><button data-do="brief" data-id="${p.id}">Brief</button><button data-do="dup" data-id="${p.id}">Duplicate</button><button data-do="exp" data-id="${p.id}">Export</button><button data-do="del" data-id="${p.id}" class="x">Delete</button></div></article>`; }).join("")}</div></section>`).join("")+`</div>`;
+  $("q").oninput=e=>{ filterQ=e.target.value; drawCollect(); $("q").focus(); const v=$("q").value; $("q").setSelectionRange(v.length,v.length); };
+  $("b-new").onclick=newProfile; $("b-import2").onclick=()=>$("b-import").click();
+  $("root").addEventListener("click",e=>{ const o=e.target.closest("[data-open]"); if(o){ activeId=o.dataset.open; save(); setMode("compose"); return; } const b=e.target.closest("[data-do]"); if(!b) return; const id=b.dataset.id,p=lib.find(x=>x.id===id);
+    if(b.dataset.do==="open"){ activeId=id; save(); setMode("compose"); } if(b.dataset.do==="brief"){ activeId=id; cardIx=0; save(); setMode("brief"); }
+    if(b.dataset.do==="dup"){ const c=JSON.parse(JSON.stringify(p)); c.id=uid(p.id.replace(/-?\d+$/,"")+"-",lib); c.v=1; c.name=p.name+" copy"; delete c._dirty; lib.push(c); activeId=c.id; save(); drawCollect(); }
+    if(b.dataset.do==="exp"){ activeId=id; save(); exportProfile(p); }
+    if(b.dataset.do==="del"){ if(lib.length<2){ toast("Keep at least one profile."); return; } modal(`<h2>Delete ${esc(p.id)}?</h2><p class="hint">Removes it from this browser's library.</p><div class="row"><button data-m="close">Cancel</button><button class="danger quiet" data-m="del" data-id="${id}">Delete</button></div>`); } }); }
+function newProfile(){ const id=uid("PROF-",lib); lib.push({id,v:1,name:"New profile",cls:"Custom",collection:"",purpose:"",scene:{aircraft:[{id:"A1",arch:"g1-quad-isr"}],systems:[{id:"RDR-1",kind:"radar",x:0,y:0,range:4000,fov:360,bearing:0}],volumes:[{id:"DA",kind:"asset",label:"Defended asset",pts:[[-200,-200],[200,-200],[200,200],[-200,200]],zmax:0}],planes:[],paths:[{id:"T1",aircraft:"A1",group:"",pts:[{x:3000,y:2500,z:120,hold:0},{x:200,y:200,z:120,hold:0}]}]},events:[],telemetry:{truth:"",interval:20,stations:[]},snapshots:[],data:[],mop:[],cards:[]}); activeId=id; sel={kind:"path",id:"T1",i:null}; cam={proj:"plan",yaw:-35,pitch:55}; tNow=null; save(); setMode("compose"); toast("Name it in the top bar. Write the purpose first."); }
+
+// ===================== Export, import, modal =====================
+function exportProfile(p){ const out=JSON.parse(JSON.stringify(p)); delete out._dirty; out.schema="profile-studio/3"; out.scene.aircraft=out.scene.aircraft.map(a=>Object.assign({},CATALOG.find(c=>c.id===a.arch)||{},a)); out.scene.paths=out.scene.paths.map(pa=>Object.assign({},pa,{timed:timed(p,pa).map(q=>[Math.round(q.x),Math.round(q.y),Math.round(q.z),Math.round(q.t0),Math.round(q.t1)])}));
+  modal(`<h2>${esc(p.id)}-v${p.v}.json</h2><p class="hint">The record VAL imports. Waypoint times are resolved under <span class="mono">timed</span> as [x, y, z, arrive, depart]. Cards carry camera, layers, focus, time, caption and notes.</p><textarea id="m-json" readonly>${esc(JSON.stringify(out,null,2))}</textarea><div class="row"><button data-m="close">Close</button><button class="quiet" data-m="copyall">Copy whole library</button><button class="primary" data-m="copy">Copy JSON</button></div>`); }
+$("b-export").onclick=()=>exportProfile(P());
+$("b-import").onclick=()=>modal(`<h2>Import</h2><p class="hint">Paste one profile record or a whole library export, or choose a file. A matching id replaces the existing profile.</p><input type="file" id="m-file" accept="application/json"><textarea id="m-json" placeholder="{ ... }"></textarea><div class="row"><button data-m="close">Cancel</button><button class="primary" data-m="import">Import</button></div>`);
+function modal(h){ $("modal").innerHTML=`<div class="scrim"><div class="dlg" role="dialog">${h}</div></div>`; const f=$("m-file"); if(f) f.onchange=e=>{ const r=new FileReader(); r.onload=()=>$("m-json").value=r.result; r.readAsText(e.target.files[0]); }; }
+$("modal").addEventListener("click",e=>{ if(e.target.classList.contains("scrim")) return $("modal").innerHTML=""; const b=e.target.closest("[data-m]"); if(!b) return; const m=b.dataset.m;
+  if(m==="close") $("modal").innerHTML="";
+  if(m==="del"){ lib=lib.filter(p=>p.id!==b.dataset.id); if(!lib.find(p=>p.id===activeId)) activeId=lib[0].id; save(); $("modal").innerHTML=""; draw(); }
+  if(m==="copy"||m==="copyall"){ const t=$("m-json"); const txt=m==="copyall"?JSON.stringify({schema:"profile-studio/3",library:lib.map(p=>{ const c=JSON.parse(JSON.stringify(p)); delete c._dirty; return c; })},null,2):t.value; navigator.clipboard?.writeText(txt).then(()=>toast("Copied")).catch(()=>{ t.select(); toast("Selected. Press copy."); }); }
+  if(m==="import"){ try{ const o=JSON.parse($("m-json").value); const items=Array.isArray(o.library)?o.library:[o]; let n=0; items.forEach(x=>{ if(!x.id||!x.scene) return; delete x.schema; x.scene.paths.forEach(t=>delete t.timed); x.scene.aircraft=(x.scene.aircraft||[]).map(a=>({id:a.id,arch:a.arch||a.id,cruise:a.cruise})); ["volumes","planes","systems","paths"].forEach(k=>x.scene[k]=x.scene[k]||[]); ["events","snapshots","data","mop","cards"].forEach(k=>x[k]=x[k]||[]); x.telemetry=x.telemetry||{truth:"",interval:20,stations:[]}; const i=idx(lib,x.id); if(i>=0) lib[i]=x; else lib.push(x); activeId=x.id; n++; }); if(!n) throw 0; save(); $("modal").innerHTML=""; draw(); toast(`Imported ${n} profile${n===1?"":"s"}`); }catch(_){ toast("That is not a profile record."); } } });
+let toastT; function toast(s){ let t=document.querySelector(".toast"); if(!t){ t=document.createElement("div"); t.className="toast"; document.body.appendChild(t);} t.textContent=s; clearTimeout(toastT); toastT=setTimeout(()=>t.remove(),2400); }
+
+// ===================== Boot =====================
+load(); setMode("compose");
+</script>
+
+</body></html>

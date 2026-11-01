@@ -11,6 +11,11 @@ each capability waits out of sight until the planner asks for it.
 
 Amended 2026-10-31 from the artifact study: sections 2, 3, 5, 7 and the new section 8.
 
+Pivot of 2026-11-01 (user): the product creates, iterates and briefs profiles as interactive
+mockups; it does not run tests. The opening paragraph's "run it and read the result" and
+section 4 describe the build before the pivot; lane 10.1 (`docs/plan.md` phase 10) rewrites
+them. Section 1 stays as the naming standard for measures of performance.
+
 ## 1. DroneScore is the standard
 
 1. Every measure the app shows is a DroneScore measure. Show its ID and name, for example

@@ -96,7 +96,10 @@ export default function Board({ width, height }: BoardProps) {
       if (width && height) return { W: width, H: height };
       const r = stage.getBoundingClientRect();
       const W = Math.max(1, Math.round(r.width || stage.clientWidth || useBoard.getState().size.W));
-      const H = Math.max(1, Math.round(r.height || stage.clientHeight || useBoard.getState().size.H));
+      const H = Math.max(
+        1,
+        Math.round(r.height || stage.clientHeight || useBoard.getState().size.H),
+      );
       return { W, H };
     };
     const renderer = new BoardRenderer(svg, size);
@@ -231,7 +234,11 @@ export default function Board({ width, height }: BoardProps) {
         role="application"
         aria-label="Board"
         className="board-stage absolute inset-0 select-none outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--select,#2862b0)]"
-        style={{ touchAction: 'none', width: width ? width : undefined, height: height ? height : undefined }}
+        style={{
+          touchAction: 'none',
+          width: width ? width : undefined,
+          height: height ? height : undefined,
+        }}
         data-testid="board-stage"
         onDragOver={onDragOver}
         onDrop={onDrop}
@@ -247,7 +254,10 @@ export default function Board({ width, height }: BoardProps) {
       </div>
       <div
         ref={msgEl}
-        className={'pointer-events-none absolute left-2 right-2 top-1.5 text-sub' + (readout && readout.level === 'warn' && !hint ? ' text-state-warning' : ' text-muted')}
+        className={
+          'pointer-events-none absolute left-2 right-2 top-1.5 text-sub' +
+          (readout && readout.level === 'warn' && !hint ? ' text-state-warning' : ' text-muted')
+        }
         data-testid="board-msg"
         role="status"
       >

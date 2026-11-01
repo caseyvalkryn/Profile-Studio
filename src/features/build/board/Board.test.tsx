@@ -32,7 +32,11 @@ function hitOf(kind: string, id: string, role?: string | null, i?: number | null
     (x) =>
       x.kind === kind &&
       x.id === id &&
-      (role === undefined ? (kind === 'system' ? x.role === 'centre' : !x.handle) : x.role === role) &&
+      (role === undefined
+        ? kind === 'system'
+          ? x.role === 'centre'
+          : !x.handle
+        : x.role === role) &&
       (i === undefined ? true : x.i === i),
   );
   if (!hit) throw new Error(`no hit ${kind} ${id} ${role ?? ''}`);
@@ -40,15 +44,38 @@ function hitOf(kind: string, id: string, role?: string | null, i?: number | null
 }
 
 function down(stage: HTMLElement, x: number, y: number, init: Record<string, unknown> = {}) {
-  fireEvent.pointerDown(stage, { clientX: x, clientY: y, button: 0, pointerId: 1, pointerType: 'mouse', isPrimary: true, ...init });
+  fireEvent.pointerDown(stage, {
+    clientX: x,
+    clientY: y,
+    button: 0,
+    pointerId: 1,
+    pointerType: 'mouse',
+    isPrimary: true,
+    ...init,
+  });
 }
 function move(stage: HTMLElement, x: number, y: number, init: Record<string, unknown> = {}) {
-  fireEvent.pointerMove(stage, { clientX: x, clientY: y, pointerId: 1, pointerType: 'mouse', isPrimary: true, ...init });
+  fireEvent.pointerMove(stage, {
+    clientX: x,
+    clientY: y,
+    pointerId: 1,
+    pointerType: 'mouse',
+    isPrimary: true,
+    ...init,
+  });
   act(() => [...mounted][0]!.gestures.flushMove());
   act(() => boardFlush());
 }
 function up(stage: HTMLElement, x: number, y: number, init: Record<string, unknown> = {}) {
-  fireEvent.pointerUp(stage, { clientX: x, clientY: y, button: 0, pointerId: 1, pointerType: 'mouse', isPrimary: true, ...init });
+  fireEvent.pointerUp(stage, {
+    clientX: x,
+    clientY: y,
+    button: 0,
+    pointerId: 1,
+    pointerType: 'mouse',
+    isPrimary: true,
+    ...init,
+  });
   act(() => boardFlush());
 }
 function click(stage: HTMLElement, x: number, y: number) {
@@ -71,14 +98,20 @@ describe('Board', () => {
   it('renders one group per layer and rewrites only the layers whose inputs changed', () => {
     useUi.setState({ timeOn: true });
     const { h, container } = mount();
-    const groups = [...container.querySelectorAll('svg.board > g[data-layer]')].map((g) => g.getAttribute('data-layer'));
+    const groups = [...container.querySelectorAll('svg.board > g[data-layer]')].map((g) =>
+      g.getAttribute('data-layer'),
+    );
     expect(groups).toContain('systems');
     expect(groups).toContain('handles');
     expect(groups).toContain('grid');
     expect(h.renders.full).toBe(1);
     const before = { ...h.writes };
 
-    act(() => useDocument.getState().edit('Set sector', (d) => { d.sensors[0]!.fovDeg = 90; }));
+    act(() =>
+      useDocument.getState().edit('Set sector', (d) => {
+        d.sensors[0]!.fovDeg = 90;
+      }),
+    );
     act(() => boardFlush());
     expect(h.renders.full).toBe(2);
     const changed = Object.keys(h.writes).filter((k) => h.writes[k] !== before[k]);
@@ -136,7 +169,9 @@ describe('Board', () => {
     down(stage, rh.sx, rh.sy);
     move(stage, rh.sx + 30, rh.sy);
     expect(useBoard.getState().ghost).not.toBeNull();
-    expect(useBoard.getState().ghost!.rec.scene.systems.find((s) => s.id === 'S-02')!.range).toBe(2500);
+    expect(useBoard.getState().ghost!.rec.scene.systems.find((s) => s.id === 'S-02')!.range).toBe(
+      2500,
+    );
     expect(useBoard.getState().bounds).toBe(bounds0);
     expect(useReadout.getState().dragBase).toBe(doc0);
     const label = useBoard.getState().dragLabel!;
@@ -165,7 +200,9 @@ describe('Board', () => {
     down(stage, rh.sx, rh.sy);
     move(stage, rh.sx + 40, rh.sy);
     expect(useDocument.getState().doc!.sensors[1]!.rangeM).not.toBe(2500);
-    act(() => { fireEvent.keyDown(stage, { key: 'Escape' }); });
+    act(() => {
+      fireEvent.keyDown(stage, { key: 'Escape' });
+    });
     expect(useDocument.getState().doc!.sensors[1]!.rangeM).toBe(2500);
     expect(useDocument.getState().past.length).toBe(past);
     expect(cancel()).toBe(false);
@@ -177,7 +214,9 @@ describe('Board', () => {
     act(() => boardFlush());
     expect(useBoard.getState().placing!.kind).toBe('system');
     expect(stage.className).toMatch(/bd-place/);
-    expect(getByTestId('board-msg').textContent).toBe('Pick a point to place it. Press Escape to cancel.');
+    expect(getByTestId('board-msg').textContent).toBe(
+      'Pick a point to place it. Press Escape to cancel.',
+    );
     // 3 px inside the S-01 ring (5000 m), south
     const cam = [...mounted][0]!.renderer.last!.cam;
     const [sx, sy] = cam.project(0, -5000, 0);
@@ -222,7 +261,9 @@ describe('Board', () => {
     click(stage, b[0], b[1]);
     click(stage, c[0], c[1]);
     expect(useDocument.getState().past.length).toBe(past + 1);
-    act(() => { fireEvent.keyDown(stage, { key: 'Enter' }); });
+    act(() => {
+      fireEvent.keyDown(stage, { key: 'Enter' });
+    });
     act(() => boardFlush());
     const d2 = useDocument.getState().doc!;
     expect(d2.threats).toHaveLength(3);
@@ -256,7 +297,9 @@ describe('Board', () => {
     act(() => useUi.getState().setTool('measure'));
     act(() => boardFlush());
     expect(useBoard.getState().ruler).toEqual({ a: null, b: null, done: false });
-    expect(getByTestId('board-msg').textContent).toBe('Drag, or click two points, to measure. Press M to close the ruler.');
+    expect(getByTestId('board-msg').textContent).toBe(
+      'Drag, or click two points, to measure. Press M to close the ruler.',
+    );
     const a = project(1000, 1000);
     const b = project(1000, 4000);
     click(stage, a[0], a[1]);
@@ -272,7 +315,9 @@ describe('Board', () => {
     expect(handles.innerHTML).toContain('class="ruler"');
     expect(handles.textContent).toContain(makeUnits(useUi.getState().units).h(3000));
     // Escape clears the ruler and the tool
-    act(() => { fireEvent.keyDown(stage, { key: 'Escape' }); });
+    act(() => {
+      fireEvent.keyDown(stage, { key: 'Escape' });
+    });
     expect(useBoard.getState().ruler).toBeNull();
     expect(useUi.getState().tool).toBe('select');
   });
@@ -330,13 +375,19 @@ describe('Board', () => {
     act(() => useUi.getState().setSelection(['k-S-02']));
     act(() => boardFlush());
     const x0 = useDocument.getState().doc!.sensors[1]!.x;
-    act(() => { fireEvent.keyDown(stage, { key: 'ArrowRight' }); });
+    act(() => {
+      fireEvent.keyDown(stage, { key: 'ArrowRight' });
+    });
     const x1 = useDocument.getState().doc!.sensors[1]!.x;
     expect(x1).toBeGreaterThan(x0);
-    act(() => { fireEvent.keyDown(stage, { key: 'ArrowRight', shiftKey: true }); });
+    act(() => {
+      fireEvent.keyDown(stage, { key: 'ArrowRight', shiftKey: true });
+    });
     const x2 = useDocument.getState().doc!.sensors[1]!.x;
     expect(x2 - x1).toBeCloseTo((x1 - x0) * 5, 6);
-    act(() => { fireEvent.keyDown(stage, { key: 'ArrowUp' }); });
+    act(() => {
+      fireEvent.keyDown(stage, { key: 'ArrowUp' });
+    });
     expect(useDocument.getState().doc!.sensors[1]!.y).toBeGreaterThan(0);
     expect(useDocument.getState().history.at(-1)).toBe('move S-02');
   });
@@ -347,7 +398,9 @@ describe('Board', () => {
     fireEvent.contextMenu(stage, { clientX: t1.sx, clientY: t1.sy });
     expect(queryByTestId('board-menu-anchor')).not.toBeNull();
     expect(useUi.getState().selectedKeys).toEqual(['k-T-01']);
-    act(() => { fireEvent.keyDown(document.body, { key: 'Escape' }); });
+    act(() => {
+      fireEvent.keyDown(document.body, { key: 'Escape' });
+    });
   });
 
   it('double-click on a waypoint deletes it; a last waypoint stays', () => {
@@ -363,7 +416,9 @@ describe('Board', () => {
     fireEvent.doubleClick(stage, { clientX: last.sx, clientY: last.sy });
     act(() => boardFlush());
     expect(useDocument.getState().doc!.threats[0]!.path).toHaveLength(1);
-    expect(useBoard.getState().readout!.text).toBe('T-01 keeps its last waypoint. Delete T-01 to remove it.');
+    expect(useBoard.getState().readout!.text).toBe(
+      'T-01 keeps its last waypoint. Delete T-01 to remove it.',
+    );
   });
 
   it('shows the cursor readout as range and bearing from the asset', () => {
@@ -419,9 +474,14 @@ describe('Board', () => {
       mount();
       const b0 = useBoard.getState().bounds!;
       act(() =>
-        useDocument.getState().open(
-          testVignette({ id: 'V-two', sensors: [testSensor('S-01', 'radar', 12000, { x: 3000, y: 0 })] }),
-        ),
+        useDocument
+          .getState()
+          .open(
+            testVignette({
+              id: 'V-two',
+              sensors: [testSensor('S-01', 'radar', 12000, { x: 3000, y: 0 })],
+            }),
+          ),
       );
       act(() => boardFlush());
       const rec = [...mounted][0]!.renderer.last!.rec;

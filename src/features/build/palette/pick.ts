@@ -37,7 +37,10 @@ export function addHeightPlane(): string | null {
   const { doc, edit } = useDocument.getState();
   if (!doc) return null;
   const key = newKey();
-  const id = uid('P', doc.planes.map((p) => p.id));
+  const id = uid(
+    'P',
+    doc.planes.map((p) => p.id),
+  );
   edit(`add ${id}`, (d) => {
     d.planes.push({ key, id, label: PLANE_DEFAULT.label, zM: PLANE_DEFAULT.zM });
   });
@@ -50,7 +53,10 @@ export function addEventAt(threatKey: string, tS: number, type: AuthoredEventTyp
   const { doc, edit } = useDocument.getState();
   if (!doc || !doc.threats.some((t) => t.key === threatKey)) return null;
   const key = newKey();
-  const id = uid('e', doc.events.map((e) => e.id));
+  const id = uid(
+    'e',
+    doc.events.map((e) => e.id),
+  );
   const t = Math.round(Math.max(0, tS) * 10) / 10;
   edit(`add ${id}`, (d) => {
     d.events.push({ key, id, tS: t, type, label: EVENT_NAMES[type], threatKey, sensorKey: null });

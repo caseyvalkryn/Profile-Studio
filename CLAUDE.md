@@ -1,13 +1,17 @@
 # Profile Studio
 
-Counter-UAS test-profile planner: build a vignette on a map, run it, score it against DroneScore
-measures, export an AAR stated as a hypothesis. The legacy app is plain ES5 scripts in `legacy/`, loaded by
-`legacy/index.html`. It is being rebuilt as a production MVP in React, TypeScript and Vite.
+Counter-UAS test-profile planner: create a profile on a board, iterate it in three views,
+save cards and brief it. It plans real tests as interactive, detailed mockups; it does not run
+them (user decision of 2026-11-01, `docs/plan.md` phase 10). The direction is the v3 mockup
+`legacy/mockup-v3.html`, served at `/legacy/mockup-v3.html` on the dev server. The legacy v4
+app is plain ES5 in `legacy/`, loaded by `legacy/index.html`, served at `/legacy/index.html`.
+The product is a React, TypeScript and Vite build in `src/`.
 
 ## The standard
 
-DroneScore measures are the gold standard. Name every metric by its DroneScore ID and name, and
-place it under one F2T2EA step (Find, Fix, Track, Target, Engage, Assess).
+DroneScore measures are the naming standard. Name every measure of performance by its
+DroneScore ID and name, and place it under one F2T2EA step (Find, Fix, Track, Target, Engage,
+Assess). The app does not score them.
 
 - Read `docs/reference/dronescore-measures.md` before you add, rename or compute a measure.
 - Read `docs/reference/jiatf-401.md` for JIATF-401 C4 conventions, the F2T2EA mapping and the
@@ -17,8 +21,9 @@ place it under one F2T2EA step (Find, Fix, Track, Target, Engage, Assess).
 
 ## Starting cold
 
-Read `docs/design-principles.md`, `docs/spec.md`, then `docs/plan.md`. The plan's status table
-says which lane is next. Each lane names the reference it needs:
+Read `docs/design-principles.md`, `docs/spec.md`, then `docs/plan.md` (phase 10 is the work;
+section 8 is the handoff). Open `legacy/mockup-v3.html` and use it: that is the product. Each
+lane names the reference it needs:
 
 - `docs/reference/legacy-app.md`: what the ES5 app does today, as a parity checklist.
 - `docs/reference/rangeboard-parts.md`: engine and UI parts to transfer, with paths and APIs.
@@ -28,6 +33,12 @@ says which lane is next. Each lane names the reference it needs:
   well, the gap list with decisions, and the decisions of 2026-10-31.
 
 ## Decisions on record (2026-10-30)
+
+- 2026-11-01: the pivot. The product is a polished version of the v3 mockup: three modes
+  (Library, Build, Brief), one board with three cameras, a whole-scene inspector, cards and a
+  brief. The run and score surface (Monte Carlo, Results, Report) leaves in phase 10 lane 10.1
+  once the user confirms decision 1 in `docs/plan.md` phase 10. The mockup, not the legacy v4
+  app, is the parity oracle for phase 10.
 
 - 2026-10-31: the upgrade (plan phase 9) ports the legacy interface in `legacy/` one to one onto
   the MVP engine, domain and state. `src/board/` is the renderer; MapLibre leaves in lane 9.2.6.

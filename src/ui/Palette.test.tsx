@@ -56,8 +56,23 @@ describe('Palette', () => {
 
   it('shows a data column, row hints, band headers and group hints', () => {
     const rows: PaletteRow[] = [
-      { id: 'a', label: 'Quadrotor ISR', group: 'Threats', band: 'Group 1', bandNote: 'Under 20 lb', data: '23 kt  705 ft', onSelect: vi.fn() },
-      { id: 'b', label: '3D radar', group: 'Sensors', data: '2.16 nm', hint: 'S', onSelect: vi.fn() },
+      {
+        id: 'a',
+        label: 'Quadrotor ISR',
+        group: 'Threats',
+        band: 'Group 1',
+        bandNote: 'Under 20 lb',
+        data: '23 kt  705 ft',
+        onSelect: vi.fn(),
+      },
+      {
+        id: 'b',
+        label: '3D radar',
+        group: 'Sensors',
+        data: '2.16 nm',
+        hint: 'S',
+        onSelect: vi.fn(),
+      },
     ];
     render(<Palette open onOpenChange={vi.fn()} items={rows} groupHints={{ Sensors: 'S' }} />);
     expect(screen.getByRole('option', { name: /Quadrotor ISR/ })).toHaveTextContent('23 kt 705 ft');
@@ -75,7 +90,13 @@ describe('Palette', () => {
       { id: 'b', label: '3D radar', group: 'Sensors', onSelect: vi.fn() },
     ];
     render(
-      <Palette open onOpenChange={vi.fn()} items={rows} focusGroups={['Sensors']} onShowAll={onShowAll} />,
+      <Palette
+        open
+        onOpenChange={vi.fn()}
+        items={rows}
+        focusGroups={['Sensors']}
+        onShowAll={onShowAll}
+      />,
     );
     expect(screen.queryByRole('option', { name: /Quadrotor/ })).toBeNull();
     expect(screen.getByRole('option', { name: /3D radar/ })).toBeInTheDocument();

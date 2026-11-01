@@ -16,7 +16,8 @@ These are settled. Do not reopen them without the user.
 | Product form | Installed production MVP, not a static page | User, 2026-10-30 |
 | vos | Port after the MVP | `docs/reference/vos.md` |
 | Sources | Local only, `~/Desktop/MASTER/VALKRYN` | User: no internet downloads |
-| Engine | rangeboard engine transferred and modified into `src/engine` | Working C-UAS Monte Carlo; no shared package |
+| Engine | rangeboard engine transferred and modified into `src/engine` | Working C-UAS Monte Carlo; no shared package. Phase 10 decision 1 removes the run and score surface |
+| Purpose | A polished profile mockup tool: create, iterate and brief test profiles. Not a place to run tests | User, 2026-11-01 (phase 10) |
 
 ## 2. Stack
 
@@ -351,6 +352,9 @@ the report with the reason.
 - **9.2.R Review** (`opus-high`, with browser; parity pairs in all three views for every seed;
   acceptance items 2, 3, 4, 13, 14, 15) and **9.2.F Fixes**.
 
+> Sub-phases 9.3, 9.4 and 9.5 are superseded by phase 10 (the pivot of 2026-11-01). The text
+> stays for reference.
+
 #### 9.3 Strip, events and debrief (9.3.1 to 9.3.3 in parallel; then 9.3.4)
 
 - **9.3.1 Timeline and authored events** (`fable-medium`, 3600 s). Port
@@ -428,6 +432,159 @@ the report with the reason.
   this phase. Reopen only if the user wants perspective and terrain.
 - The ladder table: out (study section 3). The scorecard by F2T2EA replaces it.
 
+### Phase 10. The profile mockup tool (pivot of 2026-11-01)
+
+Decision of 2026-11-01 (user): Profile Studio is a tool to create, iterate and brief
+counter-UAS test profiles as interactive, detailed mockups. It plans real tests; it does not
+run them. The functionality stays simple for the user. The direction is the v3 mockup
+`legacy/mockup-v3.html` (the artifact `M4Jr3utqfsvt5cEgCHbeB2`, 541 lines, served on the dev
+server beside the legacy app): three modes, one board with three cameras, a whole-scene
+inspector, cards and a brief. The build is a more polished version of that mockup, on the
+engine, domain, state and board the rebuild already has.
+
+Sub-phases 9.3, 9.4 and 9.5 above are superseded by this phase. Their text stays for
+reference; no lane from them runs unless this phase names it.
+
+**What the mockup has and the build lacks** (read `legacy/mockup-v3.html` at the line):
+
+| Mockup feature | Where in the mockup | Build today |
+| --- | --- | --- |
+| Time off by default ("full run"), one checkbox and a scrub | `.scrub`, line 390 | 9.2.F1 adds the T toggle; the scrub is the MVP timeline |
+| Thumbnails of the other two cameras under the stage, click to switch | `drawStage`, line 396 | none |
+| Five layer toggles in view: Reach, Events, Envelopes, Telemetry, Labels | `LAYER_DEFS`, line 386 | 12 chips, hidden (Shift+1 to 8) |
+| Save as card, one click | `t-card`, line 431 | stub until 9.4.1 |
+| Whole-scene inspector: every object listed under its section, the selected one expanded | `drawInspector`, lines 407 to 420 | selection-only inspector plus the profile form |
+| Purpose block: question, class, collection | line 408 | name, id, collection, purpose, units, site elevation, link distance, latitude, longitude, questions and hypotheses, chain time |
+| Aircraft rows with the archetype's facts and source link | line 409 | archetype on the threat |
+| Data products and Measures of performance lists | lines 418, 419 | `report.dataSources` in Report; measures as hypotheses |
+| Brief: card strip with thumbnails, stage, caption, Previous and Next, arrow keys, notes panel | lines 491 to 509 | placeholder |
+| Collect: grid by collection, per card Compose, Brief, Duplicate, Export, Delete; thumbnail from the first card; "id v3 · class · n cards · n paths" | lines 511 to 522 | Library: Open, Duplicate, Export, Delete; grouped by site |
+| Export with resolved waypoint times (`timed`) for VAL | line 525 | v6 JSON |
+
+**What the build has that the product does not need** (the user's words: this is not a place
+for real testing): the Run button and dialog, Results, Report, hypotheses and predictions,
+chain time, compare, sweep, the Monte Carlo worker and `src/engine/sim` (18.3k lines), `run`,
+`score`, `sweep`, `adapter`, `src/state/runs.ts`, recharts, and the end-to-end specs 12-01,
+12-05 to 12-08, phase6-f01 and phase6-f04. DroneScore stays as the naming standard for the
+measures of performance list (`docs/reference/dronescore-measures.md`, the 67-row table in
+`src/domain`); the scorecard goes.
+
+**Decisions the user takes before 10.1 runs** (each is a line in section 1 once taken):
+
+1. Delete the run and score code, or hide it behind a flag. Proposal: delete. Git keeps it
+   (tag `pre-pivot` at the 9.2.F merge). A hidden workspace is not simple, and the entry
+   chunk and the gate both shrink.
+2. Mode names. Spec: Library, Build, Brief. Mockup: Collect, Compose, Brief. Proposal: keep
+   Library, Build, Brief (approved in 9.1; the mockup sets the direction, not the words).
+3. Palette. The mockup and the legacy app use warm paper and graphite with affiliation inks
+   (`legacy/css/tokens.css`, `legacy/mockup-v3.html` `:root`). The port kept the MVP cool
+   palette (study decision 4). Proposal: adopt the warm palette; it is the look the user
+   prefers and the tokens already exist.
+4. The whole-scene inspector replaces the selection inspector, or sits beside it. Proposal:
+   replace. The selection still expands its own row; nothing is lost.
+
+**Rules.** Section 5 applies. Lanes branch from `rebuild/mvp` as `lane/10.x`. The renderer
+contract and the owned-file rule from phase 9 stay. The oracle for every UI lane is the mockup
+at `/legacy/mockup-v3.html` beside the legacy app at `/legacy/index.html`: the worker opens the
+same seed (CUAS-001) in the mockup and the port, saves the pair under `reviews/phase-10/`, and
+lists every difference as intended (cite the spec line) or a defect. Parity with the legacy v4
+app is no longer the bar; the mockup's simplicity is. Budgets: entry under 300 kB gzip after
+10.1; the spec section 11 rows stay.
+
+#### 10.1 Cut (`opus-high`, 3000 s, after the user's decision 1)
+
+Remove the run and score surface: `src/engine/sim/`, `adapter.ts`, `run.ts`, `score.ts`,
+`sweep.ts`, `headless.test.ts`, `src/workers/`, `src/state/runs.ts`, `src/features/results/`,
+`src/features/report/`, the Run button, the run-done note, the hypotheses and chain time blocks
+in the inspector, the `run.*`, `results.*`, `report.*` and sweep commands, `recharts` (offline
+uninstall, nothing fetched), and the seven end-to-end specs above. Keep: the domain's
+`Hypothesis` and `RunSummary` types only where the v6 schema needs them to parse stored records
+(mark them deprecated; v7 drops them in 10.5). Keep the DroneScore table and `measures.ts`.
+Three workspaces in the shell: Library, Build, Brief (decision 2). Spec sections 1, 4, 6, 7,
+11 and 12 amended in the same lane: section 4 becomes "One question, one profile, one brief";
+section 6 keeps geo, preview and derived; the first-use goal becomes "opens a template, moves
+one sensor, saves a card and briefs it in under 10 minutes"; acceptance items 1, 5 to 8 and
+11 are retired, item 19 (Brief) and a new item (Save as card) stay. `docs/design-principles.md`
+section 4 is rewritten to the same effect. Owned: the files above, `src/App.tsx`,
+`src/commands/commands.ts`, `docs/spec.md`, `docs/design-principles.md`, `e2e/`. Gate green
+with the remaining specs; entry size in the report.
+
+#### 10.2 Whole-scene inspector (`opus-high`, 3600 s, parallel with 10.3 and 10.4)
+
+Port `drawInspector` (`legacy/mockup-v3.html` lines 407 to 420) onto the v6 document: Purpose
+(question, class, collection), Aircraft (one row per archetype in use: id, archetype select,
+cruise, the catalog facts and source link), Paths (one row per threat with the waypoint table:
+x, y, altitude, hold; add and remove; the selected path expanded; the hint text), Systems
+(sensors, effectors, nodes: id, kind, position, reach, field of view, bearing), Volumes (label,
+kind, top, vertices), Reference planes, Events (time, type, label, path, the time slider),
+Telemetry (truth source, interval, stations, snapshots), Data products, Measures of
+performance (a DroneScore picker: ID and name, F2T2EA step shown). The selected object's row
+expands; clicking a row selects it on the board. Every field writes to the document store on
+input, one undo step per field (the legacy rule). The MVP profile form's units, site elevation,
+link distance, latitude and longitude move to a "Site" disclosure at the end, closed by
+default. Owned: `src/features/build/inspector/`. Tests: each section renders from CUAS-001;
+a waypoint edit is one undo step; the picker lists 67 rows.
+
+#### 10.3 Board bar, layers, time, thumbnails, Save as card (`opus-medium`, 3000 s)
+
+The Build bar becomes the mockup's: the view segment (Plan, Elevation, 3D), Add waypoints
+(the existing path placement, as a pressed toggle), the five layer toggles in view (map the 12
+board layers onto Reach, Events, Envelopes, Telemetry, Labels; the other seven follow Labels or
+stay on), Save as card (C) and the one-line readout. Under the board: the time checkbox, the
+scrub and "full run" (the MVP timeline strip is deleted; the authored events draw as beads on
+the scrub), then the two thumbnails of the other cameras, click to switch. Fit, Ref and the
+units toggle move to the palette. Owned: `src/features/build/BuildWorkspace.tsx`,
+`src/features/build/board/` (bar and strip only), `src/features/build/timeline/` (deleted),
+`src/state/document.ts` (the cards slice: save with the view, layers, time and focus;
+reorder; delete; one undo step), the `card.*` commands. Tests: Save as card stores the view;
+the thumbnails render the other two cameras; the scrub turns time on.
+
+#### 10.4 Brief (`fable-medium`, 3600 s)
+
+Port `drawBrief`, `drawCardStrip`, `drawBriefStage` and `drawNotes` (`legacy/mockup-v3.html`
+lines 491 to 509): the card strip with thumbnails (`render.card` in thumb mode), the stage
+rendering the card's view through `src/board` at its time and layers with its focus ids drawn
+strong and the rest dim, the head ("n of m · id"), the caption, Previous and Next, Left,
+Right and Space, the notes panel (name, camera, yaw and pitch, time, focus ids, layers,
+caption, presenter notes, Up, Down, Delete), "Add card from current scene" when the deck is
+empty. Entering Brief stashes the Build view and leaving restores it. Print stylesheet: one
+page per card with its render, caption and notes (PDF through print). Clips, beats, caption
+tokens, presenter aids, capture and the phone stage are not in this lane; each returns only
+when the user asks. Owned: `src/features/brief/`, `src/App.tsx` (mount only), the Brief keys
+in `src/commands/commands.ts`. Tests: a card opens at its view and time; arrows move; print
+has one page per card.
+
+#### 10.5 Collect polish and export (`opus-medium`, 2400 s, after 10.2 to 10.4)
+
+Library per the mockup's Collect: grouped by collection (a `collection` field on the profile;
+`site.name` migrates into it in v7), per card Open, Brief, Duplicate, Export, Delete; the
+thumbnail from the first card when one exists; the metadata line "id v3 · class · n cards · n
+paths"; a `version` counter that bumps on each committed edit; a `class` field (Counter-UAS,
+Multi-aircraft, One-way attack, Surrogate, Custom). Export adds the resolved waypoint times
+(`timed`: x, y, z, arrive, depart) per path, as the mockup does for VAL. v7 schema drops the
+run fields. Owned: `src/features/library/`, `src/domain/`, `src/state/persist.ts`. Tests:
+round-trip v6 to v7; export carries `timed`.
+
+#### 10.6 Palette and polish (`opus-medium`, 2400 s, after decision 3)
+
+The warm paper and graphite palette from `legacy/css/tokens.css` into `src/styles/tokens.css`
+(both themes), the affiliation inks on the board, the mockup's control sizes (28, 26, 24 px),
+the top bar at widths under 900 px, and the `stat-te-terminology` check on every string the
+phase added. Owned: `src/styles/`, `src/board/board.css`, `src/features/shell/`.
+
+#### 10.R Review and 10.F Fixes
+
+`opus-high` with the browser at 1440 x 900: the port beside the mockup for every seed in
+`fixtures/legacy-derive/` in all three views and in Brief; the first-use goal re-walked; the
+budgets measured. Then the fix lane and the user's approval.
+
+#### Deferred from phase 10
+
+Clips and beats, caption tokens, presenter aids, capture and attachments, the phone stage,
+the debrief overlay, the timeline with F2T2EA lanes, the chart strip, the readout strip with
+drag deltas, the quick-add palette's catalog rows, the target menu's long tail, snap to
+geometry. Each exists in `legacy/` and returns as its own lane only when the user asks.
+
 ## 7. Status
 
 The orchestrator updates this table at each merge. `Head` is the `rebuild/mvp` commit after the
@@ -482,386 +639,211 @@ merge. Open items live in section 8, not here.
 | node-fov | done | 3edda0a | fix from the 9.2.2 merge check: v6 `Node` carries `fovDeg` and `bearingDeg` (legacy default 0, a zero-width sector; 360 is the full ring); `importLegacyV4` keeps them, stored records default on parse without a stamp bump, `toScene` maps them, the render-test patch is gone and byte parity runs on the imported record alone; the inspector shows the two rows for nodes as legacy does; SURR-001 TM-1 now draws as a full ring; 765 tests |
 | 9.2.5 | done | a6a702a | `src/features/build/board/` ported from `51-panel-board.js` and `45-tools.js`: `Board` mounts one `<g>` per layer and rewrites only changed fragments (ticks rewrite the `t` layers only), `useBoard` store (camera, ruler, placing, snap, pointer), select and stack cycle, drag with the pre-drag ghost and `setDragBaseline`, pan, pinch, wheel zoom at the cursor, axon orbit, right-click and 500 ms long press to `openTargetMenu`, ruler, placement with snap (rings, vertices, edges, 15 degrees, Alt) and ghost labels, `boardCommands` (G, =, -, nudge); `handles.ts` unchanged; 16 tests; tick 3.5 ms, drag step 0.5 ms at 40 x 15; five parity pairs; merge check: node placement carries fovDeg and bearingDeg; 781 tests |
 | 9.2.6 | done | 17920d1 | Build wired from the rail, board, readout panel, inspector and the MVP timeline (kept until 9.3); rail, palette, menu and board commands registered in place of the stubs; one Escape owner (`app.escape`, nine steps); readout on `boardDerived(v).at`; `previewOf` passes group keys; `map/`, `assets/`, `profile/` and `maplibre-gl` removed (offline uninstall, 23 packages, nothing fetched); Thumbnail and MapSnapshot on `src/board` thumb mode; e2e helpers and five specs repointed; units deduped into `tokens.ts legacyUnits`; `src/board` ESLint fence; Elevation gate fixed to `needDoc`; entry 131 kB gzip; 82 unit files, 713 tests, 13 e2e; eight parity pairs |
+| 9.2.F1 | done | 24a5a13 | root causes: sticky camera bounds in `useBoard` (an add or drag no longer refits Plan or 3D; Fit or a new profile recomputes; a deliberate deviation: legacy `44-render.js:71` recomputes every render); Elevation opens From asset with `view.elevationMode` and a bar control; `time.cursor` (T) replaces the 9.3.2 stub with `ui.timeOn`, off by default, turned on by scrub, play, the step keys, Home and End; e2e 12-02 and 12-03 read positions in the original geometry again; 721 tests |
+| 9.2.F2 | done | 91ab1f6 | hygiene: `ladder` alias removed from `derived.ts` (the parity test rebuilds rungs from `stages`); redundant stack subscription removed from `gestures.ts`; `board.css` scoped under `:where(svg.board, svg.chart)`; palette labels "Delete height plane", "Delete event", "Delete card" (the menu keeps "Delete"); readout follows `useBoard.ref` and prints "at t+0:30"; perf spec selectors repointed; Prettier run on 19 files that predated the lanes; 722 tests, entry 131.7 kB gzip |
 
 ## 8. Handoff
 
-State on 2026-11-01, end of the eighth session. Sub-phase 9.2 (Board) is merged on `rebuild/mvp`
-at 17920d1 with the gate green: 82 unit test files, 713 tests, 13 Playwright specs on
-`vite preview`, build. Lanes 9.2.1 to 9.2.6 and the fix lane `node-fov` are in (section 7). The
-review 9.2.R has not been launched; 9.2.F and the user's approval of 9.2 follow it. No lane is in
-flight; no worktree exists. `main` is at the fourth-session merge (21e96c2) on `origin`.
-`rebuild/mvp` is ahead of `origin` until the user approves a push. Nothing was pushed in the
-eighth session and nothing was installed beyond `npm ci` per worktree (standing approval).
+State on 2026-11-01, end of the ninth session. `rebuild/mvp` is at 91ab1f6 (the merge of 9.2.F2; one docs and formatting commit follows it) with the
+gate green: 82 unit files, 722 tests, 13 Playwright specs on `vite preview`, build. Sub-phase 9.2 is merged (lanes 9.2.1 to 9.2.6, node-fov) and its
+root-cause fix lanes 9.2.F1 and 9.2.F2 are merged (section 7). No lane is in flight; no
+worktree exists. `main` is at 21e96c2 on `origin`; `rebuild/mvp` is ahead of `origin`.
+Nothing was pushed and nothing was installed in this session (`npm ci --offline` per worktree
+only).
+
+**The pivot.** The user set the product's purpose on 2026-11-01: a polished version of the v3
+mockup, a tool to create, iterate and brief test profiles as interactive mockups, not a place
+to run tests. The mockup is saved at `legacy/mockup-v3.html` and serves at
+`/legacy/mockup-v3.html` on the dev server. Phase 10 in section 6 is the plan; sub-phases
+9.3 to 9.5 are superseded. The 9.2.R review of the dense legacy port was not launched: most of
+its open items (the menu's long tail, the readout table format, the inspector action row, the
+Build bar hints, the palette's catalog rows) belong to features phase 10 removes or replaces,
+so a review of them would have been waste. The 9.2 items that survive the pivot were fixed at
+the root in 9.2.F1 and 9.2.F2 (section 7). Section 7's "9.2 open items" list below keeps only
+what phase 10 inherits.
 
 **Orchestrator prompt.** Paste this to start the next session:
 
 ```text
 You are the orchestrator for Profile Studio at /Users/caseytalbot/Projects/profile-studio,
 branch rebuild/mvp. Read CLAUDE.md, docs/design-principles.md, docs/spec.md, then docs/plan.md
-sections 5, 6 (phase 9), 7 and 8, then docs/reference/artifact-study.md and
-docs/reference/legacy-app.md. Run `npm run gate` to confirm the baseline: 82 unit files, 713
-tests, 13 e2e specs, build green.
+sections 5, 6 (phase 10), 7 and 8. Open legacy/mockup-v3.html in a browser from the dev server
+(port 5174, path /legacy/mockup-v3.html) and use it for ten minutes: Compose, Brief, Collect.
+That is the product. Run `npm run gate` to confirm the baseline: 82 unit files, 722 tests, 13 Playwright specs on `vite preview`, build.
 
-Phase 9 is the work: a one-to-one port of the legacy interface (legacy/) onto the MVP engine,
-in five sub-phases, each ending with a review lane with a browser pass and parity pairs, a fix
-lane, and my approval before the sub-phase closes. Sub-phases 9.1 (approved) and 9.2 (merged,
-not yet reviewed) are in section 7. Start with 9.2.R: opus-high with the browser on port 5174
-and the legacy app at /legacy/index.html, parity pairs in all three views for every seed,
-acceptance items 2, 3, 4, 13, 14, 15, and the open items in section 8 under "Sub-phase 9.2".
-Then 9.2.F, then ask my approval of 9.2, then 9.3 round A. Section 5 rules apply: one worker
-per lane in a worktree under .worktrees/<id>, workers do not commit, gate and git diff --stat
+Phase 10 is the work: the build becomes a more polished version of the mockup on the existing
+domain, state and board. Start by putting the four decisions at the head of phase 10 to me and
+record each answer as a row in section 1. Then 10.1 (the cut), then 10.2, 10.3 and 10.4 in one
+message, then 10.5, 10.6, 10.R, 10.F, then my approval. Section 5 rules apply: one worker per
+lane in a worktree under .worktrees/<id>, workers do not commit, gate and git diff --stat
 before each --no-ff merge, gate on rebuild/mvp after, worktree removed, status table and
-section 8 updated. The renderer contract, the owned-file rule, the parity check and the
-references per lane in section 6 phase 9 go into every brief, with the legacy files the lane
-ports named in full.
+section 8 updated. Every UI brief names the mockup lines it ports and asks for a pair of
+screenshots, mockup and port, under reviews/phase-10/.
 
 Ask me before any download (npm install included), any push, and any merge to main.
 ```
 
-**Start here.** Read `CLAUDE.md`, the principles, the spec, this file (sections 5 to 8), the
-study and the legacy inventory. Run `npm run gate` once to confirm the baseline (82 unit files,
-713 tests, 13 e2e). Then:
+**Start here.** Read `CLAUDE.md`, the principles, the spec, this file (sections 5 to 8), and
+`legacy/mockup-v3.html` whole (541 lines; the modes start at line 374). Run `npm run gate` once.
+Then:
 
-1. Launch 9.2.R in `.worktrees/9.2.R`. The brief carries: the review shape of
-   `reviews/phase-9.1.md`; the 21 parity pairs already in `reviews/phase-9.2/` (9.2.2, 9.2.3,
-   9.2.4, 9.2.5, 9.2.6); the pairs still owed (all three views for the eight seeds other than
-   CUAS-001); the acceptance items; the "Sub-phase 9.2" open items below; and the review of the
-   branch against the plan in the next block, so the reviewer confirms or corrects it in the
-   browser. Then 9.2.F, then the user's approval, then 9.3 round A (9.3.1 to 9.3.3 in one
-   message, 9.3.4 after).
-2. Sub-phases 9.3 to 9.5 follow the same rhythm. Record each merge in section 7 and each phase
-   review in `reviews/phase-9.<n>.md`, with the parity pairs under `reviews/phase-9.<n>/`.
-3. Phase 8 (vos port) is a separate plan, after phase 9. Any item under "Open items" and the
-   deferred items at the end of phase 9 run as their own lane only when the user asks.
+1. Put the four decisions at the head of phase 10 to the user. Tag `pre-pivot` at the current
+   head before 10.1 so the run and score code stays one checkout away.
+2. Launch 10.1 alone. Its brief carries the file list in section 6 and the spec and principles
+   amendments; the orchestrator reads the amended spec before cutting the next briefs.
+3. Launch 10.2, 10.3 and 10.4 in one message (disjoint folders: inspector; bar, strip and the
+   cards slice; brief). Then 10.5, then 10.6, then 10.R and 10.F.
+4. Record each merge in section 7 and the review in `reviews/phase-10.md` with pairs under
+   `reviews/phase-10/`.
 
-**The branch against the plan (phase 9, section 6).** Written at the 9.2.6 merge from the
-worker reports, the merge checks and the gate; the browser evidence is 9.2.R's job.
+**This session against the request.** The user asked for a review of the 9.2 work against the
+plan, root-cause corrections, clean code, a sound product and the handoff.
 
-Phase-level rules:
-
-- *What stays.* `src/domain`, `src/engine` (`sim/` untouched; `parity.test.ts` green),
-  `src/state`, `src/commands`, `src/ui`, `src/features/results`, `src/features/report` all
-  stand. Additions inside them: domain v6 (9.1.2) and `Node.fovDeg`, `Node.bearingDeg`
-  (node-fov); `src/engine/derived.ts` and its files (9.2.1); `ui.ts` (shell state in 9.1.3,
-  `layers`, stack clearing and `elevationMode` in 9.2.6); `document.ts` (`previewOf` group
-  keys, 9.2.6).
-- *What goes.* `map/`, `assets/`, `profile/`, `maplibre-gl` and its mocks are gone (9.2.6, in
-  the wiring lane as the plan says). The MVP inspector was replaced in place by 9.2.4, not
-  deleted by 9.2.6: same end state, earlier lane. `src/features/library` was ported in place by
-  9.1.4 and stays as the ported Library. `src/features/build/timeline` stays until 9.3.1. The
-  e2e selectors were repointed in 9.2.6, but three specs changed more than selectors: 12-02,
-  12-03 and 12-04 read positions after the board's refit on add, and 12-04 uses 6000 m instead
-  of 5500 m because snap rounds 5500 to 5600. The plan said "selectors only, behaviour
-  unchanged"; the refit is the defect, not the specs (item 5 below).
-- *The oracle.* Every UI lane saved its pairs at 1440 x 900 with CUAS-001 from the fixture
-  `input`: 9.2.2 (plan, elev, axon), 9.2.3 (rail, palette, menu, tip), 9.2.4 (inspector for threat, sensor,
-  area and event; readout), 9.2.5 (select, drag, place, ruler, axon), 9.2.6 (plan, elevation, 3d, readout).
-  Each report marks every visible difference intended or a defect. No lane took pairs for the
-  other eight seeds; the plan asks 9.2.R for all three views for every seed.
-- *The renderer contract.* Met: `src/board/` has no React, store or DOM import (the 9.2.6 ESLint
-  fence enforces it), layers keep `draw(ctx)` and return fragment strings, `render.scene`
-  returns per-layer fragments with `inputs`, and the legacy render cases run in node with byte
-  parity over every seed and camera (9.2.2). `derived` is `src/engine/derived.ts` from `Preview`
-  with F2T2EA `stages` (9.2.1); the `ladder` alias is still exported and should go after 9.2.
-  The board view mounts one `<g>` per layer and a tick rewrites only the time layers (9.2.5:
-  tick 3.5 ms, drag step 0.5 ms at 40 x 15 in jsdom).
-- *The owned-file rule.* Lanes 9.2.1 to 9.2.5 stayed inside their folders. 9.2.6 edited five
-  files outside its allowance and reported it: `src/features/build/board/renderer.ts` (three
-  lines, the layer chips reach the render), `src/board/format.ts` (delegates to
-  `legacyUnits`), `src/board/board.css` (`--select` on the accent), `src/board/cameras.ts`
-  (comments) and `cameras.test.ts` (along-path numbers). The orchestrator's merge checks touched
-  `src/board/types.ts` and `render.test.ts` (7803ac0) and `board/tools.ts` (5cde236). 9.2.R
-  reads these edits.
-- *Workers and budgets.* Workers matched section 6 (9.2.1 and 9.2.5 `fable-medium`; 9.2.2,
-  9.2.3, 9.2.4 and 9.2.6 `opus-high`; node-fov `opus-medium`). 9.2.6 ran on 3600 s instead of
-  the plan's 2400 s because the earlier lanes' checklists widened it, and still reported the
-  budget exceeded; the next wiring lane (9.3.4) should carry 3600 s in the plan.
-- *The sub-phase close.* Section 6 says the user approves before the merge to `rebuild/mvp`.
-  The practice since 9.1, on record, is: lanes merge into `rebuild/mvp` as they pass the gate,
-  and the user's approval closes the sub-phase after 9.2.F. The same holds for 9.2.
-- *Budgets.* The entry chunk is 414 kB raw, 131 kB gzip after 9.2.6 (9.1.R measured 56 kB).
-  The spec section 11 budget is 500 kB gzip, so it passes. The 9.2.6 brief stated 56 kB as the
-  budget line; that number was the 9.1.R measurement, not the spec. The growth is the static
-  import of the rail, palette, menu and board commands in `commands.ts` and the Library
-  Thumbnail pulling `src/board`. A measured trial (lazy `BuildWorkspace`) gave 103 kB plus a
-  30 kB Build chunk and was reverted. 9.5.3 remeasures; a lazy registration lane runs only if
-  the user asks.
-
-Lane by lane (plan text in section 6 against what merged):
-
-| Lane | Plan asked | Delivered | Differs |
-| --- | --- | --- | --- |
-| 9.2.1 | `derived.ts` with `at`, `tokens`, `envelopes`, `trackLine`, `crossings`, `stops`, `rangeSeries`; parity with the nine fixtures | All of it, field for field on every fixture and on the `at` and `envelopesAt` samples; 9.9 ms at 40 x 15 | `flown` waits for 9.3.3 (no run trace in the preview); `ladder` alias beside `stages` |
-| 9.2.2 | `src/board/` with scene, three cameras, symbols, 12 layers, render with card and thumbnail, hit list; legacy render cases ported; snapshot per seed and camera | All of it; byte parity in node; axon orbit rates 0.45 and 0.35 deg/px, pitch clamp 8 to 86, the hint | `DerivedView.first` widened to allow null in the merge check; the fov gap it found became the node-fov lane |
-| 9.2.3 | rail, palette (A, S, V, E, Shift+F, formation), menu `actionsFor` per kind, tip at 400 ms; commands exported | All of it on the shared `Palette`; 23 tests | Card items stubbed until 9.4.1; `setEventWarnings` idle until 9.3.1; no menu head label; Copy and Paste rows dropped for plane, event and card in 9.2.6 (`edit.copy` copies assets only); "C2" and "TSPI" unexpanded pending the user's 9.2 decision |
-| 9.2.4 | inspector per kind with the tables and the profile block; readout with pin, drag deltas, "Margin +0:12 (-0:04)" | All of it; the questions and hypotheses block moved in unchanged | Declared losses: class, datum, sensor bottom, top and status, effector rmin and elevation (not in the domain); the action row (Make a sector, Duplicate, Delete; Add event here, Formation, Reverse) and the threat Identity field are missing (9.2.6 report); the waypoint table adds "+" insert buttons legacy lacks; the field-of-view commit has no clamp |
-| node-fov | (merge check, not in section 6) | `Node.fovDeg` and `bearingDeg` through v6, the import, the scene and the inspector; SURR-001 TM-1 draws as a full ring | None |
-| 9.2.5 | board view with select, drag ghost, pan, pinch, wheel, orbit, long press, ruler, placement with snap, clipboard, duplicate, reverse, formation, sector and omni, split and merge, `saveCard`; board keys | Gestures, snap, placement, ruler, select and stack cycle, `boardCommands` G, =, -, nudge; `handles.ts` unchanged | Arrow keys stay with `time.back1` and `time.forward1` at the shell; the focused stage nudges. Fit is F in the port, 0 in legacy. The board refits on every scene change, so an add jumps the camera (legacy keeps it). Duplicate, reverse, formation, sector and omni, split and merge live in the menu and inspector commands, not in `tools.ts` |
-| 9.2.6 | compose Build, register every command, one Escape owner, delete the MapLibre folders and dependency, repoint thumbnails, selectors only in e2e | All of it; Elevation gate fixed to `needDoc`; readout on `derived.at`; units deduped; the ESLint fence | Five files outside its allowance (above); three specs changed values, not only selectors; Elevation opens in Along path (legacy: From asset) with no command to switch; the BuildBar lacks Add, Snap and Ruler and the key hints; time cannot be turned off until 9.3.2 |
+- Review: the handoff's own lane-by-lane table (previous section 8) was checked against the
+  code. One claim was wrong: "the board refits on every scene change; legacy keeps the camera".
+  Legacy recomputes the bounds on every render too (`legacy/js/44-render.js:71`; no file in
+  `legacy/js` writes a bounds into `ui.view`). The jump is still a defect for the user, so the
+  port now deviates on purpose: the camera holds until Fit, a new profile or a view change.
+  The mockup (`bounds`, line 318) also recomputes per render; the port is the polished one.
+- Root causes fixed (9.2.F1): sticky camera bounds in `useBoard` with reset on Fit and on a
+  profile change; Elevation opens From asset with a `view.elevationMode` command and a control
+  in the bar; the `time.cursor` stub replaced by `ui.timeOn` (T), off by default as in the
+  mockup and legacy, with the scrub, play and the step keys turning it on; the two end-to-end
+  specs the wiring lane bent around the refit (12-02, 12-03) read positions in the original
+  geometry again.
+- Clean code (9.2.F2): the `ladder` alias removed from `derived.ts`; the redundant stack
+  subscription and the unused pointer field removed from `gestures.ts`; `board.css` rules
+  scoped to the board svg; distinct palette labels for the three Delete commands; the readout
+  follows `useBoard.ref` and prints "at t+0:30"; the perf spec's MapLibre-era selectors
+  repointed.
+- Process root causes, for the next briefs: (1) a wiring lane that inherits five checklists
+  needs 3600 s, not the plan's 2400 s; (2) a spec that a lane must bend to pass is a defect
+  report, not a spec edit: the worker stops and reports, the orchestrator decides; (3) a worker
+  claim about legacy behaviour is checked against `legacy/js` by file and line before it enters
+  the plan; (4) the owned-file rule holds: a worker that needs a line outside its files reports
+  the line and stops.
 
 **Lessons from 9.1 and 9.2 for the next briefs.** The derive fixtures in `fixtures/legacy-derive/`
-have the shape `{derived, input, samples}`; the legacy v4 record is `input` (name it in every
-parity brief; neither app imports the whole file). The legacy app seeds CUAS-001 by itself, so a
-legacy import toast reads "1 replaced". Required fields added to `Vignette`, `Threat` or `Node`
-break every literal outside `src/domain`: the lane that adds one lists the literals
-(`src/engine/testVignette.ts`, the perf tests, `commands.ts` `addThreat` and `addNode`,
-`board/tools.ts`, `templates/build.ts`, `registry.test.ts`, `schema.test.ts`) and the
-orchestrator fixes them on the lane branch before the merge. A lane cut before a fix lane
-merges needs a merge check for that fix (9.2.5 and node-fov: 5cde236). Two lanes that both add
-a control with the same accessible name break the e2e selectors; name controls per screen.
-Orchestrator wiring between parallel lanes must consume each request once (9.1.R F-01). A
-wiring lane that follows five feature lanes inherits their checklists; set its budget from the
-checklists, not from the plan line. Workers report the entry size against the number in the
-brief; put the spec budget (500 kB gzip) in the brief, not the last measurement.
+have the shape `{derived, input, samples}`; the legacy v4 record is `input`. Required fields
+added to `Vignette`, `Threat` or `Node` break every literal outside `src/domain`: the lane that
+adds one lists the literals (`src/engine/testVignette.ts`, the perf tests, `commands.ts`
+`addThreat` and `addNode`, `board/tools.ts`, `templates/build.ts`, `registry.test.ts`,
+`schema.test.ts`) and the orchestrator fixes them on the lane branch before the merge. Two
+lanes that both add a control with the same accessible name break the e2e selectors; name
+controls per screen. Orchestrator wiring between parallel lanes must consume each request once.
+Workers report the entry size against the number in the brief; put the budget in the brief.
 
-**Brief shape for phase 9 lanes.** Working directory (`.worktrees/<id>`); the lane text from
-section 6 verbatim; the legacy files to port, read whole before writing; the renderer contract
-and the owned-file rule; the files it must not touch; the spec sections and acceptance items
-it serves; the gate (`E2E_PORT=<port> npm run gate`); the parity check and where the pairs go;
-the report shape (what changed, every difference from the legacy behaviour with its reason,
-tests added, what is open, screenshots); the time budget from section 6; the lanes running in
-parallel and their folders. Workers write user-facing text in the `stat-te-terminology`
-vocabulary and the principles' words (profile, card, clip, beat, capture, Elevation, 3D).
+**Brief shape for phase 10 lanes.** Working directory (`.worktrees/<id>`); the lane text from
+section 6 verbatim; the mockup lines to port, read whole before writing; the renderer contract
+and the owned-file rule; the files it must not touch; the spec sections it serves; the gate
+(`E2E_PORT=<port> npm run gate`); the pair of screenshots (mockup and port) and where they go;
+the report shape (what changed, every difference from the mockup with its reason, tests added,
+what is open, screenshots); the time budget; the lanes running in parallel and their folders.
+User-facing text in the `stat-te-terminology` vocabulary and the principles' words (profile,
+card, Elevation, 3D).
 
 **Approvals on record.** The user approved the phase 0 commits, the first phase 1 commit, one
-merge to `main` with a push, and the Playwright Chromium download, all on 2026-10-30. At the
-end of the third session the user approved a second push and merge to `main`, and at the end
-of the fourth session a third (both 2026-10-30). Each later push or merge to `main` needs its
-own approval. Seventh session (2026-10-31): the user approved the install of `@fontsource/archivo`,
-`@fontsource/jetbrains-mono` and `lucide-react` plus `npm ci` per worktree, and approved
-sub-phase 9.1 as closed. Eighth session (2026-10-31 to 2026-11-01): the user asked for the
-node-fov lane; no other approval was asked or given. No push and no merge to `main` happened in
-the seventh or eighth session. The `maplibre-gl` removal in 9.2.6 ran offline and fetched
-nothing.
+merge to `main` with a push, and the Playwright Chromium download, all on 2026-10-30; a second
+and a third push and merge to `main` at the end of the third and fourth sessions (2026-10-30).
+Seventh session (2026-10-31): the install of `@fontsource/archivo`, `@fontsource/jetbrains-mono`
+and `lucide-react` plus `npm ci` per worktree, and sub-phase 9.1 closed. Eighth session: the
+node-fov lane. Ninth session (2026-11-01): the user set the pivot (phase 10) and asked for the
+root-cause fixes; no push, no install, no merge to `main`. The four phase 10 decisions and the
+`pre-pivot` tag are not yet approved.
 
 **How to run a lane.** `git worktree add .worktrees/<id> -b lane/<id> rebuild/mvp`, then
-`npm ci` there (offline from the cache; stop and ask if it tries to fetch). Parallel lanes each
-run the full gate with their own preview port: `E2E_PORT=<port> npm run gate`
-(`playwright.config.mts` reads it; 5181 to 5189 were used; dev servers for parity on 5191 to
-5199). `*.tsbuildinfo` is ignored since the third session. The brief states: working directory,
-owned files, gate, report shape, time budget, and the lanes running in parallel with their
-folders. The worker does not commit. The orchestrator runs `npm run gate` in the worktree,
-commits on the lane branch, merges with `--no-ff` into `rebuild/mvp`, runs the gate there,
-removes the worktree and deletes the branch, then updates section 7. Workers are picked by
-`~/.claude/rules/delegation.md`.
+`npm ci --offline` there (stop and ask if it tries to fetch). Parallel lanes each run the full
+gate with their own preview port: `E2E_PORT=<port> npm run gate` (5181 to 5189 were used; dev
+servers for pairs on 5191 to 5199). The worker does not commit. The orchestrator runs
+`npm run gate` in the worktree, commits on the lane branch, merges with `--no-ff` into
+`rebuild/mvp`, runs the gate there, removes the worktree and deletes the branch, then updates
+section 7. Workers are picked by `~/.claude/rules/delegation.md`.
 
-**Open items.** Grouped by area. Each came from a worker report or a review; none is a guess.
+**Open items.** Each came from a worker report or a review; none is a guess. Items that phase
+10 removes are not listed; `git show dfd96f5:docs/plan.md` has the full 9.2 list.
 
-Sub-phase 9.2 (for 9.2.R and 9.2.F; from the 9.2.1 to 9.2.6 reports and the merge checks):
-- Elevation opens in Along path; legacy opens in From asset. `src/state/ui.ts` defaults
-  `elevationMode: 'alongPath'` and no command calls `setElevationMode`. Along path mode also
-  uses origin-range math for volumes, reach and slant (9.2.2). The 9.2.6 elevation pair shows
-  "Along T1, nm" against legacy "Range from asset, nm".
-- The BuildBar lacks `+ Add A`, `Snap G`, `Ruler M` and the key hints on the view buttons
-  ("P Plan", "L Elev", "X Axon", "Fit 0"). `BuildWorkspace.tsx` around lines 204 to 218.
-- The map menu lists the Add items flat and overflows a 900 px viewport; legacy uses an "Add
-  here" submenu (`menu/actions.ts` around lines 186 to 192). The menu has no head label.
-- The palette shows several bare "Delete" rows (`plane.delete`, `event.delete`,
-  `card.delete`); give them distinct labels.
-- The board refits on every scene change, so an add jumps the projection; legacy keeps the
-  camera (`board/Board.tsx` and `tools.ts`). Three e2e specs read positions after the refit.
-- Time cannot be turned off: `time.cursor` (T) is a stub until 9.3.2. The port's plan pair
-  shows time on at t+0:00 where legacy shows time off.
-- The readout panel uses the compact strip format; legacy uses a key-value table (Length,
-  Speed, Run, Range, BRG, HDG, Height, Closing, To asset, Held by, First see). BRG, HDG, Length
-  and First see are missing, "Held by" is unlabelled, and the uppercase transform turns
-  "t+0:30" into "T+0:30" (`readout/Readout.tsx`). `Readout.tsx` lines 148 and 155 do not
-  subscribe to `useBoard.ref`.
-- The inspector lacks the legacy action row (threat: Add event here, Formation, Reverse,
-  Duplicate, Delete; sensor: Make a sector, Duplicate, Delete) and the threat Identity field
-  (hostile); the waypoint table adds "+" insert buttons legacy lacks. The field-of-view commit
-  has no clamp (0 on a sensor or over 360 is refused on reload).
-- Event warning tint and `event.moveToGeometry` stay idle until 9.3.1 wires
-  `setEventWarnings`.
-- Rail threat names truncate at 232 px. "C2" and "TSPI" are unexpanded; the user decides at
-  the 9.2 approval.
+Inherited by phase 10 (from the 9.2 reports and this session):
+- The field-of-view commit in the inspector has no clamp (0 on a sensor or over 360 is refused
+  on reload). 10.2 clamps 1 to 360.
+- Rail threat names truncate at 232 px. 10.3 or 10.6.
+- "C2" and "TSPI" are unexpanded in the rail group name. 10.2 decides the words with the
+  `stat-te-terminology` skill.
 - Nudge arrows: the shell binds the arrows to `time.back1` and `time.forward1`; the focused
-  board stage nudges the selection. Fit is F in the port and 0 in legacy. Tab cycles
-  objects of a kind (`edit.nextOfKind`).
-- `gestures.ts` lines 143 to 146 hold a redundant stack subscription; the `gestures.ts:359`
-  board pointer carries `tS`; `board.css` has unscoped classes; the `Board.tsx` focus ring uses
-  `var(--select,#2862b0)` outside the svg scope.
-- Label culling differs at the port's larger stage: the plan pair draws "Lost link, return
-  home" where legacy culls it; the elevation pair draws the "120 m ceiling" plane label from
-  the MVP plane name; the 3D pair labels "EO identify" and "EW engage" where legacy labels
-  "Loiter 60 s". The ring radius is about 265 px against 213 px because the port has no chip
-  row and a narrower rail (same fit rule).
-- The "MAX RG" and axis title overlap in elev is a legacy defect carried over (9.2.2).
-- `metricsCfg.dLink` is dropped on legacy import (9.2.2).
-- `tokens.ts legacyUnits` is now the one unit formatter; `shared/units.ts` still exists for
-  Results and Report. The `ladder` alias in `derived.ts` goes after 9.2.
+  board stage nudges the selection. 10.3 keeps one owner.
+- Label culling differs from legacy at the port's larger stage (the ring radius is 265 px
+  against 213 px with no chip row and a narrower rail). The mockup is the bar now; 10.R
+  compares to it.
+- The "MAX RG" label overlaps the axis title in Elevation (a legacy defect carried over).
+- `metricsCfg.dLink` is dropped on legacy import.
+- `tokens.ts legacyUnits` is the one unit formatter; `shared/units.ts` serves Results and
+  Report and goes with them in 10.1.
 - The perf test logs React `act` warnings (9.2.5).
-- `e2e/perf/budgets.spec.ts` (outside the gate) still uses the `map-canvas`, `data-label` and
-  `map-view` selectors (8 lines); 9.5.3 repoints it.
-- Historical MapLibre mentions stay in `reviews/*` and `docs/`; `CLAUDE.md` says MapLibre
-  leaves in 9.2.6, which is now true.
-- The 9.2.R review shape: `reviews/phase-9.1.md`. Pairs for the eight seeds other than CUAS-001
-  are owed in all three views.
+- `Readout.tsx` (the hidden readout panel) and `src/features/build/readout/` stay until 10.3
+  decides whether the one-line readout in the bar replaces them (the mockup has one line).
+- Historical MapLibre mentions stay in `reviews/*` and `docs/`.
 
 Sub-phase 9.1 (from `reviews/phase-9.1.md` and the 9.1.F report):
-- `--text-subtle` (`--ps-t3`, the legacy third text step) is #7b7d73 on white, about 4.1:1,
-  under WCAG AA for small text. The user chose to keep the legacy value (2026-10-31).
-- Duplicate and template copies take `PROF-n` ids (F-10), confirmed by the user (2026-10-31);
-  legacy gave a duplicate `<src id>-n`.
+- `--text-subtle` (`--ps-t3`) is #7b7d73 on white, about 4.1:1, under WCAG AA for small text.
+  The user chose to keep the legacy value (2026-10-31). 10.6 revisits with the warm palette.
+- Duplicate and template copies take `PROF-n` ids, confirmed by the user (2026-10-31).
 - `exportLibrary(current)` replaces the stored copy of the open profile but does not add an
-  open profile that was never saved (F-17).
-- At widths under about 900 px the top bar overflows and Import is clipped (seen at 703 px in
-  the built-in browser pane). Phone and narrow layouts arrive with the Brief phone stage (9.4).
-- Seeds import with `meta.updated: null` and take the import time; group order then follows
-  import order (F-21). A fixed date for the seeds is open.
-- The top bar shows no version ("v3"); the domain has no version field (spec section 5).
-- The sheet's legend for the handle and the track frame: check in 9.2.R now that `src/board`
-  is in.
-- The Library's `/` focuses the search (registered, scoped to Library); legacy `N` is not bound.
-- Existing MVP components (Kbd, Tooltip, the timeline) still use Tailwind default sizes, not
-  the five-step scale; the 9.3 lane that replaces the timeline uses the scale.
-- The 9.1.3 and 9.1.4 parity pairs in `reviews/phase-9.1/` predate the merges; 9.1.R retook the
-  Library and top bar pairs (`9.1.R-*.png`) and 9.1.F added `after-9.1F-*.png`.
+  open profile that was never saved.
+- At widths under about 900 px the top bar overflows and Import is clipped. 10.6.
+- Seeds import with `meta.updated: null` and take the import time.
+- The top bar shows no version; 10.5 adds the counter.
+- Existing MVP components (Kbd, Tooltip) still use Tailwind default sizes, not the five-step
+  scale.
 
-Deferred from phase 9 (section 6): the imagery underlay for the plan camera, perspective 3D with
-terrain (three.js), and the ladder table. Each runs only when the user asks.
-
-Engine (`src/engine`):
-- Declared losses in `adapter.ts` `LOSSES`: the Monte Carlo flies flat at the first waypoint
-  altitude; waypoint holds are not flown; non-radar sensors use a hard threshold at r50 (the
-  logistic width is lost); `minRangeM` is a row-side filter only.
-- `RunRow` has no detecting-sensor field, so the fiber FPV template's "1.1.1 by sensor" scores the
-  layer, not each sensor. Proposal: `detect_sensor: string | null` and a by-sensor split in score.
-- Null-with-note rows: 2.1.1 and 3a.2 (no classify stage), 2.1.4 (`identified_ok` never false),
-  5.3 and 5.8 (no inputs). A shot the engine releases on proximity without a declaration counts as
-  stage `track`, outcome No Attempt.
-- Preview semantics kept on review advice: Assess is unclipped (show a negative margin instead);
-  Engage without a Target falls back to first effector reach and should be labelled "geometry
-  only" in the UI.
-- `CONFIRMED_DECLARE_FACTOR` halves `decisionS` when two phenomenologies confirm; it is a
-  declared default, not shown in the UI.
-- `derived.ts` `flown` is empty until 9.3.3 feeds the run trace.
+Engine (`src/engine`, what stays after 10.1: geo, preview, derived and its files):
+- Preview semantics: Assess is unclipped; Engage without a Target falls back to first effector
+  reach. The board's derived stages read these.
+- `derived.ts` `flown` is empty (the debrief overlay is deferred).
 
 Domain (`src/domain`):
-- Legacy import sets site lat/lon to 0 and maps MOP text to a question note; `DEFAULT_MEASURES`
-  seeds 1.1.1, 1.1.2, 2.1.2, 3.1.2; a "Target time not set" note is appended.
+- Legacy import sets site lat/lon to 0 and maps MOP text to a question note. 10.5 maps the
+  mockup's and legacy's `mop[]` to the measures list instead.
 - `Area` has only `pts`; circles draw as polygons and the inspector guesses a circle at 16 or
-  more vertices. Proposal: a `circle` field.
-- `Hypothesis.value` is assumed to be in the measure's canonical unit (m, s, percent). The schema
-  does not state it.
-- Entered-class measures (2.3 Track Quantity on the Swarm template) score from the asset's
-  entered value with no interval (6.F F-05). The sweep factor lives on `Vignette.sweep`.
+  more vertices.
 - The 9.2.4 declared losses (class, datum, sensor bottom, top and status, effector rmin and
-  elevation) are domain fields legacy has and v6 lacks. Add them only if the user asks; each
-  needs the literal list in the lessons above.
-- Lane 7.4 (2026-10-30) spread every laydown so point assets are 24 px or more apart at the
-  default Build view (rule and spacing test in `src/domain/templates/build.ts` and
-  `templates.test.ts`). No threshold changed. At n 100, seed 1 every main measure still Meets;
-  point defence 2.1.3 fell from 3637 to 2992 m (threshold 2000 m), delta wing 3.1.3 is 2257 m
-  and seed-sensitive (Meets at 2 of 5 seeds, inconclusive at the others, as before the move).
-  The n 10 figures below predate the move.
-- Template thresholds at n 10, seed 1 (before 7.4): point defence 1.1.2 3979 m, 2.1.3 3250 m, 3.1.2 100 %
-  inconclusive (Wilson at n 10 cannot clear 80 %); hover 1.2.2 99.6 %; swarm 1.2.1 100 %, 3.1.1
-  100 %; delta wing 1.1.2 8975 m, 3.1.3 2038 m, 3.1.4 20.6 s; fiber FPV 1.1.1 100 % inconclusive at
-  n 10; surrogate 1.2.3 9.8 m; sweep baseline 1.1.2 3972 m. Proportion thresholds of 80 to 90 %
-  need n of about 30 or more to be conclusive; the Run default is n 100.
+  elevation) are legacy fields v6 lacks; `class` returns in 10.5.
 
 State and commands (`src/state`, `src/commands`):
-- `toggleCompare` counts compare keys from other vignettes against `MAX_COMPARE`, so hidden keys
-  can block compare checkboxes (6.F report).
-- Undo and redo never change a locked hypothesis (`keepLocked` in `document.ts`, 6.F F-04).
-- The prediction lock and the run append go through `useDocument.apply` (no undo step).
 - `importJson` returns `Vignette[]`; records with no schema stamp are refused.
 - IndexedDB itself is untested (no `fake-indexeddb`); the persistence tests use a mock db.
-- The spec has no right-click row for C2 and TSPI nodes; Duplicate and Delete were added.
-- Stubs with a lane reason remain for the time cursor and event steps (9.3.2), the chart and
-  readout strips (9.3.2), the card items (9.4.1) and the Brief keys (9.4.4); the registry test
-  samples `card.save`.
-
-Build workspace (`src/features/build`):
-- The timeline (`timeline/`) is the MVP F2T2EA strip with six labelled lanes per threat row
-  (row 64 px, gutter 96 px) and a sticky axis; the panel is 182 px. 9.3.1 replaces it with the
-  ported strip.
-- Stacked-hit cycling: a repeat plain click at the same pixel selects the next target in the
-  stack (9.2.5 `gestures.ts`); `setSelection` clears `stack` when another key is selected
-  (9.2.6, `ui.ts`). The inspector header shows "n of m" while cycling. Swarm starts are 420 m
-  apart.
-- The run-done and sweep-done notes both live in `src/state/runs.ts` (`sweepNoteKey`,
-  `dismissDoneNote`); one edit subscription clears both, and opening Results clears both (7.G).
-- Drop from the rail or the palette onto the stage arms the row and places it at the drop
-  point (`board/Board.tsx`); Playwright cannot drive native HTML5 drag, so 12-02 sends synthetic
-  dragstart, dragover and drop events with one DataTransfer.
+- Stubs with a lane reason remain for the card items and the Brief keys; 10.3 and 10.4 fill
+  them.
 
 Library (`src/features/library`):
-- `LibraryScreen` calls `listVignettes` and `loadVignette` with no catch; in a private window with
-  no IndexedDB the saved list stays empty with no message (6.3 report).
-- A template copy is saved 500 ms after its first edit, not on open (`src/state/persist.ts`,
-  lane 7.11 and 7.F F-06). A run alone writes nothing; `flushAutosave` runs before the Library
-  list.
-- `Thumbnail.tsx` renders through `src/board` thumb mode with `aria-hidden` on the inner svg
-  (9.2.6); this pulls `src/board` into the entry chunk.
-
-Results and report (`src/features/results`, `src/features/report`):
-- `ReportWorkspace.tsx` keeps a "No vignette open." branch that `App` now handles first (6.3).
-- PNG export is untested (no canvas in jsdom); needs the 6.R browser pass.
-- The one `@media print` light-token rule lives in `results.css` and covers both screens; it has
-  no light values for `--state-covered` and `--state-warning`.
-- Picked report charts render as nested `<figure>` elements.
-- Stored runs older than 5.3 have no `predictions` snapshot and show `[]`.
-- Factor rows carry each asset's position from the site (`src/features/report/factors.ts`);
-  an asset whose offsets both print as zero reads "at the site" (7.G). The CSV and JSON exports
-  do not carry the factor table.
-- `src/features/report/limits.ts` generates the "Simulation limits" lines from the vignette:
-  holds not flown, flat altitude, a sharp detection edge at r50 for each sensor with a logistic
-  Pd model, and the minimum-range filter for each sensor with `minRangeM` above 0 (7.G). A
-  radar-only vignette with no holds and no altitude change prints no limits list.
-- Value and interval decimals grow to a cap of 4 until value, low and high print apart
-  (`units.ts` `decimalsFor`, 7.10 and 7.F F-03); the sweep y axis is titled `<ID>, <unit>`.
-- `shared/MapSnapshot.tsx` renders through `src/board` thumb mode (9.2.6).
+- `LibraryScreen` calls `listVignettes` and `loadVignette` with no catch; in a private window
+  with no IndexedDB the saved list stays empty with no message.
+- A template copy is saved 500 ms after its first edit, not on open.
+- `Thumbnail.tsx` renders through `src/board` thumb mode, which pulls `src/board` into the entry
+  chunk.
 
 Build and budgets:
-- Measured 2026-11-01 at the 9.2.6 gate: entry 414 kB raw, 131 kB gzip JS, 26.6 kB gzip CSS;
-  the MapLibre chunk is gone. Spec section 11 allows 500 kB gzip. 9.1.R measured 56 kB before
-  the Build features entered the entry through `commands.ts`.
-- Measured 2026-10-30 (`reviews/phase-7-budgets.md`, M4 Pro): first load interactive `/` 73 ms,
-  `/build` with 40 x 15 assets 785 ms (1.2 s at 4x CPU throttle). Run 200 x 6: 2.3 s in the
-  browser, 3.05 s headless; a machine 1.6x slower misses 5 s. Likely cost: one store patch and
-  rerender per replicate (`src/state/runs.ts:188`). These numbers predate phase 9; 9.5.3
-  remeasures.
-- The Run dialog has no replicate field; Run sends `DEFAULT_RUN_N` 100 (`commands.ts`).
+- Entry measured 2026-11-01 at the 9.2.F2 gate: 415 kB raw, 131.7 kB gzip JS, 26.7 kB gzip CSS. Spec section 11 allows 500 kB gzip; phase 10 sets 300 kB after
+  the cut.
 - `e2e/perf/budgets.spec.ts` reruns the measurements: `npx playwright test -c
-  e2e/perf/playwright.perf.config.mts`, `PERF_HEADED=1` for the GPU run. Its selectors are
-  stale since 9.2.6 (above).
+  e2e/perf/playwright.perf.config.mts`, `PERF_HEADED=1` for the GPU run. Its selectors were
+  repointed in 9.2.F2.
 - The root `package.json` stays CommonJS so `legacy/test/smoke.js` runs; Vite and Playwright
   configs are `.mts`.
-
-**Fix lanes proposed by 7.2**: done in the third session as lanes 7.4 to 7.11, reviewed in
-`reviews/phase-7-fixes.md` (7.R), fixed in 7.F, and the 7.F follow-ups closed in 7.G (fourth
-session). From that review only F-18 stands, by design. The MapLibre-era items from
-`reviews/phase-4.md` (F-16, F-17), 7.5 (label obstacles, wheel drift) and 6.F (inspector
-truncation, origin overlap) were pruned from this list on 2026-11-01: the files they named
-(`map/labels.ts`, `map/hit.ts`, `map/controller.ts`, the MVP inspector) no longer exist. The
-ported board has its own items above.
 
 **Known problems for the team.**
 
 1. Ports and the browser. Port 5173 is the user's rangeboard dev server; use
-   `npm run dev -- --port 5174 --strictPort` for browser checks. Playwright serves `vite preview`
-   on 5175 (`playwright.config.mts`) and the perf spec on 5177. A Vite dev server started from
-   the main checkout may hold 5174; check `lsof -i :5174` before a browser pass. Lane dev
-   servers for parity ran on 5191 to 5196. Playwright and Claude in Chrome cannot drive native
-   HTML5 drag; use click-to-arm then click, or synthetic drag events, and say so in the report.
-   A browser GIF export is a download and did not work.
-2. The internet. The user does not allow downloads without asking. The JIATF 401 handbook and
-   the C4 criteria are local in `~/Desktop/MASTER/VALKRYN/01 - C-UAS Doctrine and Operations/`.
-   Plain-text copies need `pdftotext`. The C4 text has broken letter spacing. `npm ci` and
-   `npm uninstall --offline` work from the cache; a worker stops and reports if npm tries to
-   fetch.
-3. DroneScore wins over C4. Follow DroneScore (`docs/reference/jiatf-401.md` section b). C4 prints
-   the ID 5.5 twice. DroneScore uses 5.5b for the second.
-4. The rangeboard engine is frozen in `src/engine/sim`. `playback/killChain.ts` is a routing
-   graph, not the stage ladder. `parity.test.ts` must stay green; do not edit the transfer.
-   rangeboard itself (`~/projects/rangeboard`) is read-only.
-5. vos is read-only. Its work is on the unpushed branch `casey/diu-demo-local`. Do not edit vos.
-6. Words. User-facing T&E text uses the `stat-te-terminology` skill. Lane 5.2 ran its check on
-   the report copy; 6.3 ran it on the rest; each phase 9 lane checks its own strings.
-7. Autosave writes to IndexedDB for `localhost:5174`; a browser check leaves vignettes behind
-   that the app opens on the next load. Clear site data between checks when it matters. The
-   legacy app at `/legacy/index.html` keeps its own storage and seeds CUAS-001.
-8. The main checkout's `node_modules` still holds `maplibre-gl` from before 9.2.6; the lock
-   file no longer lists it. An `npm ci` in the main checkout removes it offline.
+   `npm run dev -- --port 5174 --strictPort` (`.claude/launch.json` "dev") for browser checks.
+   Playwright serves `vite preview` on 5175 and the perf spec on 5177. Playwright cannot drive
+   native HTML5 drag; use click-to-arm then click, or synthetic drag events, and say so in the
+   report.
+2. The internet. The user does not allow downloads without asking. Sources are local in
+   `~/Desktop/MASTER/VALKRYN/`. `npm ci --offline` and `npm uninstall --offline` work from the
+   cache; a worker stops and reports if npm tries to fetch. The mockup links Google Fonts; the
+   port bundles the same families, so no fetch is needed.
+3. DroneScore wins over C4 (`docs/reference/jiatf-401.md` section b).
+4. rangeboard (`~/projects/rangeboard`) and vos are read-only.
+5. Words. User-facing T&E text uses the `stat-te-terminology` skill.
+6. Autosave writes to IndexedDB for `localhost:5174`; clear site data between browser checks
+   when it matters. The legacy app and the mockup keep their own storage (`profileStudio.v3`
+   in localStorage for the mockup) and seed CUAS-001.
+7. The main checkout's `node_modules` was refreshed with `npm ci --offline` on 2026-11-01, so the stale `maplibre-gl` copy is gone.

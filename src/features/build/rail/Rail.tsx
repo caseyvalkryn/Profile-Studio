@@ -13,8 +13,7 @@ import { paletteCommands } from '../palette/commands';
 import { RAIL_ADD_COMMAND, railCommands } from './commands';
 import { railGroups, type RailRow } from './rows';
 
-const addCommand = (id: string) =>
-  [...railCommands, ...paletteCommands].find((c) => c.id === id);
+const addCommand = (id: string) => [...railCommands, ...paletteCommands].find((c) => c.id === id);
 
 function Row({ row, selected }: { row: RailRow; selected: boolean }) {
   return (
@@ -56,10 +55,7 @@ export function Rail() {
   const selectedKeys = useUi((s) => s.selectedKeys);
   const doc = useDocument((s) => s.doc);
   const preview = usePreview();
-  const groups = useMemo(
-    () => (doc ? railGroups(doc, units, preview) : []),
-    [doc, units, preview],
-  );
+  const groups = useMemo(() => (doc ? railGroups(doc, units, preview) : []), [doc, units, preview]);
   if (!show) return null;
   const sel = new Set(selectedKeys);
   return (

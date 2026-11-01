@@ -96,11 +96,7 @@ function ExportOpen() {
             Copy JSON
           </button>
           {rec ? (
-            <button
-              type="button"
-              className="ps-btn"
-              onClick={() => void libraryText().then(copy)}
-            >
+            <button type="button" className="ps-btn" onClick={() => void libraryText().then(copy)}>
               Copy whole library
             </button>
           ) : null}
