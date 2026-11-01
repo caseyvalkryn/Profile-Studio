@@ -26,7 +26,9 @@ These are settled. Do not reopen them without the user.
 | "Envelopes" | The layer that draws the hull around a group of threats keeps the mockup's and spec's name "Envelopes" (review 10.R N-05); the `stat-te-terminology` skill allows the term for this layer | User, 2026-11-01 |
 | Hint grey | `--text-subtle` darkens from #7b7d73 to #696b61 in the light theme (4.97:1 on the panel, 4.55:1 on the board), the nearest warm grey at WCAG AA (review 10.R N-04); the dark value stays | User, 2026-11-01 |
 | Phase 10 | Approved; `rebuild/mvp` merged into `main` (phase 11 opens from there) | User, 2026-11-01 |
-| Typeface | A new family replaces Archivo and JetBrains Mono: unique, intuitive, worthy of an operator command and control panel; elegant, modern and distinctive (the SpaceX register); not "military", not JetBrains Mono. Chosen by the user from rendered specimens in lane 11.2; one download, approved first | User, 2026-11-01 |
+| Typeface | Geist for text and Geist Mono for numbers (`@fontsource/geist`, `@fontsource/geist-mono`, OFL) replace Archivo and JetBrains Mono. The brief: unique, intuitive, worthy of an operator command and control panel; elegant, modern and distinctive (the SpaceX register); not "military", not JetBrains Mono. Picked by the user from the lane 11.2 shortlist of four on the specimen page `reviews/phase-11/type-choices.html`; the download of the two packages approved | User, 2026-11-01 |
+| Words (11.1 item 8) | The rail group keeps the mockup's "C2 and TSPI" (an allowed exception to `stat-te-terminology` rule 3, recorded in the skill's `banned-terms.md`); the Elevation label "MAX RG" becomes "Max range" | User, 2026-11-01 (poll) |
+| Phase 11 | The merge of `rebuild/mvp` into `main` approved on 2026-11-01, to be run after 11.F lands with the gate green; the push is a separate approval | User, 2026-11-01 |
 | Scope hold | The bigger pieces wait for "product complete": the vos port (phase 8), the domain fields the UI dropped (`chainTime`, sensor `model`, `entered`), and the deferred list of phase 10 | User, 2026-11-01 |
 
 ## 2. Stack
@@ -434,17 +436,21 @@ removed from the tree on 2026-11-01 (`git show 70caf07` has them); the findings 
 | 10.F | done | 130ca87 | all 12 findings fixed and 8 notes closed: the 3D drag prompt "Edit in Plan (1) or Elevation (2)" (item 13 passes), focused and event labels lead the declutter (legacy byte parity kept through per-finding source patches in `render.test.ts`; 34 snapshots updated), the perf spec runs to the end with every section 11 budget met headless (SwiftShader) and headed (M4 Pro), user-worded disabled reasons, five dead panel toggles and `stripTab` removed, MAX RG and the zero tick, rail names wrap, "full run" on one line, print hides the toast, Brief mini buttons, DE rings in the ew ink, hover to surface-3, `Swatch` friend and neutral, `Field.list`, Undo names its step, Library thumbnails edge to edge, `readout/store.ts` deleted; 52 unit files, 465 tests, 7 e2e; entry 717 kB raw, 231.9 kB gzip; nine `after-10F-*.jpg` |
 | 10.F2 | done | 20694b7 | Enter in an inspector field blurs the input after the commit, so the next Cmd+Z is the app's undo, not the input's native undo (the 10.F follow-up); 52 unit files, 466 tests, 7 e2e; entry 231.9 kB gzip |
 | 10.M | done | main | phase 10 approved by the user on 2026-11-01; `rebuild/mvp` merged `--no-ff` into `main` with the phase 11 plan and this handoff; the gate run on `main` |
+| 11.1 | done | 2aba1a0 | small defects: the selected inspector row in the rule tone; `.ps-strip` rules gone; a ring press on an unselected system drags its range and selects it (principle 2.3 over mockup line 443); cards keep the Build pan and zoom, a 3D card keeps the fitted frame and the toast says so; Add waypoints appends to the selected path (`placing.pathId`) and starts a new threat only when none is selected; one listing read per screen with a parsed-record cache in `persist.ts`; the Elevation max range label clear of the top tick; "Max range" replaces "MAX RG", "C2 and TSPI" kept (user poll); two parity patches in `render.test.ts`; 54 unit files, 476 tests, 7 e2e; entry 232.48 kB gzip; 13 screenshots `reviews/phase-11/11.1-*.jpg`; open: the board hint in append mode still says "place the start waypoint" (`gestures.ts` hintText), for 11.F |
+| 11.2 | done | 9122b24 | Geist and Geist Mono (`@fontsource/geist`, `@fontsource/geist-mono` 5.3.0, OFL) replace Archivo and JetBrains Mono: the user picked from the shortlist of four (Geist, Instrument Sans, Manrope, Recursive) on `reviews/phase-11/type-choices.html`, the one approved download; old packages uninstalled offline; `base.css` imports and `tokens.css` families; tabular figures confirmed at 12 px (tnum takes effect); x-height 0.530 against Archivo 0.526 and Geist Mono 0.530 against JetBrains Mono 0.550, no size step crosses half a pixel, so the five sizes and line heights stay; `--strip` and `--spacing-strip` removed with their last user; principle 5.9 amended (spec section 7 names no family); 52 unit files, 466 tests, 7 e2e on the lane; entry 231.86 kB gzip, 100 kB of woff2 outside the entry; 13 screenshots `reviews/phase-11/type-before-*.jpg` and `type-after-*.jpg` |
+| 11.R | done | 4d340b5 | `reviews/phase-11.md`: 0 blockers, 2 majors (every reach element carries the range role, so a press on a sector edge, the min range ring or a limit ray sets max range to the press distance; `render.card` drops the card's zoom and centre, so the Brief stage, thumbnails and print draw every card at the fitted frame), 5 minors (the append hint, the leg readout left by Escape, the 3D note in a toast only, the `offGlyph` tolerance, "fitted 3D frame" wording), 10 notes; the Geist lane clean in light, dark and print; ring drag, selected row, append, Library thumbnails and the entry budget pass; 28 screenshots `R-*.jpg` |
+| 11.F | done | 23d7e2b | all 7 findings and N-05 fixed: the range role only on the max range ring (`data-role="range"` in `reach.ts`, `Hit.part` in `hitAt`, the arc test in `beginDrag`; a press on a sector edge, the min range ring or a limit ray selects and starts nothing); the card's zoom and centre in `CardRec.cam`, drawn by `render.card` on the Brief stage, the strip thumbnails and print, 3D cards keep the default view; the append hint names the path and the leg readout shows after the first point; Escape ends an append and clears the readout; the 3D note in the strip line, the toasts without "fitted"; `offGlyph` on the `hitAt` tolerance with the touch flag; `saveVignette` and `deleteVignette` keep the cached listing current; four parity patches; 54 unit files, 481 tests, 7 e2e; entry 233.04 kB gzip; seven `after-11F-*.jpg`; open: the Library thumbnail draws the first card at the fitted frame (`scene.ts` has no frame); the Elevation limit rays are covered by code only |
+| 11.M | done | main | phase 11 merge into `main` approved by the user on 2026-11-01; `rebuild/mvp` merged `--no-ff` into `main` with this handoff; the gate run on `main`; not pushed |
 
 ## 8. Handoff
 
-State on 2026-11-01, end of the tenth session. Phase 10 is approved and merged into `main`
-(section 7, row 10.M). `rebuild/mvp` and `main` hold the same tree: lanes 10.1 to 10.6, the
-review 10.R, the fix lanes 10.F and 10.F2 and three wiring commits, with the gate green: 52 unit
-files, 466 tests, 7 Playwright specs on `vite preview`, build; entry 717 kB raw, 231.9 kB gzip
-(budget 300). Spec section 12 items 2, 3, 4, 9, 10 and 12 to 25 pass (`reviews/phase-10.md`).
-The first-use goal is met in five actions. Every section 11 budget is met headless and headed.
-Tag `pre-pivot` (d1f56d1) holds the last head with the run and score code. No lane is in
-flight; no worktree exists. Nothing was installed since 2026-10-31.
+State on 2026-11-01, end of the eleventh session. Phase 11 is done, approved for the merge and
+merged into `main` (section 7, row 11.M). `rebuild/mvp` and `main` hold the same tree: lanes
+11.1 and 11.2, the review 11.R and the fix lane 11.F, with the gate green: 54 unit files, 481
+tests, 7 Playwright specs on `vite preview`, build; entry 720 kB raw, 233.0 kB gzip (budget
+300); 100 kB of Geist woff2 outside the entry. The type is Geist and Geist Mono (section 1,
+"Typeface"); the two packages were the one download of the session. Tag `pre-pivot` (d1f56d1)
+holds the last head with the run and score code. No lane is in flight; no worktree exists.
 
 **The product.** A polished version of the v3 mockup `legacy/mockup-v3.html` (served at
 `/legacy/mockup-v3.html`): three workspaces (Library, Build, Brief), one board with three
@@ -455,9 +461,10 @@ is a source of parts.
 **Decisions.** Section 1 has all of phase 10 and the three of 2026-11-01 that open phase 11:
 phase 10 approved and merged, the typeface direction, the scope hold.
 
-**Next: phase 11** (section 6). Lane 11.1 closes the small defects; lane 11.2 establishes the
-typeface from specimens the user picks by poll; 11.R and 11.F follow; then the merge into
-`main` with approval. The bigger pieces are held for "product complete" (section 6, "Held").
+**Next.** No phase is open. The plan ends at phase 11; the held list (section 6, "Held for
+product complete": the vos port, the dropped domain fields, the phase 10 deferred list) and the
+review notes below return only when the user asks. The next session starts by asking the user
+which of them, if any, opens phase 12, and writes that phase into section 6 before any lane.
 
 **Orchestrator prompt.** Paste this to start the next session:
 
@@ -466,16 +473,15 @@ You are the orchestrator for Profile Studio at /Users/caseytalbot/Projects/profi
 branch rebuild/mvp. Read CLAUDE.md, docs/design-principles.md, docs/spec.md, then docs/plan.md
 sections 1 to 5, phases 10 and 11 in section 6, then 7 and 8. Start the dev server from
 .claude/launch.json ("dev", port 5174) and use the product at / beside the mockup at
-/legacy/mockup-v3.html for ten minutes. Run `npm run gate` to confirm the baseline: 52 unit
-files, 466 tests, 7 Playwright specs, build.
+/legacy/mockup-v3.html for ten minutes. Run `npm run gate` to confirm the baseline: 54 unit
+files, 481 tests, 7 Playwright specs, build.
 
-Phase 11: first ask me, with a poll, the two word choices lane 11.1 item 8 names. Then launch
-11.1 and 11.2 in one message (disjoint files). Lane 11.2 stops after its shortlist and asks me
-by poll which packages to download; nothing is fetched before I say so. Then 11.R and 11.F,
-then bring me the result for approval. Plan section 5 rules apply: one worker per lane in a
-worktree under .worktrees/<id>, workers do not commit, gate and git diff --stat before each
---no-ff merge, gate on rebuild/mvp after, worktree removed, sections 7 and 8 updated. Put every
-decision to me with the poll tool as soon as it is known.
+No phase is open. Ask me, with a poll, which of the held items (section 6 "Held for product
+complete") and the section 8 open items opens phase 12, then write the phase into section 6
+with lanes, owned files and budgets before any lane starts. Plan section 5 rules apply: one
+worker per lane in a worktree under .worktrees/<id>, workers do not commit, gate and git diff
+--stat before each --no-ff merge, gate on rebuild/mvp after, worktree removed, sections 7 and 8
+updated. Put every decision to me with the poll tool as soon as it is known.
 
 Ask me before any download (npm install included), any push, and any merge to main.
 ```
@@ -505,13 +511,25 @@ that add a control with the same accessible name break the e2e selectors; name c
 screen. A legacy or mockup claim in a worker report is checked against the file and line (rule
 14).
 
+**Lessons from phase 11.** A worker that decides against a mockup line on a principle (11.1
+item 3) needs the hit model stated in the brief: the lane gave the range role to every reach
+element because they all carry `data-k="system"`, and the review found the sector edge press
+(F-01). A plan item that says "store" a frame is read as store only; say "store and draw"
+(F-02). A specimen page at `reviews/phase-11/type-choices.html` (Google Fonts at view time,
+nothing installed) let the user pick a typeface before any download; the plan's step 3
+specimens per candidate were not needed.
+
 **Approvals on record.** 2026-10-30: the phase 0 commits, the first phase 1 commit, three
 merges to `main` with pushes, the Playwright Chromium download. 2026-10-31: the install of
 `@fontsource/archivo`, `@fontsource/jetbrains-mono` and `lucide-react`, `npm ci` per worktree,
 the push of the phase 9 plan. 2026-11-01: the pivot (phase 10), decision 1 ("Delete it"),
 decision 3 ("Yes, warm palette"), the kickoff prompt (decisions 2 and 4; lanes 10.2 to 10.F
 with their commits and `--no-ff` merges into `rebuild/mvp`), "Envelopes" kept, the hint grey
-darkened to AA, phase 10 approved, two pushes of `rebuild/mvp`, the merge into `main` and its push; no install.
+darkened to AA, phase 10 approved, two pushes of `rebuild/mvp`, the merge into `main` and its push; no install. Later on 2026-11-01 (phase 11): the two
+word choices ("C2 and TSPI" kept, "Max range"), the download of `@fontsource/geist` and
+`@fontsource/geist-mono` (the user's pick of Geist from the specimen page
+`reviews/phase-11/type-choices.html`), the merge of phase 11 into `main`. No push of phase 11
+was approved.
 
 **How to run a lane.** `git worktree add .worktrees/<id> -b lane/<id> rebuild/mvp`, then
 `npm ci --offline` there (stop and ask if it tries to fetch). Parallel lanes each run the full
@@ -521,13 +539,22 @@ servers for pairs on 5191 to 5197). The worker does not commit. The orchestrator
 `rebuild/mvp`, runs the gate there, removes the worktree and deletes the branch, then updates
 section 7. Workers are picked by `~/.claude/rules/delegation.md`.
 
-**Open items.** Each came from a worker report or the review. Items phase 10 closed are gone;
-`git show 0b216e2:docs/plan.md` has the list before 10.F. The items 10.F and the review left
-open (the selected row tone, the `.ps-strip` rules, the ring press on an unselected system, the
-Brief and 3D card frames, Add waypoints appending to the selected path, the Library's record
-loads, the "MAX RG" gap, the "C2 and TSPI" and "MAX RG" words) are lane 11.1 in section 6, not
-repeated here. Left as notes from the review: N-10 (data product React keys are indexes), N-21
-(the mockup's stage renders pushed down in headless capture). The perf spec does not measure
+**Open items.** Each came from a worker report or a review. The lane 11.1 items are closed
+(section 7). Left from the phase 11 review (`reviews/phase-11.md`, notes): N-02 Add waypoints
+arms the selected threat in Elevation and the first click there says "Press P to add in Plan";
+N-03 a 3D card drops the axon zoom as well as the pan (the camera has a zoom; keep it if the
+user wants); N-04 "Max range" at range 0 sits in the height tick column, legible but crowded;
+N-06 the parsed-record cache keys on `updated`, so an import that keeps id and `updated` but
+changes content draws the old thumbnail; N-07 numbers in the Geist text voice are proportional
+(waypoint numbers, the "Max range" box, labels such as "Loiter 60 s"), every numeric column is
+Geist Mono and tabular; N-08 Geist draws capital I and lower-case l as bare strokes, no id is
+set in the text voice; N-09 board marks at 7 and 8 px ask for weight 700, which is not bundled,
+so the browser synthesizes it from 500; N-10 live sizes off the five pairs (11/14.67 rail mono
+columns, 12/15 rail names, 13/13 top bar buttons, 11/18 rail group heads, 12/18), for a type
+pass. From 11.F: the Library thumbnail draws the first card at the fitted frame (`scene.ts`
+carries no frame); the Elevation limit rays are covered by code only, no test presses one.
+Left from the phase 10 review: N-10 (data product React keys are indexes), N-21 (the mockup's
+stage renders pushed down in headless capture). The perf spec does not measure
 the deck PDF (the review timed 20 pages at 162 ms by hand) or a long-task quiet window for
 "interactive"; preview latency is taken at the DOM mutation.
 
@@ -574,7 +601,6 @@ From lanes 10.2 to 10.6:
    when it matters. The legacy app and the mockup keep their own storage (`profileStudio.v3`
    in localStorage for the mockup) and seed CUAS-001.
 
-**Pruned on 2026-11-01 for this handoff.** The small open items moved into lane 11.1; the
-previous section 8 (the tenth-session kickoff text, the 10.1 open items that 10.2 to 10.6 closed: Class, the top bar version, Kbd and Tooltip
-sizes, Showcase `run.run`, the 900 px top bar, the FOV clamp, the persist comments, the
-Prettier item, the readout panel, the nudge arrows). `git show 0b216e2:docs/plan.md` has it.
+**Pruned on 2026-11-01 for this handoff.** The phase 11 kickoff text and the lane 11.1 open
+list (closed in section 7); `git show 5bb3922:docs/plan.md` has them. Earlier prunes:
+`git show 0b216e2:docs/plan.md` has the section 8 before 10.F.
