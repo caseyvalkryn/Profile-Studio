@@ -492,7 +492,7 @@ lists every difference as intended (cite the spec line) or a defect. Parity with
 app is no longer the bar; the mockup's simplicity is. Budgets: entry under 300 kB gzip after
 10.1; the spec section 11 rows stay.
 
-#### 10.1 Cut (`opus-high`, 3000 s, after the user's decision 1)
+#### 10.1 Cut (`opus-high`, 3000 s; done 2026-11-01, merged at 59eb86f)
 
 Remove the run and score surface: `src/engine/sim/`, `adapter.ts`, `run.ts`, `score.ts`,
 `sweep.ts`, `headless.test.ts`, `src/workers/`, `src/state/runs.ts`, `src/features/results/`,
@@ -642,13 +642,16 @@ merge. Open items live in section 8, not here.
 | 9.2.6 | done | 17920d1 | Build wired from the rail, board, readout panel, inspector and the MVP timeline (kept until 9.3); rail, palette, menu and board commands registered in place of the stubs; one Escape owner (`app.escape`, nine steps); readout on `boardDerived(v).at`; `previewOf` passes group keys; `map/`, `assets/`, `profile/` and `maplibre-gl` removed (offline uninstall, 23 packages, nothing fetched); Thumbnail and MapSnapshot on `src/board` thumb mode; e2e helpers and five specs repointed; units deduped into `tokens.ts legacyUnits`; `src/board` ESLint fence; Elevation gate fixed to `needDoc`; entry 131 kB gzip; 82 unit files, 713 tests, 13 e2e; eight parity pairs |
 | 9.2.F1 | done | 24a5a13 | root causes: sticky camera bounds in `useBoard` (an add or drag no longer refits Plan or 3D; Fit or a new profile recomputes; a deliberate deviation: legacy `44-render.js:71` recomputes every render); Elevation opens From asset with `view.elevationMode` and a bar control; `time.cursor` (T) replaces the 9.3.2 stub with `ui.timeOn`, off by default, turned on by scrub, play, the step keys, Home and End; e2e 12-02 and 12-03 read positions in the original geometry again; 721 tests |
 | 9.2.F2 | done | 91ab1f6 | hygiene: `ladder` alias removed from `derived.ts` (the parity test rebuilds rungs from `stages`); redundant stack subscription removed from `gestures.ts`; `board.css` scoped under `:where(svg.board, svg.chart)`; palette labels "Delete height plane", "Delete event", "Delete card" (the menu keeps "Delete"); readout follows `useBoard.ref` and prints "at t+0:30"; perf spec selectors repointed; Prettier run on 19 files that predated the lanes; 722 tests, entry 131.7 kB gzip |
+| 10.1 | done | 59eb86f | the cut: `src/engine/sim` (81 files), `adapter`, `run`, `score`, `sweep`, `headless.test`, `src/workers`, `runs.ts`, Results, Report, the Run button and notes, the hypotheses and chain time blocks, run and sweep commands, recharts (offline uninstall, 37 packages), seven e2e specs; three workspaces, `/results` and `/report` redirect to Build; v6 run fields kept `@deprecated` so stored records parse; spec sections 1, 4, 6, 7, 8, 11, 12 and the principles amended; 129 files deleted, 52k lines; 49 unit files, 436 tests, 6 e2e; entry 708 kB raw, 229 kB gzip (the former lazy `ui` chunk now sits in the entry; the three chunks of 9.2 summed 363 kB gzip) |
+
 
 ## 8. Handoff
 
-State on 2026-11-01, end of the ninth session. `rebuild/mvp` is at 91ab1f6 (the merge of 9.2.F2; one docs and formatting commit follows it) with the
-gate green: 82 unit files, 722 tests, 13 Playwright specs on `vite preview`, build. Sub-phase 9.2 is merged (lanes 9.2.1 to 9.2.6, node-fov) and its
-root-cause fix lanes 9.2.F1 and 9.2.F2 are merged (section 7). No lane is in flight; no
-worktree exists. `main` is at 21e96c2 on `origin`; `rebuild/mvp` is ahead of `origin`.
+State on 2026-11-01, end of the ninth session. `rebuild/mvp` is at 59eb86f (the merge of
+10.1; one plan commit follows it) with the gate green: 49 unit files, 436 tests, 6 Playwright
+specs on `vite preview`, build. Sub-phase 9.2 is merged with its root-cause fix lanes 9.2.F1
+and 9.2.F2, and phase 10 lane 10.1 (the cut) is merged (section 7). Tag `pre-pivot` (d1f56d1)
+holds the last head with the run and score code. No lane is in flight; no worktree exists. `main` is at 21e96c2 on `origin`; `rebuild/mvp` is ahead of `origin`.
 Nothing was pushed and nothing was installed in this session (`npm ci --offline` per worktree
 only).
 
@@ -670,12 +673,13 @@ You are the orchestrator for Profile Studio at /Users/caseytalbot/Projects/profi
 branch rebuild/mvp. Read CLAUDE.md, docs/design-principles.md, docs/spec.md, then docs/plan.md
 sections 5, 6 (phase 10), 7 and 8. Open legacy/mockup-v3.html in a browser from the dev server
 (port 5174, path /legacy/mockup-v3.html) and use it for ten minutes: Compose, Brief, Collect.
-That is the product. Run `npm run gate` to confirm the baseline: 82 unit files, 722 tests, 13 Playwright specs on `vite preview`, build.
+That is the product. Run `npm run gate` to confirm the baseline: 49 unit files, 436 tests, 6
+Playwright specs on `vite preview`, build.
 
 Phase 10 is the work: the build becomes a more polished version of the mockup on the existing
-domain, state and board. Start by putting the four decisions at the head of phase 10 to me and
-record each answer as a row in section 1. Then 10.1 (the cut), then 10.2, 10.3 and 10.4 in one
-message, then 10.5, 10.6, 10.R, 10.F, then my approval. Section 5 rules apply: one worker per
+domain, state and board. Decision 1 is taken and 10.1 is merged. Start by putting decisions 2,
+3 and 4 at the head of phase 10 to me and record each answer as a row in section 1. Then 10.2,
+10.3 and 10.4 in one message, then 10.5, 10.6, 10.R, 10.F, then my approval. Section 5 rules apply: one worker per
 lane in a worktree under .worktrees/<id>, workers do not commit, gate and git diff --stat
 before each --no-ff merge, gate on rebuild/mvp after, worktree removed, status table and
 section 8 updated. Every UI brief names the mockup lines it ports and asks for a pair of
@@ -688,17 +692,17 @@ Ask me before any download (npm install included), any push, and any merge to ma
 `legacy/mockup-v3.html` whole (541 lines; the modes start at line 374). Run `npm run gate` once.
 Then:
 
-1. Put the four decisions at the head of phase 10 to the user. Tag `pre-pivot` at the current
-   head before 10.1 so the run and score code stays one checkout away.
-2. Launch 10.1 alone. Its brief carries the file list in section 6 and the spec and principles
-   amendments; the orchestrator reads the amended spec before cutting the next briefs.
+1. Put decisions 2, 3 and 4 at the head of phase 10 to the user (10.1 is done; `pre-pivot`
+   is tagged).
+2. Read the amended spec sections 1, 4, 6, 7 and 12 before cutting the next briefs.
 3. Launch 10.2, 10.3 and 10.4 in one message (disjoint folders: inspector; bar, strip and the
    cards slice; brief). Then 10.5, then 10.6, then 10.R and 10.F.
 4. Record each merge in section 7 and the review in `reviews/phase-10.md` with pairs under
    `reviews/phase-10/`.
 
 **This session against the request.** The user asked for a review of the 9.2 work against the
-plan, root-cause corrections, clean code, a sound product and the handoff.
+plan, root-cause corrections, clean code, a sound product and the handoff; then took decision 1
+and lane 10.1 ran.
 
 - Review: the handoff's own lane-by-lane table (previous section 8) was checked against the
   code. One claim was wrong: "the board refits on every scene change; legacy keeps the camera".
@@ -748,9 +752,10 @@ merge to `main` with a push, and the Playwright Chromium download, all on 2026-1
 and a third push and merge to `main` at the end of the third and fourth sessions (2026-10-30).
 Seventh session (2026-10-31): the install of `@fontsource/archivo`, `@fontsource/jetbrains-mono`
 and `lucide-react` plus `npm ci` per worktree, and sub-phase 9.1 closed. Eighth session: the
-node-fov lane. Ninth session (2026-11-01): the user set the pivot (phase 10) and asked for the
-root-cause fixes; no push, no install, no merge to `main`. The four phase 10 decisions and the
-`pre-pivot` tag are not yet approved.
+node-fov lane. Ninth session (2026-11-01): the user set the pivot (phase 10), asked for the
+root-cause fixes, and took decision 1 ("Delete it"), which authorised lane 10.1 and the
+`pre-pivot` tag; no push, no install (two offline uninstalls: `maplibre-gl` in 9.2.6, `recharts`
+in 10.1), no merge to `main`. Decisions 2, 3 and 4 are open.
 
 **How to run a lane.** `git worktree add .worktrees/<id> -b lane/<id> rebuild/mvp`, then
 `npm ci --offline` there (stop and ask if it tries to fetch). Parallel lanes each run the full
@@ -763,7 +768,22 @@ section 7. Workers are picked by `~/.claude/rules/delegation.md`.
 **Open items.** Each came from a worker report or a review; none is a guess. Items that phase
 10 removes are not listed; `git show dfd96f5:docs/plan.md` has the full 9.2 list.
 
-Inherited by phase 10 (from the 9.2 reports and this session):
+From lane 10.1 (the cut), for 10.2 to 10.5:
+- `chainTime` stays in the domain because `preview.ts` and `derived.ts` read it; only its
+  inspector block went. 10.2 decides whether it shows as a Site field.
+- The sensor `model` and the asset `entered` fields stay live in the domain and the templates
+  write them; their UI is gone. 10.2 or 10.5 removes them or shows them.
+- `src/state/persist.ts` comments still mention run results (10.5 owns the file).
+- The `CommandButton` `accent` variant (now used only by the Elevation segments) and some
+  `shared/units.ts` helpers are unused; `src/ui/Showcase.tsx` keeps a static demo item
+  `run.run` that is not registered.
+- Spec sections 2, 5, 9 and 10 and acceptance item 17 still describe runs, the AAR and the
+  run-row CSV; 10.5 (v7 schema) amends them.
+- The entry chunk is 708 kB raw, 229 kB gzip, under the 300 kB budget. The former lazy `ui`
+  chunk (Radix, cmdk) now sits in the entry because no lazy route remains; a lazy Brief in 10.4
+  may bring it back down.
+
+Inherited from 9.2 (from the 9.2 reports and this session):
 - The field-of-view commit in the inspector has no clamp (0 on a sensor or over 360 is refused
   on reload). 10.2 clamps 1 to 360.
 - Rail threat names truncate at 232 px. 10.3 or 10.6.
@@ -822,8 +842,8 @@ Library (`src/features/library`):
   chunk.
 
 Build and budgets:
-- Entry measured 2026-11-01 at the 9.2.F2 gate: 415 kB raw, 131.7 kB gzip JS, 26.7 kB gzip CSS. Spec section 11 allows 500 kB gzip; phase 10 sets 300 kB after
-  the cut.
+- Entry measured 2026-11-01 at the 10.1 gate: 708 kB raw, 229 kB gzip JS, 26.3 kB gzip CSS
+  (one chunk). Spec section 11 now allows 300 kB gzip.
 - `e2e/perf/budgets.spec.ts` reruns the measurements: `npx playwright test -c
   e2e/perf/playwright.perf.config.mts`, `PERF_HEADED=1` for the GPU run. Its selectors were
   repointed in 9.2.F2.
