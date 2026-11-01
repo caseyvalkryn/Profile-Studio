@@ -1,25 +1,29 @@
 # Profile Studio MVP specification
 
 Status: definitive for the MVP and the upgrade. Date: 2026-10-30, amended 2026-10-31 from
-`docs/reference/artifact-study.md` (sections 1, 2, 5 to 8, 10 to 12). Read
+`docs/reference/artifact-study.md` (sections 1, 2, 5 to 8, 10 to 12), amended 2026-11-01 in
+lane 10.1 (sections 1, 4, 6, 7, 8, 11, 12). Read
 `docs/design-principles.md` first. When this spec and a principle disagree, the principle wins
 and this spec is corrected. The word "vignette" in code and in sections written before the
 amendment means the record the UI calls a profile.
 
 ## 1. Product
 
-Profile Studio is a counter-UAS test planning tool. A test planner builds a vignette on a map,
-states a question and a hypothesis, simulates the vignette, and reads the result as DroneScore
-measures grouped by F2T2EA. The planner compares runs and exports an after action report (AAR).
+Profile Studio is a counter-UAS test planning tool. A test planner creates, iterates and briefs
+test profiles as interactive, detailed mockups. The planner builds a profile on a map. The
+profile states one question, its data products and its measures of performance by DroneScore
+ID, grouped by F2T2EA. The planner saves views as cards and briefs the profile from the app.
+Profile Studio plans real tests. It does not run or score them. The product is a more polished
+version of the v3 mockup `legacy/mockup-v3.html` (pivot of 2026-11-01, plan phase 10).
 
 **User.** A test engineer or evaluator. A domain expert, not a programmer. The user knows C-UAS
 sensors, effectors, threats and test design. The user does not know the app.
 
-**First-use goal.** With no help, a new user opens a template, moves one sensor, runs the
-vignette, reads one measure against its threshold and exports the AAR in under 10 minutes.
+**First-use goal.** With no help, a new user opens a template, moves one sensor, saves a card
+and briefs it in under 10 minutes.
 
-**Non-goals.** Backend, accounts, multi-user editing, vos integration, live data feeds, false
-alarm simulation, real-system specification library. Each is a later phase.
+**Non-goals.** Running or scoring a test. Later phases: backend, accounts, multi-user editing,
+vos integration, live data feeds, false alarm simulation, real-system specification library.
 
 **Upgrade (2026-10-31).** The MVP passed its acceptance suite on 2026-10-30. The upgrade brings
 the app to the capability of the legacy app and past it: a New profile flow, the legacy type
@@ -28,13 +32,6 @@ authored events with a debrief overlay, record round-trip, and a Brief workspace
 It is delivered as a one-to-one port of the legacy interface onto the MVP engine (plan section 6,
 phase 9). Scope and decisions are in `docs/reference/artifact-study.md`. The first-use goal does
 not change.
-
-**Pivot (2026-11-01).** The user set the purpose: Profile Studio creates, iterates and briefs
-test profiles as interactive, detailed mockups. It plans real tests; it does not run them. The
-product is a more polished version of the v3 mockup `legacy/mockup-v3.html`. Lane 10.1
-(`docs/plan.md` phase 10) amends sections 1, 4, 6, 7, 11 and 12 to that purpose once the user
-confirms the cut of the run and score surface. Until then the sections below describe the
-build as it stands.
 
 ## 2. Terms
 
@@ -90,17 +87,14 @@ Use these words in the UI. One word for one thing. The code keeps the type names
    hypotheses use `Q-01` and `H-01`.
 6. **Terminology.** User-facing T&E words follow the `stat-te-terminology` skill.
 
-## 4. Measure sources
+## 4. One question, one profile, one brief
 
-Each DroneScore row has one source class in the app. The scorecard shows the class beside the
-value.
-
-| Class | Rows | How the app gets the value |
-| --- | --- | --- |
-| Simulated | 1.1.1, 1.1.2, 1.1.3, 1.1, 1.2, 1.5, 1.2.1, 1.2.2, 1.2.3, 2.1.1, 2.1.2, 2.1.3, 2.1.3t, 2.1.4, 3a.2, 3b.1, 3.1.1, 3.1.2, 3.1.3, 3.1.4, 5.1, 5.4, 5.4e | Aggregated from replicate run rows |
-| Entered | 1.3, 1.4, 1.6, 1.7, 1.8, 2.1, 2.2, 2.3, 2.4, 2.5, 3a.1, 3a.3, 3b.2, 5.2, 5.2e, 5.5, 5.5b, 5.6, INT-1 to INT-14 | Typed on the asset as a vendor sheet value. Some feed the simulation, for example 1.3 field of view |
-| Derived | 5.3, 5.8 | Computed from other values with the DroneScore formula |
-| Not simulated | 1.1.4, 4.1.1, 4.1.2, 4.2.1, 4.2.2, 5.1.1, 5.2.1, 5.3.1, 5.3.2, 5.7 | Shown greyed with the reason: specialist test, day closeout or a model the MVP does not have |
+1. A profile states one question. Every other part of the profile serves that question.
+2. The profile names its data products: the data the test must collect to answer the question.
+3. The profile states its measures of performance by DroneScore ID and name, each under one
+   F2T2EA step, with its threshold. See `docs/reference/dronescore-measures.md`.
+4. The brief carries the question, the data products and the measures to the test team. The
+   app plans the test. It does not run or score it.
 
 ## 5. Data model
 
@@ -193,47 +187,24 @@ Upgrade rules for the record:
 ## 6. Engine
 
 Pure TypeScript in `src/engine/`. No React, DOM or store imports. A lint rule enforces this.
+The engine plans. It does not simulate replicates or score measures.
 
-1. **Preview.** `preview(v: Vignette): Preview`. Expected-value geometry: coverage windows per
+1. **Geo.** `src/engine/geo.ts`. Geometry and timing ported from `legacy/js/20-geo.js`: metres,
+   seconds, bearings clockwise from north. Positions along a path, ranges, coverage windows.
+   The numbers match the legacy app, so the `fixtures/legacy-derive/` parity holds.
+2. **Preview.** `preview(v: Vignette): Preview`. Expected-value geometry: coverage windows per
    sensor and threat, first detection, the F2T2EA stage times, area entry times. It runs on every
-   edit. Budget: 100 ms for 40 threats and 15 sensors. Port the legacy derive logic
-   (`docs/reference/legacy-app.md`) and replace its `splitTimes` loop with an incremental method.
-2. **Run.** `run(v: Vignette, n: number, seed: number): { rows: RunRow[]; trace: RunTrace[] }`.
-   `RunRow` holds only DroneScore fields; `RunTrace` carries the stage times and positions for
-   the timeline, including the Target time. Monte Carlo replicates in a
-   Web Worker, seeded and repeatable. Transfer and modify the rangeboard engine
-   (`docs/reference/rangeboard-parts.md`). Models for the MVP:
-   - Radar Pd by Swerling case against signal to noise ratio over range.
-   - RF, EO/IR and acoustic Pd as a logistic curve with a 50 percent range parameter.
-   - RF detection only for a threat that emits.
-   - Track initiation by M of N detections. Track loss after a coast time.
-   - Classification and identification after a dwell, with a correct-ID probability.
-   - Engagement when the threat is identified and inside effector reach, after the Target chain
-     time. Effect after time to effect, with Pk.
-   - Track error as Gaussian noise per sensor.
-3. **Measures.** `score(rows: RunRow[], settings: MeasureSetting[]): Score[]`. Proportions use a
-   Wilson 95 percent interval. Ranges and times use the mean with a 95 percent percentile
-   bootstrap interval. Each score has value, interval, threshold and evaluation: Meets, Does not
-   meet, or Inconclusive (the interval spans the threshold).
-4. **Sweep.** `sweep(v, factor, levels, n, seed)`. MVP factors: threat speed, threat altitude,
-   approach bearing, sensor range, sensor position offset. One or two factors.
-5. **At time t** (upgrade). `at(p: Preview, threatKey, tS, ref): Readout` gives position, range,
-   altitude, speed, closing speed, time to the asset, geometric window, engage margin and the
-   covering sensors. It feeds the readout strip, the drag labels and caption tokens.
-6. **Tokens** (upgrade). `resolveTokens(text, p, tS, ref)` replaces `{id.key}` with the value
-   at t. Keys: `rng`, `alt`, `spd`, `vc`, `tta`, `window`, `margin`, `see:<threatId>` on a
-   sensor id. An unknown id or key leaves the token as typed and reports the reason.
-7. **Event warnings** (upgrade). `checkEvents(v, p): Warning[]` flags an authored event that
-   contradicts geometry: a detect before any sensor can see the path, an engage outside every
-   effector reach, an event after the path ends. Each warning names the event and the reason.
-8. **Debrief** (upgrade). `resample(debrief, intervalS)` gives flown positions on the preview
-   time base and the flown stage times for the timeline. Pure data, no store.
+   edit. Budget: 100 ms for 40 threats and 15 sensors.
+3. **Derived.** `derived(v, p)`. The renderer's object, built from the preview and keyed by
+   display id: stages, windows, first and last sight, system times and event warnings. The
+   readout at time t (`at`), caption tokens, envelopes, the track line, crossings, stops and the
+   range series read from it.
 
-Every engine function is deterministic for a given input and seed. Tests use fixed seeds.
+Every engine function is deterministic for a given input.
 
 ## 7. Screens
 
-Five workspaces in a top bar: Library, Build, Results, Report, Brief. The command palette
+Three workspaces in a top bar: Library, Build, Brief. The command palette
 (Cmd+K) is available everywhere. The top bar also holds New, undo and redo with the pending
 label, the units toggle and the theme control (auto, light, dark).
 
@@ -254,11 +225,11 @@ bar. Every other panel starts hidden (principle 5.8).
 - Right: the inspector for the selection. It shows only the fields of that kind, with units.
   Areas show bottom and top. Authored events show type, time, path, sensor and any warning.
 - Bottom: the timeline with one lane per F2T2EA step and one row per threat. Each row shows the
-  planned beads (authored events), the simulated stage times of the latest run, and the flown
-  times when debrief data is loaded. Play, pause, scrub, loop; Shift-drag sets the loop; drag a
+  planned beads (authored events), the preview stage times, and the flown times when debrief
+  data is loaded. Play, pause, scrub, loop; Shift-drag sets the loop; drag a
   bead to retime it, snapping to a geometry crossing within 3 s. R cycles the strip between
   timeline, chart and readout.
-- Top: profile name, the active question, Run, the view switch (Plan, Elevation, 3D).
+- Top: profile name, the active question, the view switch (Plan, Elevation, 3D).
 - Hidden until asked: layer chips (Shift+1 to 8, one chip per `LayerId`), the readout strip
   (follows selection then hover, pins a baseline, shows deltas during a drag), the chart strip,
   the authored-event list, the debrief panel (paste TSPI or load a CSV), the snapshot list.
@@ -296,17 +267,6 @@ bar. Every other panel starts hidden (principle 5.8).
 - Phone: the stage fills the width, Back, dots and Next replace the aids, a swipe changes card.
 
 **Theme.** One control cycles auto, light and dark. Auto follows the system. The choice persists.
-
-**Results.** The scorecard: DroneScore measures grouped by F2T2EA, then areas 4 and 5 below as
-system results. Each row: ID, name, value with interval, threshold, evaluation, source class.
-Click a row to see its chart. Compare up to four runs side by side. Sweep results show as a line
-chart (one factor) or a heat map (two factors).
-
-**Report.** The AAR composer. Sections in fixed order: question, hypothesis and prediction,
-setup (map snapshot and factor table), results (scorecard and charts), evaluation, scope of
-inference, next test. The user can add a note to any section and pick which charts appear.
-Upgrade: the setup and results sections can also embed a card, rendered at its view and time,
-and the data list (`report.dataSources`) is editable here.
 
 ## 8. Interaction
 
@@ -354,7 +314,6 @@ bypasses every snap.
 | Left, Right | Step time 1 s, with Shift 10 s |
 | Cmd+D | Duplicate |
 | Cmd+C, Cmd+V | Copy, paste |
-| Cmd+Enter | Run |
 | F | Fit view |
 | M | Measure tool |
 | U | Units toggle |
@@ -425,9 +384,8 @@ orbit, racetrack, hover and stare, terminal dive, split, multi-axis salvo.
 | --- | --- |
 | Map drag | 60 frames per second with 40 threats and 15 sensors |
 | Preview after an edit | 100 ms |
-| Run of 200 replicates, 6 threats | 5 s, in the background, with progress |
 | First load | Interactive in 2 s on a laptop |
-| Entry bundle | 500 kB gzip. The port removes MapLibre (286 kB gzip lazy today); the fonts load outside the entry |
+| Entry bundle | 300 kB gzip. The fonts load outside the entry |
 | 3D view | The map drag budget: 60 frames per second with 40 threats and 15 sensors, same renderer as Plan |
 | Capture | 300 ms |
 | Deck PDF | 20 cards print in 10 s |
@@ -436,21 +394,26 @@ orbit, racetrack, hover and stare, terminal dive, split, multi-axis salvo.
 
 The MVP is done when all of these pass in the end-to-end suite:
 
-1. A new user opens "Point defence, single quadrotor", runs it, and sees 1.1.2 with a value,
-   interval, threshold and evaluation.
+1. ~~A new user opens "Point defence, single quadrotor", runs it, and sees 1.1.2 with a value,
+   interval, threshold and evaluation.~~ Retired 2026-11-01, phase 10.
 2. Dragging a radar from the library places it at the drop point. One undo removes it.
 3. Right-click on empty map, Add here, Sensor, Radar places a radar at the click point.
 4. Dragging a sensor ring changes range. The preview and the timeline update within 100 ms.
-5. A hypothesis with a prediction locks at the first run. The Results row shows Meets, Does not
-   meet or Inconclusive.
-6. Two runs compare side by side with the difference shown.
-7. A one-factor sweep shows a line chart of the measure against the factor.
-8. The AAR exports as PDF with all seven sections, and each chart exports as PNG and SVG.
+5. ~~A hypothesis with a prediction locks at the first run. The Results row shows Meets, Does
+   not meet or Inconclusive.~~ Retired 2026-11-01, phase 10.
+6. ~~Two runs compare side by side with the difference shown.~~
+   Retired 2026-11-01, phase 10.
+7. ~~A one-factor sweep shows a line chart of the measure against the factor.~~
+   Retired 2026-11-01, phase 10.
+8. ~~The AAR exports as PDF with all seven sections, and each chart exports as PNG and SVG.~~
+   Retired 2026-11-01, phase 10.
 9. A legacy v4 JSON from the current app imports without loss of assets, paths or text.
 10. Every command is reachable from the palette, and its shortcut matches the shortcut sheet.
-11. The engine package builds and runs headless in Node with no DOM.
+11. ~~The engine package builds and runs headless in Node with no DOM.~~
+    Retired 2026-11-01, phase 10.
 
-The upgrade is done when items 1 to 11 still pass and all of these pass:
+The upgrade is done when the items of 1 to 11 that are not retired still pass and all of these
+pass:
 
 12. New (button and Cmd+N) opens Build with "Untitled profile" and the name field focused; the
     renamed profile appears in the Library.
@@ -470,3 +433,5 @@ The upgrade is done when items 1 to 11 still pass and all of these pass:
     with one page per card.
 20. The first-use goal (section 1) is met again by a first-time user walk, under 10 minutes.
 21. The bundle budgets in section 11 hold, measured by the perf spec.
+22. Save as card (C, or the button on the Build bar) stores the view, layers, time and focus as
+    a card in one undo step. Brief opens the card at that view and time.

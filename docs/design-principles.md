@@ -1,20 +1,17 @@
 # Profile Studio design principles
 
-Profile Studio lets a counter-UAS test planner build a profile, run it, and read the result
-against DroneScore measures. The planner then briefs the result from the app and exports it as
-an after action report (AAR) that states a hypothesis and the evidence for it.
+Profile Studio lets a counter-UAS test planner create, iterate and brief test profiles as
+interactive, detailed mockups. A profile states one question, its data products and its
+measures of performance by DroneScore ID. The planner briefs the profile from the app. Profile
+Studio plans real tests. It does not run or score them.
 
 Be brilliant at the basics. A small set of things that work every time beats a large set that
-works most of the time. Simple does not mean less capable. The planner gets the full capability
-of the legacy app (`docs/reference/artifact-study.md`), and the interface stays quiet because
-each capability waits out of sight until the planner asks for it.
+works most of the time. Simple does not mean less capable. The planner gets what the v3 mockup
+does, polished and on a sound engine. The denser legacy app (`docs/reference/artifact-study.md`)
+is a source of parts, and a part returns only when the planner asks for it.
 
-Amended 2026-10-31 from the artifact study: sections 2, 3, 5, 7 and the new section 8.
-
-Pivot of 2026-11-01 (user): the product creates, iterates and briefs profiles as interactive
-mockups; it does not run tests. The opening paragraph's "run it and read the result" and
-section 4 describe the build before the pivot; lane 10.1 (`docs/plan.md` phase 10) rewrites
-them. Section 1 stays as the naming standard for measures of performance.
+Amended 2026-10-31 from the artifact study: sections 2, 3, 5, 7 and the new section 8. Amended
+2026-11-01 in lane 10.1: the opening paragraph, item 3.2 and section 4.
 
 ## 1. DroneScore is the standard
 
@@ -45,17 +42,18 @@ them. Section 1 stays as the naming standard for measures of performance.
 
 1. The first screen shows New and the templates. New opens a blank profile at once, named and
    ready to edit. Blank is the last template.
-2. A template opens ready to run. It has a threat, a sensor laydown, a defended asset and a
-   question.
+2. A template opens ready to edit and brief. It has a threat, a sensor laydown, a defended
+   asset and a question.
 3. Library items carry real values and say where each value came from.
 
-## 4. One question, one run, one answer
+## 4. One question, one profile, one brief
 
-1. A profile states its question and its hypothesis before it runs. The prediction is
-   recorded first.
-2. A run shows each measure against its threshold: the value, pass or fail, and the interval.
-3. Two runs can sit side by side. The difference is the result.
-4. A result applies only to the conditions tested. The app says so in the AAR.
+1. A profile states one question. Every other part of the profile serves that question.
+2. The profile names its data products: the data the test must collect to answer the question.
+3. The profile states its measures of performance by DroneScore ID and name, each under one
+   F2T2EA step, with its threshold.
+4. The brief carries the question, the data products and the measures to the test team. The
+   app plans the test. It does not run or score it.
 
 ## 5. Quiet interface
 

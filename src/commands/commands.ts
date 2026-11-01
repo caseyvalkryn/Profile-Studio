@@ -75,12 +75,6 @@ function every(...rules: Rule[]): Rule {
 const num = (arg: unknown): number | null =>
   typeof arg === 'number' && Number.isFinite(arg) ? arg : null;
 
-/** The first selected hypothesis, by key. */
-const selectedHypothesis = (ctx: CommandContext) => {
-  const keys = new Set(ctx.ui.selectedKeys);
-  return docOf(ctx)?.hypotheses.find((h) => keys.has(h.key)) ?? null;
-};
-
 const ASSETS: readonly FoundKind[] = ['threat', 'sensor', 'effector', 'node', 'area'];
 const SYSTEMS: readonly FoundKind[] = ['sensor', 'effector'];
 
@@ -429,11 +423,6 @@ const ADD_HERE: Command[] = [
   ),
 ];
 
-// ---- the command list ----
-
-/** Default replicates and seed for a run started from a key or the palette. */
-export const DEFAULT_RUN_N = 100;
-
 // ---- workspaces and later-lane keys ----
 
 const BUILD: readonly Workspace[] = ['build'];
@@ -457,8 +446,6 @@ const EVERYWHERE = new Set([
   'profile.new',
   'profile.newFromTemplate',
   'library.export',
-  'run.start',
-  'run.sweep',
 ]);
 
 const THEME_NEXT: Record<Theme, Theme> = { auto: 'light', light: 'dark', dark: 'auto' };
@@ -758,55 +745,6 @@ const COMMANDS: Command[] = [
         keys = insertCopies(d, ctx.ui.clipboard, PASTE_OFFSET_M, -PASTE_OFFSET_M);
       });
       ctx.ui.setSelection(keys);
-    },
-  },
-  {
-    id: 'run.start',
-    label: 'Run',
-    group: 'run',
-    shortcut: 'Mod+Enter',
-    when: every(
-      needDoc,
-      (ctx) => (docOf(ctx)?.threats.length ? true : 'Add a threat first'),
-      (ctx) => (docOf(ctx)?.sensors.length ? true : 'Add a sensor first'),
-      (ctx) => {
-        const k = ctx.runs.activeKey;
-        return k && ctx.runs.results[k]?.status === 'running' ? 'A run is in progress' : true;
-      },
-    ),
-    run: (ctx, arg) => {
-      const doc = docOf(ctx);
-      if (!doc) return;
-      const a = (arg ?? {}) as { n?: unknown; seed?: unknown };
-      const n = num(a.n) ?? DEFAULT_RUN_N;
-      const seed = num(a.seed) ?? doc.runs.length + 1;
-      void ctx.runs.startRun(n, seed);
-    },
-  },
-  {
-    // Spec section 6.4 and acceptance 12.7: the profile's stored sweep factor and levels.
-    id: 'run.sweep',
-    label: 'Run sweep',
-    group: 'run',
-    when: every(
-      needDoc,
-      (ctx) => (docOf(ctx)?.sweep?.factors.length ? true : 'This profile has no sweep factor'),
-      (ctx) => (docOf(ctx)?.threats.length ? true : 'Add a threat first'),
-      (ctx) => (docOf(ctx)?.sensors.length ? true : 'Add a sensor first'),
-      (ctx) => (ctx.runs.sweep?.status === 'running' ? 'A sweep is in progress' : true),
-    ),
-    run: (ctx, arg) => {
-      const doc = docOf(ctx);
-      const factors = doc?.sweep?.factors;
-      if (!doc || !factors?.length) return;
-      const a = (arg ?? {}) as { n?: unknown; seed?: unknown };
-      const n = num(a.n) ?? DEFAULT_RUN_N;
-      const seed = num(a.seed) ?? doc.runs.length + 1;
-      void ctx.runs.startSweep(
-        factors.map((f) => ({ ...f, levels: [...f.levels] })),
-        n,
-        seed,
-      );
     },
   },
   {
@@ -1304,31 +1242,6 @@ const COMMANDS: Command[] = [
       if (v == null || v <= 0) return;
       editSelected(ctx, 'Set range', SYSTEMS, (f) => {
         (f.value as Sensor | Effector).rangeM = v;
-      });
-    },
-  },
-
-  // hypothesis (inspector, not a right-click target)
-  {
-    id: 'hypothesis.setPrediction',
-    label: 'Set prediction',
-    group: 'edit',
-    needsArg: true,
-    when: every(needDoc, (ctx) => {
-      const h = selectedHypothesis(ctx);
-      if (!h) return 'Select a hypothesis first';
-      return h.lockedAt ? 'Prediction locked at first run' : true;
-    }),
-    run: (ctx, arg) => {
-      const h = selectedHypothesis(ctx);
-      if (!h || h.lockedAt) return;
-      const a = arg as { low?: unknown; high?: unknown } | null;
-      const low = num(a?.low);
-      const high = num(a?.high);
-      if (a !== null && (low == null || high == null || low > high)) return;
-      ctx.document.edit('Set prediction', (d) => {
-        const x = d.hypotheses.find((y) => y.key === h.key);
-        if (x) x.prediction = a === null ? null : { low: low as number, high: high as number };
       });
     },
   },

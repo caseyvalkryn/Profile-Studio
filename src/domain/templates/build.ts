@@ -7,7 +7,6 @@ import type {
   Effector,
   EffectorKind,
   Entered,
-  Hypothesis,
   MeasureSetting,
   Node,
   NodeKind,
@@ -132,29 +131,10 @@ export function setting(id: string, op: Op, threshold: number, unit: string): Me
   return { id, op, threshold, unit };
 }
 
-/** H-01 on `s`, with the threshold as the planning value and a prediction range. */
-export function hypothesis(
-  q: Question,
-  s: MeasureSetting,
-  prediction: { low: number; high: number },
-): Hypothesis {
-  return {
-    key: newKey(),
-    id: 'H-01',
-    question: q.key,
-    measure: s.id,
-    op: s.op,
-    value: s.threshold,
-    prediction,
-    lockedAt: null,
-  };
-}
-
 export type Parts = Partial<
   Pick<
     Vignette,
     | 'questions'
-    | 'hypotheses'
     | 'threats'
     | 'sensors'
     | 'effectors'
@@ -174,7 +154,7 @@ export function vignette(parts: Parts): Vignette {
     updated: new Date().toISOString(),
     site: { ...SITE },
     questions: parts.questions ?? [],
-    hypotheses: parts.hypotheses ?? [],
+    hypotheses: [],
     threats: parts.threats ?? [],
     sensors: parts.sensors ?? [],
     effectors: parts.effectors ?? [],

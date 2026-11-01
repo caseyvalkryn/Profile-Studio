@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { assetCentres, goTo } from './helpers';
+import { assetCentres } from './helpers';
 
 const FIXTURE = resolve(__dirname, '../src/features/library/__fixtures__/legacy-v4-cuas-001.json');
 
@@ -54,11 +54,12 @@ test('12.9 A legacy v4 JSON from the current app imports without loss of assets,
       page.locator(`[data-testid="board-stage"] svg.board [data-id="${id}"]`).first(),
     ).toBeAttached();
 
-  // The saved vignette, exported from the Report, keeps every path point and every text.
-  await goTo(page, 'Report');
+  // The saved vignette, downloaded from the Export dialog, keeps every path point and every text.
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: /^Export / });
   const [file] = await Promise.all([
     page.waitForEvent('download'),
-    page.getByRole('button', { name: 'Export JSON' }).click(),
+    dialog.getByRole('button', { name: 'Download' }).click(),
   ]);
   const text = await readFile((await file.path())!, 'utf8');
   const out = JSON.parse(text) as {

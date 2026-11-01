@@ -65,7 +65,6 @@ export type MenuOptions = {
 
 /** Group names as a test engineer reads them in the palette and the shortcut sheet. */
 export const GROUP_LABELS: Record<CommandGroup, string> = {
-  run: 'Run',
   edit: 'Edit',
   map: 'Map',
   time: 'Time',
@@ -215,7 +214,7 @@ export function menuItemsFor(kind: AssetKind, opts: MenuOptions): MenuItem[] {
 }
 
 /** Palette order of the groups: the common actions first. */
-const GROUP_ORDER: CommandGroup[] = ['run', 'edit', 'view', 'time', 'map', 'file', 'help'];
+const GROUP_ORDER: CommandGroup[] = ['edit', 'view', 'time', 'map', 'file', 'help'];
 
 /**
  * Every command active in the current workspace as a palette item (acceptance 12.10). A command that needs a number

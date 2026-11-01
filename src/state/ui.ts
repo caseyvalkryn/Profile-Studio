@@ -28,7 +28,7 @@ export type View = 'plan' | 'elevation' | '3d';
 export type Units = 'nav' | 'si';
 /** `auto` follows the system setting (legacy `90-app.js` theme cycle). */
 export type Theme = 'auto' | 'light' | 'dark';
-export type Workspace = 'library' | 'build' | 'results' | 'report' | 'brief';
+export type Workspace = 'library' | 'build' | 'brief';
 /** The bottom strip's tab; R cycles them in this order. */
 export type StripTab = 'timeline' | 'chart' | 'readout';
 /** The Elevation view's section: along the selected path, or the ring around the selected asset. */

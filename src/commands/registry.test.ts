@@ -1,8 +1,7 @@
 import { testVignette } from '../engine/testVignette';
 import { useDocument } from '../state/document';
-import { useRuns } from '../state/runs';
 import { UI_DEFAULTS, useUi } from '../state/ui';
-import { DEFAULT_RUN_N, DEFAULT_THREAT_TYPE, MENU_TARGETS } from './commands';
+import { DEFAULT_THREAT_TYPE, MENU_TARGETS } from './commands';
 import {
   all,
   byShortcut,
@@ -30,7 +29,6 @@ const SPEC_KEYS = [
   'Mod+D',
   'Mod+C',
   'Mod+V',
-  'Mod+Enter',
   'F',
   'M',
   'U',
@@ -62,7 +60,6 @@ const SPEC_MENUS: Record<string, string[]> = {
 beforeEach(() => {
   useDocument.getState().close();
   useUi.setState(UI_DEFAULTS);
-  useRuns.setState({ results: {}, order: [], activeKey: null, compareKeys: [], sweep: null });
 });
 
 describe('command registry', () => {
@@ -86,7 +83,7 @@ describe('command registry', () => {
   });
 
   it('no two commands active in one workspace share a shortcut', () => {
-    for (const w of ['library', 'build', 'results', 'report', 'brief'] as const) {
+    for (const w of ['library', 'build', 'brief'] as const) {
       const s = inWorkspace(w)
         .map((c) => c.shortcut)
         .filter(Boolean);
@@ -240,56 +237,6 @@ describe('commands edit the document', () => {
     expect(execute('system.makeOmni', currentContext())).toBe('Already omni');
     expect(execute('system.makeSector', currentContext())).toBe(true);
     expect(execute('system.makeSector', currentContext())).toBe('Already a sector');
-  });
-
-  it('a locked prediction cannot be edited', () => {
-    useDocument.getState().edit('add', (d) => {
-      d.hypotheses.push({
-        key: 'h1',
-        id: 'H-01',
-        question: '',
-        measure: '1.1.2',
-        op: '>=',
-        value: 0.9,
-        prediction: null,
-        lockedAt: null,
-      });
-    });
-    useUi.getState().setSelection(['h1']);
-    expect(execute('hypothesis.setPrediction', currentContext(), { low: 0.7, high: 0.9 })).toBe(
-      true,
-    );
-    expect(useDocument.getState().doc!.hypotheses[0]!.prediction).toEqual({ low: 0.7, high: 0.9 });
-    useDocument.getState().apply('Lock', (d) => {
-      d.hypotheses[0]!.lockedAt = '2026-10-30T00:00:00Z';
-    });
-    expect(execute('hypothesis.setPrediction', currentContext(), { low: 0, high: 1 })).toBe(
-      'Prediction locked at first run',
-    );
-  });
-
-  it('Run sweep says why without a sweep factor, then starts the stored sweep (review 6 F-02)', () => {
-    expect(execute('run.sweep', currentContext())).toBe('This profile has no sweep factor');
-    const calls: unknown[] = [];
-    const original = useRuns.getState().startSweep;
-    useRuns.setState({
-      startSweep: (factors, n, seed) => {
-        calls.push({ factors, n, seed });
-        return Promise.resolve('k');
-      },
-    });
-    try {
-      useDocument.getState().edit('Sweep', (d) => {
-        d.sweep = { factors: [{ kind: 'threat-altitude', levels: [30, 400] }] };
-      });
-      expect(execute('run.sweep', currentContext())).toBe(true);
-      expect(calls).toEqual([
-        { factors: [{ kind: 'threat-altitude', levels: [30, 400] }], n: DEFAULT_RUN_N, seed: 1 },
-      ]);
-      expect(all().find((c) => c.id === 'run.sweep')?.group).toBe('run');
-    } finally {
-      useRuns.setState({ startSweep: original });
-    }
   });
 
   it('delete removes the selection and duplicate copies it', () => {

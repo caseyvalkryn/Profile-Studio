@@ -1,11 +1,10 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
-import { Link, Route, Routes } from 'react-router-dom';
+import { Suspense, useEffect, useState } from 'react';
+import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import { registerCommands } from './commands/commands';
 import { bindKeys } from './commands/keys';
 import BuildWorkspace from './features/build/BuildWorkspace';
 import LibraryScreen from './features/library/LibraryScreen';
 import { TEMPLATES } from './domain/templates';
-import { MapSnapshot } from './features/shared/MapSnapshot';
 import Shell, { BriefPlaceholder } from './features/shell/Shell';
 import { bindTheme } from './features/shell/theme';
 import { WORKSPACES } from './features/shell/TopBar';
@@ -17,13 +16,9 @@ import { TooltipProvider } from './ui/Tooltip';
 
 registerCommands();
 
-const ResultsWorkspace = lazy(() => import('./features/results/ResultsWorkspace'));
-const ReportWorkspace = lazy(() => import('./features/report/ReportWorkspace'));
-const ReportChart = lazy(() => import('./features/results/ReportChart'));
-
 type WorkspaceName = (typeof WORKSPACES)[number]['name'];
 
-/** Build, Results and Report need an open profile. Without one, point to the Library. */
+/** Build needs an open profile. Without one, point to the Library. */
 function NoProfile({ name }: { name: string }) {
   return (
     <main
@@ -42,27 +37,6 @@ function Loading() {
   return <div className="flex-1 bg-surface-0" />;
 }
 
-const renderChart = (measureId: string, runKey: string) => (
-  <Suspense fallback={null}>
-    <ReportChart measureId={measureId} runKey={runKey} />
-  </Suspense>
-);
-
-function ReportMap() {
-  const doc = useDocument((s) => s.doc);
-  return doc ? <MapSnapshot vignette={doc} /> : null;
-}
-
-const renderMap = () => <ReportMap />;
-
-function Report() {
-  return (
-    <main className="min-h-0 flex-1 overflow-auto bg-surface-0" aria-label="Report">
-      <ReportWorkspace renderChart={renderChart} renderMap={renderMap} />
-    </main>
-  );
-}
-
 function Workspace({ name, ready }: { name: WorkspaceName; ready: boolean }) {
   const hasDoc = useDocument((st) => st.doc !== null);
   // The route sets the workspace, so keys, the palette and the sheet follow it.
@@ -70,9 +44,7 @@ function Workspace({ name, ready }: { name: WorkspaceName; ready: boolean }) {
   if (name === 'Library') return <LibraryScreen templates={TEMPLATES} />;
   if (name === 'Brief') return <BriefPlaceholder />;
   if (!hasDoc) return ready ? <NoProfile name={name} /> : <Loading />;
-  if (name === 'Build') return <BuildWorkspace />;
-  if (name === 'Results') return <ResultsWorkspace />;
-  return <Report />;
+  return <BuildWorkspace />;
 }
 
 /**
@@ -131,6 +103,9 @@ export function App() {
                 element={<Workspace name={w.name} ready={ready} />}
               />
             ))}
+            {/* Results and Report left in phase 10 (plan 10.1); old links land in Build. */}
+            <Route path="/results" element={<Navigate to="/build" replace />} />
+            <Route path="/report" element={<Navigate to="/build" replace />} />
           </Routes>
         </Suspense>
       </Shell>

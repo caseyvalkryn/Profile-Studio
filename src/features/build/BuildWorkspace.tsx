@@ -4,14 +4,11 @@
 // (principle 5.1). One board renders Plan, Elevation and 3D (src/board).
 import '../../board/board.css';
 import { useId, useState } from 'react';
-import { Link, useInRouterContext } from 'react-router-dom';
 import { currentContext, execute, get, shortcutLabel } from '../../commands/registry';
 import { useDocument } from '../../state/document';
-import { useActiveRun, useRuns } from '../../state/runs';
 import { useUi } from '../../state/ui';
 import { chips, LAYER_LABELS, defaultLayers } from '../../board';
 import { setBoardCancel, toggleLayer } from '../../commands/commands';
-import { Button } from '../../ui/Button';
 import { Tooltip } from '../../ui/Tooltip';
 import { focusRing } from '../../ui/focus';
 import Board, { cancel } from './board/Board';
@@ -36,8 +33,6 @@ export const TIMELINE_HEIGHT = 1 + 32 + 20 + 2 * 64;
 function useWhen(id: string): true | string {
   useDocument((s) => s.doc);
   useUi((s) => s.selectedKeys);
-  useRuns((s) => s.results);
-  useRuns((s) => s.sweep);
   const cmd = get(id);
   return cmd ? cmd.when(currentContext()) : `No command ${id}`;
 }
@@ -98,101 +93,8 @@ function CommandButton({
   );
 }
 
-/** Run progress with a cancel, shown in place of nothing while a run is in flight. */
-function RunProgress() {
-  const run = useActiveRun();
-  if (!run || run.status !== 'running') return null;
-  const { done, total } = run.progress;
-  return (
-    <span className="flex items-center gap-1.5" role="status" aria-label="Run progress">
-      <span className="font-mono text-xs text-muted tabular-nums">
-        {done}/{total}
-      </span>
-      <Button
-        size="sm"
-        tooltip="Stop waiting for this run"
-        onClick={() => useRuns.getState().cancel()}
-      >
-        Cancel
-      </Button>
-    </span>
-  );
-}
-
-/**
- * After a run ends, says so and links to Results (review F-08). The note stays until the user
- * opens Results or edits the vignette (review FR-03); the runs store clears it on an edit, and
- * ResultsWorkspace clears it when it mounts (review 7.R F-05).
- */
-function RunDone() {
-  const run = useActiveRun();
-  const noteKey = useRuns((s) => s.doneNoteKey);
-  const docId = useDocument((s) => s.doc?.id);
-  const runId = useDocument((s) => s.doc?.runs.find((r) => r.key === run?.key)?.id);
-  const inRouter = useInRouterContext();
-  // Only for a run of the open vignette (review 6 F-08).
-  const shown =
-    run?.status === 'done' && run.docId === docId && run.key === noteKey ? run.key : null;
-  if (!shown) return null;
-  const label = `${runId ? `Run ${runId}` : 'Run'} done`;
-  return (
-    <span className="flex items-center gap-1.5 text-xs text-muted" role="status">
-      {label}
-      {inRouter ? (
-        <Link to="/results" className={`rounded-sm text-text underline ${focusRing}`}>
-          View results
-        </Link>
-      ) : null}
-    </span>
-  );
-}
-
-/**
- * Sweep state for the open vignette, with a link to Results when it is done (review 6 F-02). The
- * done note follows the run-done rule in the runs store: an edit, undo or redo, or opening
- * Results, clears it (review 7.R F-12).
- */
-function SweepStatus() {
-  const sweep = useRuns((s) => s.sweep);
-  const noteKey = useRuns((s) => s.sweepNoteKey);
-  const docId = useDocument((s) => s.doc?.id);
-  const inRouter = useInRouterContext();
-  if (!sweep || sweep.docId !== docId) return null;
-  if (sweep.status === 'running')
-    return (
-      <span
-        className="text-xs whitespace-nowrap text-muted"
-        role="status"
-        aria-label="Sweep progress"
-      >
-        Sweep running
-        {sweep.progress ? (
-          <>
-            {' '}
-            <span className="font-mono tabular-nums">
-              {sweep.progress.done}/{sweep.progress.total}
-            </span>{' '}
-            test points
-          </>
-        ) : null}
-      </span>
-    );
-  if (sweep.status !== 'done' || sweep.key !== noteKey) return null;
-  return (
-    <span className="flex items-center gap-1.5 text-xs text-muted" role="status">
-      Sweep done
-      {inRouter ? (
-        <Link to="/results" className={`rounded-sm text-text underline ${focusRing}`}>
-          View results
-        </Link>
-      ) : null}
-    </span>
-  );
-}
-
 function BuildBar() {
   const question = useDocument((s) => s.doc?.questions.find((q) => q.text.trim())?.text);
-  const hasSweep = useDocument((s) => (s.doc?.sweep?.factors.length ?? 0) > 0);
   const units = useUi((s) => s.units);
   const view = useUi((s) => s.view);
   return (
@@ -204,15 +106,6 @@ function BuildBar() {
       ) : (
         <span className="flex-1" />
       )}
-      <RunProgress />
-      <RunDone />
-      <CommandButton id="run.start" label="Run" variant="accent" />
-      {hasSweep ? (
-        <>
-          <SweepStatus />
-          <CommandButton id="run.sweep" label="Run sweep" />
-        </>
-      ) : null}
       <CommandButton id="view.units" label={units === 'nav' ? 'nm · ft · kt' : 'km · m · m/s'} />
       <RefSelect />
       <CommandButton id="view.fit" label="Fit" />

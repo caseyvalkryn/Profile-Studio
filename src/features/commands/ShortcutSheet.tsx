@@ -9,8 +9,6 @@ import { sheetRows } from './sheet';
 export const WORKSPACE_NAMES: Record<Workspace, string> = {
   library: 'Library',
   build: 'Build',
-  results: 'Results',
-  report: 'Report',
   brief: 'Brief',
 };
 

@@ -1,6 +1,5 @@
 // The one command registry. Commands register once at import of commands.ts.
 import { useDocument } from '../state/document';
-import { useRuns } from '../state/runs';
 import { useUi, type Workspace } from '../state/ui';
 import type { AssetKind, Command, CommandContext, Pointer } from './types';
 
@@ -129,7 +128,6 @@ export function currentContext(pointer: Pointer | null = null): CommandContext {
   return {
     document: useDocument.getState(),
     ui: useUi.getState(),
-    runs: useRuns.getState(),
     pointer,
   };
 }

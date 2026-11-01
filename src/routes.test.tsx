@@ -1,14 +1,12 @@
 import './ui/test-utils';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { App } from './App';
 import { TEMPLATES } from './domain/templates';
 import type { Vignette } from './domain/types';
-import { run } from './engine/run';
 import { testVignette } from './engine/testVignette';
 import { useDocument } from './state/document';
 import { setDb, type VignetteDb } from './state/persist';
-import { useRuns } from './state/runs';
 
 // An in-memory store behind persist, so start-up and the Library read and write it.
 const store = new Map<string, Vignette>();
@@ -18,28 +16,6 @@ const fakeDb = {
   delete: async (_: string, id: string) => void store.delete(id),
   getAll: async () => [...store.values()],
 } as unknown as VignetteDb;
-
-function withRun(): Vignette {
-  const base = testVignette({
-    hypotheses: [
-      {
-        key: 'h1',
-        id: 'H-01',
-        question: '',
-        measure: '1.1.2',
-        op: '>=',
-        value: 3000,
-        prediction: { low: 2000, high: 5000 },
-        lockedAt: '2026-10-30T14:05:00.000Z',
-      },
-    ],
-  });
-  const rows = run(base, 10, 7).rows;
-  return {
-    ...base,
-    runs: [{ key: 'run-1', id: 'R-1', createdAt: base.updated, n: 10, seed: 7, rows }],
-  };
-}
 
 function at(path: string) {
   return render(
@@ -52,8 +28,7 @@ function at(path: string) {
 beforeEach(() => {
   store.clear();
   setDb(fakeDb);
-  useRuns.setState({ results: {}, order: [], activeKey: null, compareKeys: [], sweep: null });
-  act(() => useDocument.getState().open(withRun()));
+  act(() => useDocument.getState().open(testVignette()));
 });
 
 afterAll(() => setDb(null));
@@ -83,39 +58,16 @@ describe('routes', () => {
     const old = testVignette({ id: 'old', name: 'Old', updated: '2026-10-01T00:00:00.000Z' });
     const ne = testVignette({ id: 'new', name: 'New', updated: '2026-10-29T00:00:00.000Z' });
     store.set(old.id, old).set(ne.id, ne);
-    at('/results');
-    expect(await screen.findByRole('heading', { level: 1, name: 'Results' })).toBeInTheDocument();
+    at('/build');
+    expect(await screen.findByRole('main', { name: 'Build' })).toBeInTheDocument();
     expect(useDocument.getState().doc?.id).toBe('new');
   });
 
-  it('/results renders the Results workspace heading', async () => {
-    at('/results');
-    expect(await screen.findByRole('heading', { level: 1, name: 'Results' })).toBeInTheDocument();
-    expect(screen.getByRole('main', { name: 'Results' })).toBeInTheDocument();
-  });
-
-  it('/report renders the seven section titles and the map snapshot', async () => {
-    at('/report');
-    await screen.findByRole('heading', { level: 2, name: '1. Question' });
-    const titles = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent);
-    expect(titles).toEqual([
-      '1. Question',
-      '2. Hypothesis and prediction',
-      '3. Setup',
-      '4. Results',
-      '5. Evaluation',
-      '6. Scope of inference',
-      '7. Next test',
-    ]);
-    expect(screen.getByTestId('map-snapshot')).toBeInTheDocument();
-  });
-
-  it('a picked chart in the report renders a ChartFrame title', async () => {
-    at('/report');
-    const box = await screen.findByRole('checkbox', { name: /1\.1\.2/ });
-    fireEvent.click(box);
-    const figure = document.querySelector<HTMLElement>('[data-chart="1.1.2"]')!;
-    const title = await within(figure).findByTestId('chart-title');
-    expect(title).toHaveTextContent('H-01: 1.1.2');
+  it('/results and /report land in Build (plan 10.1)', async () => {
+    for (const path of ['/results', '/report']) {
+      const { unmount } = at(path);
+      expect(await screen.findByRole('main', { name: 'Build' })).toBeInTheDocument();
+      unmount();
+    }
   });
 });

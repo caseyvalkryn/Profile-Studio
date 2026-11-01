@@ -20,6 +20,7 @@ export type Vignette = {
   updated: string;
   site: { name: string; lat: number; lon: number; elevM: number };
   questions: Question[]; // Q-01 ...
+  /** @deprecated: removed in v7 (plan 10.5). Stored v6 records carry it; nothing reads it. */
   hypotheses: Hypothesis[]; // H-01 ...
   threats: Threat[];
   sensors: Sensor[];
@@ -33,13 +34,14 @@ export type Vignette = {
   debrief: Debrief | null; // flown data
   chainTime: { decisionS: number; assignS: number }; // Target step inputs
   measures: MeasureSetting[]; // the rows this vignette scores, with thresholds
+  /** @deprecated: removed in v7 (plan 10.5). Stored v6 records carry it; nothing reads it. */
   runs: RunSummary[]; // stored results, newest first
   report: ReportDraft;
-  /** The sweep the vignette is built for (spec section 6.4); absent for a single-run vignette. */
+  /** @deprecated: removed in v7 (plan 10.5). The sweep factors of a stored v6 record; nothing reads it. */
   sweep?: { factors: SweepFactor[] };
 };
 
-/** Sweep factor kinds, spec section 6.4. */
+/** Sweep factor kinds. @deprecated: removed in v7 (plan 10.5). */
 export type SweepFactorKind =
   | 'threat-speed'
   | 'threat-altitude'
@@ -47,6 +49,7 @@ export type SweepFactorKind =
   | 'sensor-range'
   | 'sensor-position-offset';
 
+/** @deprecated: removed in v7 (plan 10.5). */
 export type SweepFactor = {
   kind: SweepFactorKind;
   /** Levels in the factor's unit: m/s, m AGL, degrees, m, m. */
@@ -238,6 +241,7 @@ export type MeasureSetting = {
   unit: string;
 };
 
+/** @deprecated: removed in v7 (plan 10.5). Kept so stored v6 records parse. */
 export type Hypothesis = {
   key: string;
   id: string;
@@ -251,12 +255,16 @@ export type Hypothesis = {
 
 export type Entered = { value: number | boolean | string; source: string }; // source note is required
 
+/** @deprecated: removed in v7 (plan 10.5). */
 export type StageReached =
   'none' | 'detect' | 'track' | 'classify' | 'identify' | 'engage' | 'defeat';
 
+/** @deprecated: removed in v7 (plan 10.5). */
 export type Outcome = 'Success' | 'Miss' | 'No Attempt';
 
-/** One per threat per replicate; DroneScore field names. */
+/**
+ * One per threat per replicate; DroneScore field names. @deprecated: removed in v7 (plan 10.5). Kept so stored v6 records parse.
+ */
 export type RunRow = {
   run: number;
   threat: string;
@@ -273,7 +281,7 @@ export type RunRow = {
   outcome: Outcome;
 };
 
-/** One run: N replicates with one seed. */
+/** One run: N replicates with one seed. @deprecated: removed in v7 (plan 10.5). Kept so stored v6 records parse. */
 export type RunSummary = {
   key: string;
   id: string;
@@ -282,6 +290,7 @@ export type RunSummary = {
   seed: number;
   rows: RunRow[];
   /**
+   * @deprecated: removed in v7 (plan 10.5).
    * Hypothesis predictions as they stood at run start, by hypothesis key. `measure`, `op` and
    * `value` record the hypothesis statement; runs stored before they existed lack them.
    */
@@ -306,8 +315,8 @@ export type ReportDraft = {
   dataSources: string[];
   truth: { source: string; intervalS: number; stationKeys: string[] };
   slides: ReportSlide[];
-  /** AAR section notes, by section id (report/draft.ts SECTIONS). */
+  /** AAR section notes, by section id. @deprecated: removed in v7 (plan 10.5). */
   sections?: Partial<Record<string, string>>;
-  /** Measure ids picked as AAR charts, in pick order. */
+  /** Measure ids picked as AAR charts. @deprecated: removed in v7 (plan 10.5). */
   charts?: string[];
 };

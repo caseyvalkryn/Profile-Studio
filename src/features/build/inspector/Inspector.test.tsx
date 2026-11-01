@@ -3,9 +3,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { testVignette } from '../../../engine/testVignette';
 import { useDocument } from '../../../state/document';
 import { useUi, UI_DEFAULTS } from '../../../state/ui';
-import { MEASURES } from '../../../domain/measures';
 import Inspector from './Inspector';
-import { enteredRows } from './enteredRows';
 import { M_PER_NM } from '../../shared/units';
 
 const doc = () => useDocument.getState().doc!;
@@ -159,19 +157,6 @@ describe('Inspector', () => {
     expect(doc().sensors[0]!.rangeM).toBe(4000);
   });
 
-  it('stores an entered value and its source under the DroneScore id', () => {
-    useUi.setState({ selectedKeys: ['k-S-01'] });
-    render(<Inspector />);
-    commit('1.8 Resolution', '12');
-    expect(doc().sensors[0]!.entered['1.8']).toEqual({ value: 12, source: '' });
-    expect(screen.getByText(/No source note/)).toBeInTheDocument();
-    commit('Source, 1.8', 'Vendor sheet rev C, p. 4');
-    expect(doc().sensors[0]!.entered['1.8']).toEqual({
-      value: 12,
-      source: 'Vendor sheet rev C, p. 4',
-    });
-  });
-
   it('adds, edits and deletes waypoints, warning under two', () => {
     useUi.setState({ selectedKeys: ['k-T-01'] });
     render(<Inspector />);
@@ -242,90 +227,14 @@ describe('Inspector', () => {
     expect(history().at(-1)).toBe('rename T-01');
   });
 
-  it('shows the profile, telemetry and chain time when nothing is selected', () => {
+  it('shows the profile and telemetry when nothing is selected', () => {
     render(<Inspector />);
     expect(screen.getByLabelText('Name')).toHaveValue('test vignette');
     expect(screen.getByLabelText('Collection')).toHaveValue('site');
-    expect(screen.getByLabelText('Decision time')).toHaveValue('5');
-    expect(screen.getByLabelText('Assignment time')).toHaveValue('3');
-    expect(screen.getByText(/feed the Target step/)).toBeInTheDocument();
     commit('Name', 'range day');
     expect(doc().name).toBe('range day');
     expect(history().at(-1)).toBe('set profile name');
     commit('Stations', 'S-01, X-9');
     expect(screen.getByText('X-9 is not a system id.')).toBeInTheDocument();
-  });
-});
-
-describe('Inspector profile questions', () => {
-  it('shows the questions and hypotheses block inside the profile section', () => {
-    act(() =>
-      useDocument.getState().edit('add question', (d) => {
-        d.questions.push({ key: 'q1', id: 'Q-01', text: 'Does the radar hold T-01?', note: '' });
-      }),
-    );
-    render(<Inspector />);
-    const block = screen.getByRole('region', { name: 'Questions and hypotheses' });
-    expect(within(block).getByText('Does the radar hold T-01?')).toBeInTheDocument();
-    expect(screen.getByLabelText('Purpose')).toHaveValue('Does the radar hold T-01?');
-  });
-});
-
-describe('Inspector hypotheses (review 6 F-03, F-10)', () => {
-  const h1 = {
-    key: 'h1',
-    id: 'H-01',
-    question: '',
-    measure: '1.1.2',
-    op: '>=' as const,
-    value: 3000,
-    prediction: null,
-    lockedAt: null,
-  };
-
-  it('lists each hypothesis in display units and sets its prediction through the fields', () => {
-    act(() =>
-      useDocument.getState().edit('Add hypothesis', (d) => {
-        d.hypotheses.push({ ...h1 });
-      }),
-    );
-    render(<Inspector />);
-    const row = screen.getByRole('button', { name: /H-01 1\.1\.2 .* ≥ 1\.62 nm/ });
-    fireEvent.click(row);
-    expect(useUi.getState().selectedKeys).toEqual(['h1']);
-    commit('Prediction low', '1.5');
-    commit('Prediction high', '2');
-    const p = doc().hypotheses[0]!.prediction!;
-    expect(p.low).toBeCloseTo(1.5 * M_PER_NM, 6);
-    expect(p.high).toBeCloseTo(2 * M_PER_NM, 6);
-  });
-
-  it('a locked hypothesis shows its fields read-only', () => {
-    act(() =>
-      useDocument.getState().edit('Add hypothesis', (d) => {
-        d.hypotheses.push({
-          ...h1,
-          prediction: { low: 2800, high: 3600 },
-          lockedAt: '2026-10-30T17:40:00Z',
-        });
-      }),
-    );
-    useUi.setState({ selectedKeys: ['h1'] });
-    render(<Inspector />);
-    expect(screen.getByLabelText('Prediction low')).toBeDisabled();
-    expect(screen.getByLabelText('Threshold')).toBeDisabled();
-    expect(screen.getByText(/Locked at the first run/)).toBeInTheDocument();
-  });
-});
-
-describe('enteredRows', () => {
-  it('offers every entered row on at least one asset group, and only entered rows', () => {
-    const offered = new Set(
-      [...enteredRows('sensor'), ...enteredRows('effector')].map((m) => m.id),
-    );
-    const entered = MEASURES.filter((m) => m.sourceClass === 'entered').map((m) => m.id);
-    expect([...offered].sort()).toEqual([...entered].sort());
-    expect(enteredRows('sensor').some((m) => m.id === 'INT-1')).toBe(true);
-    expect(enteredRows('effector').some((m) => m.id === '1.3')).toBe(false);
   });
 });

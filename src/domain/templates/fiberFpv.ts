@@ -5,7 +5,7 @@
 // clear of the sensor cluster; the EO/IR sensor looks south east up the approach.
 import { terrainFollowingIngress } from '../behaviors';
 import type { Template } from './types';
-import { defendedAsset, hypothesis, question, sensor, setting, threat, vignette } from './build';
+import { defendedAsset, question, sensor, setting, threat, vignette } from './build';
 
 const ASSET = { x: 600, y: 400 };
 
@@ -28,7 +28,6 @@ export const fiberFpv: Template = {
     return vignette({
       name: 'Fiber FPV, no RF',
       questions: [Q],
-      hypotheses: [hypothesis(Q, m, { low: 60, high: 100 })],
       threats: [threat('T1', 'g1-fpv-fiber', path, 15)],
       sensors: [
         sensor('RF-1', 'rf', -300, 750, 3000),

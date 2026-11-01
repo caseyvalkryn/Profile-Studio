@@ -1,4 +1,3 @@
-import type { Factor } from '../../engine/sweep';
 import type { Step } from '../measures';
 import type { Vignette } from '../types';
 
@@ -12,6 +11,4 @@ export type Template = {
   /** DroneScore ids the question rests on. */
   mainMeasures: string[];
   make: () => Vignette;
-  /** Sweep hint for templates that are a parameter sweep; levels mirror `factor.levels`. */
-  sweep?: { factor: Factor; levels: number[] };
 };

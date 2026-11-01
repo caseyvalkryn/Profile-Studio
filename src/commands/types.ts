@@ -1,14 +1,13 @@
 // Command contract (spec section 8, Commands). Menus, palette, keys and the shortcut sheet all
 // read the one registry.
 import type { DocumentState } from '../state/document';
-import type { RunsState } from '../state/runs';
 import type { UiState, Workspace } from '../state/ui';
 
 /** What a right-click lands on. `map` is empty map, `timeline` the timeline lanes. */
 export type AssetKind =
   'map' | 'threat' | 'waypoint' | 'sensor' | 'effector' | 'node' | 'area' | 'timeline';
 
-export type CommandGroup = 'file' | 'edit' | 'view' | 'time' | 'map' | 'run' | 'help';
+export type CommandGroup = 'file' | 'edit' | 'view' | 'time' | 'map' | 'help';
 
 /** Where the pointer was for a "here" command: map metres, and the timeline time when on it. */
 export type Pointer = { x: number; y: number; tS?: number };
@@ -16,7 +15,6 @@ export type Pointer = { x: number; y: number; tS?: number };
 export type CommandContext = {
   document: DocumentState;
   ui: UiState;
-  runs: RunsState;
   pointer: Pointer | null;
 };
 

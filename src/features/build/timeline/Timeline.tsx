@@ -1,18 +1,16 @@
 // Bottom timeline (spec section 7, Build): one row per threat, one lane per F2T2EA step. The
 // gutter names each lane. Preview step times are marks in their step's lane with a quiet bar to
-// the next step. An active run's trace adds the Monte Carlo mean as a thinner mark in the same
-// lane. The accent line is the current time.
+// the next step. The accent line is the current time.
 import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import '../../../commands/commands';
 import { execute, get, shortcutLabel } from '../../../commands/registry';
 import { RATES } from '../../../domain/catalog';
 import { usePreview, useDocument } from '../../../state/document';
-import { useActiveRun } from '../../../state/runs';
 import { useUi } from '../../../state/ui';
 import { Button, ContextMenu, Menu, Tooltip, type MenuItem } from '../../../ui';
 import { fmtTime, timeTicks } from '../../shared/units';
 import { AXIS_H, GUTTER_W, LANE_H, ROW_H, domainS, laneY, timeOfX, xOfTime } from './layout';
-import { STEPS, runStepMeans } from './steps';
+import { STEPS } from './steps';
 import { usePlayback } from './usePlayback';
 import { useSize } from '../../shared/useSize';
 import { menuItemsFor } from '../../commands/adapter';
@@ -54,7 +52,6 @@ export default function Timeline({ width: fixedWidth }: TimelineProps) {
   usePlayback();
   const doc = useDocument((s) => s.doc);
   const preview = usePreview();
-  const run = useActiveRun();
   const tS = useUi((s) => s.tS);
   const timeOn = useUi((s) => s.timeOn);
   const playing = useUi((s) => s.playing);
@@ -85,7 +82,6 @@ export default function Timeline({ width: fixedWidth }: TimelineProps) {
     for (const e of doc?.effectors ?? []) m.set(e.key, e.id);
     return m;
   }, [doc]);
-  const trace = run?.result?.trace ?? null;
   const height = AXIS_H + threats.length * ROW_H;
   const x = (t: number) => xOfTime(t, width, tmaxS);
 
@@ -246,7 +242,6 @@ export default function Timeline({ width: fixedWidth }: TimelineProps) {
                 {threats.map((th, row) => {
                   const top = AXIS_H + row * ROW_H;
                   const selected = selectedKeys.includes(th.key);
-                  const means = trace ? runStepMeans(trace, th.id) : {};
                   return (
                     <g key={th.key} data-testid="timeline-row" data-threat={th.id}>
                       <line
@@ -270,7 +265,6 @@ export default function Timeline({ width: fixedWidth }: TimelineProps) {
                           .map((s) => th.stages[s.key])
                           .find((s) => s != null);
                         const y = laneY(row, i);
-                        const mean = means[step.key];
                         return (
                           <g key={step.key} data-testid="timeline-lane" data-step={step.key}>
                             <text
@@ -315,23 +309,6 @@ export default function Timeline({ width: fixedWidth }: TimelineProps) {
                                   width={2}
                                   height={LANE_H - 2}
                                   className="fill-text"
-                                />
-                              </Tooltip>
-                            ) : null}
-                            {mean ? (
-                              <Tooltip
-                                content={`${step.label}, run mean ${fmtTime(mean.meanS)}, n = ${mean.n}`}
-                              >
-                                <rect
-                                  data-testid="timeline-mark"
-                                  data-kind="run"
-                                  data-step={step.key}
-                                  aria-label={`${step.label} run mean ${fmtTime(mean.meanS)}`}
-                                  x={x(mean.meanS) - 0.5}
-                                  y={y}
-                                  width={1}
-                                  height={LANE_H}
-                                  className="fill-muted"
                                 />
                               </Tooltip>
                             ) : null}

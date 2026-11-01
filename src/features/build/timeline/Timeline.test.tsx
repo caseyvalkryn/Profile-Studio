@@ -3,7 +3,6 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { testVignette } from '../../../engine/testVignette';
 import { previewOf, useDocument } from '../../../state/document';
-import { useRuns, type RunEntry } from '../../../state/runs';
 import { UI_DEFAULTS, useUi } from '../../../state/ui';
 import { fmtTime } from '../../shared/units';
 import { GUTTER_W, LANE_H, PAD_R, laneY } from './layout';
@@ -23,7 +22,6 @@ const inLane = (el: Element, row: number, i: number) => {
 beforeEach(() => {
   useDocument.getState().open(testVignette());
   useUi.setState({ ...UI_DEFAULTS });
-  useRuns.setState({ results: {}, order: [], activeKey: null });
 });
 
 afterEach(() => {
@@ -147,50 +145,6 @@ describe('Timeline', () => {
     expect(labels(sticky)).toEqual(labels(screen.getByTestId('timeline-axis')));
     fireEvent.pointerDown(sticky, { clientX: px(p.tmaxS / 4, p.tmaxS), button: 0, pointerId: 1 });
     expect(useUi.getState().tS).toBeCloseTo(p.tmaxS / 4, 6);
-  });
-
-  it('overlays the run mean as a second mark', () => {
-    const entry: RunEntry = {
-      key: 'r1',
-      n: 2,
-      seed: 1,
-      status: 'done',
-      progress: { done: 2, total: 2 },
-      error: null,
-      detail: null,
-      predictions: [],
-      docId: 'doc',
-      docUpdated: '2026-01-01T00:00:00.000Z',
-      note: null,
-      result: {
-        rows: [],
-        scores: [],
-        trace: [10, 20].map((t, run) => ({
-          run,
-          threat: 'T-01',
-          times: {
-            detect: t,
-            track: null,
-            identify: null,
-            target: null,
-            engage: null,
-            effect: null,
-            arrival: null,
-          },
-          positions: {},
-          status: 'ok',
-        })),
-      } as unknown as RunEntry['result'],
-    };
-    useRuns.setState({ results: { r1: entry }, order: ['r1'], activeKey: 'r1' });
-    render(<Timeline width={W} />);
-    const runMarks = screen
-      .getAllByTestId('timeline-mark')
-      .filter((m) => m.getAttribute('data-kind') === 'run');
-    expect(runMarks).toHaveLength(1);
-    expect(runMarks[0]!.getAttribute('data-step')).toBe('find');
-    expect(inLane(runMarks[0]!, 0, 0)).toBe(true);
-    expect(runMarks[0]!.getAttribute('aria-label')).toBe('Find run mean t+0:15');
   });
 
   it('the right-click menu lists Set time here, Loop from here, Clear loop and Add event here', () => {
