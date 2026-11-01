@@ -1,15 +1,25 @@
-// Legacy inspector rows (legacy/js/51-panel-inspector.js fld, ufld, sel, sec): a 96 px label on the
-// left, a dense control, then a unit suffix. A value commits on blur or Enter; Escape reverts. A
-// value that does not parse keeps the stored value and shows the legacy words under the row.
-import { useId, useState, type ReactNode } from 'react';
-import { useUi } from '../../../state/ui';
+// Inspector primitives in the mockup layout (legacy/mockup-v3.html .sec, .f, .item, .sub): a
+// section with a head and an action, 88 px label rows, selectable item rows, and fields that write
+// on input. One field's keystrokes are one undo step: the step begins at the first input and ends
+// on blur or Enter (useDocument beginDrag, updateDrag, endDrag). Escape, or a value that does not
+// parse at commit, reverts the field and its step.
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useDocument, type Recipe } from '../../../state/document';
+import { useUi, type Units } from '../../../state/ui';
 import { focusRing } from '../../../ui/focus';
 import { readout } from '../../shared/units';
-import type { Units } from '../../../state/ui';
 import { parseValue, shown, suffix, type FieldType } from './parse';
 
+export const CONTROL = `h-ctl-dense w-full min-w-0 rounded-[3px] border border-surface-3 bg-surface-0 px-[5px] text-data text-text ${focusRing}`;
+export const MINI = `h-ctl-dense shrink-0 rounded-[3px] border border-surface-3 bg-surface-1 px-2 text-data text-text hover:bg-surface-2 disabled:opacity-40 ${focusRing}`;
+export const X = `h-ctl-mini w-[22px] shrink-0 rounded-[3px] text-data text-muted hover:bg-surface-3 hover:text-text disabled:opacity-40 ${focusRing}`;
+
 /** Unfocused text at readout precision (review 2 F-09): 2.70 nm, 328 ft, 31 kt. */
-function restText(m: number | null | undefined, ty: FieldType, units: Units): string | undefined {
+export function restText(
+  m: number | null | undefined,
+  ty: FieldType,
+  units: Units,
+): string | undefined {
   if (m === null || m === undefined || !Number.isFinite(m)) return undefined;
   if (ty === 'h') return readout('range', m, units);
   if (ty === 'v' || ty === 'vz') return readout('altitude', m, units);
@@ -17,19 +27,31 @@ function restText(m: number | null | undefined, ty: FieldType, units: Units): st
   return undefined;
 }
 
-const CONTROL = `h-ctl-dense min-w-0 flex-1 rounded-[3px] border border-surface-3 bg-surface-0 px-[5px] text-data text-text ${focusRing}`;
-
-/** Legacy `sec`: a section with a caps label. */
-export function Sec({ title, children }: { title: string; children: ReactNode }) {
+/** A section: a 12 px head with an optional action, then its rows. */
+export function Sec(props: { title: string; action?: ReactNode; children?: ReactNode }) {
   return (
-    <section aria-label={title} className="border-b border-surface-3 px-2.5 pt-1.5 pb-2">
-      <h2 className="mb-1.5 text-micro font-medium tracking-caps text-muted uppercase">{title}</h2>
-      {children}
+    <section
+      aria-label={props.title}
+      className="border-t border-surface-3 pt-2.5 pb-1.5 first:border-t-0 first:pt-0"
+    >
+      <div className="mb-1.5 flex items-center justify-between gap-1.5">
+        <h2 className="text-data font-medium text-muted">{props.title}</h2>
+        {props.action}
+      </div>
+      {props.children}
     </section>
   );
 }
 
-/** Legacy `in-err`: a warning line. */
+/** A group head inside a section. */
+export function Group({ children }: { children: ReactNode }) {
+  return <h3 className="mt-1.5 mb-0.5 px-1.5 text-micro font-medium text-muted">{children}</h3>;
+}
+
+export function Hint({ children }: { children: ReactNode }) {
+  return <p className="my-1 text-data text-muted">{children}</p>;
+}
+
 export function Warn({ children }: { children: ReactNode }) {
   return (
     <p role="status" className="my-1 text-micro whitespace-pre-line text-state-warning">
@@ -38,264 +60,325 @@ export function Warn({ children }: { children: ReactNode }) {
   );
 }
 
-/** Legacy `hint`. */
-export function Hint({ children }: { children: ReactNode }) {
-  return <p className="my-1 text-micro text-muted">{children}</p>;
-}
-
-/** Legacy `fld`: label, control, suffix. */
-export function Fld(props: {
-  id: string;
-  label: string;
-  suf?: string;
+/** A field row: an 88 px caption, then one or two controls. */
+export function F(props: {
+  caption?: string;
+  two?: boolean;
+  top?: boolean;
+  /** Grid columns in place of the default 88 px label and one or two equal controls. */
+  cols?: string;
   children: ReactNode;
-  err?: string | null;
 }) {
+  const cols = props.cols ?? (props.two ? 'grid-cols-[88px_1fr_1fr]' : 'grid-cols-[88px_1fr]');
   return (
-    <>
-      <div className="my-[3px] flex items-center gap-1.5">
-        <label htmlFor={props.id} className="w-24 shrink-0 text-micro text-muted">
-          {props.label}
-        </label>
-        {props.children}
-        {props.suf !== undefined ? (
-          <span className="min-w-[34px] shrink-0 font-mono text-micro text-muted">{props.suf}</span>
-        ) : null}
-      </div>
-      {props.err ? <Warn>{props.err}</Warn> : null}
-    </>
-  );
-}
-
-/** A text box that commits on blur or Enter and reverts on Escape. */
-export function CommitInput(props: {
-  id?: string;
-  value: string;
-  onCommit: (text: string) => void;
-  mono?: boolean;
-  placeholder?: string;
-  ariaLabel?: string;
-  className?: string;
-  /** Text shown while the box has no focus (readout precision, review F-09). */
-  rest?: string;
-}) {
-  const [draft, setDraft] = useState(props.value);
-  const [focused, setFocused] = useState(false);
-  const [prev, setPrev] = useState(props.value);
-  if (prev !== props.value) {
-    setPrev(props.value);
-    setDraft(props.value);
-  }
-  const commit = () => {
-    if (draft !== props.value) props.onCommit(draft);
-  };
-  return (
-    <input
-      id={props.id}
-      type="text"
-      autoComplete="off"
-      spellCheck={false}
-      aria-label={props.ariaLabel}
-      placeholder={props.placeholder}
-      value={focused || props.rest === undefined ? draft : props.rest}
-      onChange={(e) => setDraft(e.target.value)}
-      onFocus={() => setFocused(true)}
-      onBlur={() => {
-        setFocused(false);
-        commit();
-      }}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          commit();
-        } else if (e.key === 'Escape') {
-          setDraft(props.value);
-        }
-      }}
-      className={`${CONTROL} ${props.mono ? 'font-mono' : 'font-sans'} ${props.className ?? ''}`}
-    />
-  );
-}
-
-/** Legacy `ufld`: a value in display units, parsed with the legacy words. */
-export function UnitRow(props: {
-  label: string;
-  ty: FieldType;
-  stored: number | null | undefined;
-  onCommit: (v: number | null) => void;
-  nullable?: boolean;
-  placeholder?: string;
-  /** Accessible name when it differs from the legacy label (e2e alias). */
-  ariaLabel?: string;
-  suf?: string;
-}) {
-  const id = useId();
-  const units = useUi((s) => s.units);
-  const [err, setErr] = useState<string | null>(null);
-  const [seq, setSeq] = useState(0);
-  const value = shown(props.stored, props.ty, units);
-  return (
-    <Fld id={id} label={props.label} suf={props.suf ?? suffix(props.ty, units)} err={err}>
-      <CommitInput
-        key={`${value}-${seq}`}
-        id={id}
-        mono
-        value={value}
-        rest={restText(props.stored, props.ty, units)}
-        placeholder={props.placeholder}
-        ariaLabel={props.ariaLabel}
-        onCommit={(text) => {
-          if (props.nullable && text.trim() === '') {
-            setErr(null);
-            if (props.stored !== null && props.stored !== undefined) props.onCommit(null);
-            return;
-          }
-          const r = parseValue(props.ty, text, units, useUi.getState().tS);
-          if (r.err !== undefined) {
-            setErr(r.err);
-            setSeq((n) => n + 1);
-            return;
-          }
-          setErr(null);
-          if (r.v !== props.stored) props.onCommit(r.v);
-        }}
-      />
-    </Fld>
-  );
-}
-
-/** A prose text row. */
-export function TextRow(props: {
-  label: string;
-  value: string;
-  onCommit: (text: string) => void;
-  placeholder?: string;
-  mono?: boolean;
-  err?: string | null;
-}) {
-  const id = useId();
-  return (
-    <Fld id={id} label={props.label} err={props.err}>
-      <CommitInput
-        id={id}
-        value={props.value}
-        mono={props.mono}
-        placeholder={props.placeholder}
-        onCommit={props.onCommit}
-      />
-    </Fld>
-  );
-}
-
-/** A multi-line prose row (legacy textarea). */
-export function AreaRow(props: {
-  label: string;
-  value: string;
-  rows?: number;
-  onCommit: (text: string) => void;
-}) {
-  const id = useId();
-  const [draft, setDraft] = useState(props.value);
-  const [prev, setPrev] = useState(props.value);
-  if (prev !== props.value) {
-    setPrev(props.value);
-    setDraft(props.value);
-  }
-  return (
-    <div className="my-[3px] flex items-start gap-1.5">
-      <label htmlFor={id} className="w-24 shrink-0 pt-1 text-micro text-muted">
-        {props.label}
-      </label>
-      <textarea
-        id={id}
-        rows={props.rows ?? 2}
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => draft !== props.value && props.onCommit(draft)}
-        className={`min-h-16 min-w-0 flex-1 resize-y rounded-[3px] border border-surface-3 bg-surface-0 px-[5px] py-0.5 font-sans text-data text-text ${focusRing}`}
-      />
+    <div className={`mb-1.5 grid gap-x-2 ${props.top ? 'items-start' : 'items-center'} ${cols}`}>
+      {props.caption !== undefined ? (
+        <span className="truncate text-data font-medium text-muted">{props.caption}</span>
+      ) : null}
+      {props.children}
     </div>
   );
 }
 
-/** Legacy `sel`. */
-export function SelectRow<T extends string>(props: {
-  label: string;
-  value: T;
-  options: readonly (readonly [T, string])[];
-  onChange: (v: T) => void;
-  suf?: string;
+/** A small button for a section head (Add). */
+export function Mini(props: {
+  name?: string;
+  onClick: () => void;
+  disabled?: boolean;
+  title?: string;
+  pressed?: boolean;
+  children: ReactNode;
 }) {
-  const id = useId();
   return (
-    <Fld id={id} label={props.label} suf={props.suf}>
-      <select
-        id={id}
-        value={props.value}
-        onChange={(e) => {
-          const hit = props.options.find((o) => o[0] === e.target.value);
-          if (hit) props.onChange(hit[0]);
-        }}
-        className={`${CONTROL} px-0.5 font-sans`}
-      >
-        {props.options.map(([v, l]) => (
-          <option key={v} value={v}>
-            {l}
-          </option>
-        ))}
-      </select>
-    </Fld>
+    <button
+      type="button"
+      aria-label={props.name}
+      aria-pressed={props.pressed}
+      title={props.title}
+      disabled={props.disabled}
+      onClick={props.onClick}
+      className={MINI}
+    >
+      {props.children}
+    </button>
   );
 }
 
-/** A read-only row in the legacy layout. */
-export function ShowRow({ label, value, suf }: { label: string; value: string; suf?: string }) {
+/** The remove button of a row. */
+export function Remove(props: { name: string; onClick: () => void; disabled?: boolean }) {
   return (
-    <div className="my-[3px] flex items-center gap-1.5">
-      <span className="w-24 shrink-0 text-micro text-muted">{label}</span>
-      <span className="min-w-0 flex-1 truncate font-mono text-data text-text">{value}</span>
-      {suf !== undefined ? (
-        <span className="min-w-[34px] shrink-0 font-mono text-micro text-muted">{suf}</span>
+    <button
+      type="button"
+      aria-label={props.name}
+      disabled={props.disabled}
+      onClick={props.onClick}
+      className={X}
+    >
+      ×
+    </button>
+  );
+}
+
+/**
+ * A selectable object row (mockup .item): a select button with the title and the meta line, and a
+ * remove button. The selected row carries `aria-current` and shows its fields under it.
+ */
+export function Item(props: {
+  id: string;
+  current: boolean;
+  onSelect: () => void;
+  title: ReactNode;
+  meta?: ReactNode;
+  lead?: ReactNode;
+  onRemove?: () => void;
+  children?: ReactNode;
+}) {
+  return (
+    <div>
+      <div
+        aria-current={props.current ? 'true' : undefined}
+        className={`flex items-start gap-1.5 rounded-[4px] px-1.5 py-1.5 hover:bg-surface-2 ${
+          props.current ? 'bg-surface-2 shadow-[inset_2px_0_0_var(--accent)]' : ''
+        }`}
+      >
+        <button
+          type="button"
+          aria-label={`Select ${props.id}`}
+          onClick={props.onSelect}
+          className={`flex min-w-0 flex-1 cursor-default gap-1.5 text-left ${focusRing}`}
+        >
+          {props.lead}
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-body font-medium text-text">{props.title}</span>
+            {props.meta !== undefined ? (
+              <span className="block truncate font-mono text-micro text-muted">{props.meta}</span>
+            ) : null}
+          </span>
+        </button>
+        {props.onRemove ? <Remove name={`Remove ${props.id}`} onClick={props.onRemove} /> : null}
+      </div>
+      {props.current && props.children ? (
+        <div className="px-1.5 pt-1 pb-2.5">{props.children}</div>
       ) : null}
     </div>
   );
 }
 
-/** Legacy `fld` with an id input and the legacy rename words. */
-export function IdRow(props: {
-  value: string;
-  taken: readonly string[];
-  onRename: (id: string) => void;
-}) {
-  const id = useId();
-  const [err, setErr] = useState<string | null>(null);
-  const [seq, setSeq] = useState(0);
+/** The colour mark before a row title (mockup .sw). */
+export function Swatch({ kind }: { kind: 'hostile' | 'volume' }) {
   return (
-    <Fld id={id} label="Id" err={err}>
-      <CommitInput
-        key={`${props.value}-${seq}`}
-        id={id}
-        mono
-        value={props.value}
-        onCommit={(text) => {
-          const next = text.trim();
-          if (next === props.value) return;
-          if (!next) {
-            setErr('Type an id.');
-            setSeq((n) => n + 1);
-            return;
-          }
-          if (props.taken.includes(next)) {
-            setErr(`${next} is in use. Pick another id.`);
-            setSeq((n) => n + 1);
-            return;
-          }
-          setErr(null);
-          props.onRename(next);
-        }}
-      />
-    </Fld>
+    <span
+      aria-hidden
+      className={`mt-[5px] inline-block size-2 shrink-0 ${
+        kind === 'hostile' ? 'bg-[var(--state-hostile)]' : 'border border-muted'
+      }`}
+    />
   );
 }
 
-export { CONTROL };
+/** Toggle the selection to one key: a click on the selected row clears it. */
+export function toggle(key: string, current: boolean) {
+  useUi.getState().setSelection(current ? [] : [key]);
+}
+
+/**
+ * One undo step per field: `write` opens the step on the first input and applies each value to the
+ * live document; `end` closes it; `cancel` reverts it. The label is the one at the first input, so
+ * a rename typed into the id field stays one step.
+ */
+export function useCoalesce(label: string) {
+  const active = useRef<string | null>(null);
+  const mine = () => {
+    const drag = useDocument.getState().drag;
+    return active.current !== null && drag !== null && drag.label === active.current;
+  };
+  const write = (recipe: Recipe) => {
+    if (!mine()) {
+      useDocument.getState().beginDrag(label);
+      active.current = label;
+    }
+    useDocument.getState().updateDrag(recipe);
+  };
+  const end = () => {
+    if (mine()) useDocument.getState().endDrag();
+    active.current = null;
+  };
+  const cancel = () => {
+    if (mine()) useDocument.getState().cancelDrag();
+    active.current = null;
+  };
+  useEffect(
+    () => () => {
+      const drag = useDocument.getState().drag;
+      if (active.current !== null && drag && drag.label === active.current) {
+        useDocument.getState().endDrag();
+      }
+    },
+    [],
+  );
+  return { write, end, cancel };
+}
+
+/** What a field does with a typed text: a recipe to apply, an error, or nothing. */
+export type Write = (text: string) => Recipe | string | null;
+
+/** A text field (or textarea) that writes on input, as one undo step per focus. */
+export function Field(props: {
+  name: string;
+  label: string;
+  value: string;
+  rest?: string;
+  write: Write;
+  mono?: boolean;
+  placeholder?: string;
+  rows?: number;
+  className?: string;
+}) {
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const bad = useRef<string | null>(null);
+  const step = useCoalesce(props.label);
+
+  const input = (text: string) => {
+    setDraft(text);
+    const r = props.write(text);
+    if (typeof r === 'function') {
+      bad.current = null;
+      step.write(r);
+    } else bad.current = r;
+  };
+  const commit = () => {
+    if (bad.current !== null) {
+      setErr(bad.current);
+      step.cancel();
+      setDraft(null);
+    } else {
+      setErr(null);
+      step.end();
+    }
+    bad.current = null;
+  };
+  const revert = () => {
+    step.cancel();
+    bad.current = null;
+    setErr(null);
+    setDraft(null);
+  };
+
+  const shownText = focused ? (draft ?? props.value) : (props.rest ?? props.value);
+  const common = {
+    'aria-label': props.name,
+    'aria-invalid': err ? true : undefined,
+    autoComplete: 'off',
+    spellCheck: false,
+    placeholder: props.placeholder,
+    value: shownText,
+    onFocus: () => {
+      setFocused(true);
+      setDraft(null);
+    },
+    onBlur: () => {
+      setFocused(false);
+      commit();
+    },
+  };
+  const font = props.mono ? 'font-mono' : 'font-sans';
+  return (
+    <span className={`flex min-w-0 flex-col ${props.className ?? ''}`}>
+      {props.rows ? (
+        <textarea
+          {...common}
+          rows={props.rows}
+          onChange={(e) => input(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') revert();
+          }}
+          className={`min-h-12 w-full min-w-0 resize-y rounded-[3px] border border-surface-3 bg-surface-0 px-[5px] py-0.5 text-data text-text ${font} ${focusRing}`}
+        />
+      ) : (
+        <input
+          {...common}
+          type="text"
+          onChange={(e) => input(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              commit();
+            } else if (e.key === 'Escape') revert();
+          }}
+          className={`${CONTROL} ${font}`}
+        />
+      )}
+      {err ? <Warn>{err}</Warn> : null}
+    </span>
+  );
+}
+
+/** A number in display units (legacy `ufld`), parsed with the legacy words. */
+export function NumField(props: {
+  name: string;
+  label: string;
+  ty: FieldType;
+  stored: number | null | undefined;
+  set: (v: number | null) => Recipe;
+  nullable?: boolean;
+  placeholder?: string;
+  className?: string;
+}) {
+  const units = useUi((s) => s.units);
+  return (
+    <Field
+      name={props.name}
+      label={props.label}
+      mono
+      className={props.className}
+      placeholder={props.placeholder}
+      value={shown(props.stored, props.ty, units)}
+      rest={restText(props.stored, props.ty, units)}
+      write={(text) => {
+        if (props.nullable && text.trim() === '') return props.set(null);
+        const r = parseValue(props.ty, text, units, useUi.getState().tS);
+        return r.err !== undefined ? r.err : props.set(r.v);
+      }}
+    />
+  );
+}
+
+/** A select that writes one undo step per change. */
+export function Choice<T extends string>(props: {
+  name: string;
+  value: T;
+  options: readonly (readonly [T, string])[];
+  onChange: (v: T) => void;
+  className?: string;
+}) {
+  return (
+    <select
+      aria-label={props.name}
+      value={props.value}
+      onChange={(e) => {
+        const hit = props.options.find((o) => o[0] === e.target.value);
+        if (hit) props.onChange(hit[0]);
+      }}
+      className={`${CONTROL} px-0.5 font-sans ${props.className ?? ''}`}
+    >
+      {props.options.map(([v, l]) => (
+        <option key={v} value={v}>
+          {l}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/** The unit word for a field type in the current units, for captions. */
+export function useSuffix(ty: FieldType): string {
+  const units = useUi((s) => s.units);
+  return suffix(ty, units);
+}
+
+/** One undo step through the document store. */
+export function edit(label: string, recipe: Recipe) {
+  useDocument.getState().edit(label, recipe);
+}
