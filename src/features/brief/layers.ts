@@ -1,25 +1,20 @@
-// The five layer toggles of the mockup (`legacy/mockup-v3.html` LAYER_DEFS, line 232) over the
-// board's eight chip layers (src/board/layers.ts LAYER_LABELS). A group is on when every member
-// is on; a toggle writes every member. Tracks and Rings are not in a group and keep their value.
-// Lane 10.3 builds the same table for the Build bar; the orchestrator dedupes after the merge.
+// The five layer toggles of the Brief notes panel (`legacy/mockup-v3.html` LAYER_DEFS, line 232)
+// are the Build bar's table (src/features/build/bar/layers.ts), read here as groups over a card's
+// stored layers: a group is on when every member is on; a toggle writes every member.
 import type { LayerId } from '../../domain/types';
-import { defaultLayers } from '../../board';
+import { LAYER_TOGGLES, layerOn } from '../build/bar/layers';
 
 export type LayerGroup = { id: string; label: string; members: readonly LayerId[] };
 
-export const LAYER_GROUPS: readonly LayerGroup[] = [
-  { id: 'reach', label: 'Reach', members: ['reach'] },
-  { id: 'events', label: 'Events', members: ['events'] },
-  { id: 'envelopes', label: 'Envelopes', members: ['envelopes'] },
-  // The target TSPI cross is flown data, so it follows Telemetry.
-  { id: 'telemetry', label: 'Telemetry', members: ['telemetry', 'target'] },
-  { id: 'labels', label: 'Labels', members: ['labels'] },
-];
+export const LAYER_GROUPS: readonly LayerGroup[] = LAYER_TOGGLES.map((t) => ({
+  id: t.id,
+  label: t.label,
+  members: t.layers,
+}));
 
 /** True when every member of the group is on; a missing id takes the board default. */
 export function groupOn(layers: Partial<Record<LayerId, boolean>>, g: LayerGroup): boolean {
-  const def = defaultLayers();
-  return g.members.every((id) => layers[id] ?? def[id]);
+  return g.members.every((id) => layerOn(layers, id));
 }
 
 /** The layers with every member of the group set to `on`. */

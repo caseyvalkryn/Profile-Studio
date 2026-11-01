@@ -14,7 +14,7 @@ const row = (ids: string | readonly string[], label?: string): RowSpec => ({
   label,
 });
 
-const CHIPS = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `layer.chip${n}`);
+const CHIPS = [1, 2, 3, 4, 5].map((n) => `layer.chip${n}`);
 const CARDS = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `brief.card${n}`);
 
 /** Legacy order of `46-keys.js`, with the spec section 8 keys. */
@@ -36,7 +36,7 @@ const ORDER: readonly RowSpec[] = [
   row('map.gridSnap'),
   row('map.measure'),
   row('view.stripCycle', 'Timeline, chart, readout'),
-  row(CHIPS, 'Layer by chip number'),
+  row(CHIPS, 'Layer toggle by number'),
   row('view.fit', 'Fit the board'),
   row(['view.zoomIn', 'view.zoomOut'], 'Zoom'),
   row(['edit.nextOfKind', 'edit.prevOfKind'], 'Next or previous object of the same kind'),

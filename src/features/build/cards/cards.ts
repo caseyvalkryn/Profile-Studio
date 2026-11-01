@@ -3,7 +3,7 @@
 // Each edit is one undo step.
 import { cameras, VIEW_TO_CAM, type Cam } from '../../../board';
 import { find } from '../../../commands/select';
-import { newKey } from '../../../domain/ids';
+import { newKey, nextId } from '../../../domain/ids';
 import type { Card, CardView, Vignette } from '../../../domain/types';
 import { useDocument } from '../../../state/document';
 import { useUi } from '../../../state/ui';
@@ -14,12 +14,12 @@ import { toggledLayers } from '../bar/layers';
 
 export const SAVED_TOAST = 'Card saved. Write its caption in Brief.';
 
-/** The lowest unused `c<n>` (spec section 3 item 5; ids.ts has no card kind yet). */
+/** The lowest unused `c<n>` (spec section 3 item 5), minted as every other display id. */
 export function nextCardId(cards: readonly Card[]): string {
-  const used = new Set(cards.map((c) => c.id));
-  let n = 1;
-  while (used.has(`c${n}`)) n++;
-  return `c${n}`;
+  return nextId(
+    'card',
+    cards.map((c) => c.id),
+  );
 }
 
 const SYSTEMS = (doc: Vignette) => [...doc.sensors, ...doc.effectors, ...doc.nodes];

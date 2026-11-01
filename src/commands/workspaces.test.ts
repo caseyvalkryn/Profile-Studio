@@ -129,7 +129,7 @@ describe('shortcut sheet rows', () => {
       l.indexOf('Copy the selected object'),
     );
     expect(rows.find((r) => r.label === 'Plan, Elevation, 3D')!.keys).toBe('1, 2, 3');
-    expect(rows.find((r) => r.label === 'Layer by chip number')!.keys).toBe('Shift+1 to 8');
+    expect(rows.find((r) => r.label === 'Layer toggle by number')!.keys).toBe('Shift+1 to 5');
   });
 
   it('Brief shows card keys and no Build-only keys', () => {

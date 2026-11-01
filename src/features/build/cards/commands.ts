@@ -59,8 +59,10 @@ export const cardCommands: Command[] = [
     shortcut: 'C',
     workspaces: ['build'],
     when: (ctx) => (ctx.document.doc ? true : OPEN_FIRST),
-    run: () => {
-      saveCard(null);
+    run: (ctx) => {
+      // After the current card (the Brief's), as the mockup's cardIx does; the new card is current.
+      const k = saveCard(ctx.ui.cardKey);
+      if (k) ctx.ui.setCardKey(k);
     },
   },
   viewRef,

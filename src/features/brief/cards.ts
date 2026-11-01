@@ -9,9 +9,12 @@ import { newKey } from '../../domain/ids';
 import { CAM_TO_VIEW, type CamKind } from '../../board';
 import { useBoard } from '../build/board/store';
 import { boardScene } from '../build/board/derived';
+import { applyCard as applyToBuild, nextCardId } from '../build/cards/cards';
 import { useDocument, type Recipe } from '../../state/document';
 import { useUi, type BuildStash, type View } from '../../state/ui';
 import { idMaps } from './toCardRec';
+
+export { nextCardId };
 
 const doc = () => useDocument.getState().doc;
 const edit = (label: string, recipe: Recipe) => useDocument.getState().edit(label, recipe);
@@ -47,25 +50,11 @@ export function step(d: number): void {
 }
 
 /**
- * Write the card's view, time, camera, layers and selection to the Build stores. `ref` is a key
- * in the card and a display id on the board.
+ * Write the card's view, time, camera, layers and selection to the Build stores, through the one
+ * implementation in src/features/build/cards (the card menu's Open uses the same).
  */
-export function applyCard(v: Vignette, card: Card): void {
-  const ui = useUi.getState();
-  ui.setView(card.view.kind);
-  ui.setElevationMode(card.view.elevationMode);
-  ui.setTimeOn(card.tS != null);
-  if (card.tS != null) ui.setTime(card.tS);
-  ui.setSelection(card.focus.slice());
-  const { idOfKey } = idMaps(boardScene(v));
-  const layers: Record<string, boolean> = {};
-  for (const [k, on] of Object.entries(card.layers)) if (on !== undefined) layers[k] = on;
-  useBoard.getState().set({
-    yaw: card.view.yawDeg,
-    pitch: card.view.pitchDeg,
-    ref: card.view.ref === 'asset' ? 'asset' : (idOfKey.get(card.view.ref) ?? 'asset'),
-    layers,
-  });
+export function applyCard(_v: Vignette, card: Card): void {
+  applyToBuild(card);
 }
 
 /** A copy of the Build view and time, as the stash holds it. */
@@ -112,14 +101,6 @@ export function restoreBuild(): void {
     layers: { ...s.layers },
   });
   ui.setBuildStash(null);
-}
-
-/** The lowest unused card id, c1 c2 ..., as legacy `uid("c", cards)`. */
-export function nextCardId(cards: readonly Card[]): string {
-  const used = new Set(cards.map((c) => c.id));
-  let n = 1;
-  while (used.has(`c${n}`)) n++;
-  return `c${n}`;
 }
 
 /**

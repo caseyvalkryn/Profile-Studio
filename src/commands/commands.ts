@@ -35,10 +35,10 @@ import type {
 import { previewOf } from '../state/document';
 import type { Clip, MapPoint, PanelName, StripTab, Theme, Workspace } from '../state/ui';
 import { libraryCommands } from '../features/library/commands';
-import { chips, defaultLayers } from '../board';
 import { boardCommands } from '../features/build/board/commands';
 import { briefCommands } from '../features/brief/commands';
 import { useBoard } from '../features/build/board/store';
+import { LAYER_TOGGLES, setToggle, toggleOn } from '../features/build/bar/layers';
 import { cardCommands } from '../features/build/cards/commands';
 import { menuCommands } from '../features/build/menu/commands';
 import { paletteCommands } from '../features/build/palette/commands';
@@ -518,25 +518,15 @@ const PANEL_TOGGLES: Command[] = (
   run: (ctx) => ctx.ui.togglePanel(name),
 }));
 
-/** Flip one board layer in `useBoard.layers`; a layer never flipped reads its default. */
-export function toggleLayer(id: string): void {
-  const b = useBoard.getState();
-  const on = b.layers[id] ?? (defaultLayers() as Record<string, boolean>)[id] ?? false;
-  b.set({ layers: { ...b.layers, [id]: !on } });
-}
-
-/** Shift+1 to Shift+8: the layer chip by number (legacy `layer.toggle`). */
-const LAYER_CHIPS: Command[] = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({
-  id: `layer.chip${n}`,
-  label: `Layer chip ${n} on or off`,
+/** Shift+1 to Shift+5: the Build bar's five layer toggles by number (spec section 8, Keys). */
+const LAYER_CHIPS: Command[] = LAYER_TOGGLES.map((t, i) => ({
+  id: `layer.chip${i + 1}`,
+  label: `${t.label} layer on or off`,
   group: 'view',
-  shortcut: `Shift+${n}`,
+  shortcut: `Shift+${i + 1}`,
   workspaces: BUILD_BRIEF,
-  when: () => (chips().some((l) => l.chip === n) ? true : `No layer has chip ${n}`),
-  run: () => {
-    const l = chips().find((x) => x.chip === n);
-    if (l) toggleLayer(l.id);
-  },
+  when: () => true,
+  run: () => setToggle(t, !toggleOn(useBoard.getState().layers, t)),
 }));
 
 const COMMANDS: Command[] = [
@@ -890,7 +880,7 @@ const COMMANDS: Command[] = [
   ...LAYER_CHIPS,
   // Lanes 9.2.3 to 9.2.5: the rail adds, quick-add, the right-click items and the board keys.
   // They replace the stubs build.quickAdd, build.addSensor, build.addArea, build.addEvent,
-  // build.formation, map.gridSnap, view.zoomIn and view.zoomOut (card.* stay stubs in menuCommands).
+  // build.formation, map.gridSnap, view.zoomIn and view.zoomOut (the card.* commands come from cards/).
   ...railCommands,
   ...paletteCommands,
   ...menuCommands,
@@ -924,7 +914,7 @@ const COMMANDS: Command[] = [
     run: (ctx) => ctx.ui.setTheme(nextTheme(ctx.ui.theme)),
   },
 
-  // Brief keys (spec section 8): stubs until Brief lands
+  // Brief keys and commands (spec section 8), scoped to the Brief workspace (lane 10.4)
   ...briefCommands,
 
   // empty map

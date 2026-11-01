@@ -3,7 +3,7 @@
 import type { AreaKind, EffectorKind, NodeKind, SensorKind } from './types';
 
 export type IdKind =
-  SensorKind | EffectorKind | NodeKind | AreaKind | 'threat' | 'question' | 'hypothesis';
+  SensorKind | EffectorKind | NodeKind | AreaKind | 'threat' | 'question' | 'hypothesis' | 'card';
 
 const PREFIX: Record<IdKind, string> = {
   radar: 'RDR-',
@@ -22,6 +22,7 @@ const PREFIX: Record<IdKind, string> = {
   ref: 'REF-',
   question: 'Q-',
   hypothesis: 'H-',
+  card: 'c',
 };
 
 /** Kinds whose first id is the bare prefix (`DA`), then `DA-2`, `DA-3`. */
