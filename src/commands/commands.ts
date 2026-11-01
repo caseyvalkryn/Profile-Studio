@@ -37,6 +37,7 @@ import type { Clip, MapPoint, PanelName, StripTab, Theme, Workspace } from '../s
 import { libraryCommands } from '../features/library/commands';
 import { chips, defaultLayers } from '../board';
 import { boardCommands } from '../features/build/board/commands';
+import { briefCommands } from '../features/brief/commands';
 import { useBoard } from '../features/build/board/store';
 import { menuCommands } from '../features/build/menu/commands';
 import { paletteCommands } from '../features/build/palette/commands';
@@ -427,7 +428,6 @@ const ADD_HERE: Command[] = [
 
 const BUILD: readonly Workspace[] = ['build'];
 const BUILD_BRIEF: readonly Workspace[] = ['build', 'brief'];
-const BRIEF: readonly Workspace[] = ['brief'];
 
 /**
  * Commands active in every workspace. Every other command without its own `workspaces` is a
@@ -537,37 +537,6 @@ const LAYER_CHIPS: Command[] = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({
     if (l) toggleLayer(l.id);
   },
 }));
-
-const BRIEF_LATER = 'Brief arrives in lane 9.4';
-const briefKey = (id: string, label: string, shortcut: string): Command => ({
-  id,
-  label,
-  group: 'view',
-  shortcut,
-  workspaces: BRIEF,
-  when: () => BRIEF_LATER,
-  run: () => {},
-});
-
-/** The Brief keys of spec section 8, in legacy order. Stubs until lane 9.4.4 wires them. */
-const BRIEF_KEYS: Command[] = [
-  briefKey('brief.next', 'Next beat of the clip, else next card', 'ArrowRight'),
-  briefKey('brief.nextPage', 'Next beat of the clip, else next card', 'PageDown'),
-  briefKey('brief.back', 'Back one beat of the clip, else previous card', 'ArrowLeft'),
-  briefKey('brief.backPage', 'Back one beat of the clip, else previous card', 'PageUp'),
-  briefKey('brief.space', 'Next card, or play when time is on', 'Space'),
-  briefKey('brief.first', 'First card', 'Home'),
-  briefKey('brief.last', 'Last card', 'End'),
-  ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) =>
-    briefKey(`brief.card${n}`, `Jump to card ${n}`, `${n}`),
-  ),
-  briefKey('brief.full', 'Full stage on or off', 'F'),
-  briefKey('brief.notes', 'Notes panel on or off', 'N'),
-  briefKey('brief.blank', 'Blank the stage', 'B'),
-  briefKey('brief.readout', 'Live readout strip on or off', 'K'),
-  briefKey('brief.focusPrev', 'Cycle the highlight through the card focus', 'ArrowUp'),
-  briefKey('brief.focusNext', 'Cycle the highlight through the card focus', 'ArrowDown'),
-];
 
 const COMMANDS: Command[] = [
   // keys table
@@ -961,7 +930,7 @@ const COMMANDS: Command[] = [
   },
 
   // Brief keys (spec section 8): stubs until Brief lands
-  ...BRIEF_KEYS,
+  ...briefCommands,
 
   // empty map
   ...ADD_HERE,

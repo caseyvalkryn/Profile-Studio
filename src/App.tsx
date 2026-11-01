@@ -1,11 +1,11 @@
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import { registerCommands } from './commands/commands';
 import { bindKeys } from './commands/keys';
 import BuildWorkspace from './features/build/BuildWorkspace';
 import LibraryScreen from './features/library/LibraryScreen';
 import { TEMPLATES } from './domain/templates';
-import Shell, { BriefPlaceholder } from './features/shell/Shell';
+import Shell from './features/shell/Shell';
 import { bindTheme } from './features/shell/theme';
 import { WORKSPACES } from './features/shell/TopBar';
 import { useDocument } from './state/document';
@@ -16,9 +16,12 @@ import { TooltipProvider } from './ui/Tooltip';
 
 registerCommands();
 
+// Brief loads on its route only, so its code stays out of the entry chunk (plan section 8, Lessons).
+const BriefWorkspace = lazy(() => import('./features/brief/BriefWorkspace'));
+
 type WorkspaceName = (typeof WORKSPACES)[number]['name'];
 
-/** Build needs an open profile. Without one, point to the Library. */
+/** Build and Brief need an open profile. Without one, point to the Library. */
 function NoProfile({ name }: { name: string }) {
   return (
     <main
@@ -42,8 +45,8 @@ function Workspace({ name, ready }: { name: WorkspaceName; ready: boolean }) {
   // The route sets the workspace, so keys, the palette and the sheet follow it.
   useEffect(() => useUi.getState().setWorkspace(name.toLowerCase() as WorkspaceId), [name]);
   if (name === 'Library') return <LibraryScreen templates={TEMPLATES} />;
-  if (name === 'Brief') return <BriefPlaceholder />;
   if (!hasDoc) return ready ? <NoProfile name={name} /> : <Loading />;
+  if (name === 'Brief') return <BriefWorkspace />;
   return <BuildWorkspace />;
 }
 

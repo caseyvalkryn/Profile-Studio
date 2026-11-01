@@ -1,0 +1,137 @@
+/* The Brief: what the utility classes cannot say (mockup `legacy/mockup-v3.html` lines 150 to
+   168), and the print stylesheet (spec sections 7 and 10; principle 6.2). */
+
+.brief-cards {
+  background: var(--surface-1);
+  border-right: 1px solid var(--surface-3);
+}
+.brief-card[aria-current='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.brief-notes {
+  background: var(--surface-1);
+  border-left: 1px solid var(--surface-3);
+}
+.brief-stage svg {
+  cursor: default;
+}
+/* The print deck is for paper only. */
+.brief-print {
+  display: none;
+}
+
+@media (max-width: 1000px) {
+  .brief-screen {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+  }
+  .brief-cards {
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--surface-3);
+  }
+  .brief-card {
+    min-width: 180px;
+  }
+  .brief-notes {
+    border-left: 0;
+    border-top: 1px solid var(--surface-3);
+  }
+  .brief-stage {
+    min-height: 380px;
+  }
+}
+
+@media print {
+  /* The light theme on paper, whatever the screen theme (the light values of src/styles/tokens.css). */
+  :root,
+  :root[data-theme='dark'] {
+    --surface-0: #f6f7f8;
+    --surface-1: #ffffff;
+    --surface-2: #eceef1;
+    --surface-3: #dde1e6;
+    --text: #1b1f24;
+    --text-muted: #5b6470;
+    --text-subtle: #7b7d73;
+    --accent: #2563eb;
+    --accent-text: #ffffff;
+    --state-covered: #15803d;
+    --state-warning: #b45309;
+    --state-hostile: #c81e1e;
+    --state-inconclusive: #b07d00;
+    --chart-mark: #2a78d6;
+    --chart-band: rgba(42, 120, 214, 0.16);
+    color-scheme: light;
+  }
+  @page {
+    size: landscape;
+    margin: 12mm;
+  }
+  html,
+  body,
+  #root,
+  .ps-app,
+  .ps-cols,
+  .ps-centre,
+  .ps-main,
+  .brief {
+    display: block;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    background: #fff;
+  }
+  /* The app chrome and the screen Brief go; the deck stays. */
+  .ps-top,
+  .ps-rail,
+  .ps-right,
+  .ps-strip,
+  .ps-overlay,
+  .ps-tabs,
+  .ps-sheet,
+  .brief-screen {
+    display: none !important;
+  }
+  .brief-print {
+    display: block;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font: var(--fw) 13px / 1.5 var(--ui);
+    color: var(--text);
+  }
+  .brief-page {
+    break-after: page;
+    page-break-after: always;
+    break-inside: avoid;
+  }
+  .brief-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+  .brief-page h2 {
+    margin: 0 0 6px;
+    font: var(--fw-med) 15px / 20px var(--ui);
+  }
+  .brief-page-render svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--surface-3);
+  }
+  .brief-page-caption {
+    margin: 10px 0 0;
+    max-width: 72ch;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .brief-page-notes {
+    margin: 8px 0 0;
+    max-width: 72ch;
+    color: var(--text-muted);
+    white-space: pre-wrap;
+  }
+}
