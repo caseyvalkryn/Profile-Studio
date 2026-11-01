@@ -17,7 +17,7 @@
   --rule-strong: #b0aa9e; /* input and control borders, axes */
   --text: #212220; /* --t1 */
   --text-muted: #4e504b; /* --t2 */
-  --text-subtle: #7b7d73; /* --t3: labels, hints, keys */
+  --text-subtle: #696b61; /* --t3: labels, hints, keys; darkened from the mockup #7b7d73 to 4.97:1 on the panel (WCAG AA, user 2026-11-01, review 10.R N-04) */
   --accent: #2862b0; /* selection and current time only */
   --accent-text: #eeebe4; /* --accent-ink */
   --elev: 0 8px 24px rgba(33, 34, 32, 0.12);
