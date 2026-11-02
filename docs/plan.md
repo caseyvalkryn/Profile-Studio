@@ -770,25 +770,31 @@ removed from the tree on 2026-11-01 (`git show 70caf07` has them); the findings 
 | 14.1 | done | 0ad42af | drag and select on the board (user request of 2026-11-02, outside a phase; rangeboard `CanvasStage.tsx` marquee as the reference): a mouse drag on the empty board in Plan or Elevation draws the selection rectangle (`board-marquee`, the accent dashed with an 8 percent fill) and selects every system, path and area with a point inside it (`keysInRect` over the hit list: a system by its centre, a path by any waypoint, an area by any vertex; events and planes left out), the count beside the cursor and the ids in the readout (`selectedText`); Shift adds; Shift-click adds or removes one object; a Shift-click on empty keeps the selection; Escape drops a rectangle in progress; every selected key draws `.sel` (`BoardView.selKeys`, the handles stay with the first); a drag on one of several selected objects moves them together by one grid-snapped offset as one undo step with the ghost (`tools.beginGroupDrag`, label "move RDR-1, EO-1" or "move 6 objects"); the arrows nudge them together; the inspector shows "n selected" and expands no row; touch still pans; spec section 7 "Selection" and acceptance item 26; e2e `12-26-marquee`; 60 unit files, 563 tests, 11 e2e; entry 246.70 kB gzip |
 | 14.D | done | 2112093 | lane 14.1, the site file domain: a `range` area kind ("Range area", `RNG-` ids, flat by default, a plain ghost outline drawn under the other volumes; the later hit wins a tie so a zone inside a boundary still takes the click); the schema stamp `profile-studio/8` (v7 restamped by `migrateV7ToV8`; import accepts v8, v7, v6, v5 and legacy v4; the library export writes v8); `src/domain/siteFile.ts` (`readKmz` through the zip central directory and `DecompressionStream('deflate-raw')`, `parseKml` by `DOMParser` with MultiGeometry taken and holes dropped, `localFrom` equirectangular about the site with north as positive y confirmed against `cameras.ts`, `centreOf`, `siteAreas` with the origin rule); synthetic `fixtures/kml/` (two polygons around 35.0, -79.0; the KMZ carries a data-descriptor entry so the reader must use the central directory); 14 `siteFile` tests and the v7 to v8 tests; the worker stopped on `ids.ts` (rule 15) and the orchestrator added the `RNG-` prefix; one error sentence beyond the plan's list accepted ("The KML document in the KMZ cannot be read."); 61 unit files, 580 tests, 11 e2e; entry 246.80 kB gzip |
 | 14.E | done | 0ca38e9 | lane 14.2, the site file entries: `importSiteFile(file)` in `commands.ts` (a `.kmz` through `readKmz`, else text; `parseKml`; `siteAreas`; one undo step "import <file>" that pushes the range areas and sets an unset site; the areas become the selection; `fit()`; toast "n areas from <file>."; a bad file toasts its sentence, changes nothing and rejects so the Library can show it on its line); the command `build.importSite` ("Import a site file", group map, needs a document; defined in `commands.ts`, not the palette file, to avoid a cycle) with an on-demand hidden picker; a `.kml` or `.kmz` dropped on the board imports (`onDragOver` accepts `Files`); the Library input and drop accept `.kml` and `.kmz` and make a new profile named after the file (a Blank copy with no defended asset and the site reset to unset, because Blank's stand-in site 35.05, -117.6 counts as set) then import; the worker stopped on `library.test.tsx` (rule 15: the input label is now "Import file") and the orchestrator changed the two lookups; e2e 12-27 (import from the Library, 2 range areas, "2 selected", the toast, the name "site", undo removes both, a drop of the KML lands on the same box, width to height 1.5); spec section 7 Library line, section 8 "Import a site file", acceptance 27; open: a non-site file dropped on the board is accepted by dragover then ignored with no message; the Library reads the file twice; 61 unit files, 580 tests, 12 e2e; entry 248.50 kB gzip |
+| 14.R | done | d0d6a7d | `reviews/phase-14.md`: 0 blockers, 1 major (F-01: every template carries a stand-in site, Blank's 35.05, -117.6, which reading 4 counted as set, so "Import a site file" on a New profile put TST Ranch 3,483 km east as a dot), 5 minors (F-02 the equator metres per degree, 0.34 percent short in north at 35°; F-03 a non-site file dropped on the board accepted then ignored; F-04 "lon, lat" tuples with spaces parsed as vertices at latitude 0; F-05 the Library success line set after the route change, never seen; F-06 the e2e checked the ratio, not metres, no corrupt-deflate test, no file chooser step), 15 notes; the real files measured in the browser against the scale bar at 693.4 by 502.0 m and 342.8 by 429.1 m (haversine 692.6 by 504.6 and 342.4 by 431.5), bounding-box centres 107.8 m apart (haversine 107.6), both directions right, both in one frame at the 500 m grid; 665 truncated KMZ copies rejected with no hang; 14 screenshots |
+| 14.F | done | 8f44be6 | all 6 findings and notes N-03, N-05, N-09, N-14: a site file whose centre lies more than 50 km (great-circle, `distanceM`) from the site moves the site in the same undo step and the toast adds "Site set from <file>." (the user's poll decision; the Library path keeps its reset so a file within 50 km of Blank's stand-in behaves the same); WGS84 metres per degree at the origin's latitude (the fixture rectangle is 600.66 by 401.32 m on WGS84; the e2e reads 600.58 by 401.41 m from the scale bar); any file drop is cancelled and a non-site file toasts "Drop a KML or KMZ file to import a site."; a site drop focuses the stage; tuples with spaces after commas parse and a tuple with an empty field is skipped; the unseen Library line removed; the Import tooltip points Build's command at the open profile; latitude and longitude to 6 decimals; the document read after the file awaits; e2e 12-27 runs the palette command through the file chooser and drops a text file; a corrupt-deflate test; spec section 8 carries the 50 km rule and the toasts; the toast contract allows a second sentence for a side effect; 61 unit files, 584 tests, 12 e2e; entry 248.74 kB gzip |
 | 14.M | done | main | row 14.1 merged `--no-ff` into `main` (ac91730) on the user's "commit and merge to main" of 2026-11-02; both branches pushed the same day on "push"; worktree refs pruned and the empty `.worktrees/` removed; no lane branch exists |
 
 ## 8. Handoff
 
-State on 2026-11-02, end of the fourteenth session. Phase 13 (the timeline as the plan's clock,
-the Brief as the teaching space) and row 14.1 (drag and select on the board, a user request of
-2026-11-02, outside a phase) are done on `main` (42b7137, pushed). `main` is the only branch:
-the user chose it as the single lane by poll on 2026-11-02 and `rebuild/mvp` (last 6b239aa, the
-same tree) was deleted, local and remote. The gate is green: 60 unit files, 563 tests, 11
-Playwright specs on `vite preview`, build; entry 246.70 kB gzip (budget 300); 100 kB of Geist
-woff2 outside the entry. Rows 13.1 to 14.M in section 7 say what landed. Phase 14 in section 6
-is still to be written. The four readings of the user's request (section 6, phase 13) are
-confirmed by poll (section 1, "Phase 13"). Tag `pre-pivot` (d1f56d1) holds the last head with
-the run and score code. No lane is in flight; no worktree and no lane branch exist (pruned
-2026-11-02). The review notes left open are N-04, N-06, N-07, N-08, N-10, N-11, N-12 and N-14
-of `reviews/phase-13.md`, plus the open items in the 13.1 to 13.W rows and the two follow-ups
-of row 14.1 (the inspector rows do not mark each object of a multi-selection, because the row's
-current flag also expands it; a drag on a selected path's line moves nothing unless the path is
-in a group).
+State on 2026-11-02, end of the fourteenth session. Phase 14 (the site from a KML or KMZ file:
+lanes 14.1, 14.2, 14.R and 14.F) is done on `main` at 8f44be6 with the gate green: 61 unit
+files, 584 tests, 12 Playwright specs on `vite preview`, build; entry 248.74 kB gzip (budget
+300); 100 kB of Geist woff2 outside the entry. Not pushed since 6ea78c8's parent (the last push
+was 251422f); the push waits for the user's word. `main` is the only branch: the user chose it
+as the single lane by poll on 2026-11-02 and `rebuild/mvp` was deleted, local and remote. Rows
+13.1 to 14.F in section 7 say what landed. The six readings of phase 14 stand as amended by
+review 14.R (readings 3 and 4) and the user's poll on F-01 (section 1, "Site origin"). Tag
+`pre-pivot` (d1f56d1) holds the last head with the run and score code. No lane is in flight; no
+worktree and no lane branch exist. Open from phase 14 (`reviews/phase-14.md` notes): N-06 an
+edit of one vertex line rewrites every vertex from the shown text (0.001 nm rounding moves the
+others by up to 0.9 m; predates the phase); N-10 "Range" now names the Range area, the
+Elevation axis "Range from asset" and Reach; N-11 `siteFile.ts` (3 kB gzip) loads with the
+entry; N-13 the reader has no Zip64 path; N-15 Elevation labels its axis "Range from asset"
+with no asset. Earlier open items: N-04, N-06, N-07, N-08, N-10, N-11, N-12 and N-14 of
+`reviews/phase-13.md`, the open items in the 13.1 to 13.W rows, and the two follow-ups of row
+14.1 (the inspector rows do not mark each object of a multi-selection, because the row's
+current flag also expands it; a drag on a selected path's line moves nothing unless the path
+is in a group).
 
 **The product.** A polished version of the v3 mockup `legacy/mockup-v3.html` (served at
 `/legacy/mockup-v3.html`): three workspaces (Library, Build, Brief), one board with three
@@ -800,7 +806,8 @@ is a source of parts.
 phase 10 approved and merged, the typeface direction, the scope hold.
 
 **Next.** The next session starts by asking the user, with a poll, which open item opens
-phase 14: the 12.4 review items 8 to 10
+phase 15: the phase 14 notes above (N-06 the vertex rewrite, N-15 the Elevation axis with no
+asset, N-10 the three meanings of "range"), the 12.4 review items 8 to 10
 (the Plan fit on the site with a long path off the frame, the `PROF-n` id for a template copy,
 the trailing comma on a first-see label), the phase 13 notes (N-10 the board marks of one
 threat do not declutter against another threat's, N-11 the Swarm shows four of six lanes at the
@@ -821,11 +828,11 @@ You are the orchestrator for Profile Studio at /Users/caseytalbot/Projects/profi
 branch main (the only branch). Read CLAUDE.md, docs/design-principles.md, docs/spec.md, then docs/plan.md
 sections 1 to 5, phases 10, 11 and 13 in section 6, then 7 and 8. Start the dev server from
 .claude/launch.json ("dev", port 5174) and use the product at / beside the mockup at
-/legacy/mockup-v3.html for ten minutes. Run `npm run gate` to confirm the baseline: 60 unit
-files, 563 tests, 11 Playwright specs, build.
+/legacy/mockup-v3.html for ten minutes. Run `npm run gate` to confirm the baseline: 61 unit
+files, 584 tests, 12 Playwright specs, build.
 
-Phase 13 and row 14.1 are done, merged into main and pushed. Ask me, with a poll, which of the
-section 8 "Next" items opens phase 14, then write the phase into section 6
+Phase 14 (the site from a KML or KMZ file) is done on main. Ask me, with a poll, which of the
+section 8 "Next" items opens phase 15, then write the phase into section 6
 with lanes, owned files and budgets before any lane starts. Plan section 5 rules apply: one
 worker per lane in a worktree under .worktrees/<id>, workers do not commit, gate and git diff
 --stat before each --no-ff merge into main, gate on main after, worktree removed, sections 7
