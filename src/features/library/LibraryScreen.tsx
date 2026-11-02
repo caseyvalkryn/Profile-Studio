@@ -24,7 +24,10 @@ import { focusRing } from '../../ui/focus';
 import { absoluteTime, metaLine, relativeTime } from './format';
 import { SEARCH_ID } from './commands';
 import { exportLibraryFile, exportProfileFile, importText } from './io';
+import { importSiteFile, isSiteFile, readSitePolygons } from '../../commands/commands';
+import { templateById } from '../../domain/templates';
 import {
+  copyOf,
   newProfile,
   nextProfileId,
   openProfile,
@@ -305,8 +308,35 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
   };
 
   // The one import path: it refreshes this list and toasts the count; a problem shows here.
+  // A KML or KMZ file (lane 14.2) becomes a new profile named after the file: the Blank
+  // template with no defended asset and the site unset, so the file sets it. A bad file stays
+  // here as one sentence and creates nothing.
   const importFile = async (file: File | undefined) => {
-    if (file) setMessage((await importText(await file.text())).join(' '));
+    if (!file) return;
+    if (!isSiteFile(file)) {
+      setMessage((await importText(await file.text())).join(' '));
+      return;
+    }
+    try {
+      await readSitePolygons(file);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : String(err));
+      return;
+    }
+    const blank = templateById('blank');
+    if (!blank) return;
+    const stem = file.name.replace(/\.[^.]*$/, '');
+    const v = copyOf(blank, await nextProfileId(), stem);
+    v.areas = v.areas.filter((a) => a.kind !== 'asset');
+    v.site = { name: stem, lat: 0, lon: 0, elevM: 0 };
+    openProfile(v, go);
+    try {
+      await importSiteFile(file);
+      const n = useDocument.getState().doc?.areas.length ?? 0;
+      setMessage(`${n} area${n === 1 ? '' : 's'} from ${file.name}.`);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : String(err));
+    }
   };
 
   const onDrop = (e: DragEvent) => {
@@ -409,7 +439,7 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
         />
         <Button
           variant="default"
-          tooltip="Import a Profile Studio or legacy JSON file. You can also drop it here."
+          tooltip="Import a Profile Studio or legacy JSON file, or a KML or KMZ site file as a new profile. You can also drop it here."
           onClick={() => fileRef.current?.click()}
         >
           Import
@@ -417,8 +447,8 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
         <input
           ref={fileRef}
           type="file"
-          accept=".json,application/json"
-          aria-label="Import JSON file"
+          accept=".json,.kml,.kmz,application/json"
+          aria-label="Import file"
           className="hidden"
           onChange={(e) => {
             void importFile(e.target.files?.[0]);

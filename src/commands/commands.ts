@@ -33,10 +33,12 @@ import type {
   Waypoint,
 } from '../domain/types';
 import { nextStop, prevStop, stops } from '../engine';
-import { previewOf } from '../state/document';
+import { readKmz, parseKml, siteAreas, type SitePolygon } from '../domain/siteFile';
+import { previewOf, useDocument } from '../state/document';
+import { fit } from '../features/build/board/tools';
 import { boardDerived } from '../features/build/board/derived';
 import { actionSpan } from '../features/timeline/fit';
-import type { Clip, MapPoint, Theme, Workspace } from '../state/ui';
+import { useUi, type Clip, type MapPoint, type Theme, type Workspace } from '../state/ui';
 import { libraryCommands } from '../features/library/commands';
 import { boardCommands } from '../features/build/board/commands';
 import { briefCommands } from '../features/brief/commands';
@@ -470,6 +472,66 @@ export function setBoardCancel(fn: () => boolean): void {
   boardCancel = fn;
 }
 
+// ---- site file (plan phase 14, lane 14.2) ----
+
+const isKmz = (file: File) => file.name.toLowerCase().endsWith('.kmz');
+
+/** True when the file name ends in `.kml` or `.kmz`, any case. */
+export const isSiteFile = (file: File): boolean => /\.km[lz]$/i.test(file.name);
+
+/** The polygons of a KML or KMZ file. Throws the reader's or the parser's sentence. */
+export async function readSitePolygons(file: File): Promise<SitePolygon[]> {
+  const text = isKmz(file) ? await readKmz(await file.arrayBuffer()) : await file.text();
+  return parseKml(text);
+}
+
+/**
+ * Import a KML or KMZ file into the open profile: each polygon becomes a range area, as one undo
+ * step "import <file name>"; the areas become the selection and the board refits. A bad file
+ * changes nothing: its sentence goes to the toast and the promise rejects with it, so a caller
+ * with its own message line (the Library) can show it there too.
+ */
+export async function importSiteFile(file: File): Promise<void> {
+  try {
+    const doc = useDocument.getState().doc;
+    if (!doc) throw new Error('Open a profile first.');
+    const polygons = await readSitePolygons(file);
+    const stem = file.name.replace(/\.[^.]*$/, '');
+    const { areas, site } = siteAreas(doc, polygons, stem);
+    useDocument.getState().edit('import ' + file.name, (d) => {
+      d.areas.push(...areas);
+      if (site) {
+        d.site.lat = site.lat;
+        d.site.lon = site.lon;
+      }
+    });
+    useUi.getState().setSelection(areas.map((a) => a.key));
+    fit();
+    const n = areas.length;
+    showToast(`${n} area${n === 1 ? '' : 's'} from ${file.name}.`);
+  } catch (err) {
+    showToast(err instanceof Error ? err.message : String(err));
+    throw err;
+  }
+}
+
+/** The Build command's picker: a hidden file input made on demand and removed after use. */
+function pickSiteFile(): void {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.kml,.kmz';
+  input.hidden = true;
+  const done = () => input.remove();
+  input.addEventListener('cancel', done);
+  input.addEventListener('change', () => {
+    const file = input.files?.[0];
+    done();
+    if (file) importSiteFile(file).catch(() => undefined);
+  });
+  document.body.appendChild(input);
+  input.click();
+}
+
 const needAny: Rule = (ctx) => {
   const d = docOf(ctx);
   return d &&
@@ -865,6 +927,16 @@ const COMMANDS: Command[] = [
   // build.formation, map.gridSnap, view.zoomIn and view.zoomOut (the card.* commands come from cards/).
   ...railCommands,
   ...paletteCommands,
+  // Lane 14.2: the site file picker. Defined here, not in palette/commands.ts, because it calls
+  // importSiteFile below and this file imports the palette's commands.
+  {
+    id: 'build.importSite',
+    label: 'Import a site file',
+    group: 'map',
+    workspaces: BUILD,
+    when: needDoc,
+    run: () => pickSiteFile(),
+  },
   ...menuCommands,
   ...boardCommands,
   // Lane 10.3: Save as card (C) and the range reference cycle (view.ref).

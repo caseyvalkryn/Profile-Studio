@@ -202,8 +202,8 @@ label, the units toggle and the theme control (auto, light, dark).
 question and the F2T2EA steps it exercises, Blank last. Saved profiles below, grouped by
 collection, newest first, each with a thumbnail from its first card and the line "id v3 ·
 class · n cards · n paths" (lane 10.5). Search filters both. Actions: Open, Brief, Duplicate,
-Export, Delete with undo, import JSON (v7, v6, v5 or legacy v4), export the library as one
-JSON.
+Export, Delete with undo, import JSON (v8, v7, v6, v5 or legacy v4) or a KML or KMZ site file
+as a new profile, export the library as one JSON.
 
 **New.** The New button and Cmd+N create "Untitled profile" with the default site and one
 defended asset, open Build and focus the name field for inline rename. A menu arrow on New
@@ -347,6 +347,13 @@ undo step, with the pre-drag ghost; the arrows nudge them together. Delete, Dupl
 Copy act on the whole selection. The inspector expands no row and shows the count. A
 one-finger touch drag still pans; Escape drops a rectangle in progress.
 
+**Import a site file** (2026-11-02). The palette command "Import a site file" opens a file
+picker for a KML or KMZ file; a KML or KMZ file dropped on the board does the same. Each polygon
+becomes a range area at true scale about the profile's site (the file sets the site when it is
+unset), as one undo step "import <file name>". The new areas are the selection, the board
+refits, and a toast says "2 areas from <file name>." A bad file changes nothing; the toast says
+why in one sentence.
+
 **Snap** (upgrade). The placement ghost and a dragged waypoint snap to sensor rings, area
 vertices and edges within 8 px, to 15 degree bearings with Shift, else to the grid. The label
 names the snap ("on RDR-1 ring") and the leg ("1.40 nm, 93 s"). G toggles grid snap. Alt
@@ -489,3 +496,6 @@ pass:
     is one undo step; the measures picker lists the 67 DroneScore rows.
 26. A drag on the empty board selects everything inside the rectangle; a drag on one selected
     object moves them all by the same offset; one undo puts them back.
+27. A KML or KMZ file with polygons, imported from the Library or dropped on the board, draws
+    each polygon as a range area at true scale about the site; two files of one site land at
+    their true offset; one undo removes an import.

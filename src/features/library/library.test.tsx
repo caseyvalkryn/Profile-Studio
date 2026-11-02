@@ -195,7 +195,7 @@ describe('LibraryScreen', () => {
 
   it('imports a legacy v4 JSON file, saves it and lists it', async () => {
     renderLibrary();
-    const input = screen.getByLabelText('Import JSON file');
+    const input = screen.getByLabelText('Import file');
     const file = new File([legacyText], 'cuas-001.json', { type: 'application/json' });
     fireEvent.change(input, { target: { files: [file] } });
     await waitFor(() => expect(useToast.getState().text).toBe('Imported 1 profile.'));
@@ -206,7 +206,7 @@ describe('LibraryScreen', () => {
   it('shows the import error text', async () => {
     renderLibrary();
     const file = new File(['not json'], 'bad.json', { type: 'application/json' });
-    fireEvent.change(screen.getByLabelText('Import JSON file'), { target: { files: [file] } });
+    fireEvent.change(screen.getByLabelText('Import file'), { target: { files: [file] } });
     expect(await screen.findByText('This file is not JSON.')).toBeInTheDocument();
   });
 
