@@ -19,6 +19,7 @@ import { useBoard } from './store';
 import { anchor, cancelPlacing, finishPlacing, fit, placeAt, placingFor, ruler } from './tools';
 import { ASSET_MIME, parseAssetPayload } from '../rail/dnd';
 import { importSiteFile, isSiteFile } from '../../../commands/commands';
+import { showToast } from '../../shell/toastStore';
 
 export type BoardProps = {
   /** Fixed board size in pixels; otherwise the stage size is observed. */
@@ -84,10 +85,16 @@ export default function Board({ width, height }: BoardProps) {
     e.dataTransfer.dropEffect = 'copy';
   };
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    // Any file drop is ours: an uncancelled drop would open the file in the tab (review 14 F-03).
     const file = e.dataTransfer.files?.[0];
-    if (file && isSiteFile(file)) {
+    if (file) {
       e.preventDefault();
+      if (!isSiteFile(file)) {
+        showToast('Drop a KML or KMZ file to import a site.');
+        return;
+      }
       importSiteFile(file).catch(() => undefined);
+      stageEl.current?.focus();
       return;
     }
     const item = parseAssetPayload(e.dataTransfer.getData(ASSET_MIME));

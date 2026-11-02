@@ -37,6 +37,9 @@ function useCollections(current: string): string[] {
   return [...new Set([...stored, current].filter(Boolean))].sort();
 }
 
+/** A latitude or longitude to 6 decimals (0.1 m) for display; the stored value keeps all (N-05). */
+const deg6 = (d: number) => Math.round(d * 1e6) / 1e6;
+
 export function Purpose({ v }: { v: Vignette }) {
   const collections = useCollections(v.collection);
   return (
@@ -249,7 +252,7 @@ export function Site({ v }: { v: Vignette }) {
             name="Latitude"
             label="set site latitude"
             ty="num"
-            stored={v.site.lat}
+            stored={deg6(v.site.lat)}
             set={(m) => (d) => void (d.site.lat = Math.max(-90, Math.min(90, m ?? 0)))}
           />
         </F>
@@ -258,7 +261,7 @@ export function Site({ v }: { v: Vignette }) {
             name="Longitude"
             label="set site longitude"
             ty="num"
-            stored={v.site.lon}
+            stored={deg6(v.site.lon)}
             set={(m) => (d) => void (d.site.lon = Math.max(-180, Math.min(180, m ?? 0)))}
           />
         </F>
