@@ -124,7 +124,7 @@ type AuthoredEvent = { id: string; tS: number
   label: string; threatKey: string; sensorKey: string | null }
 type Card = { id: string; name: string; view: CardView
   layers: Partial<Record<LayerId, boolean>>
-  displays: { timeline: boolean; chart: boolean; readout: boolean; emphasis: boolean }   // chart not built; emphasis reads false when absent
+  displays: { timeline: boolean; chart: boolean; readout: boolean; emphasis: boolean; hidden: boolean }   // chart not built; emphasis and hidden read false when absent
   clip: Clip | null /* the slice */; focus: string[] /* keys */; tS: number | null /* null: time off */
   caption: string; notes: string }
 type CardView = { kind: 'plan'|'elevation'|'3d'; centre: { x: number; y: number }; zoom: number
@@ -214,8 +214,19 @@ with its bar and strip in the centre, the inspector on the right, and the top ba
   planes. The command palette's Add group is the quick-add: search by name, catalog values per
   row, shortcut hints; A opens it, S, V and E open it on a group.
 - Bar: the view segment (Plan, Elevation, 3D), Add waypoints as a pressed toggle,
-  the five layer toggles (Reach, Events, Envelopes, Telemetry, Labels), Save as card (C) and the
-  one-line readout. Fit, Ref and the units toggle live in the palette.
+  the five layer toggles (Reach, Events, Envelopes, Telemetry, Labels), the focus chip, Save as
+  card (C) and the one-line readout. Fit, Ref and the units toggle live in the palette.
+- The focus (2026-11-02, user request): H makes the selection the focus (Shift+click on a rail
+  row or the board extends the selection; a waypoint stands for its threat). The focus draws
+  strong and the rest at the level: faint (10 percent, labels hidden) at first; Shift+H, or
+  the level word on the chip, cycles faint, hidden (not drawn), dim (32 percent). H on the
+  focused selection, with nothing selected, or the chip's × clears it. A threat keeps its events,
+  a sensor its events and the threats they sit on, an event its threat. The chip in the bar
+  names the focus (three ids, then "and n more"). Save as card stores the expanded focus and
+  the level; opening a card sets both. The stash carries them through Brief.
+- Labels has three states: all, focus (the checkbox reads indeterminate, the text "Labels ·
+  focus": only the selection's and the focus's labels place) and off; a press or Shift+5
+  cycles them. A card stores the state as the `labels` and `labelsRest` layers.
 - Under the board: the shared timeline strip (see Brief below; lanes 12.1, 12.2 and 12.4), time
   off by default. The strip is as tall as its lanes; a grip on its top edge sets the most it
   may take (96 to 720 px, default 200; arrows, Home and a double click reset) and the lanes
@@ -263,7 +274,10 @@ the notes panel on the right.
 - Emphasis (2026-11-02, user request): a card display. The head's Focus button, E, or the notes
   checkbox draws the focus strong and the rest at 10 percent with its labels hidden, on the
   stage, the strip thumbnail and the print page. Turning it on with no focus puts every threat
-  in the focus, so the flight paths stand out. One undo step ("emphasise card c1").
+  in the focus, so the flight paths stand out. One undo step ("emphasise card c1"). Shift+E
+  cycles the level of the rest, faint, hidden (`displays.hidden`, not drawn), dim (emphasis
+  off), as Build's Shift+H; the head button's tooltip names the level. The stage, the strip and
+  the print page carry the board's `focus-faint` or `focus-hidden` class.
 - The camera segment in the stage head (2026-11-02, user request): Plan, Elevation, 3D, as the
   Build bar's view segment; keys 1, 2, 3. It sets the current card's camera as one undo step
   (the notes Camera select writes the same field) and starts the new camera from the fitted
@@ -278,10 +292,19 @@ the notes panel on the right.
   head prints the zoom ("x2.5") when it is not 1; = and - zoom about the middle; Fit (the notes
   button, the palette) returns to the fitted frame. The strip thumbnails and the print deck draw
   the stored frame.
-- The Frame panel at the top of the notes: for each threat in focus, the step
-  reached with its glyph, the next step's countdown (a press moves the time there), range,
-  height, speed and closing, the systems holding it as pills, the engage margin (in the hostile
-  ink when negative) and DA entry. A card with a slice lists its key points inside the slice.
+- The Frame panel at the top of the notes (redesigned 2026-11-02, user request): one block per
+  threat in focus, the most pressing first (at the time, nearest the origin first, a threat with
+  no sample last; with time off, earliest defended asset entry first). Six show, then "Show n
+  more"; the head is the FRAME label with the time as a value, and counts "6 of 9". A block is
+  an instrument cluster: each value in its own boxed cell (the sunken surface, a hairline
+  border) with its caps label in the micro size over it, every cell always at its place; an
+  empty cell shows a dash. Row 1, identity: the threat's id (a press selects it; the selected
+  block carries the accent bar), the step reached with its glyph, and at the right the next
+  step with its countdown as an outlined chip (a press moves the time there). Row 2, four
+  cells: Range, Height, Speed, Closing, the number medium with its unit small. Row 3, HELD as
+  a double cell with the holding systems as the strip's pills (a press selects the system),
+  then MARGIN and DA (the hostile ink for a negative margin or an entered asset). The float is
+  300 px wide. A card with a slice lists its key points inside the slice.
 - The slice: a card's `clip`, a time range and a rate. The Scissors head button
   ("Set the slice from the loop", disabled with its reason when there is no loop) takes the
   strip's loop and rate into the current card, or into a new card when the deck is empty. The
@@ -310,7 +333,7 @@ the notes panel on the right.
   stage; a card whose Timeline display is off (the stage's Timeline button, L, or
   the notes checkbox) collapses it to the play bar; new cards open with it on. The Readout
   display floats the frame panel at the stage's top right: "Frame at t+2:06" (or "Full run"),
-  then each threat in focus as the notes' Frame block (at most three, "and n more").
+  then each threat in focus as the notes' Frame block (three, then "Show n more").
 - With no card the stage draws the build: the live scene at the Build view that
   was open, the head "Build view · id" and the live time, the question as caption, the frame
   panel. The stage gestures need a card. Save a screenshot downloads the stage as a PNG at twice its size; Save a frame as a
@@ -403,12 +426,13 @@ bypasses every snap.
 | A | Quick-add (the palette's Add group) |
 | S, V, E | Quick-add on Sensors, Areas, Events |
 | Shift+F | Formation |
+| H, Shift+H | Focus the selection on or off; the focus level (faint, hidden, dim) |
 | C | Save card |
 | [ , ] | Previous or next event or derived time |
 | Home, End | Time to start or end |
 | T | Time cursor on or off |
 | G | Grid snap |
-| Shift+1 to 5 | Layer toggle by number: Reach, Events, Envelopes, Telemetry, Labels |
+| Shift+1 to 5 | Layer toggle by number: Reach, Events, Envelopes, Telemetry, Labels (all, focus, off) |
 | =, - | Zoom in, out |
 | Tab, Shift+Tab | Next or previous object of the same kind |
 | I | Inspector open or closed (the notes panel in Brief) |
@@ -416,7 +440,7 @@ bypasses every snap.
 
 Brief keys (only in Brief): Right or Space next card; Left previous card; Home, End; Up and
 Down move the current card in the strip; Delete removes it with undo; 1, 2, 3 set the card's
-camera; =, - zoom the card; E emphasis; Q the question on the stage. Build keys that edit are off in Brief. The registry scopes a shortcut by workspace.
+camera; =, - zoom the card; E emphasis, Shift+E its level; Q the question on the stage. Build keys that edit are off in Brief. The registry scopes a shortcut by workspace.
 
 **Commands.** One registry (`src/commands/`) defines each action once: ID, label, shortcut,
 enable rule with a reason, the kinds it applies to, and the workspaces it is active in. The
@@ -521,6 +545,9 @@ these pass:
 27. A KML or KMZ file with polygons, imported from the Library or dropped on the board, draws
     each polygon as a range area at true scale about the site; two files of one site land at
     their true offset; one undo removes an import.
+28. With a threat selected, H draws the rest of the board faint, the chip names the focus,
+    Shift+H hides the rest, H again draws everything strong; Shift+5 twice leaves only the
+    focus's labels.
 
 ## 13. Known gaps
 

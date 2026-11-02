@@ -3,6 +3,7 @@
 // · focus ids"; aria-current marks the current card. Under the deck, "Add card from current
 // scene"; with no cards, the hint and that button are the whole strip (the stage shows the build).
 import type { Card, Vignette } from '../../domain/types';
+import { focusClass, levelOfCard } from '../build/board/focus';
 import { render } from '../../board';
 import { boardDerived, boardScene } from '../build/board/derived';
 import { cardLine, toCardRec } from './toCardRec';
@@ -20,7 +21,7 @@ export function CardThumb({ v, card }: { v: Vignette; card: Card }) {
   );
   return (
     <span
-      className={`block bg-surface-0 [&>svg]:pointer-events-none [&>svg]:block [&>svg]:h-auto [&>svg]:w-full${card.displays.emphasis ? ' brief-emphasis' : ''}`}
+      className={`block bg-surface-0 [&>svg]:pointer-events-none [&>svg]:block [&>svg]:h-auto [&>svg]:w-full ${focusClass(levelOfCard(card.displays), card.focus.length > 0)}`}
       dangerouslySetInnerHTML={{ __html: svg.replace('<svg ', '<svg aria-hidden="true" ') }}
     />
   );

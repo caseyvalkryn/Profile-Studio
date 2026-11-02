@@ -2,8 +2,10 @@
 // candidates the other layers queued. The selected object and the focus (a card's focus ids) go
 // first, then by priority p, then by queue order (review 10.R F-02: a focused event names
 // itself). A candidate whose padded box overlaps a placed box is dropped. With the chip
-// off only "always" candidates (data blocks) place.
-import { register } from '../layers';
+// off only "always" candidates (data blocks) place. With `labelsRest` off (the chip's "focus"
+// state, 2026-11-02) only the selection's and the focus's candidates place, the focus read
+// through `ctx.dim` so an event's path and a path's events count.
+import { register, type LabelCand } from '../layers';
 import type { Box } from '../symbols';
 
 const PAD = 2;
@@ -45,7 +47,10 @@ register({
     const focus = ctx.focus || [];
     const first = (id: string | null | undefined) =>
       id != null && (id === selId || focus.indexOf(id) >= 0);
-    const list = (ctx.labels || []).filter((c) => c && c.svg && (ctx.labelsOn || c.always));
+    const restOn = ctx.layers.labelsRest !== false;
+    const kept = (c: LabelCand) =>
+      c.always || restOn || first(c.id) || (focus.length > 0 && c.id != null && !ctx.dim(c.id));
+    const list = (ctx.labels || []).filter((c) => c && c.svg && (ctx.labelsOn || c.always) && kept(c));
     list.sort((a, b) => {
       const pa = first(a.id) ? 0 : a.p;
       const pb = first(b.id) ? 0 : b.p;

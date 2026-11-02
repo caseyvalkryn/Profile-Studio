@@ -59,11 +59,14 @@ import {
   updateFrame,
   updateOrbit,
 } from './cards';
-import { Glyph, ThreatBlock } from './Frame';
+import { FrameBlocks, FrameHead, Glyph, frameCount } from './Frame';
 import { WHEEL_RATE, orbitBy, panBy, zoomAt, zoomText } from './stageFrame';
 import { captionPlaceholder, frameOf, sliceText } from './frameData';
 import { captureStage, screenshotName } from './screenshot';
 import { idMaps, toCardRec } from './toCardRec';
+import { FOCUS_LEVEL_LABEL, focusClass, levelOfCard } from '../build/board/focus';
+
+const NO_FOCUS = { emphasis: false, hidden: false } as Card['displays'];
 
 /** The mockup's stage floor: at least 320 by 300 render units. */
 export const stageSize = (w: number, h: number) => ({
@@ -93,24 +96,29 @@ function FrameFloat({ v, rec, t }: { v: Vignette; rec: CardRec; t: number | null
     const { keyOfId } = idMaps(boardScene(v));
     return rec.focus.map((id) => keyOfId.get(id)).filter((k): k is string => k !== undefined);
   }, [v, rec.focus]);
-  const frame = frameOf(boardScene(v), boardDerived(v), t, focus, rec.cam.ref);
-  const shown = frame.threats.slice(0, FLOAT_MAX);
-  const more = frame.more + frame.threats.length - shown.length;
+  const [open, setOpen] = useState(false);
+  const frame = frameOf(boardScene(v), boardDerived(v), t, focus, rec.cam.ref, FLOAT_MAX);
+  const all = frame.more
+    ? frameOf(boardScene(v), boardDerived(v), t, focus, rec.cam.ref, Infinity)
+    : frame;
+  const count = frameCount(frame);
   return (
-    <aside className="brief-float" aria-label="Frame" data-testid="brief-readout">
-      <h3 className="m-0 mb-2 text-xs font-medium text-muted" data-testid="brief-float-head">
-        {t == null ? 'Full run' : `Frame at ${fmtTime(t)}`}
-      </h3>
-      {shown.length ? (
-        <div className="flex flex-col gap-2.5">
-          {shown.map((f) => (
-            <ThreatBlock key={f.key} f={f} t={t} />
-          ))}
-        </div>
-      ) : (
-        <p className="ps-hint m-0">Add a threat to see what is true in the frame.</p>
-      )}
-      {more ? <p className="ps-hint m-0 mt-2">and {more} more</p> : null}
+    <aside
+      className="brief-float flex flex-col gap-2"
+      aria-label="Frame"
+      data-testid="brief-readout"
+    >
+      <div className="flex items-baseline justify-between gap-2">
+        <h3
+          className="m-0 text-xs font-medium text-muted"
+          aria-label={t == null ? 'Full run' : `Frame at ${fmtTime(t)}`}
+          data-testid="brief-float-head"
+        >
+          <FrameHead t={t} />
+        </h3>
+        {count ? <span className="font-mono text-micro text-muted">{count}</span> : null}
+      </div>
+      <FrameBlocks frame={frame} all={all} t={t} open={open} setOpen={setOpen} gap="gap-2" />
     </aside>
   );
 }
@@ -265,7 +273,13 @@ export default function Stage({
   // focus the selection. It is drawn, never saved.
   const buildCard = useMemo(
     () =>
-      card ? null : { ...cardFromBuild(v, stash ?? snapshotBuild()), focus: selectedKeys.slice() },
+      card
+        ? null
+        : (() => {
+            const from = stash ?? snapshotBuild();
+            const c = cardFromBuild(v, from);
+            return from.focus.length ? c : { ...c, focus: selectedKeys.slice() };
+          })(),
     [card, v, stash, selectedKeys],
   );
   const shown = card ?? buildCard;
@@ -415,7 +429,7 @@ export default function Stage({
                 <Gauge aria-hidden="true" />
               </HeadButton>
               <HeadButton
-                label="Emphasis: the focus strong, the rest faint"
+                label={`Emphasis: the focus strong, the ${FOCUS_LEVEL_LABEL[levelOfCard(card.displays)]} (Shift+E cycles)`}
                 shortcut="E"
                 pressed={card.displays.emphasis}
                 onClick={() => toggleEmphasis()}
@@ -458,7 +472,7 @@ export default function Stage({
         </span>
       </div>
       <div
-        className={`relative min-h-[360px] flex-1${card ? ' brief-stage-grab' : ''}${card?.displays.emphasis ? ' brief-emphasis' : ''}`}
+        className={`relative min-h-[360px] flex-1${card ? ' brief-stage-grab' : ''} ${focusClass(levelOfCard(shown?.displays ?? NO_FOCUS), !!shown?.focus.length)}`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}

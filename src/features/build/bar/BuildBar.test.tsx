@@ -1,5 +1,7 @@
 import '../../../ui/test-utils';
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { registerCommands } from '../../../commands/commands';
+import { execute } from '../../../commands/registry';
 import { testVignette } from '../../../engine/testVignette';
 import { useDocument } from '../../../state/document';
 import { UI_DEFAULTS, useUi } from '../../../state/ui';
@@ -94,5 +96,53 @@ describe('Build bar, Add waypoints (lane 11.1)', () => {
     expect(doc.threats.at(-1)!.path.length).toBe(2);
     expect(doc.threats.slice(0, threats0).map((t) => t.path.length)).toEqual(paths0);
     expect(useBoard.getState().placing).toBeNull();
+  });
+});
+
+describe('Build bar, the focus and the Labels states (2026-11-02)', () => {
+  beforeEach(() => {
+    useDocument.getState().open(testVignette());
+    useUi.setState({ ...UI_DEFAULTS });
+    useBoard.setState({ ...BOARD_DEFAULTS });
+    registerCommands();
+  });
+
+  it('H focuses the selection, the chip names it, the level cycles and × clears', () => {
+    mount();
+    const t0 = useDocument.getState().doc!.threats[0]!;
+    expect(execute('focus.set')).toBe('Select something to focus');
+    act(() => useUi.getState().setSelection([t0.key]));
+    act(() => void execute('focus.set'));
+    expect(useBoard.getState().focus).toEqual([t0.key]);
+    expect(screen.getByTestId('focus-chip')).toHaveTextContent(`Focus${t0.id}`);
+    expect(screen.getByTestId('board-view')).toHaveClass('focus-faint');
+    fireEvent.click(screen.getByRole('button', { name: 'rest faint' }));
+    expect(useBoard.getState().focusLevel).toBe('hidden');
+    expect(screen.getByTestId('board-view')).toHaveClass('focus-hidden');
+    // H on the focused selection clears; the level stays
+    act(() => void execute('focus.set'));
+    expect(useBoard.getState().focus).toEqual([]);
+    expect(screen.queryByTestId('focus-chip')).toBeNull();
+    // a different selection refocuses; the chip's × clears
+    const s0 = useDocument.getState().doc!.sensors[0]!;
+    act(() => useUi.getState().setSelection([t0.key, s0.key]));
+    act(() => void execute('focus.set'));
+    expect(useBoard.getState().focus).toEqual([t0.key, s0.key]);
+    fireEvent.click(screen.getByRole('button', { name: '×' }));
+    expect(useBoard.getState().focus).toEqual([]);
+  });
+
+  it('the Labels checkbox cycles all, focus, off and reads indeterminate in focus', () => {
+    mount();
+    const box = screen.getByRole('checkbox', { name: 'Labels' }) as HTMLInputElement;
+    expect(box.checked).toBe(true);
+    fireEvent.click(box);
+    expect(useBoard.getState().layers).toEqual({ labels: true, labelsRest: false });
+    const focusBox = screen.getByRole('checkbox', { name: 'Labels · focus' }) as HTMLInputElement;
+    expect(focusBox.indeterminate).toBe(true);
+    fireEvent.click(focusBox);
+    expect(useBoard.getState().layers).toEqual({ labels: false, labelsRest: false });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Labels' }));
+    expect(useBoard.getState().layers).toEqual({ labels: true, labelsRest: true });
   });
 });

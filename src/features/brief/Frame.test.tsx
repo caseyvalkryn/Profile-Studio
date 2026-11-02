@@ -40,9 +40,9 @@ describe('the frame of a card (lane 13.2)', () => {
     expect(within(blocks[0]!).getByTestId('brief-frame-step')).toHaveTextContent('Fix');
     expect(within(blocks[0]!).getByTestId('brief-frame-holders')).toHaveTextContent('S-01');
     expect(blocks[0]!).toHaveTextContent(/Range[\d.]+ nm/);
-    expect(blocks[0]!).toHaveTextContent('margin +181 s');
+    expect(within(blocks[0]!).getByTestId('brief-frame-status')).toHaveTextContent('Margin+181 s');
     const next = within(blocks[0]!).getByRole('button', { name: /^Move the time to T-01 Track/ });
-    expect(next).toHaveTextContent('Track in 1:37');
+    expect(next).toHaveTextContent('Track1:37');
     fireEvent.click(next);
     expect(useUi.getState().tS).toBe(boardDerived(v()).stages['T-01']!.track!.t);
     expect(screen.queryByTestId('brief-slice-list')).toBeNull();
@@ -53,6 +53,36 @@ describe('the frame of a card (lane 13.2)', () => {
     expect(screen.getByRole('heading', { name: 'Full run' })).toBeInTheDocument();
     expect(screen.getAllByTestId('brief-frame-threat')).toHaveLength(2);
     expect(screen.getAllByTestId('brief-frame-step')[0]).toHaveTextContent('Assess');
+  });
+
+  it('sorts the nearest threat first at t and the earliest DA entry first with time off; a null state takes no line', () => {
+    const s = boardScene(v());
+    const d = boardDerived(v());
+    const t2 = v().threats[1]!;
+    const atT = frameOf(s, d, 200, [], 'asset');
+    const r = atT.threats.map((x) => x.at?.r ?? Infinity);
+    expect(r).toEqual([...r].sort((a, b) => a - b));
+    const off = frameOf(s, d, null, [], 'asset');
+    const da = off.threats.map((x) => x.daT ?? Infinity);
+    expect(da).toEqual([...da].sort((a, b) => a - b));
+    // a cut keeps the order and counts the rest
+    const one = frameOf(s, d, 200, [], 'asset', 1);
+    expect(one.threats.map((x) => x.id)).toEqual([atT.threats[0]!.id]);
+    expect(one.more).toBe(atT.threats.length - 1);
+    at(200);
+    render(<Frame v={v()} card={v().cards[0]!} />);
+    const blocks = screen.getAllByTestId('brief-frame-threat');
+    for (const b of blocks) {
+      expect(b).not.toHaveTextContent('no engage window');
+      expect(b).not.toHaveTextContent('No DA entry');
+      // every block has the same slots; an empty one shows the dash
+      expect(within(b).getByTestId('brief-frame-status')).toHaveTextContent(/^Margin.+DA.+$/);
+    }
+    // the id selects the threat; the selected block carries the mark
+    const row = blocks.find((b) => within(b).queryByRole('button', { name: `Select ${t2.id}` }))!;
+    fireEvent.click(within(row).getByRole('button', { name: `Select ${t2.id}` }));
+    expect(useUi.getState().selectedKeys).toEqual([t2.key]);
+    expect(row).toHaveAttribute('data-selected', 'true');
   });
 
   it('a slice lists its key points, events and window changes in time order', () => {

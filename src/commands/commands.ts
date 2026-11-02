@@ -44,7 +44,8 @@ import { boardCommands } from '../features/build/board/commands';
 import { briefCommands } from '../features/brief/commands';
 import { timelineCommands } from '../features/timeline/commands';
 import { useBoard } from '../features/build/board/store';
-import { LAYER_TOGGLES, setToggle, toggleOn } from '../features/build/bar/layers';
+import { LAYER_TOGGLES, cycleToggle } from '../features/build/bar/layers';
+import { nextFocusLevel, sameKeys } from '../features/build/board/focus';
 import { cardCommands } from '../features/build/cards/commands';
 import { menuCommands } from '../features/build/menu/commands';
 import { paletteCommands } from '../features/build/palette/commands';
@@ -571,13 +572,72 @@ function cycleKind(ctx: CommandContext, dir: 1 | -1) {
 /** Shift+1 to Shift+5: the Build bar's five layer toggles by number (spec section 8, Keys). */
 const LAYER_CHIPS: Command[] = LAYER_TOGGLES.map((t, i) => ({
   id: `layer.chip${i + 1}`,
-  label: `${t.label} layer on or off`,
+  label: t.id === 'labels' ? 'Labels layer: all, focus or off' : `${t.label} layer on or off`,
   group: 'view',
   shortcut: `Shift+${i + 1}`,
   workspaces: BUILD_BRIEF,
   when: () => true,
-  run: () => setToggle(t, !toggleOn(useBoard.getState().layers, t)),
+  run: () => cycleToggle(t),
 }));
+
+/** The selection without waypoints: a waypoint's threat is the focus, as Save as card has it. */
+function focusable(ctx: CommandContext): string[] {
+  const doc = docOf(ctx);
+  if (!doc) return [];
+  const out: string[] = [];
+  for (const k of ctx.ui.selectedKeys) {
+    const f = find(doc, k);
+    const key = f?.kind === 'waypoint' ? f.threat.key : k;
+    if (f && !out.includes(key)) out.push(key);
+  }
+  return out;
+}
+
+/**
+ * The Build focus (2026-11-02, user request): H makes the selection the focus and the rest of
+ * the board draws at the level (faint at first); H on the focused selection, or with nothing
+ * selected, clears it. Shift+H cycles the level: faint, hidden, dim. Save as card stores both.
+ */
+const FOCUS_COMMANDS: Command[] = [
+  {
+    id: 'focus.set',
+    label: 'Focus the selection',
+    group: 'view',
+    shortcut: 'H',
+    workspaces: BUILD,
+    when: every(needDoc, (ctx) =>
+      focusable(ctx).length || useBoard.getState().focus.length
+        ? true
+        : 'Select something to focus',
+    ),
+    run: (ctx) => {
+      const b = useBoard.getState();
+      const keys = focusable(ctx);
+      if (!keys.length || sameKeys(keys, b.focus)) b.set({ focus: [] });
+      else b.set({ focus: keys });
+    },
+  },
+  {
+    id: 'focus.level',
+    label: 'Focus level: faint, hidden or dim',
+    group: 'view',
+    shortcut: 'Shift+H',
+    workspaces: BUILD,
+    when: every(needDoc, () => (useBoard.getState().focus.length ? true : 'Nothing in focus')),
+    run: () => {
+      const b = useBoard.getState();
+      b.set({ focusLevel: nextFocusLevel(b.focusLevel) });
+    },
+  },
+  {
+    id: 'focus.clear',
+    label: 'Clear the focus',
+    group: 'view',
+    workspaces: BUILD,
+    when: every(needDoc, () => (useBoard.getState().focus.length ? true : 'Nothing in focus')),
+    run: () => useBoard.getState().set({ focus: [] }),
+  },
+];
 
 const COMMANDS: Command[] = [
   // keys table
@@ -935,6 +995,7 @@ const COMMANDS: Command[] = [
     },
   },
   ...LAYER_CHIPS,
+  ...FOCUS_COMMANDS,
   // Lanes 9.2.3 to 9.2.5: the rail adds, quick-add, the right-click items and the board keys.
   // They replace the stubs build.quickAdd, build.addSensor, build.addArea, build.addEvent,
   // build.formation, map.gridSnap, view.zoomIn and view.zoomOut (the card.* commands come from cards/).

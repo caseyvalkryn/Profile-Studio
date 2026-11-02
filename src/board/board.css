@@ -623,6 +623,18 @@ svg.board .jmk {
 :where(svg.board, svg.chart) .dim {
   opacity: 0.32;
 }
+/* Focus levels (2026-11-02): the host carries the class. `focus-faint` is Emphasis (the rest at
+   10 percent, its labels hidden); `focus-hidden` draws the rest not at all. The Build board and
+   the Brief stage, strip and print page use the same two. */
+.focus-faint svg.board .dim {
+  opacity: 0.1;
+}
+.focus-faint svg.board .dim text {
+  display: none;
+}
+.focus-hidden svg.board .dim {
+  display: none;
+}
 :where(svg.board, svg.chart) .ghostrec {
   opacity: 0.32;
   pointer-events: none;

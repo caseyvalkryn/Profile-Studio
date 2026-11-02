@@ -9,6 +9,7 @@ import { usePreview, useDocument } from '../../../state/document';
 import { useUi, type View } from '../../../state/ui';
 import { Tooltip } from '../../../ui/Tooltip';
 import { focusRing } from '../../../ui/focus';
+import { FOCUS_LEVEL_LABEL, focusLabel } from '../board/focus';
 import { useBoard } from '../board/store';
 import LayerToggles from './LayerToggles';
 import { readoutLine } from './readout';
@@ -195,6 +196,38 @@ function Readout() {
   );
 }
 
+/**
+ * The focus chip (2026-11-02, user request): shown while the board has a focus. The ids, the
+ * level word (a press cycles it, as Shift+H) and a clear button (as H on the focused selection).
+ */
+function FocusChip() {
+  const focus = useBoard((s) => s.focus);
+  const level = useBoard((s) => s.focusLevel);
+  const doc = useDocument((s) => s.doc);
+  if (!doc || !focus.length) return null;
+  return (
+    <div
+      role="group"
+      aria-label="Focus"
+      data-testid="focus-chip"
+      className={`${MINI_BTN} gap-1.5 border-surface-3 pr-1 text-muted`}
+    >
+      <span className="text-text">Focus</span>
+      <span className="font-mono">{focusLabel(doc, focus)}</span>
+      <CommandButton
+        id="focus.level"
+        label={FOCUS_LEVEL_LABEL[level]}
+        className="inline-flex h-5 items-center rounded px-1 text-data text-muted hover:bg-surface-3 hover:text-text"
+      />
+      <CommandButton
+        id="focus.clear"
+        label="×"
+        className="inline-flex h-5 w-5 items-center justify-center rounded text-muted hover:bg-surface-3 hover:text-text"
+      />
+    </div>
+  );
+}
+
 export default function BuildBar() {
   const view = useUi((s) => s.view);
   return (
@@ -208,7 +241,10 @@ export default function BuildBar() {
         <AddWaypoints />
         {view === 'elevation' ? <ElevationModeSegments /> : null}
       </div>
-      <LayerToggles />
+      <div className="flex flex-wrap items-center gap-2.5">
+        <LayerToggles />
+        <FocusChip />
+      </div>
       <div className="flex min-w-0 items-center gap-2.5">
         <CommandButton
           id="card.save"

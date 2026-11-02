@@ -131,7 +131,7 @@ function small(): Vignette {
           elevationMode: 'fromAsset',
         },
         layers: { reach: true, rings: false },
-        displays: { timeline: true, chart: false, readout: false, emphasis: false },
+        displays: { timeline: true, chart: false, readout: false, emphasis: false, hidden: false },
         clip: { t0S: 0, t1S: 60, rate: 2, beatsS: [10, 60] },
         focus: [t1],
         tS: null,

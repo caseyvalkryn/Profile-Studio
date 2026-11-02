@@ -75,17 +75,40 @@ export function pathsInFocus(s: Scene, focus: readonly string[]) {
   return hit.length ? hit : paths;
 }
 
-/** The frame at t (null: time off) for the threats in focus; `ref` is the readout's origin. */
+/**
+ * The order of the blocks (2026-11-02, user request): the most pressing threat first. At t, by
+ * range from the origin, nearest first; a threat with no sample at t (not yet launched, or
+ * landed) goes last. With time off, by defended asset entry, earliest first; a threat that never
+ * enters goes last. Ties keep the scene order.
+ */
+export function sortFrame(threats: FrameThreat[], t: number | null): FrameThreat[] {
+  const key = (f: FrameThreat) => (t == null ? f.daT : (f.at?.r ?? null));
+  return threats
+    .map((f, i) => ({ f, i, k: key(f) }))
+    .sort((a, b) => {
+      if (a.k == null && b.k == null) return a.i - b.i;
+      if (a.k == null) return 1;
+      if (b.k == null) return -1;
+      return a.k - b.k || a.i - b.i;
+    })
+    .map((x) => x.f);
+}
+
+/**
+ * The frame at t (null: time off) for the threats in focus; `ref` is the readout's origin. The
+ * blocks come sorted (`sortFrame`) and cut at `max` (FRAME_MAX); `more` counts the rest.
+ */
 export function frameOf(
   s: Scene,
   d: Derived,
   t: number | null,
   focus: readonly string[],
   ref: string,
+  max: number = FRAME_MAX,
 ): Frame {
   const paths = pathsInFocus(s, focus);
   const kindOf = new Map(s.scene.systems.map((x) => [x.id, x.kind]));
-  const threats = paths.slice(0, FRAME_MAX).map((p): FrameThreat => {
+  const all = paths.map((p): FrameThreat => {
     const at = t == null ? null : d.at(p.id, t, ref);
     const holders = (at?.covering ?? []).map((id) => ({ id, kind: kindOf.get(id) ?? '' }));
     return {
@@ -99,7 +122,9 @@ export function frameOf(
       daT: d.daEntry[p.id] ?? null,
     };
   });
-  return { t, threats, more: Math.max(0, paths.length - FRAME_MAX) };
+  const sorted = sortFrame(all, t);
+  const threats = max === Infinity ? sorted : sorted.slice(0, max);
+  return { t, threats, more: sorted.length - threats.length };
 }
 
 /** One line of the inside-the-slice list. `glyph` marks a key point; null for other lines. */

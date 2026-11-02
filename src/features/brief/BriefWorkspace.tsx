@@ -9,6 +9,7 @@
 import '../../board/board.css';
 import './brief.css';
 import { useEffect, useMemo, useRef } from 'react';
+import { focusClass, levelOfCard } from '../build/board/focus';
 import type { Card, Vignette } from '../../domain/types';
 import { render } from '../../board';
 import { useDocument } from '../../state/document';
@@ -65,7 +66,7 @@ function FrameTable({ v, card, units }: { v: Vignette; card: Card; units: Units 
         {f.threats.map((r) => (
           <tr key={r.key}>
             <td>{r.id}</td>
-            <td>{r.reached?.label ?? 'none'}</td>
+            <td>{r.reached?.label ?? ''}</td>
             <td>{r.next && t != null ? `${r.next.label} in ${mmss(r.next.t - t)}` : ''}</td>
             <td>{r.at ? formatRange(r.at.r, units) : ''}</td>
             <td>{r.at ? formatAltitude(r.at.z, units) : ''}</td>
@@ -73,7 +74,7 @@ function FrameTable({ v, card, units }: { v: Vignette; card: Card; units: Units 
             <td>{r.at ? formatSpeed(r.at.vc, units) : ''}</td>
             <td>{r.holders.map((h) => h.id).join(' ')}</td>
             <td>{marginText(r.margin)?.replace('margin ', '') ?? ''}</td>
-            <td>{daText(r.daT, t)}</td>
+            <td>{r.daT == null ? '' : daText(r.daT, t)}</td>
           </tr>
         ))}
         {f.more ? (
@@ -114,7 +115,7 @@ export function PrintDeck({ v }: { v: Vignette }) {
             {card.clip ? sliceText(card.clip) : card.tS == null ? 'Full run' : fmtTime(card.tS)}
           </p>
           <div
-            className={`brief-page-render${card.displays.emphasis ? ' brief-emphasis' : ''}`}
+            className={`brief-page-render ${focusClass(levelOfCard(card.displays), card.focus.length > 0)}`}
             dangerouslySetInnerHTML={{ __html: svg }}
           />
           {card.caption ? <p className="brief-page-caption">{card.caption}</p> : null}

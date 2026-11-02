@@ -180,8 +180,17 @@ export type AuthoredEvent = {
   sensorKey: string | null;
 };
 
+/** `labelsRest` (2026-11-02): the labels of objects outside the focus; off is the Labels chip's "focus" state. */
 export type LayerId =
-  'reach' | 'events' | 'envelopes' | 'tracks' | 'telemetry' | 'labels' | 'rings' | 'target';
+  | 'reach'
+  | 'events'
+  | 'envelopes'
+  | 'tracks'
+  | 'telemetry'
+  | 'labels'
+  | 'labelsRest'
+  | 'rings'
+  | 'target';
 
 /**
  * A card's camera. `centre` is the pan from the fitted view in metres and `zoom` the factor on
@@ -212,8 +221,17 @@ export type Card = {
   name: string;
   view: CardView;
   layers: Partial<Record<LayerId, boolean>>;
-  /** Emphasis (2026-11-02): the focus strong and the rest faint, its labels hidden. */
-  displays: { timeline: boolean; chart: boolean; readout: boolean; emphasis: boolean };
+  /**
+   * Emphasis (2026-11-02): the focus strong and the rest faint, its labels hidden. `hidden`
+   * (2026-11-02, focus levels): the rest not drawn at all; it implies emphasis.
+   */
+  displays: {
+    timeline: boolean;
+    chart: boolean;
+    readout: boolean;
+    emphasis: boolean;
+    hidden: boolean;
+  };
   clip: Clip | null;
   focus: string[]; // keys
   tS: number | null; // null: time off

@@ -9,6 +9,7 @@ import { useDocument } from '../../../state/document';
 import { useUi } from '../../../state/ui';
 import { showToast } from '../../shell/toastStore';
 import { boardDerived, boardScene } from '../board/derived';
+import { displaysOfLevel, expandFocus, levelOfCard } from '../board/focus';
 import { useBoard } from '../board/store';
 import { toggledLayers } from '../bar/layers';
 
@@ -158,17 +159,24 @@ export function cardViewNow(doc: Vignette): CardView {
   });
 }
 
-/** A card of the board now. Focus is the selection without waypoints (mockup line 406). */
+/**
+ * A card of the board now. Focus is the board's focus expanded (its level sets emphasis and
+ * hidden), else the selection without waypoints (mockup line 406).
+ */
 export function cardFromBuild(doc: Vignette): Card {
   const ui = useUi.getState();
-  const focus = ui.selectedKeys.filter((k) => find(doc, k)?.kind !== 'waypoint');
+  const b = useBoard.getState();
+  const focus = b.focus.length
+    ? expandFocus(doc, b.focus)
+    : ui.selectedKeys.filter((k) => find(doc, k)?.kind !== 'waypoint');
+  const level = b.focus.length ? displaysOfLevel(b.focusLevel) : displaysOfLevel('dim');
   return {
     key: newKey(),
     id: nextCardId(doc.cards),
     name: `Card ${doc.cards.length + 1}`,
     view: cardViewNow(doc),
-    layers: toggledLayers(useBoard.getState().layers),
-    displays: { timeline: true, chart: false, readout: false, emphasis: false },
+    layers: toggledLayers(b.layers),
+    displays: { timeline: true, chart: false, readout: false, ...level },
     clip: null,
     focus,
     tS: ui.timeOn ? ui.tS : null,
@@ -239,7 +247,9 @@ export function applyCard(card: Card): void {
       ui.setTime(card.tS);
     }
   }
-  ui.setSelection(card.focus.filter((k) => !!find(doc, k) || doc.events.some((e) => e.key === k)));
+  const focus = card.focus.filter((k) => !!find(doc, k) || doc.events.some((e) => e.key === k));
+  ui.setSelection(focus);
+  b.set({ focus, focusLevel: levelOfCard(card.displays) });
 }
 
 /** A copy after the original, with a new key and id, in one undo step. */

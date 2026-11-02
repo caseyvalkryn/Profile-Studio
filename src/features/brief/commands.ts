@@ -232,6 +232,15 @@ export const briefCommands: Command[] = [
     run: run((m) => m.toggleEmphasis()),
   },
   {
+    id: 'brief.emphasisLevel',
+    label: 'Emphasis level: faint, hidden or dim',
+    group: 'view',
+    shortcut: 'Shift+E',
+    workspaces: BRIEF,
+    when: needCards,
+    run: run((m) => m.cycleEmphasis()),
+  },
+  {
     id: 'brief.readout',
     label: 'Show or hide the readout',
     group: 'view',

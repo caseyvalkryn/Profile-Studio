@@ -1,6 +1,7 @@
 // Interface state: selection, hover, tool, time, view, units, theme, overlays, workspace, panels.
 // None of it is a profile edit, so none of it is an undo step.
 import { create } from 'zustand';
+import type { FocusLevel } from '../features/build/board/focus';
 import type {
   AreaKind,
   Area,
@@ -77,6 +78,8 @@ export type BuildStash = {
   pitch: number;
   ref: string;
   layers: Record<string, boolean>;
+  focus: string[];
+  focusLevel: FocusLevel;
 };
 
 /** Copied assets, deep copies. Paste mints new keys and ids. */

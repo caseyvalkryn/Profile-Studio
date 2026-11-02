@@ -14,6 +14,7 @@ import { openTargetMenu } from '../menu/TargetMenu';
 import { useQuickAdd } from '../palette/store';
 import { Tip } from '../tip/Tip';
 import { BoardGestures, hintText, type MenuRequest } from './gestures';
+import { focusClass } from './focus';
 import { BoardRenderer } from './renderer';
 import { useBoard } from './store';
 import { anchor, cancelPlacing, finishPlacing, fit, placeAt, placingFor, ruler } from './tools';
@@ -73,6 +74,8 @@ export default function Board({ width, height }: BoardProps) {
   const rulerOn = useBoard((s) => !!s.ruler);
   const view = useUi((s) => s.view);
   const readout = useBoard((s) => s.readout);
+  const focusOn = useBoard((s) => s.focus.length > 0);
+  const focusLevel = useBoard((s) => s.focusLevel);
   const handleRef = useRef<BoardHandle | null>(null);
 
   // A library row dropped on the board (lane 9.2.6): arm it, then place it at the drop point.
@@ -271,7 +274,7 @@ export default function Board({ width, height }: BoardProps) {
 
   return (
     <div
-      className="relative h-full w-full overflow-hidden"
+      className={`relative h-full w-full overflow-hidden ${focusClass(focusLevel, focusOn)}`}
       style={{ background: 'var(--surface-0)', minHeight: 220, minWidth: 0 }}
       data-testid="board-view"
     >

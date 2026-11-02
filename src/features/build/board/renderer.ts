@@ -11,6 +11,7 @@ import type { Derived } from '../../../engine/derived';
 import { useDocument } from '../../../state/document';
 import { useUi } from '../../../state/ui';
 import { boardDerived, boardScene } from './derived';
+import { focusIds } from './focus';
 import { useBoard } from './store';
 import { selFromKey } from './tools';
 
@@ -101,6 +102,7 @@ export class BoardRenderer {
     const sel = selFromKey(rec, ui.selectedKeys[0], b.selIndex);
     const hover = selFromKey(rec, ui.hoverKey);
     const path = sel.kind === 'path' ? sel.id : null;
+    const focus = b.focus.length ? focusIds(useDocument.getState().doc!, b.focus) : [];
     const view: BoardView = {
       proj,
       yaw: b.yaw,
@@ -116,7 +118,7 @@ export class BoardRenderer {
       sel,
       selKeys: ui.selectedKeys,
       hover,
-      focus: [],
+      focus,
       placing: b.placing,
       ruler: b.ruler,
       snap: b.snap,
@@ -148,7 +150,7 @@ export class BoardRenderer {
       t: ui.timeOn ? ui.tS : null,
       sel: sel.kind + '|' + sel.id + '|' + sel.i + '|' + ui.selectedKeys.join(','),
       hover: hover.kind + '|' + hover.id + '|' + hover.i,
-      focus: '',
+      focus: focus.join(','),
       layers: JSON.stringify(b.layers),
       units: ui.units,
       thumb: false,

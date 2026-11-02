@@ -23,14 +23,8 @@
 .brief-stage-grab:active .brief-stage svg {
   cursor: grabbing;
 }
-/* Emphasis: the focus strong, the rest faint with its labels hidden. The stage, the strip and
-   the print deck carry the class. */
-.brief-emphasis svg.board .dim {
-  opacity: 0.1;
-}
-.brief-emphasis svg.board .dim text {
-  display: none;
-}
+/* Emphasis and the hidden level: the stage, the strip and the print deck carry the board's
+   `focus-faint` or `focus-hidden` class (src/board/board.css). */
 /* The question as a floating title at the stage's top left: the 17/24 size at weight 500. */
 .brief-question {
   position: absolute;
@@ -53,7 +47,7 @@
   position: absolute;
   top: 10px;
   right: 10px;
-  width: 264px;
+  width: 300px;
   max-height: calc(100% - 20px);
   overflow: auto;
   padding: 10px 12px 12px;

@@ -142,7 +142,7 @@ export type Layer = {
   draw: (ctx: Ctx) => string;
 };
 
-/** Legacy Sc.LAYER_LABELS: the chip names of the eight LayerIds. */
+/** Legacy Sc.LAYER_LABELS: the chip names of the LayerIds (`labelsRest` added 2026-11-02). */
 export const LAYER_LABELS: Record<LayerId, string> = {
   reach: 'Reach',
   events: 'Events',
@@ -150,6 +150,7 @@ export const LAYER_LABELS: Record<LayerId, string> = {
   tracks: 'Tracks',
   telemetry: 'Telemetry',
   labels: 'Labels',
+  labelsRest: 'Other labels',
   rings: 'Rings',
   target: 'Target TSPI',
 };
@@ -163,6 +164,7 @@ export function defaultLayers(): Record<LayerId, boolean> {
     tracks: true,
     telemetry: false,
     labels: true,
+    labelsRest: true,
     rings: false,
     target: true,
   };

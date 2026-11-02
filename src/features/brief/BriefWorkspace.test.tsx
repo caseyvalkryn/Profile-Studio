@@ -245,7 +245,7 @@ describe('Brief timeline, readout, frames and key points', () => {
       useUi.getState().setTime(20);
       useUi.getState().setTimeOn(true);
     });
-    expect(screen.getByTestId('brief-float-head')).toHaveTextContent('Frame at t+0:20');
+    expect(screen.getByTestId('brief-float-head')).toHaveAccessibleName('Frame at t+0:20');
     expect(within(float()).getAllByText('Range')[0]!.nextElementSibling).toHaveTextContent(/nm$/);
     expect(within(float()).getAllByTestId('brief-frame-holders').length).toBeGreaterThan(0);
     expect(screen.getByRole('checkbox', { name: 'Readout' })).toBeChecked();
@@ -283,21 +283,21 @@ describe('Brief timeline, readout, frames and key points', () => {
     render(<BriefWorkspace />);
     expect(useDocument.getState().doc!.cards[0]!.focus).toEqual([]);
     const stage = () => screen.getByTestId('brief-stage').parentElement!;
-    expect(stage()).not.toHaveClass('brief-emphasis');
+    expect(stage()).not.toHaveClass('focus-faint');
     fireEvent.click(screen.getByRole('button', { name: /^Emphasis/ }));
     const v = useDocument.getState().doc!;
     expect(v.cards[0]!.displays.emphasis).toBe(true);
     expect(v.cards[0]!.focus).toEqual(v.threats.map((t) => t.key));
     expect(useDocument.getState().past.map((e) => e.label)).toEqual(['emphasise card c1']);
-    expect(stage()).toHaveClass('brief-emphasis');
+    expect(stage()).toHaveClass('focus-faint');
     expect(screen.getByRole('checkbox', { name: 'Emphasis' })).toBeChecked();
     const strip = screen.getByRole('complementary', { name: 'Cards' });
-    expect(strip.querySelector('.brief-emphasis')).not.toBeNull();
+    expect(strip.querySelector('.focus-faint')).not.toBeNull();
     // off again keeps the focus
     fireEvent.click(screen.getByRole('checkbox', { name: 'Emphasis' }));
     expect(useDocument.getState().doc!.cards[0]!.displays.emphasis).toBe(false);
     expect(useDocument.getState().doc!.cards[0]!.focus).toEqual(v.threats.map((t) => t.key));
-    expect(stage()).not.toHaveClass('brief-emphasis');
+    expect(stage()).not.toHaveClass('focus-faint');
   });
 
   it('the Question box puts the question on the stage as a floating title; a press on the title takes it off', () => {

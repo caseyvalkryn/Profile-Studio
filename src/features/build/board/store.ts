@@ -7,6 +7,7 @@ import { create } from 'zustand';
 import type { Bounds } from '../../../board/geo';
 import type { Ghost, Placing, Ruler } from '../../../board/layers';
 import type { Size } from '../../../board';
+import type { FocusLevel } from './focus';
 
 /** Legacy placing plus the fields the renderer does not read (the area kind, the event type). */
 export type BoardPlacing = Placing & {
@@ -61,6 +62,12 @@ export type BoardState = {
   readout: { text: string; level: 'info' | 'warn' } | null;
   /** Layer chips the user flipped (legacy `ui.layers`); a missing id keeps the layer default. */
   layers: Record<string, boolean>;
+  /**
+   * The focus (2026-11-02): record keys drawn strong while the rest draw at `focusLevel`. Empty
+   * draws everything strong. H sets it from the selection; Save as card stores it.
+   */
+  focus: string[];
+  focusLevel: FocusLevel;
   set: (patch: Partial<Omit<BoardState, 'set' | 'reset'>>) => void;
   reset: () => void;
 };
@@ -85,6 +92,8 @@ export const BOARD_DEFAULTS = {
   dragLabel: null as { text: string; sub: string | null } | null,
   readout: null as { text: string; level: 'info' | 'warn' } | null,
   layers: {} as Record<string, boolean>,
+  focus: [] as string[],
+  focusLevel: 'faint' as FocusLevel,
 };
 
 export const useBoard = create<BoardState>()((set) => ({

@@ -22,7 +22,14 @@ function Row({ row, selected }: { row: RailRow; selected: boolean }) {
       data-key={row.key}
       title={row.warn ?? row.title}
       aria-pressed={selected}
-      onClick={() => useUi.getState().setSelection([row.key])}
+      onClick={(e) => {
+        // Shift+click adds the row to the selection or takes it out (2026-11-02, the focus work)
+        const ui = useUi.getState();
+        if (!e.shiftKey) ui.setSelection([row.key]);
+        else if (ui.selectedKeys.includes(row.key))
+          ui.setSelection(ui.selectedKeys.filter((k) => k !== row.key));
+        else ui.setSelection([...ui.selectedKeys, row.key]);
+      }}
       onPointerEnter={() => useUi.getState().setHover(row.key)}
       onPointerLeave={() => {
         if (useUi.getState().hoverKey === row.key) useUi.getState().setHover(null);

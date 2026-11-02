@@ -229,6 +229,7 @@ export const cardSchema: z.ZodType<Card> = z.object({
     readout: z.boolean(),
     // added 2026-11-02 without a stamp change: a missing field reads false
     emphasis: z.boolean().default(false),
+    hidden: z.boolean().default(false),
   }),
   clip: clipSchema.nullable(),
   focus: z.array(key),

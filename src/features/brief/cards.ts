@@ -9,6 +9,13 @@ import { RATES } from '../../domain/catalog';
 import { newKey } from '../../domain/ids';
 import { CAM_TO_VIEW, type CamKind } from '../../board';
 import { useBoard } from '../build/board/store';
+import {
+  FOCUS_LEVEL_LABEL,
+  displaysOfLevel,
+  expandFocus,
+  levelOfCard,
+  nextFocusLevel,
+} from '../build/board/focus';
 import { boardScene } from '../build/board/derived';
 import {
   applyCard as applyToBuild,
@@ -91,6 +98,8 @@ export function snapshotBuild(): BuildStash {
     pitch: b.pitch,
     ref: b.ref,
     layers: { ...b.layers },
+    focus: b.focus.slice(),
+    focusLevel: b.focusLevel,
   };
 }
 
@@ -119,6 +128,8 @@ export function restoreBuild(): void {
     pitch: s.pitch,
     ref: s.ref,
     layers: { ...s.layers },
+    focus: s.focus.slice(),
+    focusLevel: s.focusLevel,
   });
   ui.setBuildStash(null);
 }
@@ -137,9 +148,14 @@ export function cardFromBuild(v: Vignette, from: BuildStash = snapshotBuild()): 
     name: `Card ${v.cards.length + 1}`,
     view: cardViewOf(v, from),
     layers,
-    displays: { timeline: true, chart: false, readout: false, emphasis: false },
+    displays: {
+      timeline: true,
+      chart: false,
+      readout: false,
+      ...displaysOfLevel(from.focus.length ? from.focusLevel : 'dim'),
+    },
     clip: null,
-    focus: useUi.getState().selectedKeys.slice(),
+    focus: from.focus.length ? expandFocus(v, from.focus) : useUi.getState().selectedKeys.slice(),
     tS: from.timeOn ? from.tS : null,
     caption: '',
     notes: '',
@@ -212,7 +228,22 @@ export function toggleEmphasis(): void {
   edit(`${on ? 'emphasise' : 'unemphasise'} card ${card.id}`, (d) => {
     const c = d.cards.find((x) => x.key === card.key);
     if (!c) return;
-    c.displays.emphasis = on;
+    c.displays = { ...c.displays, emphasis: on, hidden: false };
+    if (focus) c.focus = focus;
+  });
+}
+
+/** Shift+E: the next level of the rest, faint, hidden, dim (emphasis off); one undo step. */
+export function cycleEmphasis(): void {
+  const v = doc();
+  const card = currentCard(v, useUi.getState().cardKey);
+  if (!v || !card) return;
+  const level = nextFocusLevel(levelOfCard(card.displays));
+  const focus = level !== 'dim' && !card.focus.length ? v.threats.map((t) => t.key) : null;
+  edit(`set card ${card.id} ${FOCUS_LEVEL_LABEL[level]}`, (d) => {
+    const c = d.cards.find((x) => x.key === card.key);
+    if (!c) return;
+    c.displays = { ...c.displays, ...displaysOfLevel(level) };
     if (focus) c.focus = focus;
   });
 }

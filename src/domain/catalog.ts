@@ -430,6 +430,7 @@ export const LAYER_IDS = [
   'tracks',
   'telemetry',
   'labels',
+  'labelsRest',
   'rings',
   'target',
 ] as const satisfies readonly LayerId[];

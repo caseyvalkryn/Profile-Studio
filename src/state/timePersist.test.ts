@@ -135,6 +135,8 @@ describe('timePersist', () => {
       pitch: 0,
       ref: '',
       layers: {},
+      focus: [],
+      focusLevel: 'faint',
     };
     useUi.setState({ buildStash: stash, cardKey: 'K2', tS: 125, loop: { startS: 55, endS: 125 } });
     vi.advanceTimersByTime(SAVE_DELAY_MS);

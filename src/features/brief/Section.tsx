@@ -4,11 +4,14 @@ import type { ReactNode } from 'react';
 
 export function Section({
   title,
+  heading,
   right,
   testId,
   children,
 }: {
   title: string;
+  /** What the head shows in place of the title text; `title` stays its accessible name. */
+  heading?: ReactNode;
   right?: ReactNode;
   testId?: string;
   children: ReactNode;
@@ -19,7 +22,9 @@ export function Section({
       data-testid={testId}
     >
       <div className="flex items-center justify-between gap-2">
-        <h3 className="m-0 text-xs font-medium text-muted">{title}</h3>
+        <h3 className="m-0 text-xs font-medium text-muted" aria-label={heading ? title : undefined}>
+          {heading ?? title}
+        </h3>
         {right}
       </div>
       {children}
