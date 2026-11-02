@@ -1,7 +1,7 @@
 // The card strip (`legacy/mockup-v3.html` drawCardStrip, line 498): one button per card with its
 // thumbnail (render.card in thumb mode, 300 by 170), "n. name" and the small line "view · t+200 s
 // · focus ids"; aria-current marks the current card. Under the deck, "Add card from current
-// scene"; with no cards, the hint and that button are the whole strip.
+// scene"; with no cards, the hint and that button are the whole strip (the stage shows the build).
 import type { Card, Vignette } from '../../domain/types';
 import { render } from '../../board';
 import { boardDerived, boardScene } from '../build/board/derived';
@@ -64,7 +64,7 @@ export default function CardStrip({
         ))
       ) : (
         <p className="ps-hint">
-          No cards yet. In Build, set the camera, layers, time and selection, then Save as card.
+          No cards yet. The stage shows the build. Press C or Save a frame as a card to keep a view.
         </p>
       )}
       <button type="button" className="ps-btn mt-1.5 self-start" onClick={onAdd}>

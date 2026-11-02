@@ -16,6 +16,12 @@
 .brief-stage svg {
   cursor: default;
 }
+/* A card with its Timeline display off: the strip shows its play bar only (lane 12.3). */
+.brief-tl-collapsed .tl-plot,
+.brief-tl-collapsed .tl-ov,
+.brief-tl-collapsed [data-testid='tl-legend'] {
+  display: none;
+}
 /* The print deck is for paper only. */
 .brief-print {
   display: none;
