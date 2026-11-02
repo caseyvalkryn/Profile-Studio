@@ -365,6 +365,192 @@ by `preview.ts` and `derived.ts`; the sensor `model` and the asset `entered` sou
 still written by the templates); the deferred list of phase 10 above. Each returns only when
 the user asks.
 
+### Phase 13. The timeline as the plan's clock, the Brief as the teaching space (opens 2026-11-01)
+
+The user's request of 2026-11-01, late: "Comprehensively upgrade the timeline and briefing
+features and capabilities. The timeline should be persistent and the linking feature between the
+plan, which builds the timeline, profile, geometry, events, objects, and overall plan. The brief
+allows for the teaching of it, and should be a space where any individual frame or slice of the
+planned event can be assessed, observed, analyzed, and taught. The timeline in the brief should
+be as robust as the plan (because it's the time). Include glyphs, color distinction, iconography,
+and a high level of polish." Rows 12.1 to 12.4 built the shared strip; this phase makes it the
+plan's clock and makes the Brief teach from it. Section 5 rules apply. Lanes branch from
+`rebuild/mvp` as `lane/13.x`. The orchestrator's readings of the request, each an assumption
+on record until the user says otherwise:
+
+1. Persistent: the time state of a profile (the cursor, time on, the loop, the zoom span, the
+   strip height and the rate) survives a workspace switch and a reload. It is interface state
+   (not an undo step, not in the record) kept per profile id in localStorage beside the theme.
+2. Linked: the strip, the board and the inspector share one selection and one hover in both
+   directions. A press on a strip row selects the system; a press on a key point glyph sets the
+   time and selects the system that gives the step; the board's hover of a system lights its
+   rows. The deck sits on the time axis: a Cards row draws each card at its time, so the plan,
+   its events and its cards read on one clock.
+3. Frame and slice: a card is a frame (a time) or a slice (a time range with a rate, the
+   `Card.clip` field of spec section 5, no longer deferred). The Brief shows what is true in
+   the frame: the step each threat has reached, its next step, its range and height, who holds
+   it, the engage margin and the time to the defended asset; for a slice, what happens inside
+   it. The strip in Brief has every Build control except the edits (a bead drag).
+4. Glyphs and colour: the seven glyphs of lane 12.4 are the one vocabulary for a key point on
+   the strip, the board and the notes panel. Colour means state (principle 5.2): a reached key
+   point in the text ink, the current one in the accent, a future one dim. No new colour.
+
+#### 13.1 The strip: persistence, linking, the Cards row, state colour (`opus-high`, 5400 s)
+
+Owned: `src/features/timeline/*` (new files allowed; split `Timeline.tsx` when a part is
+separable, for example the play bar, the lane svg and the axis), `src/state/ui.ts`, a new
+`src/state/timePersist.ts` with its test, the bind site in `src/App.tsx` (beside `bindTheme`).
+Exports `timelineCommands` from `src/features/timeline/commands.ts` (registered by 13.W; until
+then the strip's menu lists the ids and 13.W wires them).
+
+1. Persistence. `timePersist.ts`: load and save `{tS, timeOn, loop, tview, tlH, rate}` per
+   profile id under `profileStudio.time` (one JSON object keyed by id, the newest 50 ids kept)
+   through the same guarded `Storage` pattern as `shell/theme.ts`. Bound in `App.tsx`: restore
+   when the document id changes, save on each change of those fields (debounced 250 ms). A
+   missing or bad entry leaves the defaults. The Build stash of Brief still restores the Build
+   time on exit (12.3); persistence sits under it.
+2. Linking. The row of a system (the pill, its id, its bars) is a press target: a press selects
+   the system (`ui.setSelection([sys.key])`), hover sets `ui.setHover(sys.key)`; a row whose
+   system is selected or hovered draws its label in the accent and its bars at full opacity
+   while the others stay. A press on a key point glyph sets the time to the point and selects
+   the system that gives it (its `system` id's key; a DA glyph selects the threat). The lane
+   header press keeps selecting the threat. Both work in Build and Brief. The selection and the
+   hover of a system on the board or the inspector light its rows on the strip (read
+   `selectedKeys` and `hoverKey`; a system's rows appear under each threat it sees).
+3. The Cards row. Under the DA row (above the first lane): one row, 14 px, labelled "Cards" in
+   the gutter, with a marker per card that has a time: a 12 px rounded square in the surface
+   fill with the card's number (1-based position in the deck) in the mono mark size; a card with
+   a slice draws a 6 px band from `clip.t0S` to `clip.t1S` under its marker at `t0S`. The
+   current card (`ui.cardKey`) draws in the accent. A press in Brief sets `ui.setCardKey(key)`
+   (the Brief applies it); a press in Build sets the time to the card's time (and the loop to
+   its slice when it has one). A card without a time draws nothing. The title names the card.
+4. State colour. The glyphs of a lane read the time cursor when time is on: a point at or
+   before the cursor is reached (the text ink), the latest reached is current (the accent, and a
+   1.5 px halo ring), a point after the cursor is dim (`--text-subtle`); with time off every
+   glyph draws as today. The same three states in the legend's hover title, not as entries.
+5. Brief parity. In Brief the strip keeps every control of Build but the bead drag: the row and
+   glyph presses, the loop by Shift drag, the zoom, the overview pan, the grip, the context menu
+   with Set time here, Loop from here, Clear loop, Fit run, Fit action, and the two new items
+   from `timelineCommands`: `timeline.saveFrameHere` (set the time to the press time, then
+   `card.save` through the registry's run; label "Save a frame here") and
+   `timeline.saveSliceFromLoop` (label "Save the loop as a slice"; enabled when a loop is set;
+   writes the current card's clip in Brief or a new card's in Build through a function 13.2
+   exports as `setSlice(key, clip)` in `src/features/brief/cards.ts`; until the merge, call it
+   through a dynamic import as `brief/commands.ts` does). The bead stays a press target in
+   Brief (sets the time, selects the event).
+6. Polish. The lane header carries the step reached at the cursor as a short word after the
+   threat id when the gutter has room at the current width ("T1 Track" in the muted ink; the
+   gutter grows to 72 px when any lane needs it, `GUT_L` becomes a function of the lanes); the
+   cursor time chip gains the step reached of the selected threat ("t+0:10 · Track") when one
+   is selected; the row separators stop at the gutter; the play bar's loop select becomes an
+   icon button group (Lucide `Repeat`, `Repeat1` for the range, with the tooltip) only if the
+   bar stays one line at 1100 px, else it stays a select. Every new mark on the design tokens.
+
+Tests: unit tests for `timePersist` (round trip, a bad entry, the 50-id cap), `buildLanes` with
+the Cards row, the glyph state classes, the row press and the glyph press (selection and time),
+the Cards row press in both modes. Gate green; the entry budget 300 kB gzip. Screenshots:
+Build and Brief at 1440 x 900, light and dark, with the CUAS-001 fixture at t+1:40 and a
+selected sensor, under `reviews/phase-13/13.1-*.jpg`.
+
+#### 13.2 The Brief: the frame, the slice, the teaching panel (`opus-high`, 5400 s)
+
+Owned: `src/features/brief/*`, `src/features/build/cards/cards.ts` (applyCard reads the
+slice), `src/domain/schema.ts` and `types.ts` only for the `Clip` comment and defaults (no
+stamp bump: `clip` is already in v7). Exports `setSlice(key: string, clip: Clip | null)` and
+`sliceFromLoop()` from `src/features/brief/cards.ts` for 13.1's commands.
+
+1. The slice. `Card.clip` is live: `setSlice` writes it as one undo step ("set card c2
+   slice"); `sliceFromLoop` takes `ui.loop` into the current card (Brief) or a new frame card
+   (Build), rate from `ui.rate`, beats empty. `applyCard` on a card with a slice sets the loop
+   to the slice, the rate to its rate and the time to `t0S` (time on); on a frame it sets the
+   time as today and clears the loop. The notes panel's Card section gains a Slice field: from,
+   to (mono, "m:ss", `parseTime` of the strip), rate (the eight rates) and a Clear button. The
+   stage head reads "t+0:10 to t+0:40 · x2" for a slice. The strip shows the slice as the loop
+   band (12.1 draws the loop; nothing new there). P and Space play the slice from its start when
+   the cursor is outside it. Save a frame (C) inside a slice keeps the frame only.
+2. The Frame panel. A new section at the top of the notes panel, "Frame at t+0:10" (or "Full
+   run" with time off), one block per threat in focus (every threat when the focus names none,
+   at most six): the glyph and name of the step reached (the key point at or before t), the
+   next step with its countdown ("Engage in 0:12"), range, height, speed and closing speed in
+   the display units, the systems that hold it as the strip's pills with ids, the engage margin
+   ("margin +18 s", the hostile ink when negative), and the time to the defended asset. A press
+   on the next step moves the time there. Reads `boardDerived(v).at` (the readout's source),
+   `stages`, `window` and `daEntry`. With a slice, a second list "Inside the slice": every key
+   point, authored event and window start or end between t0 and t1, in time order, each a press
+   that moves the time. The Readout display keeps the one-line readout under the caption.
+3. Key points with glyphs. The Key points section draws the 12.4 glyph before each step
+   (import `stageGlyph` from `../timeline/glyphs`) with the state colour of 13.1 item 4 (the
+   classes `tl-reached`, `tl-current`, `tl-future`; the strip's stylesheet is imported by the
+   strip, which Brief always mounts). The current step reads "now".
+4. Teaching aids. Under the stage, the presenter aids line gains the current step of the threat
+   in focus as a glyph and word, and "Next: 2 Card 4 at t+1:40" names the next card's time (or
+   its slice). The stage caption's empty state in a card reads "Write what the viewer must see
+   at t+0:10." (principle 6.1). The print deck prints the frame time (or the slice) under the
+   card name and the Frame panel's lines as a small table under the caption.
+5. Iconography. The stage head buttons keep Lucide; add `Scissors` for "Set the slice from the
+   loop" (runs `sliceFromLoop`), enabled when a loop is set, with the tooltip saying why when
+   not. The notes panel section heads carry no icons (principle 5.10: an icon sits beside its
+   label; a head is a label).
+
+Tests: `cards.test.ts` for `setSlice`, `sliceFromLoop`, `applyCard` with a slice; a Frame panel
+test on the test deck (step reached, next step countdown, the systems, the slice list);
+`BriefWorkspace.test.tsx` for the Slice field and the head text. Gate green. Screenshots:
+Brief with a frame card and with a slice card, light and dark, under
+`reviews/phase-13/13.2-*.jpg`.
+
+#### 13.3 The board: key point marks on the track (`opus-high`, 4800 s)
+
+Owned: `src/board/layers/events.ts`, `src/board/symbols.ts`, `src/board/board.css`,
+`src/board/render.test.ts`, `src/board/__snapshots__/*`, `src/board/layers/index.ts` only if a
+layer input changes. The renderer contract of phase 9 holds (no React, store or DOM import).
+
+1. The marks. The events layer draws each threat's F2T2EA key points (`derived.stages`, the
+   `t` of each step with a value) and its defended asset entry (`daEntry`) on its track at the
+   position at that time (`timed` through the engine's `at`, as the first-see ticks do), as the
+   same seven glyphs the strip draws (`src/features/timeline/glyphs.tsx` is the geometry: r = 4,
+   Find open circle, Fix circle with a 1.5 dot, Track diamond r + 0.5, Target circle with a
+   cross, Engage filled triangle, Assess square with a tick, DA a 3 by 9 bar), 1 px stroke in
+   the muted ink, the open shapes filled with the board surface, as `symbols.keyPoint(stage,
+   sx, sy)`. A mark carries `data-k="keypoint"`, `data-id="<threat id>"`, `data-stage` and a
+   `<title>` "T1 Track · 1:40 · RDR-1" (the strip's title text). Marks are not hit targets.
+2. State colour at the time cursor (the layer reads `ctx.t`): reached marks in the text ink,
+   the current one in the accent with a halo, future ones at 45 percent; with time off, every
+   mark in the muted ink. The classes `kp-reached`, `kp-current`, `kp-future` in `board.css`
+   on the tokens.
+3. Declutter: a mark yields to the datablock and the event beads (the labels layer's declutter
+   list is not touched; marks are 9 px and sit on the line). Two marks within 6 px of each other
+   draw the later one 10 px along the track's normal. The thumb mode (`ctx.thumb`) draws no
+   marks. The Elevation and 3D cameras draw them at the projected point.
+4. Parity: `render.test.ts` keeps byte parity with the legacy renderer by the
+   `PHASE_10_DEVIATIONS` mechanism (add `PHASE_13_DEVIATIONS` that patches the legacy source to
+   emit the same fragment, or exclude the `keypoint` groups from the compared bytes with a
+   comment that says why). Snapshots updated. Perf: a full render stays under 1.5 ms at 40 x 15
+   (`render.perf.test.ts`).
+
+Report every difference from the legacy layer with its reason. Screenshots: Build Plan,
+Elevation and 3D with the CUAS-001 fixture at t+1:40, under `reviews/phase-13/13.3-*.jpg`
+(a Playwright script against the dev server on 5193; never the orchestrator's browser).
+
+#### 13.W Wiring (`opus-medium`, 3600 s)
+
+After the three merges. Owns `src/commands/commands.ts`, `src/features/commands/*`,
+`src/App.tsx`, `e2e/*`, `docs/spec.md` section 7 and 8, `docs/design-principles.md` items 5.8
+and 8.5 and 8.6. Registers `timelineCommands`; replaces 13.1's dynamic import of `setSlice`
+with the direct call if the chunk split allows (the Brief chunk stays lazy; if not, the dynamic
+import stays and the reason is in the report); the shortcut sheet lists the new commands; one
+e2e spec `12-20-timeline.spec.ts` (a row press selects the sensor on the board and the
+inspector; the glyph press moves the time; the Cards row opens card 2 in Brief; the time
+persists over a reload) and one `12-21-slice.spec.ts` (Save the loop as a slice, the head text,
+P plays inside the slice). Spec section 7 Build and Brief and section 8 (menu table rows,
+keys) amended; principle 8.6 drops clips from the deferred list and 8.5 names the one glyph
+vocabulary; spec section 5 `Clip` loses "deferred". Gate green; entry size reported.
+
+#### 13.R Review and 13.F Fixes
+
+`opus-high` with the browser at 1440 x 900: the four lanes against the spec, the principles,
+the four readings above and the mockup; `reviews/phase-13.md`; then the fix lane; then the
+user's approval and the merge into `main`.
+
 ## 7. Status
 
 The orchestrator updates this table at each merge. `Head` is the `rebuild/mvp` commit after the
