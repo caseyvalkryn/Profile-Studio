@@ -38,6 +38,7 @@ export default function PlayBar({ mode, tmax, stopList, setTimeHere }: PlayBarPr
   const playing = useUi((s) => s.playing);
   const loop = useUi((s) => s.loop);
   const rate = useUi((s) => s.rate);
+  const zoomed = useUi((s) => s.tview != null);
   const ui = useUi.getState;
   const [clockDraft, setClockDraft] = useState<string | null>(null);
 
@@ -46,12 +47,14 @@ export default function PlayBar({ mode, tmax, stopList, setTimeHere }: PlayBarPr
     : loop.startS <= 0 && loop.endS >= tmax - 1e-9
       ? 'all'
       : 'range';
+  // At the full view the range is the whole run, so the range toggle waits for a zoom; it stays
+  // focusable (aria-disabled) so its tooltip says why (review 13 N-13).
+  const rangeOff = !zoomed && loopMode !== 'range';
   const onLoop = (v: 'all' | 'range') => {
     const u = ui();
     if (loopMode === v) u.setLoop(null);
     else if (v === 'all') u.setLoop({ startS: 0, endS: tmax });
-    else
-      u.setLoop(u.tview ? { startS: u.tview.t0S, endS: u.tview.t1S } : { startS: 0, endS: tmax });
+    else if (u.tview) u.setLoop({ startS: u.tview.t0S, endS: u.tview.t1S });
   };
   const clockText = timeOn ? fmtTime(tS) : '';
   const onClockKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -147,7 +150,11 @@ export default function PlayBar({ mode, tmax, stopList, setTimeHere }: PlayBarPr
         </Tooltip>
         <Tooltip
           content={
-            loopMode === 'range' ? 'Loop off' : 'Loop the range (Shift and drag on the axis)'
+            loopMode === 'range'
+              ? 'Loop off'
+              : rangeOff
+                ? 'Zoom the timeline first'
+                : 'Loop the range (Shift and drag on the axis)'
           }
         >
           <button
@@ -155,7 +162,10 @@ export default function PlayBar({ mode, tmax, stopList, setTimeHere }: PlayBarPr
             className={mini}
             aria-label="Loop range"
             aria-pressed={loopMode === 'range'}
-            onClick={() => onLoop('range')}
+            aria-disabled={rangeOff || undefined}
+            onClick={() => {
+              if (!rangeOff) onLoop('range');
+            }}
           >
             <Repeat1 aria-hidden="true" />
           </button>

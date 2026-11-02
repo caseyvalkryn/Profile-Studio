@@ -6,11 +6,12 @@
 // scene and the derived fields; Frame.tsx, the stage aids and the print deck read them.
 import type { Clip } from '../../domain/types';
 import type { Scene } from '../../board';
-import { EFFECTOR_KINDS } from '../../domain/catalog';
 import type { Derived } from '../../engine';
 import type { Readout } from '../../engine/at';
+import { mmss } from '../../engine/tokens';
 import { fmtTime } from '../shared/units';
 import type { GlyphStage } from '../timeline/glyphs';
+import { T_EPS, marginSeconds, stepAt } from '../timeline/layout';
 import { keyPoints, type KeyPoint } from '../timeline/stages';
 
 /** At most this many threat blocks; the rest are counted as "and n more". */
@@ -36,12 +37,6 @@ export type FrameThreat = {
 
 export type Frame = { t: number | null; threats: FrameThreat[]; more: number };
 
-/** "1:02" without the t+ prefix, for countdowns. */
-export function mmss(s: number): string {
-  const a = Math.max(0, Math.round(s));
-  return `${Math.floor(a / 60)}:${a % 60 < 10 ? '0' : ''}${a % 60}`;
-}
-
 /** "x2", "x0.25": the strip's rate label. */
 export const rateText = (rate: number) => `x${rate}`;
 
@@ -52,9 +47,7 @@ export function sliceText(clip: Pick<Clip, 't0S' | 't1S' | 'rate'>): string {
 
 /** "margin +18 s", "margin -5 s"; null without an engage window. */
 export function marginText(margin: number | null): string | null {
-  if (margin == null) return null;
-  const s = Math.round(margin);
-  return `margin ${s >= 0 ? '+' : ''}${s} s`;
+  return margin == null ? null : `margin ${marginSeconds(margin)}`;
 }
 
 /** "DA in 1:02", "DA at t+1:02" with time off, "DA entered at t+1:02" after the entry. */
@@ -64,30 +57,14 @@ export function daText(daT: number | null, t: number | null): string {
   return t < daT ? `DA in ${mmss(daT - t)}` : `DA entered at ${fmtTime(daT)}`;
 }
 
-const isEffector = (kind: string) => (EFFECTOR_KINDS as readonly string[]).includes(kind);
-
-/** The strip's bar class for a system kind (Timeline.tsx barClass): the pill's fill. */
-export function pillClass(kind: string): string {
-  return kind === 'ew' ? 'tl-bar-ew' : isEffector(kind) ? 'tl-bar-e' : 'tl-bar-s';
-}
-
 /** The F2T2EA key points of a threat, without the defended asset entry. */
 const steps = (d: Derived, id: string) => keyPoints(d, id).filter((k) => k.stage !== 'da');
-
-/** The step reached at t: the latest F2T2EA key point at or before t; the last one with time off. */
-export function stepAt(d: Derived, id: string, t: number | null): KeyPoint | null {
-  const list = steps(d, id);
-  if (t == null) return list.at(-1) ?? null;
-  let out: KeyPoint | null = null;
-  for (const k of list) if (k.t <= t + 1e-6 && (!out || k.t >= out.t)) out = k;
-  return out;
-}
 
 /** The next step after t: the earliest F2T2EA key point after t; null with time off. */
 export function nextStep(d: Derived, id: string, t: number | null): KeyPoint | null {
   if (t == null) return null;
   let out: KeyPoint | null = null;
-  for (const k of steps(d, id)) if (k.t > t + 1e-6 && (!out || k.t < out.t)) out = k;
+  for (const k of steps(d, id)) if (k.t > t + T_EPS && (!out || k.t < out.t)) out = k;
   return out;
 }
 
@@ -114,7 +91,7 @@ export function frameOf(
     return {
       key: p.key,
       id: p.id,
-      reached: stepAt(d, p.id, t),
+      reached: stepAt(keyPoints(d, p.id), t),
       next: nextStep(d, p.id, t),
       at,
       holders,

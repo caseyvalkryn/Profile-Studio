@@ -14,7 +14,6 @@ import {
   deleteCard,
   moveCard,
   nextCardId,
-  parseTime,
   restoreBuild,
   setFocusIds,
   setSlice,
@@ -293,14 +292,6 @@ describe('the slice (lane 13.2)', () => {
   const slice = { t0S: 10, t1S: 40, rate: 2, beatsS: [] };
   const hist = () => useDocument.getState().history;
 
-  it('parses the strip clock text', () => {
-    expect(parseTime('1:40')).toBe(100);
-    expect(parseTime('t+0:10')).toBe(10);
-    expect(parseTime('75')).toBe(75);
-    expect(parseTime('1:4x')).toBeNull();
-    expect(parseTime('')).toBeNull();
-  });
-
   it('setSlice writes the slice and its start as the card time in one undo step; null clears it', () => {
     expect(setSlice('k-c2', slice)).toBe(true);
     expect(doc().cards[1]).toMatchObject({ clip: slice, tS: 10 });
@@ -329,7 +320,7 @@ describe('the slice (lane 13.2)', () => {
     expect(sliceFromLoop()).toBe('k-c2');
     expect(doc().cards[1]!.clip).toEqual({ t0S: 60, t1S: 120, rate: 4, beatsS: [] });
     expect(hist()).toEqual(['set card c2 slice']);
-    expect(useToast.getState().text).toBe('Slice t+1:00 to t+2:00 · x4 set on card 2.');
+    expect(useToast.getState().text).toBe('Slice t+1:00 to t+2:00 · x4 set on card c2.');
   });
 
   it('sliceFromLoop in Build saves a new card after the current one', () => {

@@ -1,5 +1,7 @@
 // The strip's geometry (Timeline.tsx draws it): the constants, the lanes, the gutter width, the
 // step reached at a time and the state of each key point at the cursor. No React and no store.
+// The Brief imports its time helpers from here (parseTime, round1, stepAt, pointStates, barClass;
+// lane 13.F, F-02): the strip is in the entry chunk, so the Brief chunk stays lazy.
 import type { PathRec, Scene, SystemRec, EventRec } from '../../board';
 import { EFFECTOR_KINDS } from '../../domain/catalog';
 import type { Card } from '../../domain/types';
@@ -37,7 +39,19 @@ export const CARDS_H = 14;
 export const STACK_PX = 10;
 export const STACK_DY = 10;
 
+/** The time tolerance of "at or before t" for key points: the strip, the board aids and the Brief. */
+export const T_EPS = 1e-6;
+
+/** The one reason a loop command is off: no loop is set (the strip menu, the palette, the Brief). */
+export const NO_LOOP_REASON = 'Set a loop on the timeline first (Shift and drag)';
+
 export const round1 = (t: number) => Math.round(t * 10) / 10;
+
+/** "+18 s", "-5 s": a signed engage margin in seconds; the strip label and the Frame panel. */
+export function marginSeconds(margin: number): string {
+  const s = Math.round(margin);
+  return `${s >= 0 ? '+' : ''}${s} s`;
+}
 export const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
 /** "2:55", "175", "t+2:55" or "2:55.5" to seconds; null when the text is not a time. */
@@ -49,11 +63,6 @@ export function parseTime(text: string): number | null {
   return m ? Number(m[1]) * 60 + Number(m[2]) : null;
 }
 
-export function mmss(s: number): string {
-  const a = Math.round(Math.abs(s));
-  return `${Math.floor(a / 60)}:${a % 60 < 10 ? '0' : ''}${a % 60}`;
-}
-
 export function inkOf(identity: PathRec['identity']): string {
   if (identity === 'friend') return 'tl-ink-friend';
   if (identity === 'hostile' || identity === 'suspect') return 'tl-ink-hostile';
@@ -61,6 +70,7 @@ export function inkOf(identity: PathRec['identity']): string {
 }
 
 const isEff = (kind: string) => (EFFECTOR_KINDS as readonly string[]).includes(kind);
+/** A system kind's bar class: the strip's bars and the Brief's pills share the fill. */
 export const barClass = (kind: string) =>
   kind === 'ew' ? 'tl-bar-ew' : isEff(kind) ? 'tl-bar-e' : 'tl-bar-s';
 
@@ -142,10 +152,14 @@ export function buildLanes(scene: Scene, d: Derived, areaH = 0, cardsRow = false
   return { lanes, height: Math.max(y + 2, 20), daRow, cardsTop };
 }
 
-/** The F2T2EA step reached at t: the latest key point at or before t (not the DA entry). */
-export function stepAt(points: readonly KeyPoint[], t: number): KeyPoint | null {
+/**
+ * The F2T2EA step reached at t: the latest key point at or before t (not the DA entry). With time
+ * off (`t` null) the last step of the run. The strip, the Frame panel and the stage aids read it.
+ */
+export function stepAt(points: readonly KeyPoint[], t: number | null): KeyPoint | null {
   let out: KeyPoint | null = null;
-  for (const p of points) if (p.stage !== 'da' && p.t <= t + 1e-9) out = p;
+  for (const p of points)
+    if (p.stage !== 'da' && (t == null || p.t <= t + T_EPS) && (!out || p.t >= out.t)) out = p;
   return out;
 }
 
@@ -186,10 +200,10 @@ export function pointStates(
   if (!timeOn) return points.map(() => null);
   let cur = -1;
   points.forEach((p, i) => {
-    if (p.t <= t + 1e-9 && (cur < 0 || p.t >= points[cur]!.t)) cur = i;
+    if (p.t <= t + T_EPS && (cur < 0 || p.t >= points[cur]!.t)) cur = i;
   });
   return points.map((p, i) =>
-    i === cur ? 'tl-current' : p.t <= t + 1e-9 ? 'tl-reached' : 'tl-future',
+    i === cur ? 'tl-current' : p.t <= t + T_EPS ? 'tl-reached' : 'tl-future',
   );
 }
 

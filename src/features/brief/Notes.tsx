@@ -1,5 +1,5 @@
 // The notes panel (`legacy/mockup-v3.html` drawNotes, lines 501 to 508): the Card section with
-// Up, Down and Delete; Name; Camera; Yaw and pitch; Time s (empty is the full run); Focus ids (a
+// Up, Down and Delete; Name; Camera; Yaw and pitch; Time in m:ss (empty is the full run); Focus ids (a
 // comma list of display ids, stored as keys); the five layer toggles; the Timeline and Readout
 // displays; then the Key points of the threats in focus with their definitions; Caption;
 // Presenter notes; then the question as a hint. A text field is one undo step per focus-to-blur (the document's
@@ -20,9 +20,10 @@ import { useUi } from '../../state/ui';
 import { boardDerived } from '../build/board/derived';
 import { fmtTime } from '../shared/units';
 import { DA_DEFINITION, STAGE_DEFINITION, STAGE_LABEL, keyPoints } from '../timeline/stages';
+import { mmss } from '../../engine/tokens';
+import { parseTime, pointStates } from '../timeline/layout';
 import {
   fieldLabel,
-  parseTime,
   setDisplays,
   setField,
   setFocusIds,
@@ -31,7 +32,7 @@ import {
   type CardField,
 } from './cards';
 import Frame, { Glyph } from './Frame';
-import { captionPlaceholder, mmss, rateText } from './frameData';
+import { captionPlaceholder, rateText } from './frameData';
 import { Section } from './Section';
 
 import { LAYER_GROUPS, groupOn, withGroup } from './layers';
@@ -81,7 +82,6 @@ function useCoalesced(card: Card, field: CardField, parse: (s: string) => unknow
 }
 
 const str = (s: string) => s;
-const numOrNull = (s: string) => (s.trim() === '' ? null : Number(s));
 const num = (s: string) => (s.trim() === '' ? 0 : Number(s));
 
 function TextField({
@@ -96,6 +96,7 @@ function TextField({
   max,
   placeholder,
   mono,
+  inputMode,
 }: {
   card: Card;
   field: CardField;
@@ -108,6 +109,7 @@ function TextField({
   max?: number;
   placeholder?: string;
   mono?: boolean;
+  inputMode?: 'decimal';
 }) {
   const f = useCoalesced(card, field, parse);
   return (
@@ -119,6 +121,7 @@ function TextField({
       min={min}
       max={max}
       placeholder={placeholder}
+      inputMode={inputMode}
       autoComplete="off"
       spellCheck={false}
       value={f.draft ?? value}
@@ -313,21 +316,9 @@ function KeyPoints({ v, focus }: { v: Vignette; focus: readonly string[] }) {
       {list.length ? (
         list.map((p) => {
           const points = keyPoints(d, p.id);
-          // the state inks of the strip (lane 13.1 item 4): at or before the cursor reached, the
-          // latest reached current, after it future; with time off, every glyph as the strip draws
-          let current = -1;
-          if (timeOn)
-            points.forEach((k, i) => {
-              if (k.t <= tS + 1e-6 && (current < 0 || k.t >= points[current]!.t)) current = i;
-            });
-          const state = (i: number) =>
-            !timeOn
-              ? undefined
-              : i === current
-                ? 'tl-current'
-                : points[i]!.t <= tS + 1e-6
-                  ? 'tl-reached'
-                  : 'tl-future';
+          // the state inks of the strip (lane 13.1 item 4), from the strip's own pointStates
+          const states = pointStates(points, tS, timeOn);
+          const state = (i: number) => states[i] ?? undefined;
           return (
             <div key={p.key} data-testid="brief-keypoints">
               <div className="font-mono text-xs font-medium text-text">{p.id}</div>
@@ -346,7 +337,9 @@ function KeyPoints({ v, focus }: { v: Vignette; focus: readonly string[] }) {
                         <Glyph stage={k.stage} className={state(i)} />
                         <span className="w-12 shrink-0 text-muted">{k.label}</span>
                         <span className="font-mono text-text">{fmtTime(k.t)}</span>
-                        {i === current ? <span className="text-accent">now</span> : null}
+                        {states[i] === 'tl-current' ? (
+                          <span className="text-accent">now</span>
+                        ) : null}
                         {k.system ? <span className="font-mono text-muted">{k.system}</span> : null}
                       </button>
                     </li>
@@ -487,17 +480,19 @@ export default function Notes({
                 />
               </span>
             </Field>
-            <Field id="brief-time" label="Time s">
+            {/* m:ss as the Slice field beside it, through the strip's parser (review 13 F-08);
+                empty is the full run, text that is not a time keeps the card's time; "Card time" tells
+                it from the play bar's Time clock */}
+            <Field id="brief-time" label="Time">
               <TextField
                 card={card}
                 field="tS"
-                label="Time s"
+                label="Card time"
                 id="brief-time"
-                type="number"
-                min={0}
                 placeholder="full run"
-                value={card.tS == null ? '' : String(card.tS)}
-                parse={numOrNull}
+                inputMode="decimal"
+                value={card.tS == null ? '' : mmss(card.tS)}
+                parse={(s) => (s.trim() === '' ? null : (parseTime(s) ?? card.tS))}
                 mono
               />
             </Field>

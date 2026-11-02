@@ -373,6 +373,18 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
 
   // ---------------------------------------------------------------- marks
 
+  // the cursor chip: the time, and the step the selected threat has reached ("t+0:10 · Track")
+  const selLane = lanes.find((L) => selectedKeys.includes(L.path.key));
+  const chipStep = selLane ? stepAt(selLane.points, tS) : null;
+  const chip = `${fmtTime(tS)}${chipStep ? ` · ${chipStep.label}` : ''}`;
+  const chipW = chip.length * CH + 16;
+  const cursorOn = timeOn && tS >= tv0 - 1e-6 && tS <= tv1 + 1e-6;
+  // the chip flips to the cursor's left near the right edge; its box is 8 px off the cursor and
+  // its text plus 8 px of padding wide (timeline.css .tl-cursor-time)
+  const chipLeft = xOf(tS) > W - GUT_R - chipW;
+  const chipBox = chip.length * CH + 8;
+  const chipX0 = chipLeft ? xOf(tS) - 8 - chipBox : xOf(tS) + 8;
+
   const axis = axisMarks({
     W,
     gut,
@@ -381,6 +393,7 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
     tv1,
     xOf,
     range: rangeTmp ?? (loop ? { t0: loop.startS, t1: loop.endS } : null),
+    chip: cursorOn ? { x0: chipX0, x1: chipX0 + chipBox } : null,
   });
   const laneSvg = lanes.map((L) => laneMarks(L, geo, live, d, warned, sysKey));
   const daSvg = daRow && d ? daMarks(lanes, geo, d) : null;
@@ -393,13 +406,6 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
       : null;
   const cardsSvg = cardsTop != null ? cardMarksSvg(marks, cardsTop, geo, curCard) : null;
   const splitSvg = splitMarks(d, geo, height);
-
-  // the cursor chip: the time, and the step the selected threat has reached ("t+0:10 · Track")
-  const selLane = lanes.find((L) => selectedKeys.includes(L.path.key));
-  const chipStep = selLane ? stepAt(selLane.points, tS) : null;
-  const chip = `${fmtTime(tS)}${chipStep ? ` · ${chipStep.label}` : ''}`;
-  const chipW = chip.length * CH + 16;
-  const cursorOn = timeOn && tS >= tv0 - 1e-6 && tS <= tv1 + 1e-6;
 
   return (
     <div
@@ -526,7 +532,7 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
             </svg>
             {/* the chip flips to the cursor's left near the right edge, so it never clips */}
             <span
-              className={`tl-cursor-time${xOf(tS) > W - GUT_R - chipW ? ' tl-cursor-time-l' : ''}`}
+              className={`tl-cursor-time${chipLeft ? ' tl-cursor-time-l' : ''}`}
               data-testid="tl-cursor-time"
             >
               {chip}

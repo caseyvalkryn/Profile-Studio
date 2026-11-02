@@ -57,7 +57,7 @@ test('12.19 Brief opens the imported deck at card 1; Right and Left move between
   await expect(head).toHaveText(`2 of 3 · ${legacy.id}`);
   await expect(brief.getByRole('heading', { name: legacy.cards[1]!.name })).toBeVisible();
   await expect(stage).toHaveAttribute('data-proj', 'axon');
-  await expect(page.getByRole('spinbutton', { name: 'Time s' })).toHaveValue('200');
+  await expect(page.getByRole('textbox', { name: 'Card time' })).toHaveValue('3:20');
   await expect(page.getByRole('region', { name: 'Stage' })).toContainText(legacy.cards[1]!.caption);
 
   // Left: back to card 1.

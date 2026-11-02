@@ -21,13 +21,14 @@ import {
   STACK_PX,
   barClass,
   inkOf,
-  mmss,
+  marginSeconds,
   pointStates,
   stepAt,
   wordFits,
   type CardMark,
   type Lane,
 } from './layout';
+import { mmss } from '../../engine/tokens';
 
 /** The strip's x scale and view, shared by every mark. */
 export type Geo = {
@@ -50,6 +51,8 @@ export type Live = {
 };
 
 const inView = (g: Geo, a: number, b: number) => b >= g.tv0 && a <= g.tv1;
+/** A glyph's reach from its time: the current glyph's 7 px halo. */
+const GLYPH_CLEAR = 7;
 
 export function laneMarks(
   L: Lane,
@@ -135,9 +138,12 @@ export function laneMarks(
   const gy0 = top + 2 + HEAD / 2;
   const states = pointStates(points, live.tS, live.timeOn);
   const lastX = [-Infinity, -Infinity];
+  /** The x of each glyph drawn, so the margin label keeps clear of them. */
+  const glyphXs: number[] = [];
   points.forEach((p, i) => {
     if (p.t < tv0 || p.t > tv1) return;
     const x = xOf(p.t);
+    glyphXs.push(x);
     const level = x - lastX[0]! < STACK_PX && x - lastX[1]! >= STACK_PX ? 1 : 0;
     lastX[level] = x;
     const gy = gy0 + level * STACK_DY;
@@ -172,15 +178,31 @@ export function laneMarks(
     const x0 = cx(engT);
     const x1 = cx(ws.latest);
     const yb = top + 2 + HEAD - 1.5;
-    const label = `margin ${Math.round(ws.margin)} s`;
-    // the text goes right of the bracket, or left of it near the strip's right edge
-    const right = x1 + 4 + label.length * CH <= W - GUT_R;
+    // signed as the Frame panel signs it (review 13 F-06): "margin +142 s"
+    const label = `margin ${marginSeconds(ws.margin)}`;
+    const lw = label.length * CH;
+    // The first spot clear of every glyph (its 4 px radius and the 7 px halo): right of the
+    // bracket, inside it after its last glyph (Engage, or Assess when it follows), else left of
+    // Engage (review 13 F-06).
+    const clear = (a: number, b: number) =>
+      glyphXs.every((gx) => gx + GLYPH_CLEAR < a || gx - GLYPH_CLEAR > b);
+    const inner = Math.max(x0, ...glyphXs.filter((gx) => gx >= x0 - GLYPH_CLEAR && gx <= x1));
+    const span = (x: number, anchor: 'start' | 'end') =>
+      anchor === 'start' ? { x, anchor, a: x, b: x + lw } : { x, anchor, a: x - lw, b: x };
+    const spots = [
+      span(x1 + 4, 'start'),
+      span(inner + GLYPH_CLEAR + 2, 'start'),
+      span(x0 - GLYPH_CLEAR - 2, 'end'),
+    ];
+    const fits = (sp: (typeof spots)[number], i: number) =>
+      sp.a >= gut && sp.b <= W - GUT_R && (i !== 1 || sp.b <= x1 - 4) && clear(sp.a, sp.b);
+    const spot = spots.find(fits) ?? spots[2]!;
     if (x1 - x0 >= 24 && inView(g, engT, ws.latest))
       items.push(
         <g key="margin" className="tl-margin" data-testid="tl-margin">
-          <title>{`Latest engage ${fmtTime(ws.latest)}, margin ${Math.round(ws.margin)} s`}</title>
+          <title>{`Latest engage ${fmtTime(ws.latest)}, ${label}`}</title>
           <polyline points={`${x0},${yb - 3} ${x0},${yb} ${x1},${yb} ${x1},${yb - 3}`} />
-          <text x={right ? x1 + 4 : x0 - 4} y={yb - 1} textAnchor={right ? 'start' : 'end'}>
+          <text x={spot.x} y={yb - 1} textAnchor={spot.anchor}>
             {label}
           </text>
         </g>,

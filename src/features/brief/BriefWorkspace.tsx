@@ -30,7 +30,8 @@ import {
   stashBuild,
   step,
 } from './cards';
-import { cardTime, daText, frameOf, marginText, mmss, sliceText } from './frameData';
+import { mmss } from '../../engine/tokens';
+import { cardTime, daText, frameOf, marginText, sliceText } from './frameData';
 import { toCardRec } from './toCardRec';
 
 /** The print render: the page width at 96 dpi less margins, 16:9. */

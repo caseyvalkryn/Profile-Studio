@@ -6,11 +6,12 @@ import {
   TIME_DEFAULTS,
   TIME_KEY,
   bindTimePersist,
+  loadCardKey,
   loadTime,
   saveTime,
   type TimeState,
 } from './timePersist';
-import { UI_DEFAULTS, useUi } from './ui';
+import { UI_DEFAULTS, useUi, type BuildStash } from './ui';
 
 /** A Storage stand-in over a Map. */
 function memStore() {
@@ -109,5 +110,49 @@ describe('timePersist', () => {
     vi.advanceTimersByTime(SAVE_DELAY_MS);
     expect(loadTime('V-renamed', s)?.tS).toBe(60);
     off();
+  });
+
+  it('while Brief is open the entry keeps the Build stash time and the card (F-01, N-05)', () => {
+    vi.useFakeTimers();
+    const s = memStore();
+    const a = testVignette();
+    const off = bindTimePersist(s);
+    useDocument.getState().open(a);
+    useUi.setState({ tS: 100, timeOn: true, loop: null, rate: 1 });
+    vi.advanceTimersByTime(SAVE_DELAY_MS);
+    // Brief opens: the stash holds Build's time, the card sets the live time and a loop
+    const stash: BuildStash = {
+      view: 'plan',
+      elevationMode: 'fromAsset',
+      tS: 100,
+      timeOn: true,
+      loop: null,
+      rate: 1,
+      zoom: 1,
+      px: 0,
+      py: 0,
+      yaw: 0,
+      pitch: 0,
+      ref: '',
+      layers: {},
+    };
+    useUi.setState({ buildStash: stash, cardKey: 'K2', tS: 125, loop: { startS: 55, endS: 125 } });
+    vi.advanceTimersByTime(SAVE_DELAY_MS);
+    expect(loadTime(a.id, s)).toMatchObject({ tS: 100, timeOn: true, loop: null, rate: 1 });
+    expect(loadCardKey(a.id, s)).toBe('K2');
+    off();
+    // a reload in Brief: the live state is Build's time, ready for the Brief mount to stash
+    useUi.setState({ ...UI_DEFAULTS });
+    useDocument.getState().close();
+    const off2 = bindTimePersist(s);
+    useDocument.getState().open(a);
+    expect(useUi.getState()).toMatchObject({ tS: 100, timeOn: true, loop: null, cardKey: 'K2' });
+    // a restore with Brief already open seeds the stash and leaves the card's live time
+    useDocument.getState().close();
+    useUi.setState({ buildStash: { ...stash, tS: 0, timeOn: false }, tS: 7 });
+    useDocument.getState().open(a);
+    expect(useUi.getState().tS).toBe(7);
+    expect(useUi.getState().buildStash).toMatchObject({ tS: 100, timeOn: true, loop: null });
+    off2();
   });
 });

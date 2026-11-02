@@ -1,10 +1,9 @@
 // The strip's own commands (lane 13.1, spec section 8 Timeline menu): Save a frame here and Save
-// the loop as a slice. The wiring lane 13.W registers `timelineCommands`; until then the strip's
-// menu builds their items itself (Timeline.tsx, `localItems`), so both work on this branch.
+// the loop as a slice, registered with the rest (src/commands/commands.ts).
 import { currentContext, execute } from '../../commands/registry';
 import type { Command, CommandContext } from '../../commands/types';
 import { useUi } from '../../state/ui';
-import { round1 } from './layout';
+import { NO_LOOP_REASON, round1 } from './layout';
 
 const OPEN_FIRST = 'Open a profile first';
 
@@ -19,18 +18,13 @@ export function saveFrameAt(t: number): true | string {
   return execute(u.workspace === 'brief' ? 'brief.snapshot' : 'card.save', currentContext());
 }
 
-/** What lane 13.2 exports from `../brief/cards` (`sliceFromLoop`), read through a guard. */
-type SliceApi = { sliceFromLoop?: () => unknown };
-
 /**
- * Take the loop into a slice: the current card's in Brief, a new frame card's in Build. The
- * function is lane 13.2's `sliceFromLoop` in `src/features/brief/cards.ts`, loaded on demand so
- * the Brief chunk stays lazy (as `brief/commands.ts` does). Before 13.2 merges the guard finds no
- * function and nothing happens. Resolves true when it ran.
+ * Take the loop into a slice: the current card's in Brief, a new frame card's in Build, through
+ * `sliceFromLoop` in `src/features/brief/cards.ts`, loaded on demand so the Brief chunk stays lazy
+ * (as `brief/commands.ts` does). Resolves true when it ran.
  */
 export async function sliceFromLoop(): Promise<boolean> {
-  const m = (await import('../brief/cards')) as unknown as SliceApi;
-  if (typeof m.sliceFromLoop !== 'function') return false;
+  const m = await import('../brief/cards');
   m.sliceFromLoop();
   return true;
 }
@@ -64,7 +58,7 @@ export const timelineCommands: Command[] = [
     when: (ctx) => {
       const ok = needDoc(ctx);
       if (ok !== true) return ok;
-      return ctx.ui.loop ? true : 'Set a loop first: Shift and drag on the axis';
+      return ctx.ui.loop ? true : NO_LOOP_REASON;
     },
     run: () => void sliceFromLoop(),
   },
