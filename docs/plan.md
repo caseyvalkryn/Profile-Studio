@@ -29,6 +29,7 @@ These are settled. Do not reopen them without the user.
 | Typeface | Geist for text and Geist Mono for numbers (`@fontsource/geist`, `@fontsource/geist-mono`, OFL) replace Archivo and JetBrains Mono. The brief: unique, intuitive, worthy of an operator command and control panel; elegant, modern and distinctive (the SpaceX register); not "military", not JetBrains Mono. Picked by the user from the lane 11.2 shortlist of four on the specimen page `reviews/phase-11/type-choices.html`; the download of the two packages approved | User, 2026-11-01 |
 | Words (11.1 item 8) | The rail group keeps the mockup's "C2 and TSPI" (an allowed exception to `stat-te-terminology` rule 3, recorded in the skill's `banned-terms.md`); the Elevation label "MAX RG" becomes "Max range" | User, 2026-11-01 (poll) |
 | Phase 11 | The merge of `rebuild/mvp` into `main` approved on 2026-11-01, to be run after 11.F lands with the gate green; the push is a separate approval | User, 2026-11-01 |
+| Phase 13 | The four readings of the user's request (section 6, phase 13: persisted time state per profile; one selection and hover across strip, board and inspector with a Cards row; a card is a frame or a slice with a Frame panel; one glyph vocabulary with state colour) confirmed by poll; the merge of `rebuild/mvp` into `main` approved, no push | User, 2026-11-01 |
 | Scope hold | The bigger pieces wait for "product complete": the vos port (phase 8), the domain fields the UI dropped (`chainTime`, sensor `model`, `entered`), and the deferred list of phase 10 | User, 2026-11-01 |
 
 ## 2. Stack
@@ -638,17 +639,17 @@ removed from the tree on 2026-11-01 (`git show 70caf07` has them); the findings 
 | 13.W | done | c78b1aa | `timelineCommands` registered in Build and Brief (the palette lists them; the sheet shows no key) and the strip's local fallback menu loop removed; the Brief's fallback glyph rules removed (timeline.css covers `brief-glyph`); `BuildStash` holds `loop` and `rate`, copied and restored by `snapshotBuild` and `restoreBuild`; `clipSchema` messages say "slice"; e2e `12-20-timeline` (a row press selects the sensor on the board and the inspector, a glyph press moves the clock, the time persists over a reload after the autosave; the selection does not) and `12-21-slice` (Shift drag sets the loop, the Scissors button saves the slice and the head reads the span, P plays inside it); spec sections 2, 5, 7 and 8 and principles 8.5 and 8.6 amended; 60 unit files, 554 tests, 10 e2e; entry 244.52 kB gzip. Open: the `pagehide` flush of the time state and a reload within 500 ms of the first edit (the profile copy is not yet saved) |
 | 13.R | done | f096bc2 | `reviews/phase-13.md`: 0 blockers, 2 majors (a reload in Brief puts the Brief time and loop into Build when the user leaves, because the memory-only stash snapshots the restored Brief state; the lane helpers `mmss`, `parseTime`, `round1`, `stepAt`, `pointStates` and the bar class were written two or three times and two copies already differ), 8 minors (Space on a focused strip button runs the global command; the light future board mark at 2.07:1; "Add event here" enabled in the Brief strip menu; the unsigned margin label touches the Engage glyph; e2e gaps; "Time s" in raw seconds beside the m:ss slice field; the cursor chip covers a tick label; Build Tab never leaves the page, pre-existing), 15 notes; acceptance: linked, the Brief teaches any frame or slice, and the Brief strip as robust as Build pass; persistent and polish partial; entry 244.52 kB gzip; tick 0.37 to 0.48 ms in the perf set, the Swarm at x8 in the browser p95 16.7 ms with no frame over 20 ms; 32 `R-*.jpg` |
 | 13.F | done | d9c4f09 | all 10 findings and 7 notes: the Build time state persists while Brief is open (`timePersist` saves the stash's fields and seeds the stash on a restore from Brief; `cardKey` persisted, so a Brief reload reopens the same card and a leave restores Build's time with no loop); one `mmss(s, signed)` in `engine/tokens.ts`, one `parseTime`, `round1`, `stepAt`, `pointStates`, `barClass`, `marginSeconds` and `NO_LOOP_REASON` in `timeline/layout.ts` imported by the Brief (the Brief chunk stays lazy, 8.59 kB); Space and Enter left to a focused button in every workspace, Space stays Next card in Brief (spec section 8 over the 13.2 text); future board marks in `--text-subtle` at opacity 1 (light 4.55:1), the future DA mark floored at 80 percent (about 3.2:1, orchestrator's edit); `menuItemsFor` filters by workspace and the five strip commands are active in Build and Brief; the margin label signed and clear of the Engage glyph; e2e 12-20 adds the Cards row press in Brief and the Brief reload then leave, 12-21 starts P outside the slice and asserts the first sample at the slice start, no `force` clicks, the clock locators exact; the Card time field in m:ss (accessible name "Card time"); a tick label under the cursor chip hides; stale comments gone; the toasts name the card by id; Loop range disabled at the full view ("Zoom the timeline first"); the board mark title "t+1:40"; F-10 (Build Tab, legacy tabFree) and N-02 (the grip branch is live, the review's premise was wrong) declared; 60 unit files, 558 tests, 10 e2e; entry 245.06 kB gzip; four `after-13F-*.jpg`. Notes left: N-04, N-06, N-07, N-08, N-10, N-11, N-12, N-14 |
+| 13.M | done | main | phase 13 approved by the user on 2026-11-01 (poll: "Merge to main, no push"; the four readings stand); `rebuild/mvp` merged `--no-ff` into `main` with this handoff; the gate run on `main`; not pushed |
 
 ## 8. Handoff
 
 State on 2026-11-01, end of the thirteenth session. Phase 13 (the timeline as the plan's clock,
 the Brief as the teaching space) is done on `rebuild/mvp` at d9c4f09 with the gate green: 60
 unit files, 558 tests, 10 Playwright specs on `vite preview`, build; entry 754 kB raw, 245.06 kB
-gzip (budget 300); the Brief chunk 8.59 kB; 100 kB of Geist woff2 outside the entry. It is not
-merged into `main` (`main` holds 12.4 at 867935c); the merge and any push wait for the user.
-Rows 13.1 to 13.F in section 7 say what landed. The four readings of the user's request
-(section 6, phase 13) are assumptions on record; none has been confirmed or rejected by the
-user. Tag `pre-pivot` (d1f56d1) holds the last head with the run and score code. No lane is in
+gzip (budget 300); the Brief chunk 8.59 kB; 100 kB of Geist woff2 outside the entry. The user
+approved the merge into `main` by poll (no push); row 13.M records it. Rows 13.1 to 13.F in
+section 7 say what landed. The four readings of the user's request (section 6, phase 13) are
+confirmed by the same poll (section 1, "Phase 13"). Tag `pre-pivot` (d1f56d1) holds the last head with the run and score code. No lane is in
 flight; no worktree exists. The review notes left open are N-04, N-06, N-07, N-08, N-10, N-11,
 N-12 and N-14 of `reviews/phase-13.md`, plus the open items in the 13.1 to 13.W rows.
 
@@ -661,9 +662,8 @@ is a source of parts.
 **Decisions.** Section 1 has all of phase 10 and the three of 2026-11-01 that open phase 11:
 phase 10 approved and merged, the typeface direction, the scope hold.
 
-**Next.** The next session starts by asking the user, with a poll, (a) whether phase 13 is
-approved for the merge into `main` (if this session's poll was not answered), (b) whether the
-four readings stand, and (c) which open item opens phase 14: the 12.4 review items 8 to 10
+**Next.** The next session starts by asking the user, with a poll, which open item opens
+phase 14: the 12.4 review items 8 to 10
 (the Plan fit on the site with a long path off the frame, the `PROF-n` id for a template copy,
 the trailing comma on a first-see label), the phase 13 notes (N-10 the board marks of one
 threat do not declutter against another threat's, N-11 the Swarm shows four of six lanes at the
@@ -687,9 +687,8 @@ sections 1 to 5, phases 10, 11 and 13 in section 6, then 7 and 8. Start the dev 
 /legacy/mockup-v3.html for ten minutes. Run `npm run gate` to confirm the baseline: 60 unit
 files, 558 tests, 10 Playwright specs, build.
 
-Phase 13 is done on rebuild/mvp and not merged into main. Ask me, with a poll, whether to
-merge it, whether its four readings stand, and which of the section 8 "Next" items opens
-phase 14, then write the phase into section 6
+Phase 13 is done and merged into main (not pushed). Ask me, with a poll, which of the
+section 8 "Next" items opens phase 14, then write the phase into section 6
 with lanes, owned files and budgets before any lane starts. Plan section 5 rules apply: one
 worker per lane in a worktree under .worktrees/<id>, workers do not commit, gate and git diff
 --stat before each --no-ff merge, gate on rebuild/mvp after, worktree removed, sections 7 and 8
