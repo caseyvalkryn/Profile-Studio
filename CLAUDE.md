@@ -28,6 +28,7 @@ run or score them. React, TypeScript and Vite in `src/`. The design direction is
 - `docs/spec.md` what is built (section 12 acceptance, section 13 known gaps);
   `docs/design-principles.md`; `docs/decisions.md` the user's settled choices;
   `docs/reference/` the DroneScore measures, JIATF-401 conventions and the local source list.
+- `profiles/jiop/` the JIOPs four-camera test profiles (JSON) and their Python generator.
 
 ## The standard
 

@@ -19,6 +19,7 @@ The full build history (phases, lanes, reviews) is in git: `git show 6a2e658:doc
 | Words | "Envelopes" stays for the hull layer and "C2 and TSPI" for the rail group (allowed exceptions in the `stat-te-terminology` skill); "MAX RG" is "Max range" | 2026-11-01 |
 | Timeline | The strip is the plan's clock: time state persists per profile; one selection and hover across strip, board and inspector; a card is a frame or a slice; one glyph vocabulary with state colour | 2026-11-01 |
 | Site files | KML and KMZ polygons import as `range` areas at true scale about the site; the sample files (TST Ranch, UAS Fly Area) stay out of the repo and the tests use synthetic fixtures | 2026-11-02 |
+| JIOPs profiles | The four JIOPs four-camera test profiles (JIOP-1 to JIOP-4) and their generator live in `profiles/jiop/`; they embed the site polygon coordinates, the KMZ files still stay out | 2026-11-02 |
 | Site origin | A site file whose centre lies more than 50 km from the profile's site moves the site to the file's centre in the same undo step, and the toast says so | 2026-11-02 |
 | Branches | `main` is the only branch. Commit, push and merge only on the user's word | 2026-11-02 |
 | Scope hold | Not built, and not planned: the vos port, the domain fields the UI dropped (`chainTime`, sensor `model`, `entered`), beats, caption tokens, the chart display, attachments, the debrief overlay, a basemap | 2026-11-01 |
