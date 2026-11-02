@@ -179,6 +179,9 @@ describe('timeline strip', () => {
     expect(
       screen.getByText('Add a threat to see its coverage and key points.'),
     ).toBeInTheDocument();
+    // the lane area takes the hint's height, not the grip's
+    const lanesEl = screen.getByRole('group', { name: 'Timeline' }).querySelector('.tl-lanes')!;
+    expect((lanesEl as HTMLElement).style.height).toBe('');
     fireEvent.pointerDown(axis(), { button: 0, clientX: xAt(1) });
     expect(useUi.getState().tS).toBe(60);
   });
@@ -249,6 +252,10 @@ describe('timeline strip', () => {
       useUi.getState().setTime(75);
     });
     expect(screen.getByTestId('tl-cursor-time')).toHaveTextContent('t+1:15');
+    expect(screen.getByTestId('tl-cursor-time')).not.toHaveClass('tl-cursor-time-l');
+    // near the right edge the chip flips to the cursor's left
+    act(() => useUi.getState().setTime(runEnd(previewOf(doc()).tmaxS)));
+    expect(screen.getByTestId('tl-cursor-time')).toHaveClass('tl-cursor-time-l');
   });
 
   it('an event draws its label beside the bead when there is room', () => {

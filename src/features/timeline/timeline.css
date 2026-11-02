@@ -108,6 +108,10 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+.tl-cursor-time-l {
+  left: auto;
+  right: 8px;
+}
 
 /* axis */
 .tl-tick {
