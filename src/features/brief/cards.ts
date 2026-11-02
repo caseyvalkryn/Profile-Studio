@@ -4,7 +4,7 @@
 // the Build view, time, board camera, layers and selection, so the Build board and the Brief
 // stage agree (spec section 7, Brief; principle 8.1). Entering Brief stashes the Build view;
 // leaving restores it.
-import type { Card, Clip, LayerId, Vignette } from '../../domain/types';
+import type { Card, CardView, Clip, LayerId, Vignette } from '../../domain/types';
 import { RATES } from '../../domain/catalog';
 import { newKey } from '../../domain/ids';
 import { CAM_TO_VIEW, type CamKind } from '../../board';
@@ -21,12 +21,18 @@ import { useDocument, type Recipe } from '../../state/document';
 import { useUi, type BuildStash, type View } from '../../state/ui';
 import { fmtTime } from '../shared/units';
 import { NO_LOOP_REASON, round1 } from '../timeline/layout';
+import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP, type Frame } from './stageFrame';
+
+export { ZOOM_STEP };
 import { sliceText } from './frameData';
 import { idMaps } from './toCardRec';
 
 export { nextCardId };
 
 const doc = () => useDocument.getState().doc;
+/** The document and the current card key now, for the palette's commands. */
+export const docNow = doc;
+export const cardKeyNow = () => useUi.getState().cardKey;
 const edit = (label: string, recipe: Recipe) => useDocument.getState().edit(label, recipe);
 
 /** The current card's index in the deck: the key's card, else the first; -1 for an empty deck. */
@@ -245,7 +251,8 @@ export function deleteCard(): void {
 }
 
 /** The fields the notes panel writes, each one undo step per commit. */
-export type CardField = 'name' | 'caption' | 'notes' | 'tS' | 'yawDeg' | 'pitchDeg' | 'kind';
+export type CardField =
+  'name' | 'caption' | 'notes' | 'tS' | 'yawDeg' | 'pitchDeg' | 'kind' | 'zoom';
 
 export const FIELD_LABEL: Record<CardField, string> = {
   name: 'rename card',
@@ -255,6 +262,7 @@ export const FIELD_LABEL: Record<CardField, string> = {
   yawDeg: 'set card {id} yaw',
   pitchDeg: 'set card {id} pitch',
   kind: 'set card {id} camera',
+  zoom: 'set card {id} zoom',
 };
 
 export function fieldLabel(field: CardField, id: string): string {
@@ -274,7 +282,66 @@ export function setField(key: string, field: CardField, value: unknown): Recipe 
     else if (field === 'yawDeg') c.view.yawDeg = Number(value);
     else if (field === 'pitchDeg') c.view.pitchDeg = Math.min(86, Math.max(8, Number(value)));
     else if (field === 'kind') c.view.kind = camToView(value);
+    else if (field === 'zoom') c.view.zoom = clampZoom(Number(value));
   };
+}
+
+const clampZoom = (z: number) =>
+  Number.isFinite(z) ? Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z)) : 1;
+
+/**
+ * The stage's frame gestures (./stageFrame): one wheel burst or one drag is one undo step through the
+ * document's drag edit, labelled by the card. `beginFrame` opens it, `updateFrame` writes each
+ * step to the live document (the stage and the strip follow), `endFrame` records it.
+ */
+export function beginFrame(card: Card, what: 'zoom' | 'pan' | 'orbit'): void {
+  useDocument.getState().beginDrag(`${what} card ${card.id}`);
+}
+
+export function updateFrame(key: string, frame: Frame): void {
+  useDocument.getState().updateDrag((d) => {
+    const c = d.cards.find((x) => x.key === key);
+    if (!c || c.view.kind === '3d') return;
+    c.view.zoom = clampZoom(frame.zoom);
+    c.view.centre = { x: frame.centre.x, y: frame.centre.y };
+  });
+}
+
+export function updateOrbit(key: string, view: Pick<CardView, 'yawDeg' | 'pitchDeg'>): void {
+  useDocument.getState().updateDrag((d) => {
+    const c = d.cards.find((x) => x.key === key);
+    if (!c) return;
+    c.view.yawDeg = view.yawDeg;
+    c.view.pitchDeg = view.pitchDeg;
+  });
+}
+
+export function endFrame(): void {
+  useDocument.getState().endDrag();
+}
+
+/** Zoom the current card about the stage middle (the centre holds); one undo step. */
+export function zoomCard(factor: number): void {
+  const v = doc();
+  const card = currentCard(v, useUi.getState().cardKey);
+  if (!v || !card || card.view.kind === '3d') return;
+  const z = clampZoom(card.view.zoom * factor);
+  if (z === card.view.zoom) return;
+  edit(`zoom card ${card.id}`, setField(card.key, 'zoom', z));
+}
+
+/** Fit: the card back to the fitted frame (zoom 1, centre 0, 0); one undo step. */
+export function fitCard(key: string): void {
+  const v = doc();
+  const card = v?.cards.find((c) => c.key === key);
+  if (!v || !card) return;
+  if (card.view.zoom === 1 && card.view.centre.x === 0 && card.view.centre.y === 0) return;
+  edit(`fit card ${card.id}`, (d) => {
+    const c = d.cards.find((x) => x.key === key);
+    if (!c) return;
+    c.view.zoom = 1;
+    c.view.centre = { x: 0, y: 0 };
+  });
 }
 
 function camToView(value: unknown): View {

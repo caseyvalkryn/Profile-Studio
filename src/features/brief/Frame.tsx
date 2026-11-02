@@ -50,7 +50,8 @@ const jump = (t: number) => {
   u.setTimeOn(true);
 };
 
-function ThreatBlock({ f, t }: { f: FrameThreat; t: number | null }) {
+/** One threat's block: the step reached, the next step, the readout, the holders, margin, DA. */
+export function ThreatBlock({ f, t }: { f: FrameThreat; t: number | null }) {
   const units = useUi((s) => s.units);
   const margin = marginText(f.margin);
   return (

@@ -143,7 +143,8 @@ describe('Brief workspace', () => {
     expect(head()).toBe('Build view · V-test');
     expect(stageProj()).toBe('plan');
     expect(screen.getByTestId('brief-time')).toHaveTextContent('full run');
-    expect(screen.getByTestId('brief-readout')).toHaveTextContent('T-01 · time is off');
+    expect(screen.getByTestId('brief-float-head')).toHaveTextContent('Full run');
+    expect(screen.getByTestId('brief-readout')).toHaveTextContent('T-01');
     expect(screen.getByTestId('timeline')).toBeInTheDocument();
     expect(strip()).not.toHaveClass('brief-tl-collapsed');
     expect(screen.getAllByTestId('brief-keypoints')).toHaveLength(
@@ -234,19 +235,78 @@ describe('Brief timeline, readout, frames and key points', () => {
     expect(strip()).not.toHaveClass('brief-tl-collapsed');
   });
 
-  it('the Readout button shows the live line of the threat in focus at the time cursor', () => {
+  it('the Readout button floats the frame panel on the stage: the threat in focus at the time cursor', () => {
     render(<BriefWorkspace />);
     expect(screen.queryByTestId('brief-readout')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Readout' }));
-    expect(screen.getByTestId('brief-readout')).toHaveTextContent('T-01 · time is off');
+    const float = () => screen.getByTestId('brief-readout');
+    expect(float()).toHaveClass('brief-float');
+    expect(screen.getByTestId('brief-float-head')).toHaveTextContent('Full run');
+    expect(within(float()).getByText('T-01')).toBeInTheDocument();
     act(() => {
       useUi.getState().setTime(20);
       useUi.getState().setTimeOn(true);
     });
-    expect(screen.getByTestId('brief-readout')).toHaveTextContent(
-      /^T-01 · [\d.]+ nm · \d+ ft AGL · \d+ kt · closing -?\d+ kt · /,
-    );
+    expect(screen.getByTestId('brief-float-head')).toHaveTextContent('Frame at t+0:20');
+    expect(within(float()).getAllByText('Range')[0]!.nextElementSibling).toHaveTextContent(/nm$/);
+    expect(within(float()).getAllByTestId('brief-frame-holders').length).toBeGreaterThan(0);
     expect(screen.getByRole('checkbox', { name: 'Readout' })).toBeChecked();
+  });
+
+  it('the wheel zooms the card about the cursor as one undo step; the head and the Zoom field show it', () => {
+    vi.useFakeTimers();
+    try {
+      render(<BriefWorkspace />);
+      expect(screen.queryByTestId('brief-zoom-head')).toBeNull();
+      const stage = screen.getByTestId('brief-stage');
+      fireEvent.wheel(stage, { deltaY: -200, clientX: 0, clientY: 0 });
+      fireEvent.wheel(stage, { deltaY: -200, clientX: 0, clientY: 0 });
+      const view = () => useDocument.getState().doc!.cards[0]!.view;
+      expect(view().zoom).toBeCloseTo(Math.exp(400 * 0.0015), 2);
+      expect(view().centre).not.toEqual({ x: 0, y: 0 });
+      expect(useDocument.getState().past).toHaveLength(0);
+      act(() => void vi.advanceTimersByTime(300));
+      expect(useDocument.getState().past.map((e) => e.label)).toEqual(['zoom card c1']);
+      expect(screen.getByTestId('brief-zoom-head')).toHaveTextContent('x1.82');
+      expect(screen.getByRole('spinbutton', { name: 'Zoom' })).toHaveValue(1.82);
+      fireEvent.click(screen.getByRole('button', { name: 'Fit the card' }));
+      expect(view()).toMatchObject({ zoom: 1, centre: { x: 0, y: 0 } });
+      expect(useDocument.getState().past.map((e) => e.label)).toEqual([
+        'zoom card c1',
+        'fit card c1',
+      ]);
+      expect(screen.getByRole('button', { name: 'Fit the card' })).toBeDisabled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('a drag pans a Plan card and orbits a 3D card, one undo step each; a click records nothing', () => {
+    render(<BriefWorkspace />);
+    const stage = screen.getByTestId('brief-stage');
+    fireEvent.pointerDown(stage, { button: 0, pointerId: 1, clientX: 50, clientY: 50 });
+    fireEvent.pointerUp(stage, { pointerId: 1, clientX: 50, clientY: 50 });
+    expect(useDocument.getState().past).toHaveLength(0);
+    fireEvent.pointerDown(stage, { button: 0, pointerId: 1, clientX: 50, clientY: 50 });
+    fireEvent.pointerMove(stage, { pointerId: 1, clientX: 90, clientY: 70 });
+    fireEvent.pointerMove(stage, { pointerId: 1, clientX: 110, clientY: 70 });
+    fireEvent.pointerUp(stage, { pointerId: 1, clientX: 110, clientY: 70 });
+    const c1 = useDocument.getState().doc!.cards[0]!.view;
+    expect(c1.zoom).toBe(1);
+    expect(c1.centre.x).toBeLessThan(0);
+    expect(useDocument.getState().past.map((e) => e.label)).toEqual(['pan card c1']);
+    fireEvent.click(screen.getByRole('button', { name: 'Next card' }));
+    const { yawDeg: yaw0, pitchDeg: pitch0 } = useDocument.getState().doc!.cards[1]!.view;
+    fireEvent.pointerDown(stage, { button: 0, pointerId: 2, clientX: 0, clientY: 0 });
+    fireEvent.pointerMove(stage, { pointerId: 2, clientX: 100, clientY: 0 });
+    fireEvent.pointerUp(stage, { pointerId: 2, clientX: 100, clientY: 0 });
+    const c2 = useDocument.getState().doc!.cards[1]!.view;
+    expect(c2.yawDeg).toBeCloseTo(yaw0 + 100 * 0.45, 5);
+    expect(c2.pitchDeg).toBe(pitch0);
+    expect(useDocument.getState().past.map((e) => e.label)).toEqual([
+      'pan card c1',
+      'orbit card c2',
+    ]);
   });
 
   it('C saves a frame after the current card at the current time and opens it', () => {

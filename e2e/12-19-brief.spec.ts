@@ -82,3 +82,23 @@ test('12.19 A new profile opened in Brief shows the build on the stage and the t
   await expect(page.getByTestId('timeline')).toBeVisible();
   await expect(page.getByTestId('brief-timeline')).not.toHaveClass(/brief-tl-collapsed/);
 });
+
+test('12.19 The wheel zooms the card on the stage; the head and the Zoom field show it; Fit returns.', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'New profile' }).click();
+  await expect(page.getByRole('main', { name: 'Build' })).toBeVisible();
+  await goTo(page, 'Brief');
+  await page.getByRole('button', { name: 'Save a frame as a card' }).click();
+  await expect(page.getByTestId('brief-head')).toHaveText(/^1 of 1 · /);
+  const stage = page.getByTestId('brief-stage');
+  const box = (await stage.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, -400);
+  await expect(page.getByTestId('brief-zoom-head')).toHaveText(/^x1\.\d+$/);
+  await expect(page.getByRole('spinbutton', { name: 'Zoom' })).not.toHaveValue('1');
+  await page.getByRole('button', { name: 'Fit the card' }).click();
+  await expect(page.getByTestId('brief-zoom-head')).toHaveCount(0);
+  await expect(page.getByRole('spinbutton', { name: 'Zoom' })).toHaveValue('1');
+});

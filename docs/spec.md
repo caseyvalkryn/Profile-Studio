@@ -254,8 +254,14 @@ the notes panel on the right.
   strong and the rest dim. The head shows "n of m · id". The caption sits under the stage.
 - Previous and Next; Left, Right and Space move between cards. Opening a card applies its view;
   leaving Brief restores the Build view.
-- The notes panel: name, camera, yaw and pitch, time, focus ids, layers, caption, presenter
-  notes.
+- The notes panel: name, camera, yaw and pitch, zoom with Fit, time, focus ids, layers, caption,
+  presenter notes.
+- The frame on the stage (2026-11-02, user request): the wheel zooms a Plan or Elevation card
+  about the cursor (0.5 to 8) and a drag pans it; in 3D a drag orbits at the board's rates. One
+  wheel burst or one drag is one undo step ("zoom card c2", "pan card c2", "orbit card c2"). The
+  head prints the zoom ("x2.5") when it is not 1; = and - zoom about the middle; Fit (the notes
+  button, the palette) returns to the fitted frame. The strip thumbnails and the print deck draw
+  the stored frame.
 - The Frame panel at the top of the notes: for each threat in focus, the step
   reached with its glyph, the next step's countdown (a press moves the time there), range,
   height, speed and closing, the systems holding it as pills, the engage margin (in the hostile
@@ -287,10 +293,11 @@ the notes panel on the right.
   Time off. In Brief the strip always shows under the
   stage; a card whose Timeline display is off (the stage's Timeline button, L, or
   the notes checkbox) collapses it to the play bar; new cards open with it on. The Readout
-  display adds the live line of the threat in focus under the caption.
+  display floats the frame panel at the stage's top right: "Frame at t+2:06" (or "Full run"),
+  then each threat in focus as the notes' Frame block (at most three, "and n more").
 - With no card the stage draws the build: the live scene at the Build view that
-  was open, the head "Build view · id" and the live time, the question as caption, the readout
-  line. Save a screenshot downloads the stage as a PNG at twice its size; Save a frame as a
+  was open, the head "Build view · id" and the live time, the question as caption, the frame
+  panel. The stage gestures need a card. Save a screenshot downloads the stage as a PNG at twice its size; Save a frame as a
   card (C) keeps the view as card 1.
 - The stage renders at the live time: the card's time on open, then the strip and the keys move
   it; P plays or pauses in Brief. C saves a frame: a new card after the current one with the same

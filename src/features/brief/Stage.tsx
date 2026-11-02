@@ -12,24 +12,47 @@
 // a card with a slice reads "t+0:10 to t+0:40 · x2" in the head beside the live time; Set the
 // slice from the loop (Scissors) takes the strip's loop into the card; an empty caption shows
 // what to write; the aids name the step of the threat in focus and the next card's time.
+// The frame (2026-11-02, user request): the wheel zooms the card about the cursor and a drag
+// pans it (in 3D a drag orbits), each burst one undo step (./stageFrame, cards.ts beginFrame); the
+// head prints the zoom. The Readout display is the frame panel floating at the stage's top
+// right: "Frame at t+2:06", then each threat in focus as the notes' Frame block (at most three).
 import { Camera, ChartNoAxesGantt, Gauge, ImageIcon, Scissors } from 'lucide-react';
-import { useEffect, useId, useMemo, useState, type RefObject } from 'react';
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type RefObject,
+} from 'react';
 import type { Card, Vignette } from '../../domain/types';
 import { render, type CardRec } from '../../board';
-import { useUi, type Units } from '../../state/ui';
+import { useUi } from '../../state/ui';
 import { Tooltip } from '../../ui/Tooltip';
 import { focusRing } from '../../ui/focus';
 import { useSize } from '../shared/useSize';
-import { fmtTime, formatAltitude, formatRange, formatSpeed } from '../shared/units';
+import { fmtTime } from '../shared/units';
 import { boardDerived, boardScene } from '../build/board/derived';
 import { CardThumb } from './CardStrip';
 import { NO_LOOP_REASON, stepAt } from '../timeline/layout';
 import { keyPoints } from '../timeline/stages';
-import { cardFromBuild, sliceFromLoop, snapshotBuild, snapshotCard, toggleDisplay } from './cards';
-import { Glyph } from './Frame';
-import { captionPlaceholder, sliceText } from './frameData';
+import {
+  beginFrame,
+  cardFromBuild,
+  endFrame,
+  sliceFromLoop,
+  snapshotBuild,
+  snapshotCard,
+  toggleDisplay,
+  updateFrame,
+  updateOrbit,
+} from './cards';
+import { Glyph, ThreatBlock } from './Frame';
+import { WHEEL_RATE, orbitBy, panBy, zoomAt, zoomText } from './stageFrame';
+import { captionPlaceholder, frameOf, sliceText } from './frameData';
 import { captureStage, screenshotName } from './screenshot';
-import { toCardRec } from './toCardRec';
+import { idMaps, toCardRec } from './toCardRec';
 
 /** The mockup's stage floor: at least 320 by 300 render units. */
 export const stageSize = (w: number, h: number) => ({
@@ -37,10 +60,6 @@ export const stageSize = (w: number, h: number) => ({
   H: Math.max(300, Math.round(h)),
 });
 
-/**
- * The readout line: the threat in focus (the selected one, else the card's first focus threat,
- * else the first threat) at the time cursor, in the display units, with the systems that hold it.
- */
 /** The threat in focus: the selected one, else the card's first focus threat, else the first. */
 function threatInFocus(v: Vignette, rec: CardRec, selectedKeys: readonly string[]) {
   const paths = boardScene(v).scene.paths;
@@ -51,20 +70,42 @@ function threatInFocus(v: Vignette, rec: CardRec, selectedKeys: readonly string[
   );
 }
 
-export function readoutText(
-  v: Vignette,
-  rec: CardRec,
-  selectedKeys: readonly string[],
-  units: Units,
-): string {
-  const path = threatInFocus(v, rec, selectedKeys);
-  if (!path) return 'Add a threat to see its track.';
-  if (rec.t == null) return `${path.id} · time is off. Press T to show the time.`;
-  const a = boardDerived(v).at(path.id, rec.t, rec.cam.ref);
-  if (!a) return `${path.id} · no sample at ${fmtTime(rec.t)}.`;
-  const cov = a.covering.length ? a.covering.join(' ') : 'no cover';
-  return `${path.id} · ${formatRange(a.r, units)} · ${formatAltitude(a.z, units)} · ${formatSpeed(a.spd, units)} · closing ${formatSpeed(a.vc, units)} · ${cov}`;
+/** The floating frame panel shows at most this many threats; the notes panel shows six. */
+export const FLOAT_MAX = 3;
+
+/**
+ * The frame panel on the stage (the Readout display): what is true for the threats in focus at
+ * the time cursor, as the notes' Frame blocks, at the stage's top right.
+ */
+function FrameFloat({ v, rec, t }: { v: Vignette; rec: CardRec; t: number | null }) {
+  const focus = useMemo(() => {
+    const { keyOfId } = idMaps(boardScene(v));
+    return rec.focus.map((id) => keyOfId.get(id)).filter((k): k is string => k !== undefined);
+  }, [v, rec.focus]);
+  const frame = frameOf(boardScene(v), boardDerived(v), t, focus, rec.cam.ref);
+  const shown = frame.threats.slice(0, FLOAT_MAX);
+  const more = frame.more + frame.threats.length - shown.length;
+  return (
+    <aside className="brief-float" aria-label="Frame" data-testid="brief-readout">
+      <h3 className="m-0 mb-2 text-xs font-medium text-muted" data-testid="brief-float-head">
+        {t == null ? 'Full run' : `Frame at ${fmtTime(t)}`}
+      </h3>
+      {shown.length ? (
+        <div className="flex flex-col gap-2.5">
+          {shown.map((f) => (
+            <ThreatBlock key={f.key} f={f} t={t} />
+          ))}
+        </div>
+      ) : (
+        <p className="ps-hint m-0">Add a threat to see what is true in the frame.</p>
+      )}
+      {more ? <p className="ps-hint m-0 mt-2">and {more} more</p> : null}
+    </aside>
+  );
 }
+
+/** A pan or orbit in progress: the pointer's last position and whether the edit has begun. */
+type Drag = { id: number; x: number; y: number; begun: boolean };
 
 /** The next card's time in the aids: "at t+1:40", "t+0:10 to t+0:40" for a slice, "full run". */
 function nextWhen(card: Card): string {
@@ -152,7 +193,6 @@ export default function Stage({
   const [ref, size] = useSize<HTMLDivElement>();
   const tS = useUi((s) => s.tS);
   const timeOn = useUi((s) => s.timeOn);
-  const units = useUi((s) => s.units);
   const selectedKeys = useUi((s) => s.selectedKeys);
   const stash = useUi((s) => s.buildStash);
   const hasLoop = useUi((s) => s.loop != null);
@@ -178,6 +218,92 @@ export default function Stage({
     const live = ref.current?.querySelector<SVGSVGElement>('svg.board');
     if (live) void captureStage(live, sz.W, sz.H, screenshotName(v.id, card?.id ?? null, t));
   };
+
+  // The frame gestures. The wheel zooms the card about the cursor; a burst (wheel events less
+  // than 250 ms apart) is one undo step. The listener is added by hand: React's onWheel is
+  // passive, so it cannot keep the page from scrolling.
+  const latest = useRef({ v, card, sz });
+  useEffect(() => {
+    latest.current = { v, card, sz };
+  });
+  const wheelEnd = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wheelOpen = useRef(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      const { v, card, sz } = latest.current;
+      if (!card || card.view.kind === '3d') return;
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      const k = sz.W / Math.max(1, r.width);
+      const next = zoomAt(
+        v,
+        card,
+        sz,
+        Math.exp(-dy * WHEEL_RATE),
+        (e.clientX - r.left) * k,
+        (e.clientY - r.top) * k,
+      );
+      if (!next) return;
+      if (!wheelOpen.current) {
+        beginFrame(card, 'zoom');
+        wheelOpen.current = true;
+      }
+      updateFrame(card.key, next);
+      if (wheelEnd.current) clearTimeout(wheelEnd.current);
+      wheelEnd.current = setTimeout(() => {
+        wheelOpen.current = false;
+        endFrame();
+      }, 250);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      if (wheelEnd.current) clearTimeout(wheelEnd.current);
+      if (wheelOpen.current) {
+        wheelOpen.current = false;
+        endFrame();
+      }
+    };
+  }, [ref]);
+
+  // A drag pans a Plan or Elevation card and orbits a 3D card; the edit begins at the first
+  // move, so a plain click records nothing.
+  const drag = useRef<Drag | null>(null);
+  const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!card || e.button !== 0 || (e.target as Element).closest('.brief-float')) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY, begun: false };
+  };
+  const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId || !card) return;
+    const dx = e.clientX - d.x;
+    const dy = e.clientY - d.y;
+    if (!d.begun && Math.hypot(dx, dy) < 3) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const k = sz.W / Math.max(1, r.width);
+    if (card.view.kind === '3d') {
+      if (!d.begun) beginFrame(card, 'orbit');
+      updateOrbit(card.key, orbitBy(card.view, dx, dy));
+    } else {
+      const next = panBy(v, card, sz, dx * k, dy * k);
+      if (!next) return;
+      if (!d.begun) beginFrame(card, 'pan');
+      updateFrame(card.key, next);
+    }
+    d.begun = true;
+    d.x = e.clientX;
+    d.y = e.clientY;
+  };
+  const onPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    drag.current = null;
+    if (d.begun) endFrame();
+  };
   return (
     <section
       aria-label="Stage"
@@ -198,6 +324,11 @@ export default function Stage({
         <span className="font-mono text-xs text-muted" data-testid="brief-time">
           {timeOn ? fmtTime(tS) : 'full run'}
         </span>
+        {card && card.view.kind !== '3d' && card.view.zoom !== 1 ? (
+          <span className="font-mono text-xs text-muted" data-testid="brief-zoom-head">
+            {zoomText(card.view.zoom)}
+          </span>
+        ) : null}
         <span className="flex items-center gap-1">
           {card ? (
             <>
@@ -252,11 +383,20 @@ export default function Stage({
         </span>
       </div>
       <div
-        ref={ref}
-        className="brief-stage min-h-[360px] flex-1 [&>svg]:block [&>svg]:h-full [&>svg]:w-full"
-        data-testid="brief-stage"
-        dangerouslySetInnerHTML={{ __html: svg }}
-      />
+        className={`relative min-h-[360px] flex-1${card ? ' brief-stage-grab' : ''}`}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
+        <div
+          ref={ref}
+          className="brief-stage absolute inset-0 [&>svg]:block [&>svg]:h-full [&>svg]:w-full"
+          data-testid="brief-stage"
+          dangerouslySetInnerHTML={{ __html: svg }}
+        />
+        {rec && showReadout ? <FrameFloat v={v} rec={rec} t={t} /> : null}
+      </div>
       <p
         className="m-0 min-h-[30px] max-w-[72ch] shrink-0 px-0.5 pt-2.5 text-[15px] leading-[1.5] text-text"
         data-testid="brief-caption"
@@ -265,15 +405,6 @@ export default function Stage({
           ? card.caption || <span className="text-subtle">{captionPlaceholder(card)}</span>
           : question}
       </p>
-      {rec && showReadout ? (
-        <p
-          className="m-0 mt-1.5 min-h-[18px] shrink-0 overflow-x-auto border-t border-surface-3 pt-1.5 font-mono text-xs whitespace-nowrap text-muted"
-          aria-live="polite"
-          data-testid="brief-readout"
-        >
-          {readoutText(v, rec, selectedKeys, units)}
-        </p>
-      ) : null}
       {card && startMs ? (
         <div
           className="mt-1.5 flex shrink-0 items-center gap-2.5 border-t border-surface-3 pt-1.5"

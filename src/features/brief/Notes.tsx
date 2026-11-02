@@ -1,5 +1,5 @@
 // The notes panel (`legacy/mockup-v3.html` drawNotes, lines 501 to 508): the Card section with
-// Up, Down and Delete; Name; Camera; Yaw and pitch; Time in m:ss (empty is the full run); Focus ids (a
+// Up, Down and Delete; Name; Camera; Yaw and pitch; Zoom with Fit; Time in m:ss (empty is the full run); Focus ids (a
 // comma list of display ids, stored as keys); the five layer toggles; the Timeline and Readout
 // displays; then the Key points of the threats in focus with their definitions; Caption;
 // Presenter notes; then the question as a hint. A text field is one undo step per focus-to-blur (the document's
@@ -24,6 +24,7 @@ import { mmss } from '../../engine/tokens';
 import { parseTime, pointStates } from '../timeline/layout';
 import {
   fieldLabel,
+  fitCard,
   setDisplays,
   setField,
   setFocusIds,
@@ -31,6 +32,7 @@ import {
   setSlice,
   type CardField,
 } from './cards';
+import { ZOOM_MAX, ZOOM_MIN } from './stageFrame';
 import Frame, { Glyph } from './Frame';
 import { captionPlaceholder, rateText } from './frameData';
 import { Section } from './Section';
@@ -478,6 +480,36 @@ export default function Notes({
                   parse={num}
                   mono
                 />
+              </span>
+            </Field>
+            {/* the frame: the zoom factor (the wheel on the stage sets it too) and Fit back to
+                the fitted view; a 3D card keeps the default 3D view */}
+            <Field id="brief-zoom" label="Zoom">
+              <span className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                <TextField
+                  card={card}
+                  field="zoom"
+                  label="Zoom"
+                  id="brief-zoom"
+                  type="number"
+                  min={ZOOM_MIN}
+                  max={ZOOM_MAX}
+                  value={String(Math.round(card.view.zoom * 100) / 100)}
+                  parse={(s) => (s.trim() === '' ? 1 : Number(s))}
+                  mono
+                />
+                <button
+                  type="button"
+                  className="ps-btn mini quiet"
+                  aria-label="Fit the card"
+                  disabled={
+                    card.view.kind === '3d' ||
+                    (card.view.zoom === 1 && card.view.centre.x === 0 && card.view.centre.y === 0)
+                  }
+                  onClick={() => fitCard(card.key)}
+                >
+                  Fit
+                </button>
               </span>
             </Field>
             {/* m:ss as the Slice field beside it, through the strip's parser (review 13 F-08);
