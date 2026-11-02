@@ -45,6 +45,8 @@ export type BoardView = {
   layers?: Partial<Record<string, boolean>>;
   t?: number | null;
   sel?: Sel | null;
+  /** Every selected key (`ui.selectedKeys`); `sel` is the first. Each draws with the sel class. */
+  selKeys?: readonly string[];
   hover?: Sel | null;
   focus?: string[];
   placing?: Placing | null;
@@ -107,6 +109,10 @@ function makeCtx(
       : derived.origin || { x: 0, y: 0, z: 0 };
   const u = makeUnits(view.units || record.units || 'nav');
   const keys = keysOf(record);
+  // a marquee or Shift-click selection: every selected object's display id (not in legacy)
+  const selIds = new Set<string>();
+  if (view.selKeys && view.selKeys.length > 1)
+    for (const [id, key] of keys) if (view.selKeys.includes(key)) selIds.add(id);
   const hits: Hit[] = [];
   const labels: LabelCand[] = [];
   const ctx: Ctx = {
@@ -137,7 +143,7 @@ function makeCtx(
       return ' dim';
     },
     cls(id) {
-      if (id != null && sel.id === id) return ' sel';
+      if (id != null && (sel.id === id || selIds.has(id))) return ' sel';
       if (id != null && hover.id === id) return ' hov';
       return '';
     },

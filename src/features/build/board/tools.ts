@@ -992,17 +992,164 @@ export function beginDrag(
   return drag;
 }
 
+// ---------------------------------------------------------------- group move
+
+/** The pre-drag position of one selected object (group drag). */
+type Orig =
+  | { kind: 'pt'; x: number; y: number }
+  | { kind: 'pts'; pts: [number, number][] }
+  | { kind: 'path'; pts: { x: number; y: number }[] };
+
+/**
+ * The objects a group move carries, keyed, with the text that names them: systems, threats
+ * (every waypoint), areas and lone waypoints. A waypoint of a selected threat moves with the
+ * threat, not twice. Planes and events have no plan position and are left out.
+ */
+function groupOrigs(
+  doc: Vignette,
+  keys: readonly string[],
+): { origs: Map<string, Orig>; names: string[] } {
+  const threatKeys = new Set(keys.filter((k) => find(doc, k)?.kind === 'threat'));
+  const origs = new Map<string, Orig>();
+  const names: string[] = [];
+  for (const k of keys) {
+    const f = find(doc, k);
+    if (!f || origs.has(k)) continue;
+    if (f.kind === 'waypoint') {
+      if (threatKeys.has(f.threat.key)) continue;
+      origs.set(k, { kind: 'pt', x: f.value.x, y: f.value.y });
+      names.push(f.threat.id + ' point ' + (f.index + 1));
+    } else if (f.kind === 'threat') {
+      origs.set(k, { kind: 'path', pts: f.value.path.map((p) => ({ x: p.x, y: p.y })) });
+      names.push(f.value.id);
+    } else if (f.kind === 'area') {
+      origs.set(k, { kind: 'pts', pts: f.value.pts.map((p) => [p[0], p[1]]) });
+      names.push(f.value.id);
+    } else {
+      origs.set(k, { kind: 'pt', x: f.value.x, y: f.value.y });
+      names.push(f.value.id);
+    }
+  }
+  return { origs, names };
+}
+
+/** Put every object of `origs` at its pre-drag position plus `dx, dy` (whole metres). */
+function placeGroup(c: Draft<Vignette>, origs: Map<string, Orig>, dx: number, dy: number): void {
+  for (const [k, o] of origs) {
+    const f = find(c, k);
+    if (!f) continue;
+    if (o.kind === 'path' && f.kind === 'threat') {
+      f.value.path.forEach((p, i) => {
+        const q = o.pts[i];
+        if (q) {
+          p.x = q.x + dx;
+          p.y = q.y + dy;
+        }
+      });
+    } else if (o.kind === 'pts' && f.kind === 'area') {
+      f.value.pts = o.pts.map((q) => [q[0] + dx, q[1] + dy]);
+    } else if (o.kind === 'pt' && f.kind !== 'threat' && f.kind !== 'area') {
+      f.value.x = o.x + dx;
+      f.value.y = o.y + dy;
+    }
+  }
+}
+
+/** "move RDR-1, EO-1" up to three names, else "move 4 objects". */
+function groupLabel(names: readonly string[]): string {
+  return names.length > 3 ? 'move ' + names.length + ' objects' : 'move ' + names.join(', ');
+}
+
+/**
+ * A drag on one of several selected objects (a marquee or Shift-click selection) moves them all
+ * by the same offset, one undo step, with the pre-drag ghost. Plan only. The offset snaps to the
+ * grid step unless Alt is held. Null when nothing selected can move.
+ */
+export function beginGroupDrag(
+  keys: readonly string[],
+  world: World | null,
+  cam: Cam,
+): DragHandle | null {
+  const cur = current();
+  if (!cur || !world || isElev(world) || cam.kind !== 'plan') return null;
+  const { doc, rec, d: d0 } = cur;
+  const { origs, names } = groupOrigs(doc, keys);
+  if (!origs.size) return null;
+  let b0 = useBoard.getState().bounds;
+  if (!b0) {
+    b0 = geoBounds(rec.scene);
+    useBoard.getState().set({ bounds: b0 });
+  }
+  const step = snapStep(b0.ext);
+  const units = useUi.getState().units;
+  const label0 = groupLabel(names);
+  const affected = rec.scene.paths.map((p) => p.id);
+  const start: PlanPt = { x: world.x, y: world.y };
+  const docStore = useDocument.getState();
+  docStore.beginDrag(label0);
+  useBoard.getState().set({ ghost: { rec, derived: { timed: d0.timed } }, ghostLabel: null });
+  let done = false;
+  const finish = () => {
+    useBoard.getState().set({ ghost: null, ghostLabel: null, dragLabel: null });
+  };
+  return {
+    kind: 'group',
+    id: label0,
+    role: 'centre',
+    label: label0,
+    i: null,
+    move(w, mods) {
+      if (done || !w || isElev(w)) return { label: '', deltas: [], largest: null };
+      const snapOn = useBoard.getState().snap !== false && !(mods && mods.alt);
+      let dx = w.x - start.x;
+      let dy = w.y - start.y;
+      if (snapOn) {
+        dx = Math.round(dx / step) * step;
+        dy = Math.round(dy / step) * step;
+      }
+      dx = Math.round(dx);
+      dy = Math.round(dy);
+      useDocument.getState().updateDrag((c) => placeGroup(c, origs, dx, dy));
+      const lbl = label0 + ' ' + makeUnits(units).h(Math.hypot(dx, dy));
+      const now = useDocument.getState().doc;
+      const dl = deltasOf(d0, now ? boardDerived(now) : null, affected, units);
+      useBoard.getState().set({ ghostLabel: lbl });
+      return { label: lbl, deltas: dl.deltas, largest: dl.largest };
+    },
+    end() {
+      if (done) return;
+      done = true;
+      useDocument.getState().endDrag();
+      finish();
+    },
+    cancel() {
+      if (done) return;
+      done = true;
+      useDocument.getState().cancelDrag();
+      finish();
+    },
+  };
+}
+
 // ---------------------------------------------------------------- nudge
 
 /** Legacy tools.nudge: move the selection by `dx, dy` snap steps (a plane by 10 m, an event by 1 s). */
 export function nudge(dx: number, dy: number): boolean {
   const cur = current();
   if (!cur) return false;
-  const sel = currentSel(cur.rec);
-  if (!sel.kind || !sel.id) return false;
   const step = snapStep(geoBounds(cur.rec.scene).ext);
   const mx = dx * step;
   const my = dy * step;
+  const keys = useUi.getState().selectedKeys;
+  if (keys.length > 1) {
+    // several selected objects (a marquee or Shift-click selection) move together, one edit
+    const { origs, names } = groupOrigs(cur.doc, keys);
+    if (!origs.size) return false;
+    edit(groupLabel(names), (c) => placeGroup(c, origs, mx, my));
+    return true;
+  }
+  const sel = currentSel(cur.rec);
+  if (!sel.kind || !sel.id) return false;
   const i = sel.i == null ? null : Number(sel.i);
   const key = useUi.getState().selectedKeys[0]!;
   let ok = false;

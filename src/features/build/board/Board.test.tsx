@@ -10,6 +10,7 @@ import { useQuickAdd } from '../palette/store';
 import Board, { cancel, mounted } from './Board';
 import { boardCommands } from './commands';
 import { boardFlush } from './renderer';
+import { snapStep } from './snap';
 import { BOARD_DEFAULTS, useBoard } from './store';
 import { fit } from './tools';
 
@@ -169,6 +170,124 @@ describe('Board', () => {
     click(stage, 2, 2);
     expect(useUi.getState().selectedKeys).toEqual([]);
     expect(useUi.getState().stack).toBeNull();
+  });
+
+  it('a mouse drag on the empty board selects every object in the rectangle; Shift adds; Escape cancels (2026-11-02)', () => {
+    const { stage, getByTestId } = mount();
+    const marquee = getByTestId('board-marquee');
+    expect(marquee.classList.contains('hidden')).toBe(true);
+    // the four systems and the asset area sit within 100 m of the origin (about 5 px at this fit);
+    // the paths start 5 and 6 km north and end 200 m south, outside the box's south edge
+    const [ax, ay] = project(-1000, 1000);
+    const [bx, by] = project(1000, -150);
+    down(stage, ax, ay);
+    move(stage, bx, by);
+    expect(marquee.classList.contains('hidden')).toBe(false);
+    expect(useBoard.getState().dragLabel!.text).toBe('5 selected');
+    up(stage, bx, by);
+    expect(marquee.classList.contains('hidden')).toBe(true);
+    expect([...useUi.getState().selectedKeys].sort()).toEqual([
+      'k-A-01',
+      'k-E-01',
+      'k-N-01',
+      'k-S-01',
+      'k-S-02',
+    ]);
+    expect(useBoard.getState().readout!.text).toMatch(/^\S+, \S+, \S+ and 2 more selected\.$/);
+    // every selected object draws in the accent, not only the first
+    expect(
+      stage.querySelectorAll('svg.board g[data-layer="systems"] [data-k="system"].sel').length,
+    ).toBe(4);
+    expect(stage.querySelectorAll('svg.board .vol.sel').length).toBe(1);
+    // Shift and a rectangle round the start of T-01 adds the path
+    const [cx, cy] = project(-200, 6200);
+    const [dx, dy] = project(200, 5800);
+    down(stage, cx, cy, { shiftKey: true });
+    move(stage, dx, dy, { shiftKey: true });
+    up(stage, dx, dy, { shiftKey: true });
+    expect(useUi.getState().selectedKeys).toHaveLength(6);
+    expect(useUi.getState().selectedKeys).toContain('k-T-01');
+    expect(stage.querySelectorAll('svg.board .route.sel').length).toBe(1);
+    // Escape during a marquee drops it and keeps the selection
+    down(stage, ax, ay);
+    move(stage, bx, by);
+    expect(marquee.classList.contains('hidden')).toBe(false);
+    act(() => {
+      fireEvent.keyDown(stage, { key: 'Escape' });
+    });
+    expect(marquee.classList.contains('hidden')).toBe(true);
+    up(stage, bx, by);
+    expect(useUi.getState().selectedKeys).toHaveLength(6);
+    // a plain click on empty clears it
+    click(stage, 2, 2);
+    expect(useUi.getState().selectedKeys).toEqual([]);
+  });
+
+  it('Shift-click adds an object to the selection or removes it; on empty it keeps the selection', () => {
+    const { stage } = mount();
+    const n1 = hitOf('system', 'N-01');
+    click(stage, n1.sx, n1.sy);
+    expect(useUi.getState().selectedKeys).toEqual(['k-N-01']);
+    // T-01 alone runs north of 5 km (T-02 starts at 5 km): a press on its line, not a waypoint
+    const [px, py] = project(0, 5500);
+    down(stage, px, py, { shiftKey: true });
+    up(stage, px, py, { shiftKey: true });
+    expect(useUi.getState().selectedKeys).toEqual(['k-N-01', 'k-T-01']);
+    expect(useBoard.getState().readout!.text).toBe('N-01 and T-01 selected.');
+    expect(useUi.getState().stack).toBeNull();
+    down(stage, px, py, { shiftKey: true });
+    up(stage, px, py, { shiftKey: true });
+    expect(useUi.getState().selectedKeys).toEqual(['k-N-01']);
+    down(stage, 2, 2, { shiftKey: true });
+    up(stage, 2, 2, { shiftKey: true });
+    expect(useUi.getState().selectedKeys).toEqual(['k-N-01']);
+  });
+
+  it('a drag on one of several selected objects moves them together as one snapped undo step', () => {
+    const { stage, h } = mount();
+    act(() => useUi.getState().setSelection(['k-S-01', 'k-N-01', 'k-A-01']));
+    act(() => boardFlush());
+    const step = snapStep(geoBounds(h.last!.rec.scene).ext);
+    const n1 = hitOf('system', 'N-01');
+    const past = useDocument.getState().past.length;
+    down(stage, n1.sx, n1.sy);
+    move(stage, n1.sx + 60, n1.sy + 60);
+    expect(useBoard.getState().ghost).not.toBeNull();
+    expect(useBoard.getState().dragLabel!.text).toMatch(/^move S-01, N-01, A-01 /);
+    up(stage, n1.sx + 60, n1.sy + 60);
+    const doc = useDocument.getState().doc!;
+    const s1 = doc.sensors[0]!;
+    expect(s1.x).toBeGreaterThan(0);
+    expect(s1.y).toBeLessThan(0);
+    expect(Math.abs(s1.x) % step).toBe(0);
+    expect(Math.abs(s1.y) % step).toBe(0);
+    // the same offset for the node and every vertex of the area; S-02 was not selected
+    expect(doc.nodes[0]!.x + 30).toBe(s1.x);
+    expect(doc.nodes[0]!.y + 30).toBe(s1.y);
+    expect(doc.areas[0]!.pts.map((p) => p[0] + 100 - s1.x)).toEqual([0, 200, 200, 0]);
+    expect(doc.sensors[1]!.x).toBe(50);
+    expect(useDocument.getState().past.length).toBe(past + 1);
+    expect(useDocument.getState().history.at(-1)).toBe('move S-01, N-01, A-01');
+    expect(useBoard.getState().ghost).toBeNull();
+    act(() => useDocument.getState().undo());
+    expect(useDocument.getState().doc!.sensors[0]!.x).toBe(0);
+    expect(useDocument.getState().doc!.nodes[0]!.x).toBe(-30);
+    expect(useDocument.getState().doc!.areas[0]!.pts[0]).toEqual([-100, -100]);
+  });
+
+  it('the arrows nudge every selected object together; a selected threat moves all its waypoints', () => {
+    const { stage } = mount();
+    act(() => useUi.getState().setSelection(['k-S-01', 'k-T-01']));
+    act(() => boardFlush());
+    act(() => {
+      fireEvent.keyDown(stage, { key: 'ArrowRight' });
+    });
+    const doc = useDocument.getState().doc!;
+    const dx = doc.sensors[0]!.x;
+    expect(dx).toBeGreaterThan(0);
+    expect(doc.threats[0]!.path.map((p) => p.x)).toEqual([dx, dx]);
+    expect(doc.threats[1]!.path[0]!.x).toBe(0);
+    expect(useDocument.getState().history.at(-1)).toBe('move S-01, T-01');
   });
 
   it('drags a range handle as one undo step with the pre-drag ghost', () => {

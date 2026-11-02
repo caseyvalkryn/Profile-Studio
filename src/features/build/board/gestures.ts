@@ -3,9 +3,13 @@
 // cursor, axon orbit, double-click, right-click or 500 ms long press menu, ruler, rectangle
 // area. The stage is the element around the SVG; the label, cursor and hint elements are the
 // legacy #bd-label, #bd-cursor and #bd-msg.
+// Added to legacy (user request of 2026-11-02): a mouse drag on the empty board in Plan or
+// Elevation draws a selection rectangle (the marquee element) and selects every object in it,
+// Shift adds to the selection; Shift-click adds or removes one object; a drag on one of several
+// selected objects moves them together (tools.beginGroupDrag).
 import { EFFECTOR_KINDS, SENSOR_KINDS } from '../../../domain/catalog';
 import { bearingTo } from '../../../engine/geo';
-import { cameras, render, type Hit } from '../../../board';
+import { cameras, render, type Hit, type Scene } from '../../../board';
 import { makeUnits } from '../../../board/format';
 import { clamp, esc } from '../../../board/svg';
 import { execute } from '../../../commands/registry';
@@ -20,6 +24,7 @@ import { isElev, legText, snap, type PlanPt, type World } from './snap';
 import { useBoard, type BoardPlacing } from './store';
 import {
   beginDrag,
+  beginGroupDrag,
   cancelPlacing,
   current,
   finishPlacing,
@@ -47,6 +52,8 @@ export type GestureElements = {
   label: HTMLElement;
   cursor: HTMLElement;
   msg: HTMLElement;
+  /** The selection rectangle, hidden until a drag on the empty board. */
+  marquee: HTMLElement;
 };
 
 type Local = { sx: number; sy: number; lx: number; ly: number };
@@ -60,6 +67,8 @@ type Pend = {
   touch: boolean;
   type: string;
   hit?: Hit | null;
+  /** Shift was down at the press: the click or the marquee adds to the selection. */
+  shift?: boolean;
   rectOk?: boolean;
   yaw?: number;
   pitch?: number;
@@ -74,6 +83,53 @@ function sameHit(a: Hit | null, b: Hit | null): boolean {
   if (!a && !b) return true;
   if (!a || !b) return false;
   return a.kind === b.kind && a.id === b.id && a.i === b.i;
+}
+
+/** A whole object (a system, a path, an area, an event), not a handle, a waypoint or a vertex. */
+function isObject(h: Hit | null): h is Hit {
+  return !!h && h.i == null && (h.role == null || h.role === 'centre' || h.role === 'bead');
+}
+
+/** The keys of the objects with a point inside the rectangle (board pixels): systems by their
+ *  centre, paths by any waypoint, areas by any vertex. Events and height planes are left out. */
+export function keysInRect(
+  hits: readonly Hit[],
+  r: { x0: number; y0: number; x1: number; y1: number },
+): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const inside = (q: readonly number[]) =>
+    q[0]! >= r.x0 && q[0]! <= r.x1 && q[1]! >= r.y0 && q[1]! <= r.y1;
+  for (const h of hits) {
+    if (!h.key || h.i != null || h.kind === 'event' || h.kind === 'plane') continue;
+    if (h.handle && h.role !== 'centre') continue;
+    const pts = h.seg || h.poly || [[h.sx, h.sy]];
+    if (!pts.some(inside) || seen.has(h.key)) continue;
+    seen.add(h.key);
+    out.push(h.key);
+  }
+  return out;
+}
+
+/** "RDR-1, EO-1 and T1 selected." or "RDR-1, EO-1, T1 and 4 more selected." */
+export function selectedText(rec: Scene, keys: readonly string[]): string {
+  const ids: string[] = [];
+  const sc = rec.scene;
+  for (const k of keys) {
+    const o =
+      sc.systems.find((x) => x.key === k) ||
+      sc.paths.find((x) => x.key === k) ||
+      sc.volumes.find((x) => x.key === k) ||
+      sc.planes.find((x) => x.key === k) ||
+      rec.events.find((x) => x.key === k);
+    if (o) ids.push(o.id);
+  }
+  if (!ids.length) return '';
+  if (ids.length === 1) return ids[0] + ' selected.';
+  const shown = ids.slice(0, 3);
+  const rest = ids.length - shown.length;
+  if (rest > 0) return shown.join(', ') + ' and ' + rest + ' more selected.';
+  return shown.slice(0, -1).join(', ') + ' and ' + shown[shown.length - 1] + ' selected.';
 }
 
 /** The menu kind for a hit (null = empty board). */
@@ -161,12 +217,18 @@ export class BoardGestures {
     this.moveRaf = 0;
   }
 
-  /** Escape: cancel the drag, then the placement, then the ruler. */
+  /** Escape: cancel the drag or the marquee, then the placement, then the ruler. */
   cancel(): boolean {
     if (this.drag) {
       this.drag.cancel();
       this.drag = null;
       this.pend = null;
+      this.hideLabel();
+      return true;
+    }
+    if (this.pend && this.pend.type === 'marquee') {
+      this.pend = null;
+      this.hideMarquee();
       this.hideLabel();
       return true;
     }
@@ -282,6 +344,64 @@ export class BoardGestures {
     this.el.label.classList.add('hidden');
     this.el.label.textContent = '';
     if (useBoard.getState().dragLabel) useBoard.getState().set({ dragLabel: null });
+  }
+
+  // ---------------------------------------------------------- marquee
+  /** The rectangle from the press to the pointer, in stage pixels (the element) and board
+   *  pixels (the hit test). */
+  private marqueeRect(a: Local, b: Local) {
+    return {
+      el: {
+        x: Math.min(a.lx, b.lx),
+        y: Math.min(a.ly, b.ly),
+        w: Math.abs(b.lx - a.lx),
+        h: Math.abs(b.ly - a.ly),
+      },
+      hit: {
+        x0: Math.min(a.sx, b.sx),
+        y0: Math.min(a.sy, b.sy),
+        x1: Math.max(a.sx, b.sx),
+        y1: Math.max(a.sy, b.sy),
+      },
+    };
+  }
+  private showMarquee(a: Local, b: Local): string[] {
+    const r = this.marqueeRect(a, b);
+    const m = this.el.marquee;
+    m.style.transform = 'translate(' + Math.round(r.el.x) + 'px,' + Math.round(r.el.y) + 'px)';
+    m.style.width = Math.round(r.el.w) + 'px';
+    m.style.height = Math.round(r.el.h) + 'px';
+    m.classList.remove('hidden');
+    const last = this.renderer.last;
+    return last ? keysInRect(last.hits, r.hit) : [];
+  }
+  private hideMarquee(): void {
+    this.el.marquee.classList.add('hidden');
+  }
+  /** The marquee's result: Shift adds the keys to the selection, else they replace it. */
+  private selectKeys(keys: string[], add: boolean): void {
+    const ui = useUi.getState();
+    const last = this.renderer.last;
+    const next = add
+      ? [...ui.selectedKeys, ...keys.filter((k) => !ui.selectedKeys.includes(k))]
+      : keys;
+    useBoard.getState().set({ selIndex: null });
+    if (ui.stack) ui.setStack(null);
+    ui.setSelection(next);
+    if (last) readout(selectedText(last.rec, next));
+  }
+  /** Shift-click: add the object to the selection, or remove it when it is selected. */
+  private toggleKey(h: Hit): void {
+    const ui = useUi.getState();
+    const last = this.renderer.last;
+    const k = last ? keyOfHit(last.rec, h) : null;
+    if (!k) return;
+    const has = ui.selectedKeys.includes(k.key);
+    const next = has ? ui.selectedKeys.filter((x) => x !== k.key) : [...ui.selectedKeys, k.key];
+    useBoard.getState().set({ selIndex: null });
+    if (ui.stack) ui.setStack(null);
+    ui.setSelection(next);
+    if (last) readout(next.length > 1 ? selectedText(last.rec, next) : '');
   }
 
   // returns HTML: the values stay in the t-data box, two spaces apart; the reference words are ui (t-sub)
@@ -503,7 +623,7 @@ export class BoardGestures {
       this.pend = { ...base, type: 'rotate', hit: h, yaw: b.yaw, pitch: b.pitch };
       return;
     }
-    this.pend = { ...base, type: h ? 'obj' : 'empty', hit: h };
+    this.pend = { ...base, type: h ? 'obj' : 'empty', hit: h, shift: !!ev.shiftKey };
     if (touch) {
       this.longTimer = window.setTimeout(() => {
         this.longTimer = 0;
@@ -520,7 +640,22 @@ export class BoardGestures {
     const last = this.renderer.last;
     if (pend.type === 'obj') {
       const hit = pend.hit || null;
-      if (useDocument.getState().doc && this.draggable(hit) && pend.w0 && last) {
+      const doc = useDocument.getState().doc;
+      const keys = useUi.getState().selectedKeys;
+      const hk = hit && last ? keyOfHit(last.rec, hit) : null;
+      if (
+        doc &&
+        last &&
+        pend.w0 &&
+        keys.length > 1 &&
+        isObject(hit) &&
+        hk &&
+        keys.includes(hk.key)
+      ) {
+        // one of several selected objects: the group moves together
+        this.drag = beginGroupDrag(keys, pend.w0, last.cam);
+        pend.type = this.drag ? 'drag' : pend.touch ? 'pan' : 'none';
+      } else if (doc && this.draggable(hit) && pend.w0 && last) {
         if (hit!.role !== 'insert' && hit!.role !== 'edge') this.select(hit);
         this.drag = beginDrag(hit, pend.w0, last.cam, pend.touch);
         pend.type = this.drag ? 'drag' : pend.touch ? 'pan' : 'none';
@@ -528,7 +663,10 @@ export class BoardGestures {
         pend.type = pend.touch ? 'pan' : 'none';
       }
     } else if (pend.type === 'empty') {
-      pend.type = pend.touch ? 'pan' : 'none';
+      // a mouse drag on the empty 2D board draws the selection rectangle; touch pans
+      const twoD = !!last && last.cam.kind !== 'axon' && !!useDocument.getState().doc;
+      pend.type = pend.touch ? 'pan' : twoD ? 'marquee' : 'none';
+      if (pend.type === 'marquee') this.showMarquee(pend.p0, pend.p0);
     } else if (pend.type === 'place' && pend.rectOk) {
       pend.type = 'rect';
     }
@@ -641,6 +779,9 @@ export class BoardGestures {
         const U = makeUnits(useUi.getState().units);
         this.showLabel(U.h(Math.abs(w.x - a0.x)) + ' x ' + U.h(Math.abs(w.y - a0.y)), p);
       }
+    } else if (pend.type === 'marquee') {
+      const n = this.showMarquee(pend.p0, p).length;
+      this.showLabel(n ? n + ' selected' : '', p);
     }
   }
 
@@ -698,6 +839,15 @@ export class BoardGestures {
       if (a && c) placeAt(w!, { rect: { a, b: c }, cam });
       return;
     }
+    if (g.type === 'marquee') {
+      const keys = this.showMarquee(g.p0, p);
+      this.hideMarquee();
+      this.showLabel('', p);
+      const add = !!g.shift || !!ev.shiftKey;
+      if (keys.length) this.selectKeys(keys, add);
+      else if (!add && last && last.sel.kind) this.select(null);
+      return;
+    }
     if (g.type === 'rotate' && g.moved) {
       // a 3D drag orbits and never edits; one that started on an editable hit says where to edit
       if (g.hit && (g.hit.handle || g.hit.role)) readout(EDIT_IN_2D);
@@ -727,14 +877,16 @@ export class BoardGestures {
     if (g.type === 'obj') {
       const h = g.hit!;
       if (h.role === 'insert' || h.role === 'edge') return;
-      this.clickSelect(h, p, g.touch);
+      if (g.shift && isObject(h) && last && last.sel.kind) this.toggleKey(h);
+      else this.clickSelect(h, p, g.touch);
       if (g.touch && !h.handle && !h.role) {
         this.hover(h);
         this.tapHover = true;
       }
       return;
     }
-    if (g.type === 'empty' && last && last.sel.kind) this.select(null);
+    // a Shift-click on the empty board keeps the selection
+    if (g.type === 'empty' && !g.shift && last && last.sel.kind) this.select(null);
   }
 
   /** A click selects; a repeat click on the same spot cycles the stack under it (ui.stack). */
@@ -771,6 +923,7 @@ export class BoardGestures {
       this.drag = null;
     }
     this.pend = null;
+    this.hideMarquee();
     this.hideLabel();
   }
 
@@ -855,7 +1008,8 @@ export class BoardGestures {
   private onKey(ev: KeyboardEvent): void {
     if (ev.type !== 'keydown' || ev.key === ' ') return;
     const b = useBoard.getState();
-    if (ev.key === 'Escape' && (this.drag || b.placing || b.ruler)) {
+    const marquee = !!this.pend && this.pend.type === 'marquee';
+    if (ev.key === 'Escape' && (this.drag || marquee || b.placing || b.ruler)) {
       this.cancel();
       ev.preventDefault();
       return;

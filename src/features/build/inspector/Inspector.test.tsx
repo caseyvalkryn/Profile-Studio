@@ -98,6 +98,16 @@ describe('Inspector', () => {
     expect(screen.queryByLabelText('Range')).toBeNull();
   });
 
+  it('several selected objects expand no row and show the count (2026-11-02)', () => {
+    render(<Inspector />);
+    act(() => useUi.getState().setSelection([keyOf('RDR-1'), keyOf('T1')]));
+    expect(screen.getByTestId('inspector-many')).toHaveTextContent('2 selected');
+    expect(screen.queryByLabelText('Range')).toBeNull();
+    act(() => useUi.getState().setSelection([keyOf('RDR-1')]));
+    expect(screen.queryByTestId('inspector-many')).toBeNull();
+    expect(screen.getByLabelText('Range')).toBeInTheDocument();
+  });
+
   it('a waypoint edit typed key by key is one undo step', () => {
     useUi.setState({ selectedKeys: [keyOf('T1')] });
     render(<Inspector />);
