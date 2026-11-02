@@ -21,7 +21,6 @@
 import './timeline.css';
 import { useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
 import { stops } from '../../engine';
-import { currentContext, get } from '../../commands/registry';
 import { useDocument } from '../../state/document';
 import { TL_H_DEFAULT, TL_H_MAX, TL_H_MIN, useUi } from '../../state/ui';
 import { ContextMenu, type MenuItem } from '../../ui';
@@ -32,7 +31,6 @@ import { boardDerived, boardScene } from '../build/board/derived';
 import { useSize } from '../shared/useSize';
 import { fmtTime } from '../shared/units';
 import { axisMarks } from './Axis';
-import { timelineCommands } from './commands';
 import { actionSpan, actionStart, runEnd, wantsFit } from './fit';
 import { GLYPH_ORDER, HATCH_EW, HATCH_S, kindPill, stageGlyph } from './glyphs';
 import { cardMarksSvg, daMarks, laneMarks, splitMarks, type Geo, type Live } from './LaneSvg';
@@ -168,22 +166,7 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
   }, [docId, tmax, aStart, ui]);
 
   const menuItems: MenuItem[] = useMemo(
-    () => {
-      const pointer = { x: 0, y: 0, tS: menuT };
-      const items = menuItemsFor('timeline', { pointer, onArg: () => {} });
-      // The strip's own commands until 13.W registers them (then menuItemsFor lists them).
-      const ctx = currentContext(pointer);
-      for (const cmd of timelineCommands) {
-        if (get(cmd.id)) continue;
-        const ok = cmd.when(ctx);
-        items.push(
-          ok === true
-            ? { id: cmd.id, label: cmd.label, onSelect: () => cmd.run(currentContext(pointer)) }
-            : { id: cmd.id, label: cmd.label, disabledReason: ok },
-        );
-      }
-      return items;
-    },
+    () => menuItemsFor('timeline', { pointer: { x: 0, y: 0, tS: menuT }, onArg: () => {} }),
     // Rebuilt for each right-click; the stores are read at that moment.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [menuT, doc, loop],

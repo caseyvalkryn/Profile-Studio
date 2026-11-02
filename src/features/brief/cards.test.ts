@@ -89,6 +89,22 @@ describe('the Build stash', () => {
       layers: { labels: false },
     });
   });
+
+  it('restores the loop and rate a slice card changed (lane 13.W)', () => {
+    useUi.getState().setLoop({ startS: 10, endS: 20 });
+    useUi.getState().setRate(2);
+    stashBuild();
+    useUi.getState().setLoop({ startS: 60, endS: 120 });
+    useUi.getState().setRate(8);
+    restoreBuild();
+    expect(useUi.getState()).toMatchObject({ loop: { startS: 10, endS: 20 }, rate: 2 });
+
+    useUi.getState().setLoop(null);
+    stashBuild();
+    useUi.getState().setLoop({ startS: 60, endS: 120 });
+    restoreBuild();
+    expect(useUi.getState().loop).toBeNull();
+  });
 });
 
 describe('the card frame (lane 11.1)', () => {

@@ -574,8 +574,8 @@ describe('the strip as the plan clock (lane 13.1)', () => {
     const [frame, slice] = timelineCommands;
     expect(frame!.label).toBe('Save a frame here');
     expect(slice!.label).toBe('Save the loop as a slice');
-    // registered by lane 13.W; until then the strip's menu builds the items itself
-    expect(get(frame!.id)).toBeUndefined();
+    // registered by lane 13.W, so the strip's menu lists them through menuItemsFor
+    expect(get(frame!.id)).toBe(frame);
     const ctx = currentContext({ x: 0, y: 0, tS: 42 });
     expect(frame!.when(ctx)).toBe(true);
     expect(frame!.when(currentContext(null))).toBe('Right-click the timeline first');

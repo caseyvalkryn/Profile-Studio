@@ -40,6 +40,7 @@ import type { Clip, MapPoint, Theme, Workspace } from '../state/ui';
 import { libraryCommands } from '../features/library/commands';
 import { boardCommands } from '../features/build/board/commands';
 import { briefCommands } from '../features/brief/commands';
+import { timelineCommands } from '../features/timeline/commands';
 import { useBoard } from '../features/build/board/store';
 import { LAYER_TOGGLES, setToggle, toggleOn } from '../features/build/bar/layers';
 import { cardCommands } from '../features/build/cards/commands';
@@ -897,6 +898,8 @@ const COMMANDS: Command[] = [
 
   // Brief keys and commands (spec section 8), scoped to the Brief workspace (lane 10.4)
   ...briefCommands,
+  // The strip's own menu items, in Build and Brief (lane 13.1; registered in lane 13.W).
+  ...timelineCommands,
 
   // empty map
   ...ADD_HERE,
@@ -1286,6 +1289,8 @@ export const MENU_ORDER: Readonly<Partial<Record<AssetKind, readonly string[]>>>
     'time.clearLoop',
     'timeline.fitRun',
     'timeline.fitAction',
+    'timeline.saveFrameHere',
+    'timeline.saveSliceFromLoop',
   ],
 };
 

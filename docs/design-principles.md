@@ -106,8 +106,10 @@ controls stay out of the way until you need them.
 5. The timeline is one strip for Build and Brief: the same lanes, key points and play bar under
    the board and under the stage, so the briefer teaches from the plan the planner drew. A key
    point carries its definition. A frame is a card saved at a time (2026-11-01, user request).
-6. Clips and beats, caption tokens and attachments are deferred. Each returns only when the
-   planner asks for it.
+   One glyph vocabulary marks the key points on the strip, the board and the notes, and one
+   state colour reads the cursor: reached in the text ink, current in the accent, future subtle.
+6. A slice is a card saved over a time range at a rate; it plays as a loop (phase 13). Beats,
+   caption tokens and attachments are deferred. Each returns only when the planner asks for it.
 
 ## Sources
 

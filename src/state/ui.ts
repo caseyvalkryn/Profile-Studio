@@ -67,6 +67,9 @@ export type BuildStash = {
   elevationMode: ElevationMode;
   tS: number;
   timeOn: boolean;
+  /** The strip's loop and rate: a slice card sets both, so leaving Brief puts Build's back. */
+  loop: LoopRange | null;
+  rate: number;
   zoom: number;
   px: number;
   py: number;

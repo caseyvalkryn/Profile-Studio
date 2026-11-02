@@ -26,31 +26,6 @@
 .brief-ink-hostile {
   color: var(--hostile);
 }
-/* Key point glyphs in the notes panel and the aids (lane 13.2) in the strip's state inks. Lane
-   13.1 defines tl-reached, tl-current and tl-future in timeline.css for the strip; these are the
-   Brief's fallback until that merge, scoped to the Brief's glyphs. 13.W removes them if they
-   duplicate the strip's rules. */
-.brief .brief-glyph.tl-reached .tl-gl {
-  stroke: var(--text);
-}
-.brief .brief-glyph.tl-reached .tl-gl-fill {
-  fill: var(--text);
-}
-.brief .brief-glyph.tl-current .tl-gl {
-  stroke: var(--accent);
-}
-.brief .brief-glyph.tl-current .tl-gl-fill {
-  fill: var(--accent);
-}
-.brief .brief-glyph.tl-future .tl-gl {
-  stroke: var(--text-subtle);
-}
-.brief .brief-glyph.tl-future .tl-gl-fill {
-  fill: var(--text-subtle);
-}
-.brief .brief-glyph .tl-gl-open {
-  fill: var(--surface-1);
-}
 /* The print deck is for paper only. */
 .brief-print {
   display: none;
