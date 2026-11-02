@@ -1,5 +1,5 @@
 // Layer volumes (legacy 43-layer-volumes.js): defended asset, engagement zone, no fly volume,
-// reference pattern. Legacy names stay (volumes for areas, elev, axon): the port is literal.
+// reference pattern, range area. Range areas draw first so a site boundary sits under the rest. Legacy names stay (volumes for areas, elev, axon): the port is literal.
 import { poly } from '../cameras';
 import { register } from '../layers';
 import { r1 } from '../svg';
@@ -58,7 +58,13 @@ register({
     const S = ctx.S;
     const cam = ctx.cam;
     let out = '';
-    for (const v of ctx.scene.volumes || []) {
+    const vols = ctx.scene.volumes || [];
+    // stable: record order holds within each group
+    const ordered = [
+      ...vols.filter((v) => v.kind === 'range'),
+      ...vols.filter((v) => v.kind !== 'range'),
+    ];
+    for (const v of ordered) {
       if (!v.pts || v.pts.length < 2) continue;
       const c = 'vol vol-' + v.kind + ctx.cls(v.id) + ctx.dim(v.id);
       const at = { 'data-k': 'volume', 'data-id': v.id };

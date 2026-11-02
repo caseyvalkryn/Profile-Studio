@@ -48,7 +48,7 @@ Use these words in the UI. One word for one thing. The code keeps the type names
 | Flight path | Ordered waypoints with altitude, speed and hold time | path |
 | Sensor | Radar, RF detector, EO/IR or acoustic | system |
 | Effector | RF effector, kinetic effector or directed energy | system |
-| Area | Defended asset, engagement zone, no-fly area, reference pattern, with a bottom and a top | volume |
+| Area | Defended asset, engagement zone, no-fly area, reference pattern or range area (a site boundary or fly area from a KML or KMZ file), with a bottom and a top | volume |
 | Height plane | A reference altitude drawn across the scene | plane |
 | View | Plan, Elevation or 3D. Plan and Elevation edit; 3D looks | camera (plan, elev, axon) |
 | Authored event | A planned kill-chain event at a time on a flight path: detect, track, identify, engage, split, merge, loiter, terminal, checkpoint | event |
@@ -97,7 +97,7 @@ TypeScript types in `src/domain/types.ts`. Runtime validation with zod in `src/d
 
 ```ts
 type Vignette = {
-  schema: 'profile-studio/6'       // v7 in lane 10.5
+  schema: 'profile-studio/8'       // v7 in lane 10.5, v8 in lane 14.1
   id: string; name: string; updated: string
   collection: string; class: ProfileClass; version: number   // v7 (10.5); site.name migrates into collection
   site: { name: string; lat: number; lon: number; elevM: number }
@@ -118,7 +118,7 @@ type Vignette = {
   runs: RunSummary[]               // v6 only, deprecated; dropped in v7
   report: ReportDraft              // dataSources is the data products list; v7 keeps it, truth and notes, drops the rest
 }
-type Area = { id: string; kind: 'asset'|'wez'|'nfz'|'ref'; label: string
+type Area = { id: string; kind: 'asset'|'wez'|'nfz'|'ref'|'range'; label: string
   pts: { x: number; y: number }[]; zMinM: number; zMaxM: number }
 type HeightPlane = { id: string; label: string; zM: number }
 type AuthoredEvent = { id: string; tS: number
@@ -168,10 +168,11 @@ Upgrade rules for the record:
 2. A card stores a way of looking, never a picture. Captured renders and attached images live in
    session memory only and are not part of the record or of IndexedDB.
 3. Cards are `Vignette.cards`. `report.dataSources` is the data products list.
-4. The schema stamp is `profile-studio/6`. A v5 record migrates with empty lists and a null
+4. The schema stamp is `profile-studio/8`. A v5 record migrates with empty lists and a null
    debrief. v7 (lane 10.5) adds `collection`, `class` and `version`, keeps the data products,
    the telemetry (`report.truth`) and the import notes (`report.notes`), and drops the run fields.
-   A v6 record migrates without loss.
+   A v6 record migrates without loss. v8 (lane 14.1) adds the area kind `range`; a v7 record
+   migrates by its stamp alone. Import accepts v8, v7, v6, v5 and legacy v4.
 
 ## 6. Engine
 

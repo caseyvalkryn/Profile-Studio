@@ -3,7 +3,7 @@
 
 import { z } from 'zod';
 import { AUTHORED_EVENT_TYPES, LAYER_IDS, NODE_DEFAULTS, RATES } from './catalog';
-import { migrateToV7 } from './migrateV5';
+import { migrateToV8 } from './migrateV5';
 import type {
   Area,
   AuthoredEvent,
@@ -155,7 +155,7 @@ export const areaSchema: z.ZodType<Area> = z
   .object({
     key,
     id: z.string(),
-    kind: z.enum(['asset', 'wez', 'nfz', 'ref']),
+    kind: z.enum(['asset', 'wez', 'nfz', 'ref', 'range']),
     label: z.string(),
     pts: z.array(z.tuple([num, num])).min(3, 'An area needs three or more vertices.'),
     zMinM: num,
@@ -287,16 +287,16 @@ export const vignetteSchema: z.ZodType<Vignette> = z.object({
 });
 
 /**
- * Parse and validate a vignette. A `profile-studio/5` or `/6` record is migrated to v7 first
- * (migrateToV7). Throws an Error whose message lists each problem and its path.
+ * Parse and validate a vignette. A `profile-studio/5`, `/6` or `/7` record is migrated to v8
+ * first (migrateToV8). Throws an Error whose message lists each problem and its path.
  */
 export function parseVignette(input: unknown): Vignette {
-  const r = vignetteSchema.safeParse(migrateToV7(input));
+  const r = vignetteSchema.safeParse(migrateToV8(input));
   if (!r.success) throw new Error(`This is not a valid profile.\n${z.prettifyError(r.error)}`);
   return r.data;
 }
 
-/** True for a valid v7 record only; a v5 or v6 record needs parseVignette to migrate it. */
+/** True for a valid v8 record only; a v5, v6 or v7 record needs parseVignette to migrate it. */
 export function isVignette(input: unknown): input is Vignette {
   return vignetteSchema.safeParse(input).success;
 }

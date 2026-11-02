@@ -40,7 +40,7 @@ import type {
 } from './types';
 import { PROFILE_CLASSES, SCHEMA } from './types';
 
-export { migrateToV7, migrateV5ToV6 } from './migrateV5';
+export { migrateToV8, migrateV5ToV6, migrateV7ToV8 } from './migrateV5';
 
 type Obj = Record<string, unknown>;
 
@@ -52,7 +52,7 @@ const num = (v: unknown, d = 0): number => (typeof v === 'number' && Number.isFi
 const numOrNull = (v: unknown): number | null =>
   typeof v === 'number' && Number.isFinite(v) ? v : null;
 
-const AREA_KINDS: readonly string[] = ['asset', 'wez', 'nfz', 'ref'];
+const AREA_KINDS: readonly string[] = ['asset', 'wez', 'nfz', 'ref', 'range'];
 
 /** Legacy C.EV_TYPES keys to the spec names: legacy `id` is `identify`. */
 export function eventTypeOf(legacy: string): AuthoredEventType | null {

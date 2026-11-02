@@ -3,7 +3,9 @@
 // never changes. `id` is the display id (RDR-1, T1, DA, Q-01) and can be renamed.
 // References between records use `key`, never `id` or an array index.
 
-export const SCHEMA = 'profile-studio/7' as const;
+export const SCHEMA = 'profile-studio/8' as const;
+/** The stamp before the `range` area kind; v7 migrates to v8 by stamp only (spec section 5). */
+export const SCHEMA_V7 = 'profile-studio/7' as const;
 /** The stamp before collection, class and version, with the run fields (spec section 5). */
 export const SCHEMA_V6 = 'profile-studio/6' as const;
 /** The stamp before height planes, authored events, snapshots, cards and debrief (spec section 5). */
@@ -12,7 +14,7 @@ export const SCHEMA_V5 = 'profile-studio/5' as const;
 export type SensorKind = 'radar' | 'rf' | 'eoir' | 'acoustic';
 export type EffectorKind = 'ew' | 'kinetic' | 'de';
 export type NodeKind = 'c2' | 'tspi';
-export type AreaKind = 'asset' | 'wez' | 'nfz' | 'ref';
+export type AreaKind = 'asset' | 'wez' | 'nfz' | 'ref' | 'range';
 export type Op = '>=' | '<=';
 
 /** The profile classes (spec section 5, legacy C.CLASSES). */
@@ -136,7 +138,10 @@ export type Node = {
   bearingDeg: number;
 };
 
-/** Defended asset, engagement zone, no-fly area or reference pattern. `pts` are [x, y] metres. */
+/**
+ * Defended asset, engagement zone, no-fly area, reference pattern or range area (a site boundary
+ * or fly area). `pts` are [x, y] metres.
+ */
 export type Area = {
   key: string;
   id: string;

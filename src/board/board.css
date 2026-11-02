@@ -191,6 +191,12 @@ svg.board .hint {
 :where(svg.board, svg.chart) .vol-ref {
   stroke: var(--ghost);
 }
+/* range area: a site boundary or fly area, a plain solid outline under every other volume */
+:where(svg.board, svg.chart) .vol-range {
+  stroke: var(--ghost);
+  stroke-dasharray: none;
+  fill: none;
+}
 :where(svg.board, svg.chart) .vol.flat {
   stroke-width: var(--w3);
 }
@@ -880,6 +886,7 @@ svg.chart .empty {
 :where(svg.board, svg.chart) .vol-wez,
 :where(svg.board, svg.chart) .vol-nfz,
 :where(svg.board, svg.chart) .vol-ref,
+:where(svg.board, svg.chart) .vol-range,
 :where(svg.board, svg.chart) .route,
 :where(svg.board, svg.chart) .id-hostile,
 :where(svg.board, svg.chart) .id-suspect,

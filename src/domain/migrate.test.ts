@@ -379,7 +379,7 @@ describe('legacy v4 round trip (acceptance item 18)', () => {
 });
 
 describe('migrateV5ToV6', () => {
-  it('takes a v5 record to v7: empty lists, a null debrief and empty threat groups', () => {
+  it('takes a v5 record to v8: empty lists, a null debrief and empty threat groups', () => {
     const v6 = templateById('swarm-split')!.make();
     const v5 = JSON.parse(JSON.stringify(v6)) as Record<string, unknown> & {
       threats: Record<string, unknown>[];
@@ -395,7 +395,7 @@ describe('migrateV5ToV6', () => {
     // The template is v7: a stored v5 record has no collection, class or version.
     for (const k of ['collection', 'class', 'version']) delete v5[k];
     const v = parseVignette(v5);
-    expect(v.schema).toBe('profile-studio/7');
+    expect(v.schema).toBe('profile-studio/8');
     expect([v.collection, v.class, v.version]).toEqual([v6.site.name, 'Custom', 1]);
     expect([v.planes, v.events, v.snapshots, v.cards, v.debrief]).toEqual([[], [], [], [], null]);
     expect(v.threats.length).toBeGreaterThan(0);

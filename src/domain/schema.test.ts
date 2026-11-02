@@ -19,7 +19,7 @@ function small(): Vignette {
   const t1 = newKey();
   const rdr = newKey();
   return {
-    schema: 'profile-studio/7',
+    schema: 'profile-studio/8',
     id: 'V-1',
     name: 'Round trip',
     updated: '2026-10-30T00:00:00.000Z',
@@ -191,7 +191,7 @@ describe('v6 to v7', () => {
   it('takes the collection from the site name and drops the run fields', () => {
     const base = small();
     const v = parseVignette(smallV6(base));
-    expect(v.schema).toBe('profile-studio/7');
+    expect(v.schema).toBe('profile-studio/8');
     expect([v.collection, v.class, v.version]).toEqual(['Range', 'Custom', 1]);
     expect(v.site.name).toBe('Range');
     for (const k of ['hypotheses', 'runs', 'sweep']) expect(k in v).toBe(false);
@@ -212,6 +212,36 @@ describe('v6 to v7', () => {
 
   it('refuses a class outside the catalog', () => {
     expect(() => parseVignette({ ...small(), class: 'Tank' })).toThrow(/class/);
+  });
+});
+
+describe('v7 to v8', () => {
+  it('restamps a v7 record and changes nothing else', () => {
+    const v = small();
+    const v7 = { ...JSON.parse(JSON.stringify(v)), schema: 'profile-studio/7' };
+    expect(isVignette(v7)).toBe(false);
+    expect(parseVignette(v7)).toEqual(v);
+  });
+
+  it('parses a v8 record with a range area', () => {
+    const v = small();
+    v.areas.push({
+      key: newKey(),
+      id: 'RNG-1',
+      kind: 'range',
+      label: 'Fly area',
+      pts: [
+        [-300, -200],
+        [300, -200],
+        [300, 200],
+        [-300, 200],
+      ],
+      zMinM: 0,
+      zMaxM: 0,
+    });
+    const back = parseVignette(JSON.parse(JSON.stringify(v)));
+    expect(back).toEqual(v);
+    expect(back.areas.at(-1)!.kind).toBe('range');
   });
 });
 
