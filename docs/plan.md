@@ -30,6 +30,7 @@ These are settled. Do not reopen them without the user.
 | Words (11.1 item 8) | The rail group keeps the mockup's "C2 and TSPI" (an allowed exception to `stat-te-terminology` rule 3, recorded in the skill's `banned-terms.md`); the Elevation label "MAX RG" becomes "Max range" | User, 2026-11-01 (poll) |
 | Phase 11 | The merge of `rebuild/mvp` into `main` approved on 2026-11-01, to be run after 11.F lands with the gate green; the push is a separate approval | User, 2026-11-01 |
 | Phase 13 | The four readings of the user's request (section 6, phase 13: persisted time state per profile; one selection and hover across strip, board and inspector with a Cards row; a card is a frame or a slice with a Frame panel; one glyph vocabulary with state colour) confirmed by poll; the merge of `rebuild/mvp` into `main` approved, no push | User, 2026-11-01 |
+| Phase 14 | KML and KMZ import approved ("Write phase 14 and approved to begin. Keep it simple, clean, minimal, but fully capable and intuitive for the user"); a new `range` area kind; the sample files stay out of the repo; the six readings in section 6 stand until the user says otherwise | User, 2026-11-02 |
 | Scope hold | The bigger pieces wait for "product complete": the vos port (phase 8), the domain fields the UI dropped (`chainTime`, sensor `model`, `entered`), and the deferred list of phase 10 | User, 2026-11-01 |
 
 ## 2. Stack
@@ -553,6 +554,122 @@ vocabulary; spec section 5 `Clip` loses "deferred". Gate green; entry size repor
 `opus-high` with the browser at 1440 x 900: the four lanes against the spec, the principles,
 the four readings above and the mockup; `reviews/phase-13.md`; then the fix lane; then the
 user's approval and the merge into `main`.
+
+### Phase 14. The site from a KML or KMZ file (opens 2026-11-02)
+
+The user's request of 2026-11-02: "What would it take for this application to have the
+capability to seamlessly ingest kmz files and create the range/area to scale?", then "Write
+phase 14 and approved to begin. Keep it simple, clean, minimal, but fully capable and intuitive
+for the user." The two sample files (`TST Ranch.kmz`, `UAS Fly Area.kmz`, Google Earth Pro
+exports) each hold one Placemark with one Polygon of 19 and 22 vertices, about 690 by 500 m and
+340 by 430 m, centres 270 m apart. They stay out of the repo (real site coordinates); tests use
+synthetic fixtures. Section 5 rules apply. Lanes branch from `main` as `lane/14.x`. The
+orchestrator's readings, each an assumption on record until the user says otherwise:
+
+1. Polygons become areas, nothing else. A KML Point, LineString, image overlay, folder tree or
+   style is ignored in this phase. A Placemark with several polygons (MultiGeometry) gives
+   several areas; an inner ring (a hole) is dropped. The Placemark name is the area label; a
+   file with no polygon is an error and changes nothing.
+2. A new area kind `range` ("Range area", id prefix `RNG`) holds site boundaries and fly areas.
+   It draws as a plain solid outline in the ghost ink with no fill, under every other volume;
+   its default top is 0 (a flat footprint, like the asset), and the inspector edits bottom and
+   top as for any area. The schema stamp moves to `profile-studio/8`; v7 migrates by stamp only
+   (no field changes), and import accepts v8, v7, v6, v5 and legacy v4.
+3. To scale: the board is a flat local plane in metres, so one projection serves. East is
+   `(lon - lon0) * cos(lat0) * 111320` m and north is `(lat - lat0) * 110574` m, with north as
+   the board's positive y (the lane confirms the sign against the Plan grid labels). At a few
+   kilometres this is exact to well under a metre. No library, no UTM, no basemap.
+4. The origin is the profile's site. When the site is unset (latitude and longitude both 0),
+   the first import sets it to the centre of the file's bounding box, so the site lands on the
+   board origin. When the site is set, the file projects against it, so a second file lands at
+   its true offset from the first. The user can still type the site on the Profile tab.
+5. Two entries, one function. In Build: a palette command "Import a site file" (group map) that
+   opens a file picker, and a KML or KMZ file dropped on the board. In the Library: the Import
+   button and a drop accept `.kml` and `.kmz` beside JSON and create a new profile named after
+   the file (Untitled profile's defaults, no defended asset, site from the file), then open
+   Build. Both call one `importSiteFile(doc, file)` and are one undo step named
+   "import <file name>". After the import the imported areas are the selection (the 14.1
+   multi-selection), the board refits to show them, and a toast says "2 areas from TST
+   Ranch.kmz". A bad file (not a zip, no `.kml` inside, not KML, no polygon) is one readable
+   sentence in the toast or the Library message line, and the document does not change.
+6. The KMZ reader is local: a zip's local file headers walked in an `ArrayBuffer`, method 0
+   (stored) copied, method 8 (deflate) inflated by the platform `DecompressionStream`
+   (`deflate-raw`; Chromium, Safari 16.4 and later, Node 22 in vitest). The first entry whose
+   name ends in `.kml` is the document. The KML is parsed by the platform `DOMParser`. No new
+   dependency; no download.
+
+#### 14.1 The domain: the kind, the stamp, the parser, the projection (`opus-medium`, 3000 s)
+
+Owned: `src/domain/types.ts`, `src/domain/schema.ts`, `src/domain/catalog.ts` (the area
+tables), `src/domain/migrate.ts` (the kind list), `src/domain/migrateV5.ts` (v7 to v8 by stamp;
+rename allowed), `src/state/persist.ts` (the stamps accepted and written), a new
+`src/domain/siteFile.ts` with `siteFile.test.ts`, `src/board/board.css` (`.vol-range`), the
+snapshot and schema tests that the stamp and the kind touch, `fixtures/kml/` (synthetic: one
+KML with two polygons around a fictional point, and the same zipped as a KMZ with a deflated
+entry, built by a script the lane commits beside them), spec section 5 item 4 (the stamp) and
+the Area row of the terms table.
+
+1. `range` in `AreaKind`, the zod enum, `AREA_KINDS` (last), `AREA_LABELS` ("Range area"),
+   `AREA_DEFAULTS` (`zMaxM` 0, prefix `RNG`), the legacy import's kind list. It appears in the
+   rail's Areas group, the quick add and the inspector's kind select with no further code.
+2. `.vol-range`: stroke the ghost ink, no dash, no fill, drawn first among the volumes so a
+   boundary sits under the asset and the zones (`layers/volumes.ts` keeps the record order; the
+   lane sorts `range` first in the layer or states why not). Plan, Elevation and 3D all draw it
+   through the existing volume code; the Elevation and 3D prisms work as for any area.
+3. The stamp: `SCHEMA` is `profile-studio/8`, `SCHEMA_V7` is the old constant; `migrateV7ToV8`
+   restamps; `parseVignette` and `importRecord` accept v8, v7, v6, v5, legacy v4; the library
+   export writes v8. Tests: a v7 record round-trips; a v8 record with a `range` area parses; a
+   v7 reader's rejection is not tested (there is none).
+4. `siteFile.ts` exports: `readKmz(buf: ArrayBuffer): Promise<string>` (the KML text; throws
+   "This file is not a KMZ." or "The KMZ has no KML document."), `parseKml(text): SitePolygon[]`
+   (`{name, ring: [lon, lat][]}` with the closing vertex dropped and fewer than three vertices
+   skipped; throws "This file is not KML." or "The file has no polygon."),
+   `localFrom(origin: {lat, lon}, [lon, lat]): [x, y]` (reading 3), `centreOf(polygons)`
+   (reading 4), and `siteAreas(doc, polygons): {areas: Area[], site?: {lat, lon}}` that gives
+   the `range` areas with ids from `nextId` and labels from the names (the file's stem when a
+   name is empty), plus the site to set when the document's is unset. Pure functions; no store.
+5. Tests on the fixtures: the KMZ inflates to the KML; both polygons parse with the right vertex
+   counts; the projected extent of a 600 by 400 m test rectangle is 600 by 400 within 1 m and
+   north is positive y; the origin rule both ways; every error sentence.
+
+#### 14.2 The entries: Build command and drop, Library import (`opus-medium`, 3000 s; after 14.1)
+
+Owned: `src/commands/commands.ts` (the `build.importSite` command and `importSiteFile`),
+`src/features/build/palette/commands.ts` (the row, group map, no shortcut),
+`src/features/build/board/Board.tsx` (the file branch of `onDrop` and `onDragOver`),
+`src/features/library/LibraryScreen.tsx` (accept, the new profile path), the e2e
+`e2e/12-27-site-file.spec.ts` (Playwright `setInputFiles` with the KMZ fixture, and a drop via
+a `DataTransfer` built in the page), spec section 7 Library and Build lines, section 8 (the
+drop), acceptance item 27.
+
+1. `importSiteFile(doc, file)` in `commands.ts`: reads the file (`.kmz` through `readKmz`,
+   anything else as text), `parseKml`, `siteAreas`, then one `edit('import ' + file.name)` that
+   pushes the areas and sets the site when given; then `setSelection(keys)`, the board refit
+   (`fit()` in `features/build/board/tools.ts`), and `showToast('n areas from <name>')`.
+   Errors go to the toast as the thrown sentence. Not a command id by itself; the command
+   `build.importSite` ("Import a site file", `when` needs an open document) opens a hidden
+   file input (`accept=".kml,.kmz"`) and calls it.
+2. The board drop: `onDragOver` accepts `Files` too; `onDrop` with a file whose name ends in
+   `.kml` or `.kmz` calls `importSiteFile` and returns; the asset payload branch is unchanged.
+3. The Library: `accept=".json,.kml,.kmz,application/json"`, label "Import file"; the drop too.
+   A KML or KMZ makes a new profile through the New path (name the file stem, no defended
+   asset), opens Build, then `importSiteFile`; the Library message line reports the count or
+   the error. JSON import is unchanged.
+4. The e2e: open the Library, import the KMZ fixture, expect Build with two `range` volumes
+   (`.vol-range` count 2), the inspector "2 selected", the toast text, the grid labels showing
+   the fitted extent; undo removes both; drop the KML fixture on the board and expect the areas
+   again at the same place (the site is now set, so the second import lands on the first).
+5. Spec: the Library line lists KML and KMZ; the Build interaction list gets "Import a site
+   file"; acceptance 27: "A KML or KMZ file with polygons, imported from the Library or dropped
+   on the board, draws each polygon as a range area at true scale about the site; two files of
+   one site land at their true offset; one undo removes an import."
+
+#### 14.R Review and 14.F Fixes
+
+`opus-high` with the browser at 1440 x 900: the two lanes against the spec, the principles and
+the six readings above, with the two sample files from the user's Downloads imported by hand
+(not committed) to confirm the scale and the offset; `reviews/phase-14.md`; then the fix lane;
+then the gate on `main` and the user's word before any push.
 
 ## 7. Status
 
