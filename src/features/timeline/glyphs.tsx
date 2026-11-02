@@ -57,7 +57,25 @@ export function stageGlyph(stage: GlyphStage, cx: number, cy: number): ReactNode
   }
 }
 
-/** The swatch of a coverage row: a short bar in the row's ink (the bar classes of timeline.css). */
-export function kindSwatch(barClass: string, x: number, cy: number): ReactNode {
-  return <rect className={`tl-bar ${barClass}`} x={x} y={cy - 4} width={4} height={8} rx={1} />;
+/** The legend's glyph order: the six F2T2EA steps, then the defended asset entry. */
+export const GLYPH_ORDER: readonly GlyphStage[] = [
+  'find',
+  'fix',
+  'track',
+  'target',
+  'engage',
+  'assess',
+  'da',
+];
+
+/**
+ * The hatch patterns' ids: defs in the strip (Timeline.tsx) that `.tl-bar-s` and `.tl-bar-ew`
+ * fill with (timeline.css), so the coverage families differ by texture, not only by ink.
+ */
+export const HATCH_S = 'tl-hatch-s';
+export const HATCH_EW = 'tl-hatch-ew';
+
+/** The pill of a coverage row or a legend entry: 10 by 6 in the row's bar fill, centred on cy. */
+export function kindPill(barClass: string, x: number, cy: number): ReactNode {
+  return <rect className={`tl-bar ${barClass}`} x={x} y={cy - 3} width={10} height={6} rx={1.5} />;
 }

@@ -4,10 +4,22 @@ import { testVignette } from '../../engine/testVignette';
 import type { Vignette } from '../../domain/types';
 import { previewOf, useDocument } from '../../state/document';
 import { UI_DEFAULTS, useUi } from '../../state/ui';
+import { testSensor, testThreat } from '../../engine/testVignette';
 import { boardDerived } from '../build/board/derived';
+import { menuItemsFor } from '../commands/adapter';
+import { fmtTime } from '../shared/units';
+import { actionSpan, wantsFit } from './fit';
 import { STAGE_DEFINITION, keyPoints } from './stages';
 import Timeline, { GUT_L, buildLanes, parseTime, runEnd, tickSteps } from './Timeline';
 import { boardScene } from '../build/board/derived';
+
+/** A long ingress: one threat from 30 km, seen only in the last part of its run. */
+function ingress(): Vignette {
+  const v = testVignette();
+  v.threats = [testThreat('T-01', 'g1-quad-isr', 30000)];
+  v.sensors = [testSensor('S-01', 'radar', 5000)];
+  return v;
+}
 
 /** jsdom lays nothing out: the strip takes its 800 px fallback, 716 px of axis after the gutter. */
 const PLOT_W = 800 - GUT_L - 12;
@@ -52,6 +64,8 @@ describe('timeline helpers', () => {
   it('picks at most eight labelled majors that fit', () => {
     expect(tickSteps(60, 740 / 60)).toEqual({ major: 10, minor: 2 });
     expect(tickSteps(600, 740 / 600)).toEqual({ major: 120, minor: 30 });
+    // the shorter labels (no prefix) let a 300 s major fit at 41 px
+    expect(tickSteps(2400, 330 / 2400)).toEqual({ major: 300, minor: 60 });
     expect(runEnd(12)).toBe(60);
     expect(runEnd(300)).toBe(300);
   });
@@ -75,7 +89,46 @@ describe('timeline strip', () => {
     const ticks = within(lane).getAllByTestId('tl-stage');
     expect(ticks.map((t) => t.getAttribute('data-stage'))).toEqual(points.map((p) => p.stage));
     expect(ticks[0]!.querySelector('title')!.textContent).toContain(STAGE_DEFINITION.find);
-    expect(within(lane).getByText('Find')).toBeInTheDocument();
+    // glyphs only in the lane; the names live in the legend (lane 12.4)
+    expect(within(lane).queryByText('Find')).toBeNull();
+    expect(lane.querySelectorAll('[data-testid="tl-stage"] text')).toHaveLength(0);
+  });
+
+  it('a run over three times its action span opens on the span, until a zoom by hand', () => {
+    const v = ingress();
+    open(v);
+    const d = boardDerived(v);
+    const span = actionSpan(d)!;
+    expect(wantsFit(d)).toBe(true);
+    const { unmount } = render(<Timeline mode="build" />);
+    expect(useUi.getState().tview).toEqual(span);
+    expect(within(axis() as HTMLElement).queryByText('0:00')).toBeNull();
+    // a hand zoom holds through a document change
+    act(() => useUi.getState().setTview({ t0S: 0, t1S: 100 }));
+    act(() => useDocument.getState().edit('move', (dd) => void (dd.threats[0]!.path[0]!.x += 500)));
+    expect(useUi.getState().tview).toEqual({ t0S: 0, t1S: 100 });
+    unmount();
+    // the test vignette's action starts at once: no fit
+    open(testVignette());
+    render(<Timeline mode="build" />);
+    expect(useUi.getState().tview).toBeNull();
+  });
+
+  it('the context menu fits the run or the action span', () => {
+    const items = () =>
+      menuItemsFor('timeline', { pointer: { x: 0, y: 0, tS: 0 }, onArg: () => {} });
+    const labels = items().map((i) => i.label);
+    const at = labels.indexOf('Clear loop');
+    expect(labels.slice(at, at + 3)).toEqual(['Clear loop', 'Fit run', 'Fit action']);
+    expect(items().find((i) => i.label === 'Fit action')!.disabledReason).toBe(
+      'No coverage window yet',
+    );
+    const v = ingress();
+    open(v);
+    act(() => items().find((i) => i.label === 'Fit action')!.onSelect!());
+    expect(useUi.getState().tview).toEqual(actionSpan(boardDerived(v)));
+    act(() => items().find((i) => i.label === 'Fit run')!.onSelect!());
+    expect(useUi.getState().tview).toBeNull();
   });
 
   it('the play bar: first, previous and next key point, last, rate, loop, play and pause', () => {
@@ -104,6 +157,9 @@ describe('timeline strip', () => {
     expect(useUi.getState().playing).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
     expect(useUi.getState().playing).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Time off' }));
+    expect(useUi.getState().timeOn).toBe(false);
+    expect(screen.getByRole('button', { name: 'Time off' })).toBeDisabled();
   });
 
   it('Shift and a drag on the axis set the loop range; a double click clears it', () => {
@@ -208,21 +264,31 @@ describe('timeline strip', () => {
     expect(useUi.getState().tlH).toBe(96);
   });
 
-  it('the lanes share the area height; a tall lane gives each system its own labelled row', () => {
+  it('a lane takes its content height; the rows grow to 24 px with room, the area scrolls past tlH', () => {
     const v = doc();
     const scene = boardScene(v);
     const d = boardDerived(v);
-    const n = v.threats.length;
     const small = buildLanes(scene, d, 0);
-    expect(small.lanes.every((L) => L.layout === 'band' && L.h === small.lanes[0]!.h)).toBe(true);
-    const tall = buildLanes(scene, d, 400);
-    expect(tall.lanes[0]!.h).toBeGreaterThan(small.lanes[0]!.h);
-    expect(tall.lanes.every((L) => L.h === tall.lanes[0]!.h)).toBe(true);
-    expect(tall.height).toBeLessThanOrEqual(400);
-    expect(tall.height).toBeGreaterThan(400 - n - 2 * tall.lanes.length);
-    const withRows = tall.lanes.find((L) => L.rows.length);
-    expect(withRows!.layout).toBe('rows');
-    expect(withRows!.pitch).toBeGreaterThanOrEqual(12);
+    expect(small.lanes.every((L) => L.layout === 'band')).toBe(true);
+    // one threat at 400 px: 24 px rows, the area at the content height
+    const one = testVignette();
+    one.threats = [one.threats[0]!];
+    const lane1 = buildLanes(boardScene(one), boardDerived(one), 400);
+    expect(lane1.lanes[0]!.layout).toBe('rows');
+    expect(lane1.lanes[0]!.pitch).toBe(24);
+    expect(lane1.height).toBeLessThan(400);
+    expect(lane1.lanes[0]!.h).toBe(2 + 14 + 2 + 14 + 4 + 3 * 24);
+    // eight threats at 400 px: the band, the lanes past the cap
+    const eight = testVignette();
+    eight.threats = Array.from({ length: 8 }, (_, i) => ({
+      ...eight.threats[0]!,
+      key: `k-T-${i}`,
+      id: `T-${i}`,
+      path: eight.threats[0]!.path.map((p) => ({ ...p, key: `${p.key}-${i}` })),
+    }));
+    const lane8 = buildLanes(boardScene(eight), boardDerived(eight), 400);
+    expect(lane8.lanes.every((L) => L.layout === 'band')).toBe(true);
+    expect(lane8.height).toBeGreaterThan(400);
 
     render(<Timeline mode="build" />);
     expect(screen.getAllByTestId('tl-row').length).toBeGreaterThan(0);
@@ -230,10 +296,31 @@ describe('timeline strip', () => {
       'height',
       String(buildLanes(scene, d, 200).height),
     );
+    const lanesEl = screen.getByRole('group', { name: 'Timeline' }).querySelector('.tl-lanes')!;
+    expect((lanesEl as HTMLElement).style.maxHeight).toBe('200px');
     const sys = scene.scene.systems.find((s) => d.windows[s.id]?.[v.threats[0]!.id]?.length)!;
     expect(screen.getAllByText(sys.id).length).toBeGreaterThan(0);
+    // the row's pill: 10 by 6 in the row's fill, before the id in the text ink
+    const pill = screen.getAllByTestId('tl-row')[0]!.querySelector('rect.tl-bar')!;
+    expect(pill).toHaveAttribute('width', '10');
+    expect(pill).toHaveAttribute('height', '6');
+    expect(pill).toHaveAttribute('rx', '1.5');
     act(() => useUi.getState().setTlH(96));
     expect(screen.queryAllByTestId('tl-row')).toHaveLength(0);
+  });
+
+  it('the DA row, the engage margin bracket and the split letter', () => {
+    render(<Timeline mode="build" />);
+    const v = doc();
+    const d = boardDerived(v);
+    expect(screen.getAllByTestId('tl-da-bar')).toHaveLength(2);
+    const margin = screen.getAllByTestId('tl-margin')[0]!;
+    const ws = d.window[v.threats[0]!.id]!;
+    expect(margin.querySelector('title')!.textContent).toBe(
+      `Latest engage ${fmtTime(ws.latest!)}, margin ${Math.round(ws.margin!)} s`,
+    );
+    expect(margin.textContent).toContain(`margin ${Math.round(ws.margin!)} s`);
+    expect(screen.queryAllByTestId('tl-split')).toHaveLength(d.splits.length);
   });
 
   it('the stage glyphs, the legend and the cursor readout', () => {
@@ -244,9 +331,31 @@ describe('timeline strip', () => {
     const da = stages.find((s) => s.getAttribute('data-stage') === 'da');
     if (da) expect(da.querySelector('rect.tl-gl-da')).not.toBeNull();
     const legend = screen.getByTestId('tl-legend');
-    expect(legend.textContent).toContain('Sensor');
-    expect(legend.textContent).toContain('F2T2EA step');
-    expect(legend.textContent).toContain('Defended asset');
+    // each entry: a swatch svg, then its name
+    expect(
+      Array.from(legend.querySelectorAll('span')).map((s) => s.lastChild!.textContent),
+    ).toEqual([
+      'Find',
+      'Fix',
+      'Track',
+      'Target',
+      'Engage',
+      'Assess',
+      'DA',
+      'Sensor',
+      'Effector',
+      'EW',
+      'Event',
+    ]);
+    // Find and Fix sit 3 s apart: within 10 px, so Fix stacks 10 px lower on its hairline
+    const fix = stages.find((s) => s.getAttribute('data-stage') === 'fix')!;
+    expect(find).toHaveAttribute('data-level', '0');
+    expect(fix).toHaveAttribute('data-level', '1');
+    // the axis labels carry no prefix; the cursor chip and the clock keep it
+    const labs = Array.from(axis().querySelectorAll('.tl-tlab')).map((t) => t.textContent);
+    expect(labs).toContain('0:00');
+    expect(labs).toContain('2:00');
+    expect(labs.some((l) => l!.startsWith('t+'))).toBe(false);
     act(() => {
       useUi.getState().setTimeOn(true);
       useUi.getState().setTime(75);
