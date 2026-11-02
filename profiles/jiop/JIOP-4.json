@@ -2,7 +2,7 @@
   "schema": "profile-studio/8",
   "id": "JIOP-4",
   "name": "Controlled repeat, optical zoom 1x against 5x",
-  "updated": "2026-11-02T16:01:48.522571Z",
+  "updated": "2026-11-02T19:44:13.830939Z",
   "collection": "JIOPs four-camera test, TST Ranch, 12 to 13 Nov 2026",
   "class": "Counter-UAS",
   "version": 1,
@@ -14,7 +14,7 @@
   },
   "questions": [
     {
-      "key": "fa911c21-ddcf-4404-a81a-08edaf716778",
+      "key": "4ab4ec1e-f4b0-4dc5-89b5-e6fef2631b93",
       "id": "Q-01",
       "text": "Does optical zoom (1x against 5x) on the varifocal cameras change the first-cue, confirmed and identified ranges for the same Mavic 3 approach, and by how much against the run-to-run variation?",
       "note": "Response: first possible, confirmed and identified range per camera per run; the difference between levels and the spread within a level. Vary: optical zoom on CAM-3 and CAM-4 (1x, 5x). Hold: CAM-1 and CAM-2 at 80 deg, 40 m AGL, 8 m/s, head-on, same path. Record: sun, sky background, wind. Replicates: 3 runs per level, levels alternated. Target-absent interval: 120 s before launch. A second factor, defined background condition, can replace zoom with the same profile."
@@ -22,26 +22,26 @@
   ],
   "threats": [
     {
-      "key": "a36b3a74-1ec3-4866-9cea-2b28e4de1c0c",
+      "key": "954962cf-bfbe-4f32-9828-7b611a9c75d1",
       "id": "T1",
       "type": "g1-quad-isr",
       "path": [
         {
-          "key": "702d4613-fbce-4657-914a-b85cebc2f0eb",
+          "key": "185d9fef-423e-4579-9035-3f5cb24cf862",
           "x": -155.1,
           "y": 160.4,
           "z": 0,
           "holdS": 120
         },
         {
-          "key": "b114edea-1567-428e-b725-7521d997e444",
+          "key": "3c1b798e-e054-49eb-9dd6-a6d70afad8e0",
           "x": -155.1,
           "y": 160.4,
           "z": 40,
           "holdS": 0
         },
         {
-          "key": "8f375525-004d-4691-ba0f-a81a207aac6d",
+          "key": "82153cf1-2c79-41ed-8743-f42cbb4bb816",
           "x": 102.4,
           "y": -171.4,
           "z": 40,
@@ -54,23 +54,23 @@
   ],
   "sensors": [
     {
-      "key": "65bd6596-bd14-4693-8da4-590f550e2b91",
+      "key": "cb041690-4769-42e2-928b-9f9ba4b434e7",
       "id": "CAM-1",
       "kind": "eoir",
       "x": 144.9,
       "y": -201.7,
       "z": 2.5,
-      "rangeM": 250,
+      "rangeM": 203,
       "minRangeM": 0,
-      "fovDeg": 80,
-      "bearingDeg": 322.2,
-      "elMinDeg": -24,
-      "elMaxDeg": 40,
+      "fovDeg": 80.0,
+      "bearingDeg": 313.6,
+      "elMinDeg": -22.2,
+      "elMaxDeg": 42.2,
       "model": {
         "pd": {
           "kind": "logistic",
-          "r50M": 200.0,
-          "widthM": 25.0
+          "r50M": 162.4,
+          "widthM": 20.3
         },
         "scanS": 1,
         "trackM": 3,
@@ -82,29 +82,29 @@
       },
       "entered": {
         "1.3": {
-          "value": 80,
-          "source": "Appendix B example value (80 deg horizontal, 2560 x 1920, 25 fps); confirm against the purchased model"
+          "value": 80.0,
+          "source": "Appendix B example value, 80 deg horizontal; confirm against the purchased model; tilt 10 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 64.4 deg; reach 203 m at 3 px on a 0.4 m target"
         }
       }
     },
     {
-      "key": "0ea24dbc-2779-49da-899d-c96d8927fb7c",
+      "key": "27eb9d24-46d4-47c5-921e-ea2c70ff4612",
       "id": "CAM-2",
       "kind": "eoir",
       "x": 137.0,
       "y": -207.8,
       "z": 2.5,
-      "rangeM": 250,
+      "rangeM": 203,
       "minRangeM": 0,
-      "fovDeg": 80,
-      "bearingDeg": 322.2,
-      "elMinDeg": -24,
-      "elMaxDeg": 40,
+      "fovDeg": 80.0,
+      "bearingDeg": 319.3,
+      "elMinDeg": -22.2,
+      "elMaxDeg": 42.2,
       "model": {
         "pd": {
           "kind": "logistic",
-          "r50M": 200.0,
-          "widthM": 25.0
+          "r50M": 162.4,
+          "widthM": 20.3
         },
         "scanS": 1,
         "trackM": 3,
@@ -116,29 +116,29 @@
       },
       "entered": {
         "1.3": {
-          "value": 80,
-          "source": "Appendix B example value (80 deg horizontal, 2560 x 1920, 25 fps); confirm against the purchased model"
+          "value": 80.0,
+          "source": "Appendix B example value, 80 deg horizontal; confirm against the purchased model; tilt 10 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 64.4 deg; reach 203 m at 3 px on a 0.4 m target"
         }
       }
     },
     {
-      "key": "ac1f1b04-3fd2-4671-821d-fad2023d8c99",
+      "key": "889cd25b-c927-4cfa-8565-188bdfa1bc33",
       "id": "CAM-3 1x",
       "kind": "eoir",
       "x": 129.1,
       "y": -213.9,
       "z": 2.5,
-      "rangeM": 250,
+      "rangeM": 203,
       "minRangeM": 0,
-      "fovDeg": 80,
-      "bearingDeg": 322.2,
-      "elMinDeg": -24,
-      "elMaxDeg": 40,
+      "fovDeg": 80.0,
+      "bearingDeg": 325.0,
+      "elMinDeg": -24.2,
+      "elMaxDeg": 40.2,
       "model": {
         "pd": {
           "kind": "logistic",
-          "r50M": 200.0,
-          "widthM": 25.0
+          "r50M": 162.4,
+          "widthM": 20.3
         },
         "scanS": 1,
         "trackM": 3,
@@ -150,29 +150,29 @@
       },
       "entered": {
         "1.3": {
-          "value": 80,
-          "source": "Baseline level: varifocal at 1x, about 80 deg horizontal"
+          "value": 80.0,
+          "source": "Appendix B example value, 80 deg horizontal; confirm against the purchased model; tilt 8 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 64.4 deg; reach 203 m at 3 px on a 0.4 m target"
         }
       }
     },
     {
-      "key": "3a3f8b5e-8017-4b9d-8396-ff05e5d6ac86",
+      "key": "ea3867e9-ae22-472a-ace6-b15b8796fed6",
       "id": "CAM-4 1x",
       "kind": "eoir",
       "x": 121.2,
       "y": -220.1,
       "z": 2.5,
-      "rangeM": 250,
+      "rangeM": 203,
       "minRangeM": 0,
-      "fovDeg": 80,
-      "bearingDeg": 322.2,
-      "elMinDeg": -24,
-      "elMaxDeg": 40,
+      "fovDeg": 80.0,
+      "bearingDeg": 330.7,
+      "elMinDeg": -26.2,
+      "elMaxDeg": 38.2,
       "model": {
         "pd": {
           "kind": "logistic",
-          "r50M": 200.0,
-          "widthM": 25.0
+          "r50M": 162.4,
+          "widthM": 20.3
         },
         "scanS": 1,
         "trackM": 3,
@@ -184,29 +184,29 @@
       },
       "entered": {
         "1.3": {
-          "value": 80,
-          "source": "Baseline level: varifocal at 1x, about 80 deg horizontal"
+          "value": 80.0,
+          "source": "Appendix B example value, 80 deg horizontal; confirm against the purchased model; tilt 6 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 64.4 deg; reach 203 m at 3 px on a 0.4 m target"
         }
       }
     },
     {
-      "key": "9d754d18-671d-45d7-bea9-0f091256b6ea",
+      "key": "d2116c20-8691-4319-bb17-3f49ea6e9f3c",
       "id": "CAM-3 5x",
       "kind": "eoir",
       "x": 129.1,
       "y": -213.9,
       "z": 2.5,
-      "rangeM": 450,
+      "rangeM": 500,
       "minRangeM": 0,
       "fovDeg": 17.6,
-      "bearingDeg": 322.2,
-      "elMinDeg": -2.6,
-      "elMaxDeg": 10.6,
+      "bearingDeg": 325.0,
+      "elMinDeg": 1.4,
+      "elMaxDeg": 14.6,
       "model": {
         "pd": {
           "kind": "logistic",
-          "r50M": 360.0,
-          "widthM": 45.0
+          "r50M": 400.0,
+          "widthM": 50.0
         },
         "scanS": 1,
         "trackM": 3,
@@ -219,28 +219,28 @@
       "entered": {
         "1.3": {
           "value": 17.6,
-          "source": "Factor level: varifocal at 5x, about 17.6 deg horizontal"
+          "source": "Spec value at 5x (a true 5x of the 80 deg lens gives 19.0 deg); replace with the lens spec at the zoom step set; tilt 8 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 13.2 deg; reach 500 m at 3 px on a 0.4 m target"
         }
       }
     },
     {
-      "key": "1276291d-bc67-4181-9415-741ecb99c29b",
+      "key": "ace81575-22b6-4227-8775-0827b5af0736",
       "id": "CAM-4 5x",
       "kind": "eoir",
       "x": 121.2,
       "y": -220.1,
       "z": 2.5,
-      "rangeM": 450,
+      "rangeM": 500,
       "minRangeM": 0,
       "fovDeg": 17.6,
-      "bearingDeg": 322.2,
-      "elMinDeg": -2.6,
-      "elMaxDeg": 10.6,
+      "bearingDeg": 330.7,
+      "elMinDeg": -0.6,
+      "elMaxDeg": 12.6,
       "model": {
         "pd": {
           "kind": "logistic",
-          "r50M": 360.0,
-          "widthM": 45.0
+          "r50M": 400.0,
+          "widthM": 50.0
         },
         "scanS": 1,
         "trackM": 3,
@@ -253,7 +253,7 @@
       "entered": {
         "1.3": {
           "value": 17.6,
-          "source": "Factor level: varifocal at 5x, about 17.6 deg horizontal"
+          "source": "Spec value at 5x (a true 5x of the 80 deg lens gives 19.0 deg); replace with the lens spec at the zoom step set; tilt 6 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 13.2 deg; reach 500 m at 3 px on a 0.4 m target"
         }
       }
     }
@@ -261,7 +261,7 @@
   "effectors": [],
   "nodes": [
     {
-      "key": "112519e3-6a77-4256-947d-230d93a89ebd",
+      "key": "7b8c2099-ff01-4400-a3be-f82d26cdda81",
       "id": "GCS-1",
       "kind": "c2",
       "x": -156.4,
@@ -272,7 +272,7 @@
       "bearingDeg": 0
     },
     {
-      "key": "3dc36296-1613-4ef9-9006-e34359e61532",
+      "key": "0531722d-6323-4bc9-a3d2-41de201f6678",
       "id": "REC-1",
       "kind": "c2",
       "x": 142.2,
@@ -283,7 +283,7 @@
       "bearingDeg": 0
     },
     {
-      "key": "604584ac-764f-4978-ab58-30ca886e2a90",
+      "key": "9a303530-72a4-40c3-8468-4fc032495a85",
       "id": "TM-1",
       "kind": "tspi",
       "x": -156.4,
@@ -294,7 +294,7 @@
       "bearingDeg": 0
     },
     {
-      "key": "28afa34b-13bf-43f3-8186-adb722b7a1f7",
+      "key": "6ff89a05-6542-4043-a79e-d43ccfe24cc4",
       "id": "TM-2",
       "kind": "tspi",
       "x": 142.2,
@@ -307,7 +307,7 @@
   ],
   "areas": [
     {
-      "key": "84d889d3-5d38-4b89-85aa-fe9c769087f1",
+      "key": "f36d9e19-7250-4d94-9729-5f73beceb840",
       "id": "RNG-1",
       "kind": "range",
       "label": "UAS Fly Area",
@@ -339,7 +339,7 @@
       "zMaxM": 0
     },
     {
-      "key": "493499f9-06a9-4e00-acc5-1b5269bf89d6",
+      "key": "6b5c0fd4-cca4-4cfa-96dd-ebaf3170655e",
       "id": "RNG-2",
       "kind": "range",
       "label": "TST Ranch",
@@ -368,7 +368,7 @@
       "zMaxM": 0
     },
     {
-      "key": "8b2378c1-7ac7-47a5-83b9-2f41d7e7e129",
+      "key": "140d844b-c56f-4f07-8d2e-56880842243a",
       "id": "DA",
       "kind": "asset",
       "label": "Camera site",
@@ -384,13 +384,13 @@
   ],
   "planes": [
     {
-      "key": "396201c6-e0a7-43cb-b47c-f0304bb2fb0a",
+      "key": "b46bd8c8-48ce-4b7d-b252-cb57e807e0d8",
       "id": "HP-1",
       "label": "Run altitude 40 m AGL",
       "zM": 40
     },
     {
-      "key": "7aa8c3d6-a769-4a90-9862-9168e0e999c8",
+      "key": "7ff20218-7920-4ed0-bd3e-0438ed759595",
       "id": "HP-2",
       "label": "400 ft AGL ceiling (Part 107)",
       "zM": 121.9
@@ -398,46 +398,46 @@
   ],
   "events": [
     {
-      "key": "451286b0-c6db-4f3d-9d12-f24176558802",
+      "key": "8fdade8c-2764-4ebe-8a36-a7b7acbc5913",
       "id": "e1",
       "tS": 0,
       "type": "checkpoint",
       "label": "Recording on; target-absent interval (120 s)",
-      "threatKey": "a36b3a74-1ec3-4866-9cea-2b28e4de1c0c",
+      "threatKey": "954962cf-bfbe-4f32-9828-7b611a9c75d1",
       "sensorKey": null
     },
     {
-      "key": "96afed68-f65b-434a-bd92-fb65549a4ccb",
+      "key": "cbdb727d-9b52-4a99-aadc-16f31cba3c6c",
       "id": "e2",
-      "tS": 129,
+      "tS": 123,
       "type": "detect",
       "label": "First cue, factor level (CAM-3 at 5x)",
-      "threatKey": "a36b3a74-1ec3-4866-9cea-2b28e4de1c0c",
-      "sensorKey": "9d754d18-671d-45d7-bea9-0f091256b6ea"
+      "threatKey": "954962cf-bfbe-4f32-9828-7b611a9c75d1",
+      "sensorKey": "d2116c20-8691-4319-bb17-3f49ea6e9f3c"
     },
     {
-      "key": "f7113394-7429-40de-82f5-862693c01e12",
+      "key": "e37b459f-d0c3-4f7a-8b70-8bc73fce91a6",
       "id": "e3",
-      "tS": 154,
+      "tS": 160,
       "type": "checkpoint",
       "label": "First cue, baseline level (CAM-3 at 1x) expected here",
-      "threatKey": "a36b3a74-1ec3-4866-9cea-2b28e4de1c0c",
+      "threatKey": "954962cf-bfbe-4f32-9828-7b611a9c75d1",
       "sensorKey": null
     },
     {
-      "key": "928f3c07-5a29-460b-9397-0e082e13ebc1",
+      "key": "3febe429-5605-4419-bb17-c135ebf48d2b",
       "id": "e4",
-      "tS": 158,
+      "tS": 133,
       "type": "identify",
-      "label": "Identified, fixed cameras (CAM-1)",
-      "threatKey": "a36b3a74-1ec3-4866-9cea-2b28e4de1c0c",
-      "sensorKey": "65bd6596-bd14-4693-8da4-590f550e2b91"
+      "label": "Mavic 3 identified expected (CAM-3 5x, 8 px) at about 406 m",
+      "threatKey": "954962cf-bfbe-4f32-9828-7b611a9c75d1",
+      "sensorKey": "d2116c20-8691-4319-bb17-3f49ea6e9f3c"
     }
   ],
   "snapshots": [],
   "cards": [
     {
-      "key": "9d54df6e-d6f2-44a9-b217-5e77d9c5f356",
+      "key": "e8569249-6817-47d6-a6ec-6d1613dd4245",
       "id": "c1",
       "name": "Laydown",
       "view": {
@@ -471,7 +471,7 @@
       "notes": "One factor at two levels: optical zoom on CAM-3 and CAM-4. Three replicate runs per level, alternating levels run to run so sky and sun changes do not confound the factor."
     },
     {
-      "key": "70686e7d-c705-430d-8766-51660c1479cb",
+      "key": "60392185-e3b2-47ca-9938-43dbf0e8b987",
       "id": "c2",
       "name": "Baseline level",
       "view": {
@@ -500,18 +500,18 @@
       },
       "clip": null,
       "focus": [
-        "a36b3a74-1ec3-4866-9cea-2b28e4de1c0c",
-        "65bd6596-bd14-4693-8da4-590f550e2b91",
-        "0ea24dbc-2779-49da-899d-c96d8927fb7c",
-        "ac1f1b04-3fd2-4671-821d-fad2023d8c99",
-        "3a3f8b5e-8017-4b9d-8396-ff05e5d6ac86"
+        "954962cf-bfbe-4f32-9828-7b611a9c75d1",
+        "cb041690-4769-42e2-928b-9f9ba4b434e7",
+        "27eb9d24-46d4-47c5-921e-ea2c70ff4612",
+        "889cd25b-c927-4cfa-8565-188bdfa1bc33",
+        "ea3867e9-ae22-472a-ace6-b15b8796fed6"
       ],
-      "tS": 154,
+      "tS": 160,
       "caption": "Baseline: all four cameras at 80 deg. The planning reach is the same on every camera, so the four first-cue ranges should agree within the measurement uncertainty.",
       "notes": "Use the spread between CAM-1 to CAM-4 at the baseline as the repeatability floor for the comparison."
     },
     {
-      "key": "3705c540-1891-4300-a71d-ec44c5345bf9",
+      "key": "a98bd3df-cb9e-4924-82f7-51f2ed0f1f6a",
       "id": "c3",
       "name": "Factor level",
       "view": {
@@ -540,16 +540,16 @@
       },
       "clip": null,
       "focus": [
-        "a36b3a74-1ec3-4866-9cea-2b28e4de1c0c",
-        "9d754d18-671d-45d7-bea9-0f091256b6ea",
-        "1276291d-bc67-4181-9415-741ecb99c29b"
+        "954962cf-bfbe-4f32-9828-7b611a9c75d1",
+        "d2116c20-8691-4319-bb17-3f49ea6e9f3c",
+        "ace81575-22b6-4227-8775-0827b5af0736"
       ],
-      "tS": 129,
+      "tS": 123,
       "caption": "Factor level: CAM-3 and CAM-4 at 5x. The planning reach moves out; the vertical FOV narrows, so the near end of the run is FOV-limited at 5x.",
       "notes": "Report the difference in first-cue range between levels with the run-to-run variation at each level (plan section 7, step 8: distributions, not the single longest detection)."
     },
     {
-      "key": "efa9c885-ef8e-46ad-8b18-590b76398f78",
+      "key": "55ee0b5c-3dad-4205-b0a3-5932642cf109",
       "id": "c4",
       "name": "FOV loss at 5x",
       "view": {
@@ -578,16 +578,16 @@
       },
       "clip": null,
       "focus": [
-        "a36b3a74-1ec3-4866-9cea-2b28e4de1c0c",
-        "9d754d18-671d-45d7-bea9-0f091256b6ea",
-        "1276291d-bc67-4181-9415-741ecb99c29b"
+        "954962cf-bfbe-4f32-9828-7b611a9c75d1",
+        "d2116c20-8691-4319-bb17-3f49ea6e9f3c",
+        "ace81575-22b6-4227-8775-0827b5af0736"
       ],
       "tS": 169.49962648676654,
       "caption": "Side view near the end of the run: the target climbs above the 5x vertical FOV while the 80 deg cameras still hold it.",
       "notes": "Flag the 5x trials FOV-limited from this point (plan section 6). Do not read the loss as an optical limit."
     },
     {
-      "key": "5ff7dae6-be38-48a3-9d03-972c553c0ced",
+      "key": "3195ac61-0a59-44d6-b818-42c9eec2696c",
       "id": "c5",
       "name": "Both levels, 3D",
       "view": {
@@ -615,13 +615,13 @@
         "readout": true
       },
       "clip": null,
-      "focus": ["a36b3a74-1ec3-4866-9cea-2b28e4de1c0c"],
-      "tS": 154,
+      "focus": ["954962cf-bfbe-4f32-9828-7b611a9c75d1"],
+      "tS": 160,
       "caption": "The two sector sets from the same four positions.",
       "notes": "Orbit to separate the 80 deg and the 17.6 deg sectors."
     },
     {
-      "key": "049cbcd9-7418-440b-b4fb-d6fecdbf5e23",
+      "key": "38808d31-d996-415c-b995-4801c37a0b25",
       "id": "c6",
       "name": "Run slice",
       "view": {
@@ -654,7 +654,7 @@
         "rate": 4,
         "beatsS": []
       },
-      "focus": ["a36b3a74-1ec3-4866-9cea-2b28e4de1c0c"],
+      "focus": ["954962cf-bfbe-4f32-9828-7b611a9c75d1"],
       "tS": 125.0,
       "caption": "Launch to the end of the run at x4.",
       "notes": "Play the slice; compare the CAM-3 1x and CAM-3 5x rows on the timeline for the same path."
@@ -710,8 +710,8 @@
       "source": "Aircraft GCS telemetry log (GPS time, lat, lon, alt); ATOS tag track as the second source",
       "intervalS": 0.2,
       "stationKeys": [
-        "604584ac-764f-4978-ab58-30ca886e2a90",
-        "28afa34b-13bf-43f3-8186-adb722b7a1f7"
+        "9a303530-72a4-40c3-8468-4fc032495a85",
+        "6ff89a05-6542-4043-a79e-d43ccfe24cc4"
       ]
     }
   }

@@ -8,3 +8,4 @@ playwright-report/
 test-results/
 .claude/
 e2e/__results__/
+profiles/jiop/val-test-profiles.html

@@ -2,7 +2,7 @@
   "schema": "profile-studio/8",
   "id": "JIOP-3",
   "name": "Swarm, seven aircraft with crossings",
-  "updated": "2026-11-02T16:01:48.522571Z",
+  "updated": "2026-11-02T19:44:13.830939Z",
   "collection": "JIOPs four-camera test, TST Ranch, 12 to 13 Nov 2026",
   "class": "Multi-aircraft",
   "version": 1,
@@ -14,7 +14,7 @@
   },
   "questions": [
     {
-      "key": "1d2d5f1c-226f-4574-a859-d96eeb8ead0f",
+      "key": "754f1a00-d3f4-46cf-b0b9-82de54c38e63",
       "id": "Q-01",
       "text": "With seven aircraft in the fly area at once, which aircraft does each camera detect, when and where, which observations are missed or false, and how often is an observation associated with the wrong aircraft?",
       "note": "Response per camera per aircraft: detection events with ground and slant range; missed observations; false detections; wrong associations. Vary: spacing (crossing pair at 5 m vertical, close pair at 16 m), speed (6 to 16 m/s), altitude (20 to 60 m AGL). Hold: camera settings as the ladder baseline. Record: sun, background, wind. Replicates: 2 runs minimum. Target-absent interval: 120 s before launch. Multi-aircraft association extends the single-aircraft method of the plan."
@@ -22,26 +22,26 @@
   ],
   "threats": [
     {
-      "key": "0a0aeb7d-4f3f-45c2-be2f-b4e520a6c888",
+      "key": "62a5c9ca-c95f-4bee-b5a4-72d790a2ef5b",
       "id": "T1",
       "type": "g1-quad-isr",
       "path": [
         {
-          "key": "50b30fce-cb5f-4085-a8a1-14bb12508e02",
+          "key": "a43de8d3-2d33-4846-bba2-d96ccdcd4f18",
           "x": -143.2,
           "y": 164.6,
           "z": 0,
           "holdS": 120
         },
         {
-          "key": "3360129f-58ca-46f4-a0e6-4322e882d02b",
+          "key": "996c5d8b-1772-486c-9cab-cccc426e8b55",
           "x": -143.2,
           "y": 164.6,
           "z": 50,
           "holdS": 0
         },
         {
-          "key": "a08c149c-b604-4dc0-99b6-20bb513b4fa3",
+          "key": "392d0fb4-dd5d-4cc0-8afa-134e93b1500c",
           "x": 98.2,
           "y": -136.6,
           "z": 50,
@@ -52,26 +52,26 @@
       "group": "A"
     },
     {
-      "key": "8e3ea59f-f696-47e3-b8ee-223a9ae9052d",
+      "key": "8a450c99-eea2-4107-ba9b-f06ec7eadb22",
       "id": "T2",
       "type": "g1-quad-isr",
       "path": [
         {
-          "key": "f9bf703c-d2f8-4f3b-aa3d-d54e09e08166",
+          "key": "50c22056-99bc-4c4d-976a-d8a0d47ecc00",
           "x": -162.2,
           "y": 149.9,
           "z": 0,
           "holdS": 120
         },
         {
-          "key": "4f508cdd-eacb-44a8-90bb-fac2504804f3",
+          "key": "d5d432d4-1da9-4139-80bc-1353b4b5c4d0",
           "x": -162.2,
           "y": 149.9,
           "z": 60,
           "holdS": 0
         },
         {
-          "key": "a2d7872f-da3f-4a37-885a-cda0a4f06003",
+          "key": "9ef98a09-3d55-444d-9cbd-8964a05b3d7a",
           "x": 69.8,
           "y": -158.7,
           "z": 60,
@@ -82,47 +82,47 @@
       "group": "A"
     },
     {
-      "key": "77c9db5b-f3aa-4a6e-896a-01ceef40ce98",
+      "key": "c5657b10-8c2f-4b87-83ca-d30a7b54e887",
       "id": "T3",
       "type": "g1-fpv-rf",
       "path": [
         {
-          "key": "3592b5eb-82b2-4ece-914f-1b57f6faca59",
+          "key": "74840a60-4c1c-49e4-8084-0cd53f39d7ad",
           "x": -139.4,
           "y": 166.3,
           "z": 0,
           "holdS": 120
         },
         {
-          "key": "d94e6acb-a6e5-4b5d-9a0f-4f0306a3facb",
+          "key": "616ca1de-9e03-48ee-ac83-071545b0ecb3",
           "x": -139.4,
           "y": 166.3,
           "z": 25,
           "holdS": 0
         },
         {
-          "key": "9d336b13-4b67-4ebb-8255-785d87c87423",
+          "key": "b119c67e-3be8-4457-a562-60dd3794bd15",
           "x": -95.8,
           "y": 54.6,
           "z": 25,
           "holdS": 0
         },
         {
-          "key": "adec8fe3-de28-47c0-b111-98e1fd69c452",
+          "key": "1fa4b65f-1edf-4dd9-b025-b3bfa0f81fb8",
           "x": 6.2,
           "y": -18.1,
           "z": 25,
           "holdS": 0
         },
         {
-          "key": "21a12b51-6861-42e7-a10a-3d4adddb4559",
+          "key": "df37d84c-a43d-4328-b587-19bec741a52a",
           "x": 51.4,
           "y": -135.0,
           "z": 25,
           "holdS": 0
         },
         {
-          "key": "771e99aa-7725-4cfc-a948-f8c8e71e0764",
+          "key": "5c93133b-32f7-4ee0-bd61-4451f75e6dbc",
           "x": 99.5,
           "y": -154.6,
           "z": 25,
@@ -133,47 +133,47 @@
       "group": "B"
     },
     {
-      "key": "895e3fdb-00fd-4e6b-9f4b-3f0011c14577",
+      "key": "c3b30276-b804-49fb-bd53-0291bfb5e580",
       "id": "T4",
       "type": "g1-fpv-rf",
       "path": [
         {
-          "key": "19deb880-3a7b-4b55-bb83-b8fefec3be42",
+          "key": "cd72dc94-f717-4135-b177-d207dc60d6fc",
           "x": -164.7,
           "y": 146.7,
           "z": 0,
           "holdS": 120
         },
         {
-          "key": "c2756ebf-6b67-4544-b461-04b4addc45da",
+          "key": "1a0483fa-7c62-49a1-a173-eb98652ea0bc",
           "x": -164.7,
           "y": 146.7,
           "z": 30,
           "holdS": 0
         },
         {
-          "key": "4c02f8c5-0b69-4637-8c76-25c84974880f",
+          "key": "0aaf794d-a308-4f92-bea8-1f017812697f",
           "x": -67.3,
           "y": 76.7,
           "z": 30,
           "holdS": 0
         },
         {
-          "key": "bb09061e-4532-42fa-a5d8-d27bf8c4779f",
+          "key": "2c85c29e-a562-4b64-8ec6-7b77e6e7d3f7",
           "x": -22.2,
           "y": -40.2,
           "z": 30,
           "holdS": 0
         },
         {
-          "key": "91bca57c-285b-4909-b43d-ba865f206116",
+          "key": "e0670e63-80ae-4339-8d50-579302ea95a0",
           "x": 79.8,
           "y": -112.9,
           "z": 30,
           "holdS": 0
         },
         {
-          "key": "582de505-0c6c-4e60-a261-f25aaab6f315",
+          "key": "7a155b30-56e3-4c42-bf8d-fd86d0e11132",
           "x": 86.9,
           "y": -164.4,
           "z": 30,
@@ -184,26 +184,26 @@
       "group": "B"
     },
     {
-      "key": "31cfbcba-febd-4bfa-93e2-523a7f1483c0",
+      "key": "c23b6cfb-1c45-4ab9-bcec-b6a5629eee76",
       "id": "T5",
       "type": "g1-fpv-rf",
       "path": [
         {
-          "key": "e3689d89-b21c-4e1d-86dd-8323c0a1b0a3",
+          "key": "240e83c8-6a01-41e6-a447-d50530ff9b8a",
           "x": -152.1,
           "y": 156.5,
           "z": 0,
           "holdS": 140
         },
         {
-          "key": "3b8ad1f8-7479-476b-b1ae-f247b33a83d4",
+          "key": "b2656933-6972-4c54-8bbc-12bfa420104e",
           "x": -152.1,
           "y": 156.5,
           "z": 20,
           "holdS": 0
         },
         {
-          "key": "22f85a64-c12f-414b-b382-61866af3a2a3",
+          "key": "5fee35ec-cba4-4424-ad25-2add36191e27",
           "x": 102.4,
           "y": -171.4,
           "z": 20,
@@ -214,26 +214,26 @@
       "group": "B"
     },
     {
-      "key": "18a44c64-e629-4a08-9c8f-71dcfc6f3446",
+      "key": "bb42cb00-d940-4a58-a76c-19c893f9144f",
       "id": "T6",
       "type": "g1-fpv-rf",
       "path": [
         {
-          "key": "b940fb00-3f38-471e-9362-a61f0e9a9042",
+          "key": "83da9f80-48e7-418e-a639-0e5c8b18cc59",
           "x": -145.7,
           "y": 161.4,
           "z": 0,
           "holdS": 120
         },
         {
-          "key": "25dc308f-8f4b-42ac-bedc-4e965b06bf18",
+          "key": "e25c67b7-4785-49b0-b6f2-5b25c3eb5930",
           "x": -145.7,
           "y": 161.4,
           "z": 35,
           "holdS": 0
         },
         {
-          "key": "c22eb255-e807-4d6e-8c41-bbcee1868ef4",
+          "key": "e0aba303-21a7-4da1-a521-c6f0ae859d7a",
           "x": 84.2,
           "y": -134.9,
           "z": 35,
@@ -244,26 +244,26 @@
       "group": "B"
     },
     {
-      "key": "f711dd36-fbc6-4328-864f-7ab3887ed491",
+      "key": "5c2bb7d5-9de0-48d4-9410-e256fd47e1d8",
       "id": "T7",
       "type": "g1-fpv-rf",
       "path": [
         {
-          "key": "1f696251-7b42-428c-a7df-620a9eea61a8",
+          "key": "9e265dd4-eff2-4f13-bc90-04e9bf51b3fc",
           "x": -158.4,
           "y": 151.6,
           "z": 0,
           "holdS": 120
         },
         {
-          "key": "615dd860-170d-41c9-b871-c7772328d5d8",
+          "key": "31076b80-0529-4a8b-81da-a72bd03720ae",
           "x": -158.4,
           "y": 151.6,
           "z": 35,
           "holdS": 0
         },
         {
-          "key": "9eed2774-c9d4-485d-ae70-559742fe6134",
+          "key": "cd57834f-a3d0-4d4a-8da8-703b148ea6c4",
           "x": 71.5,
           "y": -144.7,
           "z": 35,
@@ -276,23 +276,23 @@
   ],
   "sensors": [
     {
-      "key": "be4363f3-6af4-432f-a5b5-a0230b4dbbcf",
+      "key": "052c5ec4-0527-45f3-9f27-359a0b9034f4",
       "id": "CAM-1",
       "kind": "eoir",
       "x": 144.9,
       "y": -201.7,
       "z": 2.5,
-      "rangeM": 250,
+      "rangeM": 127,
       "minRangeM": 0,
-      "fovDeg": 80,
-      "bearingDeg": 322.2,
-      "elMinDeg": -24,
-      "elMaxDeg": 40,
+      "fovDeg": 80.0,
+      "bearingDeg": 313.6,
+      "elMinDeg": -22.2,
+      "elMaxDeg": 42.2,
       "model": {
         "pd": {
           "kind": "logistic",
-          "r50M": 200.0,
-          "widthM": 25.0
+          "r50M": 101.60000000000001,
+          "widthM": 12.700000000000001
         },
         "scanS": 1,
         "trackM": 3,
@@ -304,29 +304,29 @@
       },
       "entered": {
         "1.3": {
-          "value": 80,
-          "source": "Appendix B example value (80 deg horizontal, 2560 x 1920, 25 fps); confirm against the purchased model"
+          "value": 80.0,
+          "source": "Appendix B example value, 80 deg horizontal; confirm against the purchased model; tilt 10 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 64.4 deg; reach 127 m at 3 px on a 0.25 m target"
         }
       }
     },
     {
-      "key": "3fcd7767-669c-4d49-a68e-c9f081dc1f07",
+      "key": "d64e5bf1-f43f-471c-9e14-e6f46869f937",
       "id": "CAM-2",
       "kind": "eoir",
       "x": 137.0,
       "y": -207.8,
       "z": 2.5,
-      "rangeM": 250,
+      "rangeM": 127,
       "minRangeM": 0,
-      "fovDeg": 80,
-      "bearingDeg": 322.2,
-      "elMinDeg": -24,
-      "elMaxDeg": 40,
+      "fovDeg": 80.0,
+      "bearingDeg": 319.3,
+      "elMinDeg": -22.2,
+      "elMaxDeg": 42.2,
       "model": {
         "pd": {
           "kind": "logistic",
-          "r50M": 200.0,
-          "widthM": 25.0
+          "r50M": 101.60000000000001,
+          "widthM": 12.700000000000001
         },
         "scanS": 1,
         "trackM": 3,
@@ -338,29 +338,29 @@
       },
       "entered": {
         "1.3": {
-          "value": 80,
-          "source": "Appendix B example value (80 deg horizontal, 2560 x 1920, 25 fps); confirm against the purchased model"
+          "value": 80.0,
+          "source": "Appendix B example value, 80 deg horizontal; confirm against the purchased model; tilt 10 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 64.4 deg; reach 127 m at 3 px on a 0.25 m target"
         }
       }
     },
     {
-      "key": "ed89c172-9bcc-4010-a429-60fb88ff06f3",
+      "key": "fe7784f4-a5ad-4bd5-897d-db4cafb4bfa7",
       "id": "CAM-3",
       "kind": "eoir",
       "x": 129.1,
       "y": -213.9,
       "z": 2.5,
-      "rangeM": 400,
+      "rangeM": 254,
       "minRangeM": 0,
-      "fovDeg": 40,
-      "bearingDeg": 322.2,
-      "elMinDeg": -10,
-      "elMaxDeg": 20,
+      "fovDeg": 45.5,
+      "bearingDeg": 325.0,
+      "elMinDeg": -9.5,
+      "elMaxDeg": 25.5,
       "model": {
         "pd": {
           "kind": "logistic",
-          "r50M": 320.0,
-          "widthM": 40.0
+          "r50M": 203.20000000000002,
+          "widthM": 25.400000000000002
         },
         "scanS": 1,
         "trackM": 3,
@@ -372,29 +372,29 @@
       },
       "entered": {
         "1.3": {
-          "value": 40,
-          "source": "Varifocal at 2x: about 40 deg horizontal; derive from the calibrated focal length"
+          "value": 45.5,
+          "source": "Derived: 2x optical zoom of the 80 deg lens, 2 atan(tan 40 deg / 2); replace with the lens spec at the zoom step set; tilt 8 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 34.9 deg; reach 254 m at 3 px on a 0.25 m target"
         }
       }
     },
     {
-      "key": "6f67fb79-ec78-4660-bf06-64619cf79a57",
+      "key": "651451f8-efda-4968-bf9b-53ded082ea51",
       "id": "CAM-4",
       "kind": "eoir",
       "x": 121.2,
       "y": -220.1,
       "z": 2.5,
-      "rangeM": 450,
+      "rangeM": 500,
       "minRangeM": 0,
       "fovDeg": 17.6,
-      "bearingDeg": 322.2,
-      "elMinDeg": -2.6,
-      "elMaxDeg": 10.6,
+      "bearingDeg": 330.7,
+      "elMinDeg": -0.6,
+      "elMaxDeg": 12.6,
       "model": {
         "pd": {
           "kind": "logistic",
-          "r50M": 360.0,
-          "widthM": 45.0
+          "r50M": 400.0,
+          "widthM": 50.0
         },
         "scanS": 1,
         "trackM": 3,
@@ -407,7 +407,7 @@
       "entered": {
         "1.3": {
           "value": 17.6,
-          "source": "Varifocal at 5x: about 17.6 deg horizontal; derive from the calibrated focal length"
+          "source": "Spec value at 5x (a true 5x of the 80 deg lens gives 19.0 deg); replace with the lens spec at the zoom step set; tilt 6 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 13.2 deg; reach 500 m at 3 px on a 0.25 m target"
         }
       }
     }
@@ -415,7 +415,7 @@
   "effectors": [],
   "nodes": [
     {
-      "key": "9036dc7c-5867-4800-95b6-da1536bdca2a",
+      "key": "874f6845-4fb3-4b29-9e27-95124376bbf2",
       "id": "GCS-1",
       "kind": "c2",
       "x": -156.4,
@@ -426,7 +426,7 @@
       "bearingDeg": 0
     },
     {
-      "key": "48c869cb-2684-48e1-9eeb-62b50b5c6c80",
+      "key": "37680743-9e26-4131-b372-e797c34f7ef5",
       "id": "REC-1",
       "kind": "c2",
       "x": 142.2,
@@ -437,7 +437,7 @@
       "bearingDeg": 0
     },
     {
-      "key": "69b7df67-a239-4b03-b05f-46d0cc9a9787",
+      "key": "cc241d4b-3417-4f40-bc73-5fa9b4baac77",
       "id": "TM-1",
       "kind": "tspi",
       "x": -156.4,
@@ -448,7 +448,7 @@
       "bearingDeg": 0
     },
     {
-      "key": "4be69c3a-2420-4408-ab8b-5060e84a8903",
+      "key": "c4997316-cc08-4da0-9ae1-71a4eb3806f9",
       "id": "TM-2",
       "kind": "tspi",
       "x": 142.2,
@@ -461,7 +461,7 @@
   ],
   "areas": [
     {
-      "key": "02647a91-1718-4623-9f3a-f8a03172237c",
+      "key": "e7381d85-fc72-4ceb-9b48-6ffaa8c9b052",
       "id": "RNG-1",
       "kind": "range",
       "label": "UAS Fly Area",
@@ -493,7 +493,7 @@
       "zMaxM": 0
     },
     {
-      "key": "aef901e5-a385-4e71-9c01-5dc7e8647ee9",
+      "key": "ac025178-c22c-4a65-9ddd-bb4d657a5413",
       "id": "RNG-2",
       "kind": "range",
       "label": "TST Ranch",
@@ -522,7 +522,7 @@
       "zMaxM": 0
     },
     {
-      "key": "846b3df5-7df0-431f-a4fa-b06ab7d2bb4c",
+      "key": "851072b9-c593-4f20-bb38-ef1bb5f4aeba",
       "id": "DA",
       "kind": "asset",
       "label": "Camera site",
@@ -538,19 +538,19 @@
   ],
   "planes": [
     {
-      "key": "8da83f47-e484-415b-860f-87bec5085d1e",
+      "key": "044962d7-c89b-424e-b3a0-88ebd8ea1baf",
       "id": "HP-1",
       "label": "Runner 20 m AGL",
       "zM": 20
     },
     {
-      "key": "e99e9645-b9b2-4a8d-8511-ca77a62efa66",
+      "key": "d35c5918-4766-4d90-b4b9-849325845253",
       "id": "HP-2",
       "label": "Mavic pair 50 to 60 m AGL",
       "zM": 60
     },
     {
-      "key": "b4b18860-7f27-4ebe-8f25-3dc0fcaa5946",
+      "key": "d5310f83-3ee5-4cdd-bce1-eae6c593d127",
       "id": "HP-3",
       "label": "400 ft AGL ceiling (Part 107)",
       "zM": 121.9
@@ -558,55 +558,55 @@
   ],
   "events": [
     {
-      "key": "40dd9d86-91bd-4db8-bb2f-6e8629388fc1",
+      "key": "0cadb84a-5978-4038-bd6c-472758297a9c",
       "id": "e1",
       "tS": 0,
       "type": "checkpoint",
       "label": "Recording on; target-absent interval (120 s)",
-      "threatKey": "0a0aeb7d-4f3f-45c2-be2f-b4e520a6c888",
+      "threatKey": "62a5c9ca-c95f-4bee-b5a4-72d790a2ef5b",
       "sensorKey": null
     },
     {
-      "key": "352ab1d8-3330-40fb-821d-54547bcedd24",
+      "key": "0effbfb8-ded2-44a7-bc17-3abfdab245ef",
       "id": "e2",
       "tS": 137,
       "type": "checkpoint",
       "label": "T3 and T4 cross on the axis (first crossing)",
-      "threatKey": "77c9db5b-f3aa-4a6e-896a-01ceef40ce98",
+      "threatKey": "c5657b10-8c2f-4b87-83ca-d30a7b54e887",
       "sensorKey": null
     },
     {
-      "key": "441c28e0-c17a-498f-bc83-a66a11920ba9",
+      "key": "5926146f-e957-4a8b-a6de-a040e60bc956",
       "id": "e3",
       "tS": 148,
       "type": "checkpoint",
       "label": "T3 and T4 cross on the axis (second crossing)",
-      "threatKey": "77c9db5b-f3aa-4a6e-896a-01ceef40ce98",
+      "threatKey": "c5657b10-8c2f-4b87-83ca-d30a7b54e887",
       "sensorKey": null
     },
     {
-      "key": "916d4f56-ce40-4372-8784-2531455db9aa",
+      "key": "800c86d2-22eb-45b6-98d9-f766cbd9ce6a",
       "id": "e4",
-      "tS": 144,
+      "tS": 140,
       "type": "detect",
-      "label": "First cue on the runner expected (CAM-4, 5x)",
-      "threatKey": "31cfbcba-febd-4bfa-93e2-523a7f1483c0",
-      "sensorKey": "6f67fb79-ec78-4660-bf06-64619cf79a57"
+      "label": "First cue on the runner expected (CAM-4, 5x, 3 px) at about 465 m",
+      "threatKey": "c23b6cfb-1c45-4ab9-bcec-b6a5629eee76",
+      "sensorKey": "651451f8-efda-4968-bf9b-53ded082ea51"
     },
     {
-      "key": "efb7e1b2-70cc-4ffe-9d67-c60d778a20a9",
+      "key": "bbbac71f-0498-4bbf-b054-041209773be5",
       "id": "e5",
-      "tS": 171,
+      "tS": 164,
       "type": "identify",
-      "label": "Mavic pair identified expected (CAM-1)",
-      "threatKey": "0a0aeb7d-4f3f-45c2-be2f-b4e520a6c888",
-      "sensorKey": "be4363f3-6af4-432f-a5b5-a0230b4dbbcf"
+      "label": "Mavic pair identified expected (CAM-4, 5x, 8 px) at about 254 m",
+      "threatKey": "62a5c9ca-c95f-4bee-b5a4-72d790a2ef5b",
+      "sensorKey": "651451f8-efda-4968-bf9b-53ded082ea51"
     }
   ],
-  "snapshots": [137, 148, 144],
+  "snapshots": [137, 148, 141],
   "cards": [
     {
-      "key": "414ddea7-0ae0-4059-a82c-e9cd4b90cc79",
+      "key": "ebd54adf-2985-4a34-bc62-a52e2a9e67cb",
       "id": "c1",
       "name": "Laydown",
       "view": {
@@ -640,7 +640,7 @@
       "notes": "Each aircraft logs its own GCS position. Review each camera for every aircraft separately; a detection must be associated with one aircraft by time and bearing against the logs."
     },
     {
-      "key": "dba131ef-61c1-4bca-a644-cda5ffe7b595",
+      "key": "65e28ec7-d521-4719-a040-ca5f129c99c8",
       "id": "c2",
       "name": "Density at the first crossing",
       "view": {
@@ -668,13 +668,13 @@
         "readout": true
       },
       "clip": null,
-      "focus": ["77c9db5b-f3aa-4a6e-896a-01ceef40ce98", "895e3fdb-00fd-4e6b-9f4b-3f0011c14577"],
+      "focus": ["c5657b10-8c2f-4b87-83ca-d30a7b54e887", "c3b30276-b804-49fb-bd53-0291bfb5e580"],
       "tS": 137,
       "caption": "First crossing of T3 and T4 on the axis, 5 m apart in height. The closest spacing in the run; it tests 1.8 Resolution and the association rule.",
       "notes": "Record which cameras show two targets at the crossing and which show one. Count a merged pair as a missed observation for the hidden aircraft."
     },
     {
-      "key": "be48d791-7b40-4207-b038-3f0aba350493",
+      "key": "add80283-77b7-4007-9d7f-3a2f8eeae2d2",
       "id": "c3",
       "name": "Runner cue",
       "view": {
@@ -702,13 +702,13 @@
         "readout": true
       },
       "clip": null,
-      "focus": ["31cfbcba-febd-4bfa-93e2-523a7f1483c0", "6f67fb79-ec78-4660-bf06-64619cf79a57"],
-      "tS": 144,
+      "focus": ["c23b6cfb-1c45-4ab9-bcec-b6a5629eee76", "651451f8-efda-4968-bf9b-53ded082ea51"],
+      "tS": 140,
       "caption": "The late runner at 16 m/s and 20 m AGL enters the 5x camera reach while the pairs are already in the image: the cue must be associated with T5, not the pairs.",
       "notes": "The wrong-association count feeds 2.1.4. The 20 s launch delay separates the runner from the pairs in time."
     },
     {
-      "key": "1e849365-1fe1-4001-beb2-722f48535ad2",
+      "key": "f16988e4-c01f-4cf4-889e-8acbdf73b9f8",
       "id": "c4",
       "name": "Heights, side view",
       "view": {
@@ -742,7 +742,7 @@
       "notes": "Set the view From asset to read every aircraft against the camera elevation limits."
     },
     {
-      "key": "bbf6edd8-e2ec-4a57-af3f-dc8f9a91d509",
+      "key": "f3a1013d-c8cc-4a5b-8861-b5e963d1566d",
       "id": "c5",
       "name": "Swarm, 3D",
       "view": {
@@ -776,7 +776,7 @@
       "notes": "Orbit to show the vertical separation of the crossing pair."
     },
     {
-      "key": "fed113b7-2639-4c0d-86c1-e88159d2a051",
+      "key": "6695ca4d-66b7-493d-8b94-9ae24e26fc9c",
       "id": "c6",
       "name": "Swarm slice",
       "view": {
@@ -872,8 +872,8 @@
       "source": "Aircraft GCS telemetry log (GPS time, lat, lon, alt); ATOS tag track as the second source",
       "intervalS": 0.2,
       "stationKeys": [
-        "69b7df67-a239-4b03-b05f-46d0cc9a9787",
-        "4be69c3a-2420-4408-ab8b-5060e84a8903"
+        "cc241d4b-3417-4f40-bc73-5fa9b4baac77",
+        "c4997316-cc08-4da0-9ae1-71a4eb3806f9"
       ]
     }
   }

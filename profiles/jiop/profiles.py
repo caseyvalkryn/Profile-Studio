@@ -6,6 +6,14 @@ SAFETY=('Safety: every path stays inside the UAS Fly Area; no path points at the
         'Site datum: the profile origin is the centre of the UAS Fly Area file (lat 35.289972, lon -79.385599, WGS84). Ground elevation 150 m is a planning value; survey it.')
 CLOCK='Before the first run: synchronize the PC, camera and telemetry clocks, record the offset with a visible time-marked event, and keep the correction (plan section 7, step 3).'
 def truthKeys(ns): return [n['key'] for n in ns if n['kind']=='tspi']
+def camLine(sensors):
+    """'CAM-1 and CAM-2: 80 deg at 1x, tilt 10 deg up. CAM-3: ...' for the card notes."""
+    return ' '.join(f"{s['id']}: {s['fovDeg']:g} deg at {s['zoom']}, tilt {s['tiltDeg']:g} deg up, upper limit {s['elMaxDeg']:g} deg." for s in sensors)
+def lossLine(sensors,z=40):
+    """'CAM-4 at 5x loses a target at 40 m AGL inside about 168 m, CAM-3 ...' from each camera's upper limit."""
+    parts=[f"{s['id']} at {s['zoom']} inside about {lossAt(s['elMaxDeg'],z):.0f} m" for s in sensors]
+    return f"At {z:g} m AGL the elevation angle passes each camera's upper limit: "+', '.join(parts)+f". Sensor {SENSOR[ASPECT][0]} x {SENSOR[ASPECT][1]} assumed; a 16:9 sensor narrows the vertical FOV and moves every limit out (confirm the model)."
+
 def firstWindow(sensor,w):
     ws=windows(sensor,w); return ws[0][0] if ws else None
 
@@ -26,18 +34,18 @@ def rangeLadder():
     for i,d in enumerate(holds):
         t=w[2+i][3]
         evs.append(ev(f'e{n}',t,'checkpoint',f'Band {d} m: hover 30 s',T1['key'],None)); n+=1
-    f4=firstWindow(sensors[3],w); f1=firstWindow(sensors[0],w)
-    evs.append(ev(f'e{n}',f4+1,'detect','First possible cue expected (CAM-4, 5x)',T1['key'],sensors[3]['key'])); n+=1
-    evs.append(ev(f'e{n}',f1+5,'identify','Identified expected (CAM-1, 80 deg)',T1['key'],sensors[0]['key'])); n+=1
+    f4=firstAt(sensors[3],w,PX['cue'])
+    evs.append(ev(f'e{n}',f4,'detect',f"First possible cue expected (CAM-4, 5x, {PX['cue']} px) at about {groundAt(sensors[3],w,f4):.0f} m",T1['key'],sensors[3]['key'])); n+=1
+    evs.append(idEvent(f'e{n}',sensors,w,T1['key'],'Mavic 3',w[-1][3])); n+=1
     tH=[w[2+i][3]+15 for i in range(5)]
     cards=[
       card('c1','Laydown','plan',None,[],'Range ladder: one Mavic 3 hovers 30 s at five distance bands on the fly-area axis, 40 m AGL, 5 m/s between bands. Four cameras at the SE end look NW (bearing 322).',
-           'Cameras CAM-1 and CAM-2: fixed 80 deg. CAM-3: 2x (40 deg). CAM-4: 5x (17.6 deg). Reach rings are planning values from the pixel-footprint estimate (Appendix A.1), not measured ranges. The ladder measures them.'),
+           camLine(sensors)+f" Each camera is yawed to the axis {AIM_S} m before the camera line; survey and record azimuth and tilt. Reach rings are planning values from the pixel-footprint estimate (Appendix A.1) at {PX['cue']} px on a {W_MAVIC:g} m target, not measured ranges. The ladder measures them."),
       card('c2','Band 450 m','plan',tH[0],[T1['key']],'Band 400 to 470 m. Only CAM-4 at 5x is expected to hold the target here. The 80 deg cameras read it as a non-detection in this bin.',
            'Appendix C.2: report detection probability per fixed distance bin. A non-detection inside the FOV is an optical limit; outside the FOV it is FOV-limited and must be flagged.'),
       card('c3','Band 250 m','plan',tH[2],[T1['key']],'Band 200 to 300 m. CAM-3 at 2x and CAM-4 at 5x hold the target; the 80 deg cameras reach their planning limit here.',
            'The middle band decides the 80 deg cameras. Expect the first possible cue here and the confirmed detection one band closer.'),
-      card('c4','FOV limit at the near bands','elevation',tH[3],[T1['key']],'Side view along the path at the 150 m band. At 40 m AGL the elevation angle passes the 5x camera limit (10.6 deg) at about 200 m and the 2x limit (20 deg) at about 100 m. From there inward those trials are FOV-limited, not optical limits; the 80 deg cameras hold the target to the 75 m band.',
+      card('c4','FOV limit at the near bands','elevation',tH[3],[T1['key']],'Side view along the path at the 150 m band. '+lossLine(sensors)+' From there inward those trials are FOV-limited, not optical limits; the 80 deg cameras hold the target to the 75 m band.',
            'Plan section 6: label trials FOV-limited when the aircraft enters the image after it is already large enough for detection. The near bands belong to the 80 deg cameras.'),
       card('c5','The ladder, 3D','3d',tH[1],[T1['key']],'The five hovers along the axis, with the four camera sectors from the SE end.','Use this view in the brief to show the bands and the sectors together.'),
       card('c6','Approach slice','plan',w[2][3],[T1['key']],'The run from launch to the last band, at x4.','Play this slice in the brief; the timeline shows each camera window against the five hovers.',
@@ -59,30 +67,34 @@ def rangeLadder():
 
 # ---------------------------------------------------------------- 2. One-Way Attack
 def oneWayAttack():
-    sensors=cams_baseline(); ns=nodes()
+    sensors=cams_baseline(W_TANQ); ns=nodes()
     aim=P(140)
     path=[wp(LAUNCH,0,120),wp(LAUNCH,40),wp(P(100),40),wp(aim,5,5)]
     T1=threat('T1','g1-fpv-rf',path,15)
     w=timed(path,15)
     areas=rangeAreas()+[da(),area('REF-1','ref','Aim point (simulated, no payload)',square(aim,16))]
-    f=[firstWindow(s,w) for s in sensors]
+    # the earliest camera at each pixel threshold on a 0.25 m Tanq (gen.py PX), by elevation and azimuth coverage
+    cue=earliestAt(sensors,w,PX['cue']); conf=earliestAt(sensors,w,PX['confirmed']); ident=earliestAt(sensors,w,PX['identified'])
+    idText=(f"Identified expected ({camName(ident[1])}, {PX['identified']} px) at about {groundAt(ident[1],w,ident[0]):.0f} m" if ident else
+            f"Identified ({PX['identified']} px) not expected before the aim point in any camera")
     evs=[ev('e1',0,'checkpoint','Recording on; target-absent interval (120 s)',T1['key'],None),
          ev('e2',w[1][3],'checkpoint','Launch and climb to 40 m AGL',T1['key'],None),
-         ev('e3',f[3]+1,'detect','First possible cue expected (CAM-4, 5x)',T1['key'],sensors[3]['key']),
-         ev('e4',f[2]+4,'track','Confirmed detection expected (CAM-3, 2x)',T1['key'],sensors[2]['key']),
-         ev('e5',f[0]+5,'identify','Identified expected (CAM-1, 80 deg)',T1['key'],sensors[0]['key']),
+         ev('e3',cue[0],'detect',f"First possible cue expected ({camName(cue[1])}, {PX['cue']} px) at about {groundAt(cue[1],w,cue[0]):.0f} m",T1['key'],cue[1]['key']),
+         ev('e4',conf[0],'track',f"Confirmed detection expected ({camName(conf[1])}, {PX['confirmed']} px) at about {groundAt(conf[1],w,conf[0]):.0f} m",T1['key'],conf[1]['key']),
+         ev('e5',ident[0] if ident else w[3][3],'identify',idText,T1['key'],ident[1]['key'] if ident else None),
          ev('e6',w[2][3],'terminal','Terminal dive begins: 41 deg descent to the aim point, 5 m AGL',T1['key'],None)]
-    warn=(w[3][3]-(f[3]+1))
+    f=[cue[0],conf[0],ident[0] if ident else w[3][3]]
+    warn=(w[3][3]-cue[0])
     cards=[
       card('c1','Laydown','plan',None,[],'One-way attack: one Tanq 5 inch FPV runs the fly-area axis at 15 m/s and 40 m AGL, then dives at 41 deg to an aim point 60 m short of the cameras. No payload.',
            'Plan section 8: at 15 m/s, 1 s of timing offset is 15 m of range. The clock record decides the range uncertainty on this profile.'),
-      card('c2','First cue','plan',f[3]+1,[T1['key'],sensors[3]['key']],f'First possible cue expected from CAM-4 at 5x. Warning time to the aim point: about {warn:.0f} s.',
+      card('c2','First cue','plan',f[0],[T1['key'],cue[1]['key']],f"First possible cue expected from {cue[1]['id']} at {cue[1]['zoom']} ({PX['cue']} px on a {W_TANQ:g} m Tanq). Warning time to the aim point: about {warn:.0f} s.",
            'Mark first possible, first confirmed and first identified as separate events in each camera (plan section 7, step 6). Each event links to its frame and GCS position.'),
-      card('c3','Identified','plan',f[0]+5,[T1['key'],sensors[0]['key']],'Identified expected in the 80 deg cameras. Record horizontal and slant range at each event per camera.',
+      card('c3','Identified','plan',f[2],[T1['key']]+([ident[1]['key']] if ident else []),idText+f". The 80 deg cameras reach {PX['identified']} px on a Tanq only inside {reach(W_TANQ,HFOV['1x'][0],PX['identified']):.0f} m, past the aim point. Record horizontal and slant range at each event per camera.",
            'The identification criterion is written before the run (plan section 8): a reviewer locates the same moving target across consecutive frames without the flight log as a cue.'),
       card('c4','Dive, side view','elevation',(w[2][3]+w[3][3])/2,[T1['key']],'The terminal descent along the path: 40 m AGL to 5 m over 40 m of ground. Steep, short warning.',
-           'CAM-4 at 5x loses the target at about 200 m (elevation above its 10.6 deg limit) and CAM-3 at 2x at about 100 m as the dive begins; the 80 deg cameras hold it to the aim point. Flag the zoomed results FOV-limited from those ranges.'),
-      card('c5','The run, 3D','3d',f[2]+4,[T1['key']],'The run in 3D at the confirmed detection.','Orbit to show the camera sectors against the descent.'),
+           lossLine(sensors)+' The 80 deg cameras hold it to the aim point. Flag the zoomed results FOV-limited from those ranges.'),
+      card('c5','The run, 3D','3d',f[1],[T1['key']],'The run in 3D at the confirmed detection.','Orbit to show the camera sectors against the descent.'),
       card('c6','Attack slice','plan',w[1][3],[T1['key']],'Launch to impact at x2.','Play in the brief: about 35 s from launch to the aim point.',
            clip={'t0S':round(w[1][3]),'t1S':round(w[-1][4]),'rate':2,'beatsS':[]}),
     ]
@@ -98,7 +110,7 @@ def oneWayAttack():
 
 # ---------------------------------------------------------------- 3. Swarm
 def swarm():
-    sensors=cams_baseline(); ns=nodes()
+    sensors=cams_baseline(W_TANQ); ns=nodes()   # five of seven are Tanq; the reach is the conservative one
     def L(s,a): return P(s,a)
     T=[]
     # Mavic 3 pair, line abreast, slow
@@ -125,16 +137,16 @@ def swarm():
     x1=tAt(W['T3'],-90); x2=tAt(W['T3'],30)
     evs.append(ev('e2',x1,'checkpoint','T3 and T4 cross on the axis (first crossing)',T[2]['key'],None))
     evs.append(ev('e3',x2,'checkpoint','T3 and T4 cross on the axis (second crossing)',T[2]['key'],None))
-    f5=firstWindow(sensors[3],W['T5']); f1=firstWindow(sensors[0],W['T1'])
-    evs.append(ev('e4',f5+1,'detect','First cue on the runner expected (CAM-4, 5x)',T[4]['key'],sensors[3]['key']))
-    evs.append(ev('e5',f1+5,'identify','Mavic pair identified expected (CAM-1)',T[0]['key'],sensors[0]['key']))
+    f5=firstAt(sensors[3],W['T5'],PX['cue'])
+    evs.append(ev('e4',f5,'detect',f"First cue on the runner expected (CAM-4, 5x, {PX['cue']} px) at about {groundAt(sensors[3],W['T5'],f5):.0f} m",T[4]['key'],sensors[3]['key']))
+    evs.append(idEvent('e5',[s for s in sensors],W['T1'],T[0]['key'],'Mavic pair',W['T1'][-1][3]))
     tAll=max(w[1][3] for w in W.values())
     cards=[
       card('c1','Laydown','plan',None,[],'Swarm: seven aircraft in the fly area at once. Two Mavic 3 line abreast at 50 and 60 m AGL; a Tanq pair crossing the axis twice; a Tanq pair 16 m apart at 35 m; one Tanq runner at 16 m/s and 20 m AGL, launched 20 s late.',
            'Each aircraft logs its own GCS position. Review each camera for every aircraft separately; a detection must be associated with one aircraft by time and bearing against the logs.',layers={'envelopes':True}),
       card('c2','Density at the first crossing','plan',x1,[T[2]['key'],T[3]['key']],'First crossing of T3 and T4 on the axis, 5 m apart in height. The closest spacing in the run; it tests 1.8 Resolution and the association rule.',
            'Record which cameras show two targets at the crossing and which show one. Count a merged pair as a missed observation for the hidden aircraft.',layers={'envelopes':True}),
-      card('c3','Runner cue','plan',f5+1,[T[4]['key'],sensors[3]['key']],'The late runner at 16 m/s and 20 m AGL enters the 5x camera reach while the pairs are already in the image: the cue must be associated with T5, not the pairs.',
+      card('c3','Runner cue','plan',f5,[T[4]['key'],sensors[3]['key']],'The late runner at 16 m/s and 20 m AGL enters the 5x camera reach while the pairs are already in the image: the cue must be associated with T5, not the pairs.',
            'The wrong-association count feeds 2.1.4. The 20 s launch delay separates the runner from the pairs in time.'),
       card('c4','Heights, side view','elevation',x2,[],'Side view from the camera site at the second crossing: five heights from 20 to 60 m AGL across the group.','Set the view From asset to read every aircraft against the camera elevation limits.',elev='fromAsset',layers={'envelopes':True}),
       card('c5','Swarm, 3D','3d',x2,[],'The seven paths in 3D at the second crossing, with the group hulls.','Orbit to show the vertical separation of the crossing pair.',layers={'envelopes':True}),
@@ -156,10 +168,8 @@ def swarm():
 def controlledRepeat():
     base=cams_baseline(); ns=nodes()
     # CAM-3 and CAM-4 are the varifocal cameras: baseline at 1x (80 deg), factor level at 5x (17.6 deg)
-    c3a=cam('CAM-3 1x',CAMPOS[2],250,80,-24,40,'Baseline level: varifocal at 1x, about 80 deg horizontal')
-    c4a=cam('CAM-4 1x',CAMPOS[3],250,80,-24,40,'Baseline level: varifocal at 1x, about 80 deg horizontal')
-    c3b=cam('CAM-3 5x',CAMPOS[2],450,17.6,-2.6,10.6,'Factor level: varifocal at 5x, about 17.6 deg horizontal')
-    c4b=cam('CAM-4 5x',CAMPOS[3],450,17.6,-2.6,10.6,'Factor level: varifocal at 5x, about 17.6 deg horizontal')
+    c3a=cam('CAM-3 1x',CAMPOS[2],'1x'); c4a=cam('CAM-4 1x',CAMPOS[3],'1x')
+    c3b=cam('CAM-3 5x',CAMPOS[2],'5x'); c4b=cam('CAM-4 5x',CAMPOS[3],'5x')
     sensors=[base[0],base[1],c3a,c4a,c3b,c4b]
     path=[wp(LAUNCH,0,120),wp(LAUNCH,40),wp(P(150),40,10)]
     T1=threat('T1','g1-quad-isr',path,8)
@@ -169,7 +179,7 @@ def controlledRepeat():
     evs=[ev('e1',0,'checkpoint','Recording on; target-absent interval (120 s)',T1['key'],None),
          ev('e2',f[4]+1,'detect','First cue, factor level (CAM-3 at 5x)',T1['key'],c3b['key']),
          ev('e3',f[2]+1,'checkpoint','First cue, baseline level (CAM-3 at 1x) expected here',T1['key'],None),
-         ev('e4',f[0]+5,'identify','Identified, fixed cameras (CAM-1)',T1['key'],base[0]['key'])]
+         idEvent('e4',sensors,w,T1['key'],'Mavic 3',w[-1][3])]
     cards=[
       card('c1','Laydown','plan',None,[],'Controlled repeat: the same Mavic 3 approach (40 m AGL, 8 m/s, head-on) flown with the varifocal cameras at 1x, then at 5x. CAM-1 and CAM-2 are held constant as the control.',
            'One factor at two levels: optical zoom on CAM-3 and CAM-4. Three replicate runs per level, alternating levels run to run so sky and sun changes do not confound the factor.'),

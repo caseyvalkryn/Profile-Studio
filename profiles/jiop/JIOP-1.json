@@ -2,7 +2,7 @@
   "schema": "profile-studio/8",
   "id": "JIOP-1",
   "name": "Range ladder, Mavic 3 by distance band",
-  "updated": "2026-11-02T16:01:48.522571Z",
+  "updated": "2026-11-02T19:44:13.830939Z",
   "collection": "JIOPs four-camera test, TST Ranch, 12 to 13 Nov 2026",
   "class": "Counter-UAS",
   "version": 1,
@@ -14,7 +14,7 @@
   },
   "questions": [
     {
-      "key": "d648ea05-9149-414f-ba2f-b3064911efd0",
+      "key": "f31deb4f-3f0f-4a21-9d08-ad393d40b6fc",
       "id": "Q-01",
       "text": "At which distance bands does each of the four cameras detect, confirm and identify a Mavic 3 on the fly-area axis, and with what probability per bin?",
       "note": "Response: detection outcome per bin, per camera, per run (possible, confirmed, identified, none; FOV-limited flag). Vary: distance band (5 levels), camera configuration (4). Hold: altitude 40 m AGL, speed 5 m/s, aspect head-on, 30 s per band. Record: sun, sky background, wind, visibility. Replicates: 3 runs minimum (Appendix C.2). Target-absent interval: 120 s before launch, every run."
@@ -22,54 +22,54 @@
   ],
   "threats": [
     {
-      "key": "c74e4e2b-23c7-4941-a907-086db233824a",
+      "key": "c5348dc2-0543-4835-8870-d16cfe39e04b",
       "id": "T1",
       "type": "g1-quad-isr",
       "path": [
         {
-          "key": "eaad6885-1f5d-45ac-9767-38239d143223",
+          "key": "967d7eeb-44ba-4c7c-a3bc-c2c5f2c3a2e7",
           "x": -155.1,
           "y": 160.4,
           "z": 0,
           "holdS": 120
         },
         {
-          "key": "d351078a-05a8-4b58-8a6c-1aa856288e00",
+          "key": "f3b32db6-a24d-41bb-94b3-bb960ea36756",
           "x": -155.1,
           "y": 160.4,
           "z": 40,
           "holdS": 0
         },
         {
-          "key": "4aec10c8-7000-45e0-a444-ed6585ecad2b",
+          "key": "2a5dbd61-c24a-43f8-b6c7-b15042c269b1",
           "x": -142.9,
           "y": 144.6,
           "z": 40,
           "holdS": 30
         },
         {
-          "key": "15b4ac19-1411-46d4-9ba7-a0f02ae43c13",
+          "key": "956c8ae0-ff19-4679-a0d2-fad9544daedd",
           "x": -81.5,
           "y": 65.6,
           "z": 40,
           "holdS": 30
         },
         {
-          "key": "aaef8610-43e9-466f-a27c-9f24ceaca4a4",
+          "key": "f131dae6-9c83-44f9-9fbb-75b7762c0d0e",
           "x": -20.2,
           "y": -13.4,
           "z": 40,
           "holdS": 30
         },
         {
-          "key": "1b06862d-fd05-4a5f-885e-84c505a1f205",
+          "key": "46769667-941d-4631-821b-dd793442978f",
           "x": 41.1,
           "y": -92.4,
           "z": 40,
           "holdS": 30
         },
         {
-          "key": "2788f040-088d-46c9-91c9-6915997e6bce",
+          "key": "4ab20563-1f94-44bc-878e-5f29dc6385fb",
           "x": 87.1,
           "y": -151.6,
           "z": 40,
@@ -82,23 +82,23 @@
   ],
   "sensors": [
     {
-      "key": "cea57206-a9e4-40d0-924d-c464ad5f1e77",
+      "key": "c121ade2-35a9-4491-804c-13da00a3c124",
       "id": "CAM-1",
       "kind": "eoir",
       "x": 144.9,
       "y": -201.7,
       "z": 2.5,
-      "rangeM": 250,
+      "rangeM": 203,
       "minRangeM": 0,
-      "fovDeg": 80,
-      "bearingDeg": 322.2,
-      "elMinDeg": -24,
-      "elMaxDeg": 40,
+      "fovDeg": 80.0,
+      "bearingDeg": 313.6,
+      "elMinDeg": -22.2,
+      "elMaxDeg": 42.2,
       "model": {
         "pd": {
           "kind": "logistic",
-          "r50M": 200.0,
-          "widthM": 25.0
+          "r50M": 162.4,
+          "widthM": 20.3
         },
         "scanS": 1,
         "trackM": 3,
@@ -110,29 +110,29 @@
       },
       "entered": {
         "1.3": {
-          "value": 80,
-          "source": "Appendix B example value (80 deg horizontal, 2560 x 1920, 25 fps); confirm against the purchased model"
+          "value": 80.0,
+          "source": "Appendix B example value, 80 deg horizontal; confirm against the purchased model; tilt 10 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 64.4 deg; reach 203 m at 3 px on a 0.4 m target"
         }
       }
     },
     {
-      "key": "2b6c825b-4cc4-409e-9257-48c816e94043",
+      "key": "2ac5e1dd-5796-41fb-bba1-ab24f3b1fce4",
       "id": "CAM-2",
       "kind": "eoir",
       "x": 137.0,
       "y": -207.8,
       "z": 2.5,
-      "rangeM": 250,
+      "rangeM": 203,
       "minRangeM": 0,
-      "fovDeg": 80,
-      "bearingDeg": 322.2,
-      "elMinDeg": -24,
-      "elMaxDeg": 40,
+      "fovDeg": 80.0,
+      "bearingDeg": 319.3,
+      "elMinDeg": -22.2,
+      "elMaxDeg": 42.2,
       "model": {
         "pd": {
           "kind": "logistic",
-          "r50M": 200.0,
-          "widthM": 25.0
+          "r50M": 162.4,
+          "widthM": 20.3
         },
         "scanS": 1,
         "trackM": 3,
@@ -144,29 +144,29 @@
       },
       "entered": {
         "1.3": {
-          "value": 80,
-          "source": "Appendix B example value (80 deg horizontal, 2560 x 1920, 25 fps); confirm against the purchased model"
+          "value": 80.0,
+          "source": "Appendix B example value, 80 deg horizontal; confirm against the purchased model; tilt 10 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 64.4 deg; reach 203 m at 3 px on a 0.4 m target"
         }
       }
     },
     {
-      "key": "80e42dd0-1ce7-4d00-a01a-171ae7e05d14",
+      "key": "1f73a284-0a7b-4259-aaa6-9f6c5e4a1736",
       "id": "CAM-3",
       "kind": "eoir",
       "x": 129.1,
       "y": -213.9,
       "z": 2.5,
-      "rangeM": 400,
+      "rangeM": 407,
       "minRangeM": 0,
-      "fovDeg": 40,
-      "bearingDeg": 322.2,
-      "elMinDeg": -10,
-      "elMaxDeg": 20,
+      "fovDeg": 45.5,
+      "bearingDeg": 325.0,
+      "elMinDeg": -9.5,
+      "elMaxDeg": 25.5,
       "model": {
         "pd": {
           "kind": "logistic",
-          "r50M": 320.0,
-          "widthM": 40.0
+          "r50M": 325.6,
+          "widthM": 40.7
         },
         "scanS": 1,
         "trackM": 3,
@@ -178,29 +178,29 @@
       },
       "entered": {
         "1.3": {
-          "value": 40,
-          "source": "Varifocal at 2x: about 40 deg horizontal; derive from the calibrated focal length"
+          "value": 45.5,
+          "source": "Derived: 2x optical zoom of the 80 deg lens, 2 atan(tan 40 deg / 2); replace with the lens spec at the zoom step set; tilt 8 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 34.9 deg; reach 407 m at 3 px on a 0.4 m target"
         }
       }
     },
     {
-      "key": "a63ba4ae-b1b1-4c6a-b4cd-502f9c880a64",
+      "key": "ec01f897-116c-424a-8397-9c4c82c6dc87",
       "id": "CAM-4",
       "kind": "eoir",
       "x": 121.2,
       "y": -220.1,
       "z": 2.5,
-      "rangeM": 450,
+      "rangeM": 500,
       "minRangeM": 0,
       "fovDeg": 17.6,
-      "bearingDeg": 322.2,
-      "elMinDeg": -2.6,
-      "elMaxDeg": 10.6,
+      "bearingDeg": 330.7,
+      "elMinDeg": -0.6,
+      "elMaxDeg": 12.6,
       "model": {
         "pd": {
           "kind": "logistic",
-          "r50M": 360.0,
-          "widthM": 45.0
+          "r50M": 400.0,
+          "widthM": 50.0
         },
         "scanS": 1,
         "trackM": 3,
@@ -213,7 +213,7 @@
       "entered": {
         "1.3": {
           "value": 17.6,
-          "source": "Varifocal at 5x: about 17.6 deg horizontal; derive from the calibrated focal length"
+          "source": "Spec value at 5x (a true 5x of the 80 deg lens gives 19.0 deg); replace with the lens spec at the zoom step set; tilt 6 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 13.2 deg; reach 500 m at 3 px on a 0.4 m target"
         }
       }
     }
@@ -221,7 +221,7 @@
   "effectors": [],
   "nodes": [
     {
-      "key": "44dad363-18b9-48cc-89bb-4df5a31592a6",
+      "key": "099b2e5e-c82c-49a9-9ab0-de2232e03901",
       "id": "GCS-1",
       "kind": "c2",
       "x": -156.4,
@@ -232,7 +232,7 @@
       "bearingDeg": 0
     },
     {
-      "key": "68c4ee74-3bc8-4d26-8fb9-34adfa635191",
+      "key": "9411fe56-4fa3-47a0-b985-b31edb09e986",
       "id": "REC-1",
       "kind": "c2",
       "x": 142.2,
@@ -243,7 +243,7 @@
       "bearingDeg": 0
     },
     {
-      "key": "b3a85ebd-621e-4609-9e0d-020557e8c997",
+      "key": "faabfeb8-20c6-4974-ba5e-cb224caca393",
       "id": "TM-1",
       "kind": "tspi",
       "x": -156.4,
@@ -254,7 +254,7 @@
       "bearingDeg": 0
     },
     {
-      "key": "3266a779-d3e3-4647-a8f4-e6923fdb61ff",
+      "key": "ab0ef4bf-9142-49dc-ad10-11be613b1a4a",
       "id": "TM-2",
       "kind": "tspi",
       "x": 142.2,
@@ -267,7 +267,7 @@
   ],
   "areas": [
     {
-      "key": "d9c41b38-466a-49c8-96a2-21511ab1a60e",
+      "key": "5db9bdda-b735-4c04-b3f3-c3322c59bbe3",
       "id": "RNG-1",
       "kind": "range",
       "label": "UAS Fly Area",
@@ -299,7 +299,7 @@
       "zMaxM": 0
     },
     {
-      "key": "77e6c051-2fe6-446d-907a-346dce567b29",
+      "key": "feea6a4f-b3ca-4790-86c2-206b5ef54cd5",
       "id": "RNG-2",
       "kind": "range",
       "label": "TST Ranch",
@@ -328,7 +328,7 @@
       "zMaxM": 0
     },
     {
-      "key": "1b2cc2e5-4d31-4e97-b5aa-808d759eb63b",
+      "key": "f7848673-7132-4ec4-8961-6e862c95011a",
       "id": "DA",
       "kind": "asset",
       "label": "Camera site",
@@ -342,7 +342,7 @@
       "zMaxM": 0
     },
     {
-      "key": "37d64dd5-650c-4942-84f7-410fc93f8d6a",
+      "key": "13e22e72-901a-4bfd-82fa-a8a587b980ad",
       "id": "REF-1",
       "kind": "ref",
       "label": "Band 400 to 470 m",
@@ -358,7 +358,7 @@
       "zMaxM": 0
     },
     {
-      "key": "1c607b6f-8531-46b1-b80f-14247ac8595d",
+      "key": "f394abf4-461e-4a78-a040-dee2af829312",
       "id": "REF-2",
       "kind": "ref",
       "label": "Band 300 to 400 m",
@@ -374,7 +374,7 @@
       "zMaxM": 0
     },
     {
-      "key": "58675db9-0e5d-4727-9411-8122845c2187",
+      "key": "4e2e3a53-3d7c-4901-aab9-f36c28ce2d8e",
       "id": "REF-3",
       "kind": "ref",
       "label": "Band 200 to 300 m",
@@ -391,7 +391,7 @@
       "zMaxM": 0
     },
     {
-      "key": "af4e5032-09fe-42cf-bc73-375590d34aa1",
+      "key": "3fa0a429-c06e-4f7a-b646-c01259bdc042",
       "id": "REF-4",
       "kind": "ref",
       "label": "Band 100 to 200 m",
@@ -410,7 +410,7 @@
       "zMaxM": 0
     },
     {
-      "key": "9adf12b8-40fe-4700-bec5-6d2ea4ac45fe",
+      "key": "a87d30b8-d4ea-4137-a5b1-ae1b8a563095",
       "id": "REF-5",
       "kind": "ref",
       "label": "Band 50 to 100 m",
@@ -429,13 +429,13 @@
   ],
   "planes": [
     {
-      "key": "0b069e7a-a6d1-409a-8313-94c91fbc503e",
+      "key": "9ee8c21c-4f24-405d-93ab-7f5e3cd25f19",
       "id": "HP-1",
       "label": "Test altitude 40 m AGL",
       "zM": 40
     },
     {
-      "key": "4171746a-9900-44ce-81b2-c864f5b70fe2",
+      "key": "74404f7f-262c-4af2-9e65-93417402b4b0",
       "id": "HP-2",
       "label": "400 ft AGL ceiling (Part 107)",
       "zM": 121.9
@@ -443,82 +443,82 @@
   ],
   "events": [
     {
-      "key": "5db0db61-973f-4f45-8431-7736b766b9af",
+      "key": "cc2bd60a-7bf1-4210-b282-93e843aa3fc9",
       "id": "e1",
       "tS": 0,
       "type": "checkpoint",
       "label": "Recording on; target-absent interval (120 s)",
-      "threatKey": "c74e4e2b-23c7-4941-a907-086db233824a",
+      "threatKey": "c5348dc2-0543-4835-8870-d16cfe39e04b",
       "sensorKey": null
     },
     {
-      "key": "b14bf27f-ace9-4482-a20f-5c60f8f63087",
+      "key": "8d2e4525-91af-4fb8-a0f9-ae8f47000fa5",
       "id": "e2",
       "tS": 132.0,
       "type": "checkpoint",
       "label": "Band 450 m: hover 30 s",
-      "threatKey": "c74e4e2b-23c7-4941-a907-086db233824a",
+      "threatKey": "c5348dc2-0543-4835-8870-d16cfe39e04b",
       "sensorKey": null
     },
     {
-      "key": "f10ea035-c158-444d-a0e8-06f97dcf40fc",
+      "key": "e7bdf404-a48b-40e8-a110-eea491b16433",
       "id": "e3",
       "tS": 182.0,
       "type": "checkpoint",
       "label": "Band 350 m: hover 30 s",
-      "threatKey": "c74e4e2b-23c7-4941-a907-086db233824a",
+      "threatKey": "c5348dc2-0543-4835-8870-d16cfe39e04b",
       "sensorKey": null
     },
     {
-      "key": "41e49cba-9cef-4360-bbd2-e93afdea8702",
+      "key": "a1f5b7e7-a073-48ae-a6ba-97a472b73c42",
       "id": "e4",
       "tS": 232.0,
       "type": "checkpoint",
       "label": "Band 250 m: hover 30 s",
-      "threatKey": "c74e4e2b-23c7-4941-a907-086db233824a",
+      "threatKey": "c5348dc2-0543-4835-8870-d16cfe39e04b",
       "sensorKey": null
     },
     {
-      "key": "4b200aff-e1a1-4063-b778-78cb9193ac0f",
+      "key": "eb12e679-b6ed-4943-b963-7b8b188ab5aa",
       "id": "e5",
       "tS": 282.0,
       "type": "checkpoint",
       "label": "Band 150 m: hover 30 s",
-      "threatKey": "c74e4e2b-23c7-4941-a907-086db233824a",
+      "threatKey": "c5348dc2-0543-4835-8870-d16cfe39e04b",
       "sensorKey": null
     },
     {
-      "key": "9e4d21e0-b753-4675-9510-87334d064e7c",
+      "key": "d5689ae9-d403-4973-9165-bf650d4669fa",
       "id": "e6",
       "tS": 327.0,
       "type": "checkpoint",
       "label": "Band 75 m: hover 30 s",
-      "threatKey": "c74e4e2b-23c7-4941-a907-086db233824a",
+      "threatKey": "c5348dc2-0543-4835-8870-d16cfe39e04b",
       "sensorKey": null
     },
     {
-      "key": "1930f8ef-182c-4393-af5f-a31948fa97e2",
+      "key": "c0fc384a-e06f-44cc-82e8-4c00c6323daa",
       "id": "e7",
-      "tS": 164,
+      "tS": 120,
       "type": "detect",
-      "label": "First possible cue expected (CAM-4, 5x)",
-      "threatKey": "c74e4e2b-23c7-4941-a907-086db233824a",
-      "sensorKey": "a63ba4ae-b1b1-4c6a-b4cd-502f9c880a64"
+      "label": "First possible cue expected (CAM-4, 5x, 3 px) at about 470 m",
+      "threatKey": "c5348dc2-0543-4835-8870-d16cfe39e04b",
+      "sensorKey": "ec01f897-116c-424a-8397-9c4c82c6dc87"
     },
     {
-      "key": "d6431547-33e8-4318-89af-d4f1f6ea0a0f",
+      "key": "4d84ab65-ea15-419a-b13c-a4d720a3922d",
       "id": "e8",
-      "tS": 268,
+      "tS": 170,
       "type": "identify",
-      "label": "Identified expected (CAM-1, 80 deg)",
-      "threatKey": "c74e4e2b-23c7-4941-a907-086db233824a",
-      "sensorKey": "cea57206-a9e4-40d0-924d-c464ad5f1e77"
+      "label": "Mavic 3 identified expected (CAM-4, 5x, 8 px) at about 410 m",
+      "threatKey": "c5348dc2-0543-4835-8870-d16cfe39e04b",
+      "sensorKey": "ec01f897-116c-424a-8397-9c4c82c6dc87"
     }
   ],
   "snapshots": [],
   "cards": [
     {
-      "key": "cc90cd91-e886-4746-b0fb-dff088e24bf0",
+      "key": "db2e108f-ec1f-42bc-8640-66e90e48b50f",
       "id": "c1",
       "name": "Laydown",
       "view": {
@@ -549,10 +549,10 @@
       "focus": [],
       "tS": null,
       "caption": "Range ladder: one Mavic 3 hovers 30 s at five distance bands on the fly-area axis, 40 m AGL, 5 m/s between bands. Four cameras at the SE end look NW (bearing 322).",
-      "notes": "Cameras CAM-1 and CAM-2: fixed 80 deg. CAM-3: 2x (40 deg). CAM-4: 5x (17.6 deg). Reach rings are planning values from the pixel-footprint estimate (Appendix A.1), not measured ranges. The ladder measures them."
+      "notes": "CAM-1: 80 deg at 1x, tilt 10 deg up, upper limit 42.2 deg. CAM-2: 80 deg at 1x, tilt 10 deg up, upper limit 42.2 deg. CAM-3: 45.5 deg at 2x, tilt 8 deg up, upper limit 25.5 deg. CAM-4: 17.6 deg at 5x, tilt 6 deg up, upper limit 12.6 deg. Each camera is yawed to the axis 100 m before the camera line; survey and record azimuth and tilt. Reach rings are planning values from the pixel-footprint estimate (Appendix A.1) at 3 px on a 0.4 m target, not measured ranges. The ladder measures them."
     },
     {
-      "key": "b467be5d-53c2-43ea-8453-55c2ca004d84",
+      "key": "ecddf0a1-0bf9-4e85-be49-d79ccd7ecc9f",
       "id": "c2",
       "name": "Band 450 m",
       "view": {
@@ -580,13 +580,13 @@
         "readout": true
       },
       "clip": null,
-      "focus": ["c74e4e2b-23c7-4941-a907-086db233824a"],
+      "focus": ["c5348dc2-0543-4835-8870-d16cfe39e04b"],
       "tS": 146.99239276624934,
       "caption": "Band 400 to 470 m. Only CAM-4 at 5x is expected to hold the target here. The 80 deg cameras read it as a non-detection in this bin.",
       "notes": "Appendix C.2: report detection probability per fixed distance bin. A non-detection inside the FOV is an optical limit; outside the FOV it is FOV-limited and must be flagged."
     },
     {
-      "key": "857e6dd6-b2af-4cb2-81de-88393635cb5f",
+      "key": "7566d1a8-a48a-4825-af90-cb06e49d6297",
       "id": "c3",
       "name": "Band 250 m",
       "view": {
@@ -614,13 +614,13 @@
         "readout": true
       },
       "clip": null,
-      "focus": ["c74e4e2b-23c7-4941-a907-086db233824a"],
+      "focus": ["c5348dc2-0543-4835-8870-d16cfe39e04b"],
       "tS": 247.00203972194856,
       "caption": "Band 200 to 300 m. CAM-3 at 2x and CAM-4 at 5x hold the target; the 80 deg cameras reach their planning limit here.",
       "notes": "The middle band decides the 80 deg cameras. Expect the first possible cue here and the confirmed detection one band closer."
     },
     {
-      "key": "78c959c0-45e6-4fc3-af53-40b96a367fb6",
+      "key": "d937566b-3040-48f5-8136-78e8f5ba7c76",
       "id": "c4",
       "name": "FOV limit at the near bands",
       "view": {
@@ -648,13 +648,13 @@
         "readout": true
       },
       "clip": null,
-      "focus": ["c74e4e2b-23c7-4941-a907-086db233824a"],
+      "focus": ["c5348dc2-0543-4835-8870-d16cfe39e04b"],
       "tS": 297.0007296790433,
-      "caption": "Side view along the path at the 150 m band. At 40 m AGL the elevation angle passes the 5x camera limit (10.6 deg) at about 200 m and the 2x limit (20 deg) at about 100 m. From there inward those trials are FOV-limited, not optical limits; the 80 deg cameras hold the target to the 75 m band.",
+      "caption": "Side view along the path at the 150 m band. At 40 m AGL the elevation angle passes each camera's upper limit: CAM-1 at 1x inside about 41 m, CAM-2 at 1x inside about 41 m, CAM-3 at 2x inside about 79 m, CAM-4 at 5x inside about 168 m. Sensor 2560 x 1920 assumed; a 16:9 sensor narrows the vertical FOV and moves every limit out (confirm the model). From there inward those trials are FOV-limited, not optical limits; the 80 deg cameras hold the target to the 75 m band.",
       "notes": "Plan section 6: label trials FOV-limited when the aircraft enters the image after it is already large enough for detection. The near bands belong to the 80 deg cameras."
     },
     {
-      "key": "c4034dbf-58b4-41bd-8859-7eae295d99ab",
+      "key": "643ca7ce-cacf-46af-9211-d4074fe6844a",
       "id": "c5",
       "name": "The ladder, 3D",
       "view": {
@@ -682,13 +682,13 @@
         "readout": true
       },
       "clip": null,
-      "focus": ["c74e4e2b-23c7-4941-a907-086db233824a"],
+      "focus": ["c5348dc2-0543-4835-8870-d16cfe39e04b"],
       "tS": 197.00334976485388,
       "caption": "The five hovers along the axis, with the four camera sectors from the SE end.",
       "notes": "Use this view in the brief to show the bands and the sectors together."
     },
     {
-      "key": "bf9b9a00-5ac4-4a2e-ba5f-4531fe666b69",
+      "key": "cb1a5c00-8fa6-4417-affa-9b5b5027a983",
       "id": "c6",
       "name": "Approach slice",
       "view": {
@@ -721,7 +721,7 @@
         "rate": 4,
         "beatsS": []
       },
-      "focus": ["c74e4e2b-23c7-4941-a907-086db233824a"],
+      "focus": ["c5348dc2-0543-4835-8870-d16cfe39e04b"],
       "tS": 131.99239276624934,
       "caption": "The run from launch to the last band, at x4.",
       "notes": "Play this slice in the brief; the timeline shows each camera window against the five hovers."
@@ -783,8 +783,8 @@
       "source": "Aircraft GCS telemetry log (GPS time, lat, lon, alt); ATOS tag track as the second source",
       "intervalS": 0.2,
       "stationKeys": [
-        "b3a85ebd-621e-4609-9e0d-020557e8c997",
-        "3266a779-d3e3-4647-a8f4-e6923fdb61ff"
+        "faabfeb8-20c6-4974-ba5e-cb224caca393",
+        "ab0ef4bf-9142-49dc-ad10-11be613b1a4a"
       ]
     }
   }

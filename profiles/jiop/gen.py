@@ -43,14 +43,64 @@ CAMPOS=[P(S_CAM,a) for a in (-15,-5,5,15)]
 LAUNCH=P(-270)
 def wp(pt,z,hold=0): return {'key':key(),'x':pt[0],'y':pt[1],'z':z,'holdS':hold}
 def sensorModel(rangeM): return {'pd':{'kind':'logistic','r50M':0.8*rangeM,'widthM':0.1*rangeM},'scanS':1,'trackM':3,'trackN':5,'coastS':10,'idDwellS':5,'pCorrectId':0.9,'trackErrorM':5}
-def cam(id,pos,rangeM,fov,elMin,elMax,fovSrc):
-    return {'key':key(),'id':id,'kind':'eoir','x':pos[0],'y':pos[1],'z':2.5,'rangeM':rangeM,'minRangeM':0,'fovDeg':fov,'bearingDeg':round((B+180)%360,1),'elMinDeg':elMin,'elMaxDeg':elMax,'model':sensorModel(rangeM),'entered':{'1.3':{'value':fov,'source':fovSrc}}}
-FIX='Appendix B example value (80 deg horizontal, 2560 x 1920, 25 fps); confirm against the purchased model'
-Z2='Varifocal at 2x: about 40 deg horizontal; derive from the calibrated focal length'
-Z5='Varifocal at 5x: about 17.6 deg horizontal; derive from the calibrated focal length'
-def cams_baseline():
-    return [cam('CAM-1',CAMPOS[0],250,80,-24,40,FIX),cam('CAM-2',CAMPOS[1],250,80,-24,40,FIX),
-            cam('CAM-3',CAMPOS[2],400,40,-10,20,Z2),cam('CAM-4',CAMPOS[3],450,17.6,-2.6,10.6,Z5)]
+# ---- camera planning model (review of 2026-11-02: tilt, sensor aspect, zoom FOV, aim, pixel thresholds)
+# Every limit on the page and in the profiles derives from these constants. Change them here and
+# regenerate (profiles.py, then page.py).
+SENSOR={'4:3':(2560,1920),'16:9':(2560,1440)}
+ASPECT='4:3'   # the Appendix B example (2560 x 1920); confirm the purchased model, a 16:9 sensor narrows the vertical FOV
+NPX=2560
+HFOV={'1x':(80.0,'Appendix B example value, 80 deg horizontal; confirm against the purchased model'),
+      '2x':(round(2*math.degrees(math.atan(math.tan(math.radians(40))/2)),1),'Derived: 2x optical zoom of the 80 deg lens, 2 atan(tan 40 deg / 2); replace with the lens spec at the zoom step set'),
+      '5x':(17.6,'Spec value at 5x (a true 5x of the 80 deg lens gives 19.0 deg); replace with the lens spec at the zoom step set')}
+TILT={'CAM-1':10.0,'CAM-2':10.0,'CAM-3':8.0,'CAM-4':6.0}   # deg up from level; set on the mount and record in the camera survey
+AIM_S=100   # each camera is yawed to the axis point 100 m before the camera line (the dive start); record the azimuth
+W_MAVIC=0.4; W_TANQ=0.25   # projected width, m
+PX={'cue':3,'confirmed':5,'identified':8}   # planning thresholds in pixels across the width (Johnson: detection 2, recognition 8)
+SITE_MAX=500   # a reach beyond the launch point is site-limited; the sensor keeps this value
+def vfov(h,aspect=ASPECT):
+    w,hh=SENSOR[aspect]; return 2*math.degrees(math.atan(math.tan(math.radians(h/2))*hh/w))
+def pixels(width,hfov,d): return width*NPX/(2*d*math.tan(math.radians(hfov/2)))
+def reach(width,hfov,px): return min(SITE_MAX,width*NPX/(2*math.tan(math.radians(hfov/2))*px))
+def lossAt(elMax,z=40.0,lens=2.5):
+    """Ground distance inside which a target at z m AGL sits above the upper elevation limit."""
+    return (z-lens)/math.tan(math.radians(elMax)) if elMax>0 else float('inf')
+def aimBearing(pos):
+    ax,ay=P(S_CAM-AIM_S); return round(math.degrees(math.atan2(ax-pos[0],ay-pos[1]))%360,1)
+def cam(id,pos,zoom,width=W_MAVIC,tilt=None):
+    base=id.split(' ')[0]; h,src=HFOV[zoom]; v=vfov(h); tilt=TILT[base] if tilt is None else tilt
+    r=round(reach(width,h,PX['cue']))
+    note=f"{src}; tilt {tilt:g} deg up; sensor {SENSOR[ASPECT][0]} x {SENSOR[ASPECT][1]} ({ASPECT}) so vertical FOV {v:.1f} deg; reach {r} m at {PX['cue']} px on a {width:g} m target"
+    return {'key':key(),'id':id,'kind':'eoir','x':pos[0],'y':pos[1],'z':2.5,'rangeM':r,'minRangeM':0,'fovDeg':h,'bearingDeg':aimBearing(pos),
+            'elMinDeg':round(tilt-v/2,1),'elMaxDeg':round(tilt+v/2,1),'model':sensorModel(r),'entered':{'1.3':{'value':h,'source':note}},
+            'zoom':zoom,'tiltDeg':tilt,'widthM':width}
+ZOOM_OF={'CAM-1':'1x','CAM-2':'1x','CAM-3':'2x','CAM-4':'5x'}
+def cams_baseline(width=W_MAVIC):
+    return [cam(id,CAMPOS[i],ZOOM_OF[id],width) for i,id in enumerate(('CAM-1','CAM-2','CAM-3','CAM-4'))]
+def strip(s):
+    """The sensor as the profile stores it: without the planning fields."""
+    return {k:v for k,v in s.items() if k not in ('zoom','tiltDeg','widthM')}
+def camName(s): return s['id'] if s['id'].endswith('x') else f"{s['id']}, {s['zoom']}"
+def firstAt(sensor,w,px):
+    """First second after launch (the end of the ground hold) at which the target is covered and at least px pixels wide; None when never."""
+    end=w[-1][4]
+    for t in range(int(math.ceil(w[0][4])),int(end)+1):
+        p=posAt(w,t)
+        if covered(sensor,p) and pixels(sensor['widthM'],sensor['fovDeg'],math.hypot(p[0]-sensor['x'],p[1]-sensor['y'],p[2]-sensor['z']))>=px: return t
+    return None
+def earliestAt(sensors,w,px):
+    """(t, sensor) of the first camera to reach px pixels on the path; None when none does."""
+    best=None
+    for s in sensors:
+        t=firstAt(s,w,px)
+        if t is not None and (best is None or t<best[0]): best=(t,s)
+    return best
+def idEvent(id,sensors,w,tk,what,endT):
+    """The identified event: the earliest camera at the identification pixel count, else a checkpoint at endT."""
+    hit=earliestAt(sensors,w,PX['identified'])
+    if hit: return ev(id,hit[0],'identify',f"{what} identified expected ({camName(hit[1])}, {PX['identified']} px) at about {groundAt(hit[1],w,hit[0]):.0f} m",tk,hit[1]['key'])
+    return ev(id,endT,'checkpoint',f"{what} identified ({PX['identified']} px) not expected in any camera on this path",tk,None)
+def groundAt(sensor,w,t):
+    p=posAt(w,t); return math.hypot(p[0]-sensor['x'],p[1]-sensor['y'])
 def node(id,kind,pt,rangeM=0): return {'key':key(),'id':id,'kind':kind,'x':pt[0],'y':pt[1],'z':0,'rangeM':rangeM,'fovDeg':0,'bearingDeg':0}
 def nodes():
     gcs=P(-285,-10); rec=P(215,0)
@@ -114,7 +164,7 @@ def card(id,name,kind,tS,focus,caption,notes,layers=None,clip=None,yaw=-35,pitch
 def ev(id,t,type,label,tk,sk): return {'key':key(),'id':id,'tS':round(t,1),'type':type,'label':label,'threatKey':tk,'sensorKey':sk}
 def vignette(id,name,cls,Q,threats,sensors,nodes_,areas,planes_,events,snapshots,cards,measures,notes,data,truthKeys):
     return {'schema':'profile-studio/8','id':id,'name':name,'updated':NOW,'collection':COLL,'class':cls,'version':1,'site':SITE,
-            'questions':[Q],'threats':threats,'sensors':sensors,'effectors':[],'nodes':nodes_,'areas':areas,'planes':planes_,'events':events,
+            'questions':[Q],'threats':threats,'sensors':[strip(s) for s in sensors],'effectors':[],'nodes':nodes_,'areas':areas,'planes':planes_,'events':events,
             'snapshots':snapshots,'cards':cards,'debrief':None,'chainTime':{'decisionS':5,'assignS':3},'measures':measures,
             'report':{'notes':notes,'dataSources':DATA_COMMON+data,'truth':{'source':'Aircraft GCS telemetry log (GPS time, lat, lon, alt); ATOS tag track as the second source','intervalS':0.2,'stationKeys':truthKeys}}}
 def check(v):
