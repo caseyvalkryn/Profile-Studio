@@ -640,21 +640,25 @@ removed from the tree on 2026-11-01 (`git show 70caf07` has them); the findings 
 | 13.R | done | f096bc2 | `reviews/phase-13.md`: 0 blockers, 2 majors (a reload in Brief puts the Brief time and loop into Build when the user leaves, because the memory-only stash snapshots the restored Brief state; the lane helpers `mmss`, `parseTime`, `round1`, `stepAt`, `pointStates` and the bar class were written two or three times and two copies already differ), 8 minors (Space on a focused strip button runs the global command; the light future board mark at 2.07:1; "Add event here" enabled in the Brief strip menu; the unsigned margin label touches the Engage glyph; e2e gaps; "Time s" in raw seconds beside the m:ss slice field; the cursor chip covers a tick label; Build Tab never leaves the page, pre-existing), 15 notes; acceptance: linked, the Brief teaches any frame or slice, and the Brief strip as robust as Build pass; persistent and polish partial; entry 244.52 kB gzip; tick 0.37 to 0.48 ms in the perf set, the Swarm at x8 in the browser p95 16.7 ms with no frame over 20 ms; 32 `R-*.jpg` |
 | 13.F | done | d9c4f09 | all 10 findings and 7 notes: the Build time state persists while Brief is open (`timePersist` saves the stash's fields and seeds the stash on a restore from Brief; `cardKey` persisted, so a Brief reload reopens the same card and a leave restores Build's time with no loop); one `mmss(s, signed)` in `engine/tokens.ts`, one `parseTime`, `round1`, `stepAt`, `pointStates`, `barClass`, `marginSeconds` and `NO_LOOP_REASON` in `timeline/layout.ts` imported by the Brief (the Brief chunk stays lazy, 8.59 kB); Space and Enter left to a focused button in every workspace, Space stays Next card in Brief (spec section 8 over the 13.2 text); future board marks in `--text-subtle` at opacity 1 (light 4.55:1), the future DA mark floored at 80 percent (about 3.2:1, orchestrator's edit); `menuItemsFor` filters by workspace and the five strip commands are active in Build and Brief; the margin label signed and clear of the Engage glyph; e2e 12-20 adds the Cards row press in Brief and the Brief reload then leave, 12-21 starts P outside the slice and asserts the first sample at the slice start, no `force` clicks, the clock locators exact; the Card time field in m:ss (accessible name "Card time"); a tick label under the cursor chip hides; stale comments gone; the toasts name the card by id; Loop range disabled at the full view ("Zoom the timeline first"); the board mark title "t+1:40"; F-10 (Build Tab, legacy tabFree) and N-02 (the grip branch is live, the review's premise was wrong) declared; 60 unit files, 558 tests, 10 e2e; entry 245.06 kB gzip; four `after-13F-*.jpg`. Notes left: N-04, N-06, N-07, N-08, N-10, N-11, N-12, N-14 |
 | 13.M | done | main | phase 13 approved by the user on 2026-11-01 (poll: "Merge to main, no push"; the four readings stand); `rebuild/mvp` merged `--no-ff` into `main` with this handoff; the gate run on `main`; pushed 2026-11-02 |
-| 14.1 | done | rebuild/mvp | drag and select on the board (user request of 2026-11-02, outside a phase; rangeboard `CanvasStage.tsx` marquee as the reference): a mouse drag on the empty board in Plan or Elevation draws the selection rectangle (`board-marquee`, the accent dashed with an 8 percent fill) and selects every system, path and area with a point inside it (`keysInRect` over the hit list: a system by its centre, a path by any waypoint, an area by any vertex; events and planes left out), the count beside the cursor and the ids in the readout (`selectedText`); Shift adds; Shift-click adds or removes one object; a Shift-click on empty keeps the selection; Escape drops a rectangle in progress; every selected key draws `.sel` (`BoardView.selKeys`, the handles stay with the first); a drag on one of several selected objects moves them together by one grid-snapped offset as one undo step with the ghost (`tools.beginGroupDrag`, label "move RDR-1, EO-1" or "move 6 objects"); the arrows nudge them together; the inspector shows "n selected" and expands no row; touch still pans; spec section 7 "Selection" and acceptance item 26; e2e `12-26-marquee`; 60 unit files, 563 tests, 11 e2e; entry 246.70 kB gzip |
+| 14.1 | done | 0ad42af | drag and select on the board (user request of 2026-11-02, outside a phase; rangeboard `CanvasStage.tsx` marquee as the reference): a mouse drag on the empty board in Plan or Elevation draws the selection rectangle (`board-marquee`, the accent dashed with an 8 percent fill) and selects every system, path and area with a point inside it (`keysInRect` over the hit list: a system by its centre, a path by any waypoint, an area by any vertex; events and planes left out), the count beside the cursor and the ids in the readout (`selectedText`); Shift adds; Shift-click adds or removes one object; a Shift-click on empty keeps the selection; Escape drops a rectangle in progress; every selected key draws `.sel` (`BoardView.selKeys`, the handles stay with the first); a drag on one of several selected objects moves them together by one grid-snapped offset as one undo step with the ghost (`tools.beginGroupDrag`, label "move RDR-1, EO-1" or "move 6 objects"); the arrows nudge them together; the inspector shows "n selected" and expands no row; touch still pans; spec section 7 "Selection" and acceptance item 26; e2e `12-26-marquee`; 60 unit files, 563 tests, 11 e2e; entry 246.70 kB gzip |
+| 14.M | done | main | row 14.1 merged `--no-ff` into `main` (ac91730) on the user's "commit and merge to main" of 2026-11-02; both branches pushed the same day on "push"; worktree refs pruned and the empty `.worktrees/` removed; no lane branch exists |
 
 ## 8. Handoff
 
-State on 2026-11-01, end of the thirteenth session. Phase 13 (the timeline as the plan's clock,
-the Brief as the teaching space) is done on `rebuild/mvp` at d9c4f09 with the gate green: 60
-unit files, 558 tests, 10 Playwright specs on `vite preview`, build; entry 754 kB raw, 245.06 kB
-gzip (budget 300); the Brief chunk 8.59 kB; 100 kB of Geist woff2 outside the entry. The user
-approved the merge into `main` by poll (no push); row 13.M records it; `main` and `rebuild/mvp`
-were pushed on 2026-11-02. Rows 13.1 to 13.F in section 7 say what landed. Row 14.1 (drag and
-select on the board, a user request of 2026-11-02) landed outside a phase on `rebuild/mvp`;
-phase 14 in section 6 is still to be written. The four readings of the user's request (section 6, phase 13) are
-confirmed by the same poll (section 1, "Phase 13"). Tag `pre-pivot` (d1f56d1) holds the last head with the run and score code. No lane is in
-flight; no worktree exists. The review notes left open are N-04, N-06, N-07, N-08, N-10, N-11,
-N-12 and N-14 of `reviews/phase-13.md`, plus the open items in the 13.1 to 13.W rows.
+State on 2026-11-02, end of the fourteenth session. Phase 13 (the timeline as the plan's clock,
+the Brief as the teaching space) and row 14.1 (drag and select on the board, a user request of
+2026-11-02, outside a phase) are done and merged into `main`; `rebuild/mvp` is at 0ad42af and
+`main` at its merge ac91730; both are pushed. The gate is green: 60 unit files, 563 tests, 11
+Playwright specs on `vite preview`, build; entry 246.70 kB gzip (budget 300); 100 kB of Geist
+woff2 outside the entry. Rows 13.1 to 14.M in section 7 say what landed. Phase 14 in section 6
+is still to be written. The four readings of the user's request (section 6, phase 13) are
+confirmed by poll (section 1, "Phase 13"). Tag `pre-pivot` (d1f56d1) holds the last head with
+the run and score code. No lane is in flight; no worktree and no lane branch exist (pruned
+2026-11-02). The review notes left open are N-04, N-06, N-07, N-08, N-10, N-11, N-12 and N-14
+of `reviews/phase-13.md`, plus the open items in the 13.1 to 13.W rows and the two follow-ups
+of row 14.1 (the inspector rows do not mark each object of a multi-selection, because the row's
+current flag also expands it; a drag on a selected path's line moves nothing unless the path is
+in a group).
 
 **The product.** A polished version of the v3 mockup `legacy/mockup-v3.html` (served at
 `/legacy/mockup-v3.html`): three workspaces (Library, Build, Brief), one board with three
@@ -688,9 +692,9 @@ branch rebuild/mvp. Read CLAUDE.md, docs/design-principles.md, docs/spec.md, the
 sections 1 to 5, phases 10, 11 and 13 in section 6, then 7 and 8. Start the dev server from
 .claude/launch.json ("dev", port 5174) and use the product at / beside the mockup at
 /legacy/mockup-v3.html for ten minutes. Run `npm run gate` to confirm the baseline: 60 unit
-files, 558 tests, 10 Playwright specs, build.
+files, 563 tests, 11 Playwright specs, build.
 
-Phase 13 is done and merged into main (not pushed). Ask me, with a poll, which of the
+Phase 13 and row 14.1 are done, merged into main and pushed. Ask me, with a poll, which of the
 section 8 "Next" items opens phase 14, then write the phase into section 6
 with lanes, owned files and budgets before any lane starts. Plan section 5 rules apply: one
 worker per lane in a worktree under .worktrees/<id>, workers do not commit, gate and git diff
