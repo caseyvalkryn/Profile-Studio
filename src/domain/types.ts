@@ -192,7 +192,12 @@ export type CardView = {
   elevationMode: 'alongPath' | 'fromAsset';
 };
 
-/** A card's playback from `t0S` to `t1S` at `rate`, stopping at each beat. */
+/**
+ * A card's slice (the UI word; "clip" is the record's): the time range `t0S` to `t1S` that the
+ * card loops at `rate` (one of the strip's eight rates), stopping at each beat. Opening the card
+ * sets the loop, the rate and the time to `t0S` (lane 13.2). The app writes `beatsS` empty;
+ * imported beats inside the range are kept.
+ */
 export type Clip = { t0S: number; t1S: number; rate: number; beatsS: number[] };
 
 /** A saved way of looking: view, layers, time, focus, caption, notes. Never a picture. */

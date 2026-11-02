@@ -4,16 +4,23 @@
 // the Build view, time, board camera, layers and selection, so the Build board and the Brief
 // stage agree (spec section 7, Brief; principle 8.1). Entering Brief stashes the Build view;
 // leaving restores it.
-import type { Card, LayerId, Vignette } from '../../domain/types';
+import type { Card, Clip, LayerId, Vignette } from '../../domain/types';
+import { RATES } from '../../domain/catalog';
 import { newKey } from '../../domain/ids';
 import { CAM_TO_VIEW, type CamKind } from '../../board';
 import { useBoard } from '../build/board/store';
 import { boardScene } from '../build/board/derived';
-import { applyCard as applyToBuild, cardViewOf, nextCardId } from '../build/cards/cards';
+import {
+  applyCard as applyToBuild,
+  cardFromBuild as cardFromBoard,
+  cardViewOf,
+  nextCardId,
+} from '../build/cards/cards';
 import { showToast } from '../shell/toastStore';
 import { useDocument, type Recipe } from '../../state/document';
 import { useUi, type BuildStash, type View } from '../../state/ui';
 import { fmtTime } from '../shared/units';
+import { sliceText } from './frameData';
 import { idMaps } from './toCardRec';
 
 export { nextCardId };
@@ -169,6 +176,8 @@ export function snapshotCard(): string | null {
         id: nextCardId(v.cards),
         name: `${baseName(base.name)} at ${t == null ? 'full run' : fmtTime(t)}`,
         tS: t,
+        // a frame saved inside a slice keeps the frame only (lane 13.2)
+        clip: null,
         caption: '',
         notes: '',
       }
@@ -290,4 +299,99 @@ export function setLayers(key: string, layers: Partial<Record<LayerId, boolean>>
     const c = d.cards.find((x) => x.key === key);
     if (c) c.layers = { ...layers };
   });
+}
+
+// ---------------------------------------------------------------- the slice (lane 13.2)
+
+/**
+ * "2:55", "175", "t+2:55" or "2:55.5" to seconds; null when the text is not a time. A copy of the
+ * strip's parser (src/features/timeline/Timeline.tsx parseTime), kept here so the Brief's card
+ * logic does not pull the strip into its import graph.
+ */
+export function parseTime(text: string): number | null {
+  const s = text.trim().replace(/^t\+/i, '');
+  if (!s) return null;
+  if (/^\d+(\.\d+)?$/.test(s)) return Number(s);
+  const m = /^(\d+):(\d{1,2}(?:\.\d+)?)$/.exec(s);
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+}
+
+const round1 = (t: number) => Math.round(t * 10) / 10;
+
+/** The rate menu's value nearest to `rate` (the schema takes only the eight rates). */
+export function menuRate(rate: number): number {
+  return RATES.reduce((a, b) => (Math.abs(b - rate) < Math.abs(a - rate) ? b : a), 1);
+}
+
+/** A slice the schema accepts, or null: start before end, both at or after 0, a menu rate. */
+export function validSlice(clip: Clip): Clip | null {
+  const t0S = round1(clip.t0S);
+  const t1S = round1(clip.t1S);
+  if (!Number.isFinite(t0S) || !Number.isFinite(t1S) || t0S < 0 || t1S <= t0S) return null;
+  return {
+    t0S,
+    t1S,
+    rate: RATES.includes(clip.rate) ? clip.rate : menuRate(clip.rate),
+    beatsS: clip.beatsS.filter((b) => b >= t0S && b <= t1S),
+  };
+}
+
+/**
+ * Set or clear the card's slice; one undo step ("set card c2 slice"). A slice also sets the card's
+ * time to its start, so the card sits on the clock at the time it opens at (the Cards row). An
+ * invalid slice changes nothing and returns false.
+ */
+export function setSlice(key: string, clip: Clip | null): boolean {
+  const v = doc();
+  const card = v?.cards.find((c) => c.key === key);
+  if (!card) return false;
+  const next = clip ? validSlice(clip) : null;
+  if (clip && !next) return false;
+  edit(`set card ${card.id} slice`, (d) => {
+    const c = d.cards.find((x) => x.key === key);
+    if (!c) return;
+    c.clip = next;
+    if (next) c.tS = next.t0S;
+  });
+  return true;
+}
+
+export const NO_LOOP_REASON = 'Set a loop on the timeline first (Shift and drag)';
+
+/**
+ * Take the timeline's loop as a slice, at the strip's rate, with no beats. In Brief it goes on the
+ * current card (with no card, on a new card of the Build view); in Build it goes on a new frame
+ * card inserted after the current card. Returns the card's key; null, with a toast, when no loop
+ * is set. One undo step.
+ */
+export function sliceFromLoop(): string | null {
+  const v = doc();
+  if (!v) return null;
+  const ui = useUi.getState();
+  const loop = ui.loop;
+  const clip = loop
+    ? validSlice({ t0S: loop.startS, t1S: loop.endS, rate: ui.rate, beatsS: [] })
+    : null;
+  if (!clip) {
+    showToast(`${NO_LOOP_REASON}.`);
+    return null;
+  }
+  const i = currentIndex(v.cards, ui.cardKey);
+  if (ui.workspace === 'brief' && i >= 0) {
+    const card = v.cards[i]!;
+    setSlice(card.key, clip);
+    showToast(`Slice ${sliceText(clip)} set on card ${i + 1}.`);
+    return card.key;
+  }
+  const base =
+    ui.workspace === 'brief'
+      ? cardFromBuild(v, ui.buildStash ?? snapshotBuild())
+      : cardFromBoard(v);
+  const card: Card = { ...base, clip, tS: clip.t0S };
+  edit(`save slice ${card.id}`, (d) => {
+    d.cards.splice(i + 1, 0, card);
+  });
+  ui.setCardKey(card.key);
+  showToast(`Slice ${sliceText(clip)} saved as card ${i + 2}.`);
+  return card.key;
 }
