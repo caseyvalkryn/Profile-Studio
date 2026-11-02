@@ -3,6 +3,7 @@ import { useDocument } from '../state/document';
 import { UI_DEFAULTS, useUi } from '../state/ui';
 import './commands';
 import { dispatchKey, shortcutOf } from './keys';
+import { byShortcut } from './registry';
 
 const key = (
   k: string,
@@ -83,6 +84,23 @@ describe('key dispatch', () => {
     expect(dispatchKey(key('z', { metaKey: true, repeat: true }), undefined, true)).toBe(
       'edit.undo',
     );
+  });
+
+  it('Space and Enter on a focused button press the button, in Build and Brief (F-03)', () => {
+    const button = document.createElement('button');
+    const glyph = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    glyph.setAttribute('role', 'button');
+    for (const workspace of ['build', 'brief'] as const) {
+      useUi.setState({ workspace, playing: false });
+      for (const target of [button, glyph]) {
+        expect(dispatchKey(key(' ', {}, target), undefined, true)).toBeNull();
+        expect(dispatchKey(key('Enter', {}, target), undefined, true)).toBeNull();
+      }
+    }
+    // from the page, Space is the workspace's command: play in Build, Next card in Brief
+    useUi.setState({ workspace: 'build' });
+    expect(dispatchKey(key(' '), undefined, true)).not.toBeNull();
+    expect(byShortcut('Space', 'brief')?.id).toBe('brief.space');
   });
 
   it('normalises symbols and space', () => {

@@ -13,7 +13,7 @@
 // off. Legacy derive has no stages, so with its output only the DA marks draw.
 import { posAt, type Pt3, type TimedPoint } from '../../engine/geo';
 import { STAGES, type StageName } from '../../engine/derived';
-import { mmss } from '../../engine/tokens';
+import { legacyUnits } from '../../engine/tokens';
 import { EFFECTOR_KINDS, SENSOR_KINDS } from '../../domain/catalog';
 import type { Cam } from '../cameras';
 import { register, type Ctx } from '../layers';
@@ -150,7 +150,9 @@ function buildMarks(d: KeyPointDerived, pathId: string, w: TimedPoint[]): Marks 
   const id = esc(pathId);
   const marks: Mark[] = [];
   const add = (stage: KeyPointStage, t: number, system: string | null, pos: Pt3) => {
-    const title = pathId + ' ' + KP_LABEL[stage] + ' · ' + mmss(t) + (system ? ' · ' + system : '');
+    // the strip's title text (N-15): "T1 Track · t+1:40 · RDR-1"
+    const title =
+      pathId + ' ' + KP_LABEL[stage] + ' · ' + legacyUnits.t(t) + (system ? ' · ' + system : '');
     marks.push({
       stage,
       t,

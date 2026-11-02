@@ -10,16 +10,10 @@ import { useUi } from '../../state/ui';
 import { focusRing } from '../../ui/focus';
 import { boardDerived, boardScene } from '../build/board/derived';
 import { fmtTime, formatAltitude, formatRange, formatSpeed } from '../shared/units';
+import { mmss } from '../../engine/tokens';
 import { kindPill, stageGlyph, type GlyphStage } from '../timeline/glyphs';
-import {
-  frameOf,
-  daText,
-  marginText,
-  mmss,
-  pillClass,
-  sliceItems,
-  type FrameThreat,
-} from './frameData';
+import { barClass } from '../timeline/layout';
+import { frameOf, daText, marginText, sliceItems, type FrameThreat } from './frameData';
 import { Section } from './Section';
 import { toCardRec } from './toCardRec';
 
@@ -43,7 +37,7 @@ export function Pill({ id, kind }: { id: string; kind: string }) {
   return (
     <span className="inline-flex items-center gap-1 font-mono text-text">
       <svg width="10" height="6" aria-hidden="true">
-        {kindPill(pillClass(kind), 0, 3)}
+        {kindPill(barClass(kind), 0, 3)}
       </svg>
       {id}
     </span>

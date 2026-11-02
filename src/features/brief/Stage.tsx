@@ -23,16 +23,11 @@ import { useSize } from '../shared/useSize';
 import { fmtTime, formatAltitude, formatRange, formatSpeed } from '../shared/units';
 import { boardDerived, boardScene } from '../build/board/derived';
 import { CardThumb } from './CardStrip';
-import {
-  NO_LOOP_REASON,
-  cardFromBuild,
-  sliceFromLoop,
-  snapshotBuild,
-  snapshotCard,
-  toggleDisplay,
-} from './cards';
+import { NO_LOOP_REASON, stepAt } from '../timeline/layout';
+import { keyPoints } from '../timeline/stages';
+import { cardFromBuild, sliceFromLoop, snapshotBuild, snapshotCard, toggleDisplay } from './cards';
 import { Glyph } from './Frame';
-import { captionPlaceholder, sliceText, stepAt } from './frameData';
+import { captionPlaceholder, sliceText } from './frameData';
 import { captureStage, screenshotName } from './screenshot';
 import { toCardRec } from './toCardRec';
 
@@ -178,7 +173,7 @@ export default function Stage({
   const next = card && index + 1 < n ? v.cards[index + 1]! : null;
   const showReadout = card ? card.displays.readout : true;
   const focusPath = rec ? threatInFocus(v, rec, selectedKeys) : undefined;
-  const step = focusPath && t != null ? stepAt(boardDerived(v), focusPath.id, t) : null;
+  const step = focusPath && t != null ? stepAt(keyPoints(boardDerived(v), focusPath.id), t) : null;
   const screenshot = () => {
     const live = ref.current?.querySelector<SVGSVGElement>('svg.board');
     if (live) void captureStage(live, sz.W, sz.H, screenshotName(v.id, card?.id ?? null, t));

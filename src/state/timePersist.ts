@@ -2,7 +2,9 @@
 // on, the loop, the zoom span, the strip height and the rate survive a workspace switch and a
 // reload. It is interface state, not an undo step and not in the record, so it lives in
 // localStorage beside the theme (`shell/theme.ts`, the same guarded Storage pattern) under one key
-// holding one JSON object keyed by profile id, the newest MAX_IDS ids kept.
+// holding one JSON object keyed by profile id, the newest MAX_IDS ids kept. The stored time is
+// Build's: while Brief is open the card owns the live time, so the entry takes the Build stash's
+// fields (lane 13.F, F-01). The entry also keeps the Brief's current card (`cardKey`, N-05).
 import { useDocument, type DocumentState } from './document';
 import {
   TL_H_DEFAULT,
@@ -39,8 +41,8 @@ export const TIME_DEFAULTS: TimeState = {
 };
 
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
-/** One stored entry: the time state and `at`, its save order (the newest has the largest). */
-type Entry = TimeState & { at: number };
+/** One stored entry: the time state, the Brief's card and `at`, its save order (newest largest). */
+type Entry = TimeState & { cardKey: string | null; at: number };
 
 function storage(): Store | null {
   try {
@@ -82,7 +84,12 @@ function readAll(store: Store | null): Record<string, Entry> {
     if (!obj(all)) return {};
     const out: Record<string, Entry> = {};
     for (const [id, e] of Object.entries(all))
-      if (obj(e)) out[id] = { ...cleanTime(e), at: num(e.at) ? e.at : 0 };
+      if (obj(e))
+        out[id] = {
+          ...cleanTime(e),
+          cardKey: typeof e.cardKey === 'string' ? e.cardKey : null,
+          at: num(e.at) ? e.at : 0,
+        };
     return out;
   } catch {
     return {};
@@ -95,13 +102,23 @@ export function loadTime(id: string, store: Store | null = storage()): TimeState
   return e ? cleanTime(e) : null;
 }
 
+/** The Brief's stored current card of a profile, else null (a key gone from the deck means the first). */
+export function loadCardKey(id: string, store: Store | null = storage()): string | null {
+  return readAll(store)[id]?.cardKey ?? null;
+}
+
 /** Store the profile's time state as the newest entry; the oldest past MAX_IDS drop off. */
-export function saveTime(id: string, t: TimeState, store: Store | null = storage()): void {
+export function saveTime(
+  id: string,
+  t: TimeState,
+  store: Store | null = storage(),
+  cardKey: string | null = null,
+): void {
   try {
     if (!store) return;
     const all = readAll(store);
     const at = Math.max(Date.now(), ...Object.values(all).map((e) => e.at + 1));
-    all[id] = { ...cleanTime(t), at };
+    all[id] = { ...cleanTime(t), cardKey, at };
     const keep = Object.entries(all)
       .sort((a, b) => b[1].at - a[1].at)
       .slice(0, MAX_IDS);
@@ -111,10 +128,19 @@ export function saveTime(id: string, t: TimeState, store: Store | null = storage
   }
 }
 
-/** The six persisted fields of the ui store. */
-export function pickTime(s: Pick<UiState, (typeof TIME_FIELDS)[number]>): TimeState {
-  return { tS: s.tS, timeOn: s.timeOn, loop: s.loop, tview: s.tview, tlH: s.tlH, rate: s.rate };
+/**
+ * The six persisted fields of the ui store. While Brief is open (`buildStash` set) the cursor, time
+ * on, the loop and the rate are the stash's, Build's own; the zoom span and the height are shared.
+ */
+export function pickTime(
+  s: Pick<UiState, (typeof TIME_FIELDS)[number]> & Partial<Pick<UiState, 'buildStash'>>,
+): TimeState {
+  const b = s.buildStash ?? s;
+  return { tS: b.tS, timeOn: b.timeOn, loop: b.loop, tview: s.tview, tlH: s.tlH, rate: b.rate };
 }
+
+/** The ui fields whose change saves the entry: the six, the Brief's card and the stash. */
+const WATCHED = [...TIME_FIELDS, 'cardKey', 'buildStash'] as const;
 
 /**
  * True when the document store change opened a document (open or close reset the history), not
@@ -125,8 +151,9 @@ function opened(s: DocumentState, prev: DocumentState): boolean {
 }
 
 /**
- * Restore the time state when the open profile changes (its entry, else the defaults), and save
- * each change of the six fields under the open profile's id, 250 ms after the last one. An edit
+ * Restore the time state and the Brief's card when the open profile changes (its entry, else the
+ * defaults), and save each change of the six fields, the card or the Build stash under the open
+ * profile's id, 250 ms after the last one. An edit
  * of the profile id keeps the time and saves it under the new id. Returns the unbind.
  */
 export function bindTimePersist(store: Store | null = storage()): () => void {
@@ -137,13 +164,27 @@ export function bindTimePersist(store: Store | null = storage()): () => void {
   const flush = () => {
     if (timer) clearTimeout(timer);
     timer = null;
-    if (pendingId) saveTime(pendingId, pickTime(useUi.getState()), store);
+    const ui = useUi.getState();
+    if (pendingId) saveTime(pendingId, pickTime(ui), store, ui.cardKey);
     pendingId = null;
   };
   const restore = (id: string) => {
     restoring = true;
     try {
-      useUi.setState(loadTime(id, store) ?? TIME_DEFAULTS);
+      const t = loadTime(id, store) ?? TIME_DEFAULTS;
+      const cardKey = loadCardKey(id, store);
+      const stash = useUi.getState().buildStash;
+      // The entry is Build's time. With Brief open the card owns the live time, so the entry seeds
+      // the stash and leaving Brief restores it; else it is the live state, which the Brief mount
+      // stashes before it applies the card (a reload in Brief).
+      if (stash)
+        useUi.setState({
+          tview: t.tview,
+          tlH: t.tlH,
+          cardKey,
+          buildStash: { ...stash, tS: t.tS, timeOn: t.timeOn, loop: t.loop, rate: t.rate },
+        });
+      else useUi.setState({ ...t, cardKey });
     } finally {
       restoring = false;
     }
@@ -165,7 +206,7 @@ export function bindTimePersist(store: Store | null = storage()): () => void {
     if (id) restore(id);
   });
   const offUi = useUi.subscribe((s, prev) => {
-    if (restoring || TIME_FIELDS.every((f) => s[f] === prev[f])) return;
+    if (restoring || WATCHED.every((f) => s[f] === prev[f])) return;
     const id = useDocument.getState().doc?.id;
     if (!id) return;
     if (pendingId && pendingId !== id) flush();

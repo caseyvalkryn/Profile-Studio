@@ -20,6 +20,7 @@ import { showToast } from '../shell/toastStore';
 import { useDocument, type Recipe } from '../../state/document';
 import { useUi, type BuildStash, type View } from '../../state/ui';
 import { fmtTime } from '../shared/units';
+import { NO_LOOP_REASON, round1 } from '../timeline/layout';
 import { sliceText } from './frameData';
 import { idMaps } from './toCardRec';
 
@@ -190,7 +191,7 @@ export function snapshotCard(): string | null {
     d.cards.splice(i + 1, 0, card);
   });
   ui.setCardKey(card.key);
-  showToast(`Frame saved as card ${i + 2}. Write its caption.`);
+  showToast(`Frame saved as card ${card.id}. Write its caption.`);
   const next = doc();
   if (next) applyCard(next, card);
   return card.key;
@@ -307,21 +308,6 @@ export function setLayers(key: string, layers: Partial<Record<LayerId, boolean>>
 
 // ---------------------------------------------------------------- the slice (lane 13.2)
 
-/**
- * "2:55", "175", "t+2:55" or "2:55.5" to seconds; null when the text is not a time. A copy of the
- * strip's parser (src/features/timeline/Timeline.tsx parseTime), kept here so the Brief's card
- * logic does not pull the strip into its import graph.
- */
-export function parseTime(text: string): number | null {
-  const s = text.trim().replace(/^t\+/i, '');
-  if (!s) return null;
-  if (/^\d+(\.\d+)?$/.test(s)) return Number(s);
-  const m = /^(\d+):(\d{1,2}(?:\.\d+)?)$/.exec(s);
-  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
-}
-
-const round1 = (t: number) => Math.round(t * 10) / 10;
-
 /** The rate menu's value nearest to `rate` (the schema takes only the eight rates). */
 export function menuRate(rate: number): number {
   return RATES.reduce((a, b) => (Math.abs(b - rate) < Math.abs(a - rate) ? b : a), 1);
@@ -360,7 +346,7 @@ export function setSlice(key: string, clip: Clip | null): boolean {
   return true;
 }
 
-export const NO_LOOP_REASON = 'Set a loop on the timeline first (Shift and drag)';
+export { NO_LOOP_REASON };
 
 /**
  * Take the timeline's loop as a slice, at the strip's rate, with no beats. In Brief it goes on the
@@ -384,7 +370,7 @@ export function sliceFromLoop(): string | null {
   if (ui.workspace === 'brief' && i >= 0) {
     const card = v.cards[i]!;
     setSlice(card.key, clip);
-    showToast(`Slice ${sliceText(clip)} set on card ${i + 1}.`);
+    showToast(`Slice ${sliceText(clip)} set on card ${card.id}.`);
     return card.key;
   }
   const base =
@@ -396,6 +382,6 @@ export function sliceFromLoop(): string | null {
     d.cards.splice(i + 1, 0, card);
   });
   ui.setCardKey(card.key);
-  showToast(`Slice ${sliceText(clip)} saved as card ${i + 2}.`);
+  showToast(`Slice ${sliceText(clip)} saved as card ${card.id}.`);
   return card.key;
 }

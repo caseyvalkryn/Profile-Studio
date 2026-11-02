@@ -943,6 +943,9 @@ const COMMANDS: Command[] = [
     id: 'time.setHere',
     label: 'Set time here',
     group: 'time',
+    // the strip's menu in Build and Brief (13.1 item 5); the menu filters by workspace (F-05),
+    // so this and the four strip commands below declare both
+    workspaces: BUILD_BRIEF,
     kinds: ['map', 'timeline'],
     needsPointer: true,
     // On the timeline the pointer carries its time; on the board, the nearest threat time.
@@ -966,6 +969,7 @@ const COMMANDS: Command[] = [
     id: 'time.loopFrom',
     label: 'Loop from here',
     group: 'time',
+    workspaces: BUILD_BRIEF,
     kinds: ['timeline'],
     needsPointer: true,
     when: every(needDoc, (ctx) =>
@@ -982,6 +986,7 @@ const COMMANDS: Command[] = [
     id: 'time.clearLoop',
     label: 'Clear loop',
     group: 'time',
+    workspaces: BUILD_BRIEF,
     kinds: ['timeline'],
     when: (ctx) => (ctx.ui.loop ? true : 'No loop is set'),
     run: (ctx) => ctx.ui.setLoop(null),
@@ -991,6 +996,7 @@ const COMMANDS: Command[] = [
     id: 'timeline.fitRun',
     label: 'Fit run',
     group: 'time',
+    workspaces: BUILD_BRIEF,
     kinds: ['timeline'],
     when: needDoc,
     run: (ctx) => ctx.ui.setTview(null),
@@ -999,6 +1005,7 @@ const COMMANDS: Command[] = [
     id: 'timeline.fitAction',
     label: 'Fit action',
     group: 'time',
+    workspaces: BUILD_BRIEF,
     kinds: ['timeline'],
     when: every(needDoc, (ctx) => {
       const doc = docOf(ctx);

@@ -110,9 +110,9 @@ describe('key point marks on the track', () => {
       '300',
       String(Math.round(d.daEntry.T1! * 10) / 10),
     ]);
-    expect(ms[2]!.title).toBe('T1 Track · 2:30 · EO-1');
-    expect(ms[0]!.title).toBe('T1 Find · 0:28 · RDR-1');
-    expect(ms[6]!.title).toBe('T1 DA · 6:54');
+    expect(ms[2]!.title).toBe('T1 Track · t+2:30 · EO-1');
+    expect(ms[0]!.title).toBe('T1 Find · t+0:28 · RDR-1');
+    expect(ms[6]!.title).toBe('T1 DA · t+6:54');
   });
 
   it('time off: no --t on the root and nothing in the now layer', () => {

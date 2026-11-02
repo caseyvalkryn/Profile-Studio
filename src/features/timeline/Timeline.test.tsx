@@ -11,11 +11,13 @@ import { fmtTime } from '../shared/units';
 import { actionSpan, wantsFit } from './fit';
 import { STAGE_DEFINITION, keyPoints } from './stages';
 import Timeline, { GUT_L, buildLanes, parseTime, runEnd, tickSteps } from './Timeline';
+import { axisMarks } from './Axis';
 import { boardScene } from '../build/board/derived';
-import { currentContext, get } from '../../commands/registry';
+import { currentContext, forTarget, get } from '../../commands/registry';
 import { testCard } from '../brief/testDeck';
+import { marginText } from '../brief/frameData';
 import { sliceFromLoop, timelineCommands } from './commands';
-import { CARDS_H, DA_H, GUT_WIDE, cardMarks, gutterFor, pointStates } from './layout';
+import { CARDS_H, DA_H, GUT_WIDE, cardMarks, gutterFor, pointStates, stepAt } from './layout';
 
 /** A long ingress: one threat from 30 km, seen only in the last part of its run. */
 function ingress(): Vignette {
@@ -72,6 +74,28 @@ describe('timeline helpers', () => {
     expect(tickSteps(2400, 330 / 2400)).toEqual({ major: 300, minor: 60 });
     expect(runEnd(12)).toBe(60);
     expect(runEnd(300)).toBe(300);
+  });
+
+  it('hides a tick label whose box meets the cursor chip (F-09)', () => {
+    // 0 to 420 s over 700 px from x 56: the 2:00 label is centred at x 256
+    const xOf = (t: number) => 56 + (t / 420) * 700;
+    const labels = (chip: { x0: number; x1: number } | null) => {
+      const { container } = render(
+        <svg>
+          {axisMarks({ W: 768, gut: 56, gutR: 12, tv0: 0, tv1: 420, xOf, range: null, chip })}
+        </svg>,
+      );
+      const out = [...container.querySelectorAll('text')].map((t) => t.textContent);
+      cleanup();
+      return out;
+    };
+    expect(labels(null)).toContain('2:00');
+    // the chip "t+1:40" right of the cursor at 1:40 (x 222.7) covers 2:00
+    const x0 = xOf(100) + 8;
+    const covered = labels({ x0, x1: x0 + 6 * 6.6 + 8 });
+    expect(covered).not.toContain('2:00');
+    expect(covered).toContain('1:00');
+    expect(covered).toContain('3:00');
   });
 });
 
@@ -135,6 +159,20 @@ describe('timeline strip', () => {
     expect(useUi.getState().tview).toBeNull();
   });
 
+  it('the Brief strip menu lists no Build-only item (F-05)', () => {
+    const labels = () =>
+      menuItemsFor('timeline', { pointer: { x: 0, y: 0, tS: 0 }, onArg: () => {} }).map(
+        (i) => i.label,
+      );
+    expect(labels()).toContain('Add event here');
+    useUi.setState({ workspace: 'brief' });
+    const brief = labels();
+    expect(brief).not.toContain('Add event here');
+    expect(brief).toEqual(expect.arrayContaining(['Set time here', 'Save a frame here']));
+    for (const c of forTarget('timeline'))
+      if (c.workspaces && !c.workspaces.includes('brief')) expect(brief).not.toContain(c.label);
+  });
+
   it('the play bar: first, previous and next key point, last, rate, loop, play and pause', () => {
     render(<Timeline mode="build" />);
     const d = boardDerived(doc());
@@ -158,7 +196,13 @@ describe('timeline strip', () => {
     expect(all).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(all);
     expect(useUi.getState().loop).toBeNull();
+    // at the full view the range toggle waits for a zoom (review 13 N-13)
+    const range = screen.getByRole('button', { name: 'Loop range' });
+    expect(range).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(range);
+    expect(useUi.getState().loop).toBeNull();
     act(() => useUi.getState().setTview({ t0S: 10, t1S: 50 }));
+    expect(screen.getByRole('button', { name: 'Loop range' })).not.toHaveAttribute('aria-disabled');
     fireEvent.click(screen.getByRole('button', { name: 'Loop range' }));
     expect(useUi.getState().loop).toEqual({ startS: 10, endS: 50 });
     expect(screen.getByRole('button', { name: 'Loop range' })).toHaveAttribute(
@@ -329,10 +373,23 @@ describe('timeline strip', () => {
     expect(screen.getAllByTestId('tl-da-bar')).toHaveLength(2);
     const margin = screen.getAllByTestId('tl-margin')[0]!;
     const ws = d.window[v.threats[0]!.id]!;
+    // signed as the Frame panel signs it (F-06)
+    const signed = marginText(ws.margin!)!;
+    expect(signed).toMatch(/^margin [+-]\d+ s$/);
     expect(margin.querySelector('title')!.textContent).toBe(
-      `Latest engage ${fmtTime(ws.latest!)}, margin ${Math.round(ws.margin!)} s`,
+      `Latest engage ${fmtTime(ws.latest!)}, ${signed}`,
     );
-    expect(margin.textContent).toContain(`margin ${Math.round(ws.margin!)} s`);
+    expect(margin.textContent).toContain(signed);
+    // the label keeps clear of every glyph of the lane (the Engage triangle among them)
+    const text = margin.querySelector('text')!;
+    const tx = Number(text.getAttribute('x'));
+    const lw = signed.length * 6.6;
+    const [a, b] = text.getAttribute('text-anchor') === 'end' ? [tx - lw, tx] : [tx, tx + lw];
+    const lane = screen.getAllByTestId('tl-lane')[0]!;
+    for (const g of within(lane).getAllByTestId('tl-stage')) {
+      const gx = Number(g.querySelector('.tl-hit')!.getAttribute('cx'));
+      expect(gx + 7 < a || gx - 7 > b).toBe(true);
+    }
     expect(screen.queryAllByTestId('tl-split')).toHaveLength(d.splits.length);
   });
 
@@ -517,6 +574,18 @@ describe('the strip as the plan clock (lane 13.1)', () => {
     }
   });
 
+  it('the shared stepAt: at a key point time, just before it, and with time off (F-02)', () => {
+    const pts = keyPoints(boardDerived(doc()), doc().threats[0]!.id);
+    const steps = pts.filter((p) => p.stage !== 'da');
+    expect(steps.length).toBeGreaterThan(1);
+    const k = steps[1]!;
+    expect(stepAt(pts, k.t)?.stage).toBe(k.stage);
+    expect(stepAt(pts, k.t - 0.01)?.stage).toBe(steps[0]!.stage);
+    expect(stepAt(pts, steps[0]!.t - 0.01)).toBeNull();
+    // time off: the last step of the run, never the DA entry
+    expect(stepAt(pts, null)?.stage).toBe(steps.at(-1)!.stage);
+  });
+
   it('the glyph state classes at the cursor: reached, current with a halo, future', () => {
     expect(pointStates([{ t: 1 }, { t: 2 }, { t: 3 }], 2, true)).toEqual([
       'tl-reached',
@@ -579,7 +648,7 @@ describe('the strip as the plan clock (lane 13.1)', () => {
     const ctx = currentContext({ x: 0, y: 0, tS: 42 });
     expect(frame!.when(ctx)).toBe(true);
     expect(frame!.when(currentContext(null))).toBe('Right-click the timeline first');
-    expect(slice!.when(ctx)).toBe('Set a loop first: Shift and drag on the axis');
+    expect(slice!.when(ctx)).toBe('Set a loop on the timeline first (Shift and drag)');
     act(() => frame!.run(ctx));
     expect(useUi.getState()).toMatchObject({ tS: 42, timeOn: true });
     expect(doc().cards).toHaveLength(1);

@@ -46,13 +46,24 @@ test('Phase 13: in Brief a Shift-drag loop becomes a slice card; P plays inside 
   await expect(page.getByTestId('brief-slice-to')).toHaveValue(mmss(t1));
   await expect(page.getByTestId('brief-slice-rate')).toHaveValue('1');
 
-  // P plays the slice: the clock advances and stays inside it.
-  const clock = page.getByRole('textbox', { name: 'Time' });
+  // The slice starts on a whole second, so the first clock sample reads its start exactly.
+  const from = page.getByTestId('brief-slice-from');
+  await from.fill(mmss(t0));
+  await from.press('Enter');
+  await expect(sliceHead).toHaveText(new RegExp(`^t\\+${mmss(t0)} to `));
+
+  // P from a time outside the slice starts at the slice's start, then plays inside it.
+  const clock = page.getByRole('textbox', { name: 'Time', exact: true });
+  await clock.fill('0:05');
+  await clock.press('Enter');
+  await expect(clock).toHaveValue('t+0:05');
+  expect(t0).toBeGreaterThan(5);
   await page.locator('body').click({ position: { x: 5, y: 5 } });
   await page.keyboard.press('p');
-  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+  await expect.poll(() => clock.inputValue(), { intervals: [20] }).not.toBe('t+0:05');
   const start = secs(await clock.inputValue());
-  expect(start).toBeGreaterThanOrEqual(t0);
+  expect(start).toBe(t0);
+  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
   await page.waitForTimeout(1500);
   const later = secs(await clock.inputValue());
   expect(later).toBeGreaterThan(start);

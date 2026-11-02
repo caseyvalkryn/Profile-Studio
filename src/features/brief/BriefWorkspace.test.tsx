@@ -98,11 +98,13 @@ describe('Brief workspace', () => {
       target: { value: 'elev' },
     });
     expect(useDocument.getState().doc!.cards[0]!.view.kind).toBe('elevation');
-    const time = screen.getByRole('spinbutton', { name: 'Time s' });
+    const time = screen.getByRole('textbox', { name: 'Card time' });
     fireEvent.focus(time);
-    fireEvent.change(time, { target: { value: '120' } });
+    fireEvent.change(time, { target: { value: '2:00' } });
     fireEvent.blur(time);
     expect(useDocument.getState().doc!.cards[0]!.tS).toBe(120);
+    // shown in m:ss, as the Slice field beside it (F-08)
+    expect(time).toHaveValue('2:00');
     const focus = screen.getByRole('textbox', { name: 'Focus ids' });
     fireEvent.change(focus, { target: { value: 'T-02' } });
     fireEvent.blur(focus);

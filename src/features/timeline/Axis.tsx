@@ -1,7 +1,9 @@
 // The strip's time axis: the loop range (or the range being dragged), the base line, the minor
-// and major ticks and the labels ("0:00"; the cursor chip carries the "t+" prefix).
+// and major ticks and the labels ("0:00"; the cursor chip carries the "t+" prefix). A label whose
+// box meets the cursor chip is hidden, so the chip never covers a time (review 13 F-09).
 import type { ReactNode } from 'react';
-import { AXIS_H, CH, mmss } from './layout';
+import { mmss } from '../../engine/tokens';
+import { AXIS_H, CH } from './layout';
 
 const MAJORS = [1, 2, 5, 10, 30, 60, 120, 300, 600, 1200, 3600];
 const MINOR: Record<number, number> = {
@@ -41,9 +43,11 @@ export type AxisProps = {
   xOf: (t: number) => number;
   /** The loop range to draw: the one being dragged, else the loop. */
   range: { t0: number; t1: number } | null;
+  /** The cursor chip's x span while it shows, else null: a tick label it meets is hidden. */
+  chip?: { x0: number; x1: number } | null;
 };
 
-export function axisMarks({ W, gut, gutR, tv0, tv1, xOf, range }: AxisProps): ReactNode[] {
+export function axisMarks({ W, gut, gutR, tv0, tv1, xOf, range, chip }: AxisProps): ReactNode[] {
   const span = tv1 - tv0;
   const plotW = W - gut - gutR;
   const { major, minor } = tickSteps(span, plotW / span);
@@ -88,7 +92,8 @@ export function axisMarks({ W, gut, gutR, tv0, tv1, xOf, range }: AxisProps): Re
     const atStart = x < gut + 12;
     const lw = lab.length * CH;
     const lx0 = atStart ? x : x - lw / 2;
-    if (lx0 >= labEnd + 8) {
+    const underChip = chip != null && lx0 < chip.x1 + 2 && lx0 + lw > chip.x0 - 2;
+    if (lx0 >= labEnd + 8 && !underChip) {
       out.push(
         <text
           key={`l${tt}`}
