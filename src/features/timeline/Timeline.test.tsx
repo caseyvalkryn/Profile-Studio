@@ -1,5 +1,5 @@
 import '../../ui/test-utils';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { testVignette } from '../../engine/testVignette';
 import type { Vignette } from '../../domain/types';
 import { previewOf, useDocument } from '../../state/document';
@@ -12,6 +12,10 @@ import { actionSpan, wantsFit } from './fit';
 import { STAGE_DEFINITION, keyPoints } from './stages';
 import Timeline, { GUT_L, buildLanes, parseTime, runEnd, tickSteps } from './Timeline';
 import { boardScene } from '../build/board/derived';
+import { currentContext, get } from '../../commands/registry';
+import { testCard } from '../brief/testDeck';
+import { sliceFromLoop, timelineCommands } from './commands';
+import { CARDS_H, DA_H, GUT_WIDE, cardMarks, gutterFor, pointStates } from './layout';
 
 /** A long ingress: one threat from 30 km, seen only in the last part of its run. */
 function ingress(): Vignette {
@@ -147,12 +151,21 @@ describe('timeline strip', () => {
       target: { value: '8' },
     });
     expect(useUi.getState().rate).toBe(8);
-    const loop = screen.getByRole('combobox', { name: 'Loop' });
-    fireEvent.change(loop, { target: { value: 'all' } });
+    // the loop: two pressed toggles, the whole run and the range; a second press turns it off
+    const all = screen.getByRole('button', { name: 'Loop all' });
+    fireEvent.click(all);
     expect(useUi.getState().loop).toEqual({ startS: 0, endS: d.tmax });
-    expect(loop).toHaveValue('all');
-    fireEvent.change(loop, { target: { value: 'off' } });
+    expect(all).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(all);
     expect(useUi.getState().loop).toBeNull();
+    act(() => useUi.getState().setTview({ t0S: 10, t1S: 50 }));
+    fireEvent.click(screen.getByRole('button', { name: 'Loop range' }));
+    expect(useUi.getState().loop).toEqual({ startS: 10, endS: 50 });
+    expect(screen.getByRole('button', { name: 'Loop range' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    act(() => useUi.getState().setLoop(null));
     fireEvent.click(screen.getByRole('button', { name: 'Play' }));
     expect(useUi.getState().playing).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
@@ -373,3 +386,211 @@ describe('timeline strip', () => {
     expect(within(screen.getByTestId('tl-bead')).getByText('First detection')).toBeInTheDocument();
   });
 });
+
+/** A press: down and up at one point. */
+const press = (el: Element) => {
+  fireEvent.pointerDown(el, { button: 0, clientX: 100 });
+  fireEvent.pointerUp(el, { clientX: 100 });
+};
+
+/** The test vignette with three cards: no time, a frame at 0:30 and a slice from 0:10 to 0:40. */
+function withCards(): Vignette {
+  const v = testVignette();
+  v.cards = [
+    testCard(),
+    testCard({ key: 'k-c2', id: 'c2', name: 'Frame', tS: 30 }),
+    testCard({
+      key: 'k-c3',
+      id: 'c3',
+      name: 'Slice',
+      tS: 10,
+      clip: { t0S: 10, t1S: 40, rate: 2, beatsS: [] },
+    }),
+  ];
+  return v;
+}
+
+describe('the strip as the plan clock (lane 13.1)', () => {
+  it('buildLanes puts the Cards row under the DA row and the lanes under it', () => {
+    const v = withCards();
+    const scene = boardScene(v);
+    const d = boardDerived(v);
+    const a = buildLanes(scene, d, 200);
+    const b = buildLanes(scene, d, 200, true);
+    expect(a.cardsTop).toBeNull();
+    expect(b.cardsTop).toBe(2 + (b.daRow ? DA_H + 1 : 0));
+    expect(b.lanes[0]!.top).toBe(a.lanes[0]!.top + CARDS_H + 1);
+    // a card without a time draws nothing; the numbers are the deck places
+    expect(cardMarks(v.cards).map((m) => [m.n, m.t])).toEqual([
+      [2, 30],
+      [3, 10],
+    ]);
+  });
+
+  it('the Cards row: a marker per timed card, the slice band, the title', () => {
+    open(withCards());
+    render(<Timeline mode="build" />);
+    const cards = screen.getAllByTestId('tl-card');
+    expect(cards.map((c) => c.textContent)).toEqual([
+      'Card 2 · Frame · t+0:302',
+      'Card 3 · Slice · t+0:10 to t+0:403',
+    ]);
+    expect(screen.getAllByTestId('tl-card-slice')).toHaveLength(1);
+    expect(screen.getByTestId('tl-cards-row')).toHaveTextContent('Cards');
+    // in Build no card is current until one is keyed
+    expect(document.querySelector('.tl-card-cur')).toBeNull();
+  });
+
+  it('a Cards row press in Build sets the time and the slice as the loop', () => {
+    open(withCards());
+    render(<Timeline mode="build" />);
+    const [frame, slice] = screen.getAllByTestId('tl-card');
+    press(frame!);
+    expect(useUi.getState()).toMatchObject({ tS: 30, timeOn: true, loop: null, cardKey: null });
+    press(slice!);
+    expect(useUi.getState()).toMatchObject({ tS: 10, loop: { startS: 10, endS: 40 } });
+  });
+
+  it('a Cards row press in Brief opens the card; the current card draws in the accent', () => {
+    open(withCards());
+    render(<Timeline mode="brief" />);
+    const frame = screen.getAllByTestId('tl-card')[0]!;
+    expect(frame).not.toHaveClass('tl-card-cur');
+    press(frame);
+    expect(useUi.getState().cardKey).toBe('k-c2');
+    expect(useUi.getState().timeOn).toBe(false);
+    expect(screen.getAllByTestId('tl-card')[0]).toHaveClass('tl-card-cur');
+  });
+
+  it('a row press selects its system; the board selection and hover light its rows', () => {
+    render(<Timeline mode="build" />);
+    const row = screen.getAllByTestId('tl-row')[0]!;
+    const key = row.getAttribute('data-select-key')!;
+    expect(row).not.toHaveClass('tl-lit');
+    press(row.querySelector('.tl-hit')!);
+    expect(useUi.getState().selectedKeys).toEqual([key]);
+    expect(row).toHaveClass('tl-lit');
+    // a window of that system lights too; a hover on another row sets the shared hover
+    const lit = screen.getAllByTestId('tl-window').filter((w) => w.classList.contains('tl-lit'));
+    expect(lit.length).toBeGreaterThan(0);
+    const other = screen
+      .getAllByTestId('tl-row')
+      .find((r) => r.getAttribute('data-select-key') !== key)!;
+    fireEvent.pointerMove(other, { clientX: 20 });
+    expect(useUi.getState().hoverKey).toBe(other.getAttribute('data-select-key'));
+    expect(other).toHaveClass('tl-lit');
+    // a selection made on the board or the inspector lights the rows the same way
+    act(() => useUi.getState().setSelection([other.getAttribute('data-select-key')!]));
+    expect(row).not.toHaveClass('tl-lit');
+    // in Brief the row press selects too
+    act(() => useUi.getState().setSelection([]));
+    cleanupStrip();
+    render(<Timeline mode="brief" />);
+    press(screen.getAllByTestId('tl-row')[0]!.querySelector('.tl-hit')!);
+    expect(useUi.getState().selectedKeys).toEqual([key]);
+  });
+
+  it('a glyph press sets the time and selects the system that gives the step', () => {
+    render(<Timeline mode="brief" />);
+    const v = doc();
+    const d = boardDerived(v);
+    const id = v.threats[0]!.id;
+    const pts = keyPoints(d, id);
+    const lane = screen.getAllByTestId('tl-lane')[0]!;
+    const find = within(lane)
+      .getAllByTestId('tl-stage')
+      .find((g) => g.getAttribute('data-stage') === 'find')!;
+    press(find);
+    const sys = boardScene(v).scene.systems.find((s) => s.id === pts[0]!.system)!;
+    expect(useUi.getState()).toMatchObject({
+      tS: Math.round(pts[0]!.t * 10) / 10,
+      timeOn: true,
+      selectedKeys: [sys.key],
+    });
+    // the DA glyph selects the threat
+    const da = within(lane)
+      .getAllByTestId('tl-stage')
+      .find((g) => g.getAttribute('data-stage') === 'da');
+    if (da) {
+      press(da);
+      expect(useUi.getState().selectedKeys).toEqual([v.threats[0]!.key]);
+    }
+  });
+
+  it('the glyph state classes at the cursor: reached, current with a halo, future', () => {
+    expect(pointStates([{ t: 1 }, { t: 2 }, { t: 3 }], 2, true)).toEqual([
+      'tl-reached',
+      'tl-current',
+      'tl-future',
+    ]);
+    expect(pointStates([{ t: 1 }, { t: 2 }], 2, false)).toEqual([null, null]);
+    render(<Timeline mode="build" />);
+    const lane = screen.getAllByTestId('tl-lane')[0]!;
+    const glyphs = () => within(lane).getAllByTestId('tl-stage');
+    // time off: every glyph draws as before
+    const states = (g: Element) => /tl-(reached|current|future)/.test(g.getAttribute('class')!);
+    expect(glyphs().some(states)).toBe(false);
+    const pts = keyPoints(boardDerived(doc()), doc().threats[0]!.id);
+    const at = pts[2]!;
+    act(() => {
+      useUi.getState().setTimeOn(true);
+      useUi.getState().setTime(at.t);
+    });
+    const g = glyphs();
+    expect(g[0]).toHaveClass('tl-reached');
+    const cur = g.find((x) => x.getAttribute('data-stage') === at.stage)!;
+    expect(cur).toHaveClass('tl-current');
+    expect(cur.querySelector('.tl-halo')).not.toBeNull();
+    expect(document.querySelectorAll('.tl-halo').length).toBeGreaterThanOrEqual(1);
+    expect(g[g.length - 1]).toHaveClass('tl-future');
+  });
+
+  it('the step word after a short threat id widens the gutter; the chip names the step', () => {
+    // the test vignette's four-character ids leave no room: the gutter stays at 56 px
+    expect(gutterFor(buildLanes(boardScene(doc()), boardDerived(doc())).lanes)).toBe(GUT_L);
+    const v = testVignette();
+    v.threats[0]!.id = 'T1';
+    v.threats[1]!.id = 'T2';
+    open(v);
+    render(<Timeline mode="build" />);
+    expect(gutterFor(buildLanes(boardScene(v), boardDerived(v)).lanes)).toBe(GUT_WIDE);
+    expect(screen.queryAllByTestId('tl-step')).toHaveLength(0);
+    const pts = keyPoints(boardDerived(v), 'T1');
+    act(() => {
+      useUi.getState().setTimeOn(true);
+      useUi.getState().setTime(pts[2]!.t);
+    });
+    const lane = screen.getAllByTestId('tl-lane')[0]!;
+    expect(within(lane).getByTestId('tl-step')).toHaveTextContent(pts[2]!.label);
+    expect(screen.getByTestId('tl-cursor-time')).toHaveTextContent(fmtTime(pts[2]!.t));
+    expect(screen.getByTestId('tl-cursor-time')).not.toHaveTextContent('·');
+    act(() => useUi.getState().setSelection([v.threats[0]!.key]));
+    expect(screen.getByTestId('tl-cursor-time')).toHaveTextContent(
+      `${fmtTime(pts[2]!.t)} · ${pts[2]!.label}`,
+    );
+  });
+
+  it('Save a frame here and Save the loop as a slice', async () => {
+    const [frame, slice] = timelineCommands;
+    expect(frame!.label).toBe('Save a frame here');
+    expect(slice!.label).toBe('Save the loop as a slice');
+    // registered by lane 13.W; until then the strip's menu builds the items itself
+    expect(get(frame!.id)).toBeUndefined();
+    const ctx = currentContext({ x: 0, y: 0, tS: 42 });
+    expect(frame!.when(ctx)).toBe(true);
+    expect(frame!.when(currentContext(null))).toBe('Right-click the timeline first');
+    expect(slice!.when(ctx)).toBe('Set a loop first: Shift and drag on the axis');
+    act(() => frame!.run(ctx));
+    expect(useUi.getState()).toMatchObject({ tS: 42, timeOn: true });
+    expect(doc().cards).toHaveLength(1);
+    expect(doc().cards[0]!.tS).toBe(42);
+    act(() => useUi.getState().setLoop({ startS: 5, endS: 20 }));
+    expect(slice!.when(currentContext(null))).toBe(true);
+    await expect(sliceFromLoop()).resolves.toBeTypeOf('boolean');
+  });
+});
+
+/** Unmount every rendered strip (between two renders in one test). */
+function cleanupStrip() {
+  cleanup();
+}
