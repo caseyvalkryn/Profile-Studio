@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic test site around a fictional point (lat 35.0, lon -79.0). Not a real range. -->
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Synthetic site</name>
+    <Placemark>
+      <name>Test rectangle</name>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -79.0032899,34.9981913,0 -78.9967101,34.9981913,0 -78.9967101,35.0018087,0 -79.0032899,35.0018087,0 -79.0032899,34.9981913,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <Placemark>
+      <name>  Fly area </name>
+      <MultiGeometry>
+        <Polygon>
+          <outerBoundaryIs>
+            <LinearRing>
+              <coordinates>
+                -78.9950651,35.0013566,0 -78.9932009,35.0010852,0 -78.9914462,35.0023514,0 -78.9912269,35.0040697,0 -78.9924332,35.0055167,0 -78.9942975,35.0057880,0 -78.9956135,35.0045219,0 -78.9958328,35.0027131,0 -78.9950651,35.0013566,0
+              </coordinates>
+            </LinearRing>
+          </outerBoundaryIs>
+          <innerBoundaryIs>
+            <LinearRing>
+              <coordinates>
+                -78.9938588,35.0029844,0 -78.9929815,35.0029844,0 -78.9929815,35.0037079,0 -78.9938588,35.0037079,0 -78.9938588,35.0029844,0
+              </coordinates>
+            </LinearRing>
+          </innerBoundaryIs>
+        </Polygon>
+      </MultiGeometry>
+    </Placemark>
+    <Placemark>
+      <name>Gate</name>
+      <Point>
+        <coordinates>-79.0000000,34.9976486,0</coordinates>
+      </Point>
+    </Placemark>
+  </Document>
+</kml>

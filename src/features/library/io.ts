@@ -45,7 +45,7 @@ export function download(name: string, text: string): void {
   URL.revokeObjectURL(url);
 }
 
-/** The schema's version number for dialog labels: 'profile-studio/7' reads 7. */
+/** The schema's version number for dialog labels: 'profile-studio/8' reads 8. */
 export const schemaVersion = (): string => String(SCHEMA).split('/').pop() ?? '';
 
 export const profileText = (v: Vignette): string => exportJson(v);

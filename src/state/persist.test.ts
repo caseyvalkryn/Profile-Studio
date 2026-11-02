@@ -102,6 +102,15 @@ describe('JSON import and export', () => {
     expect(importJson(exportJson(v7!))).toEqual([v7]);
   });
 
+  it('round-trips a v7 record to v8: the stamp changes and nothing else', () => {
+    const v = testVignette();
+    const v7 = { ...JSON.parse(exportJson(v)), schema: 'profile-studio/7' };
+    const [v8] = importJson(JSON.stringify(v7));
+    expect(v8).toEqual(v);
+    expect(v8!.schema).toBe(SCHEMA);
+    expect(importJson(exportJson(v8!))).toEqual([v]);
+  });
+
   it("refuses the mockup's own stamp", () => {
     expect(() => importJson('{"schema":"profile-studio/3"}')).toThrow(
       /Unknown record stamp: profile-studio\/3/,

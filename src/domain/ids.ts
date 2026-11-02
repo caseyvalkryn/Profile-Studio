@@ -20,6 +20,7 @@ const PREFIX: Record<IdKind, string> = {
   wez: 'WEZ-',
   nfz: 'NFZ-',
   ref: 'REF-',
+  range: 'RNG-',
   question: 'Q-',
   hypothesis: 'H-',
   card: 'c',

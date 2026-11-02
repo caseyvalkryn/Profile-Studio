@@ -7,6 +7,7 @@ import {
   SCHEMA,
   SCHEMA_V5,
   SCHEMA_V6,
+  SCHEMA_V7,
   type Card,
   type ProfileClass,
   type Vignette,
@@ -41,7 +42,7 @@ export type VignetteListing = {
   firstCard: Card | null;
 };
 
-/** The listing of one stored record, v5 to v7. Read defensively: the record is not parsed. */
+/** The listing of one stored record, v5 to v8. Read defensively: the record is not parsed. */
 export function listingOf(v: Vignette): VignetteListing {
   const old = v as Partial<Vignette>;
   return {
@@ -96,7 +97,7 @@ export async function loadVignette(id: string): Promise<Vignette | null> {
   const v = await (await getDb()).get('vignettes', id);
   if (!v) return null;
   storedIds.add(v.id);
-  // A record stored at v5 or v6 migrates on load; parseVignette accepts v5, v6 and v7.
+  // A record stored at v5, v6 or v7 migrates on load; parseVignette accepts v5 to v8.
   return parseVignette(v);
 }
 
@@ -155,7 +156,7 @@ export async function listWithRecords(): Promise<{
   return { list: listed, records };
 }
 
-/** Every stored profile, newest first, parsed: a record stored at v5 or v6 comes back as v7. */
+/** Every stored profile, newest first, parsed: a record stored at v5, v6 or v7 comes back as v8. */
 export async function loadAllVignettes(): Promise<Vignette[]> {
   const all = await (await getDb()).getAll('vignettes');
   for (const v of all) storedIds.add(v.id);
@@ -175,7 +176,7 @@ export async function deleteVignette(id: string): Promise<void> {
 export type TimedWaypoint = [number, number, number, number, number];
 
 /**
- * The record as exported (spec section 10): the v7 record with `timed` on each threat, the
+ * The record as exported (spec section 10): the v8 record with `timed` on each threat, the
  * resolved waypoint times from the preview's path timing (leg length over speed, plus holds).
  */
 export function exportRecord(v: Vignette): Vignette & {
@@ -232,16 +233,16 @@ function withoutTimed(data: unknown): unknown {
 function importRecord(data: unknown): Vignette {
   const schema =
     typeof data === 'object' && data !== null ? (data as { schema?: unknown }).schema : undefined;
-  if (schema === SCHEMA || schema === SCHEMA_V6 || schema === SCHEMA_V5)
+  if (schema === SCHEMA || schema === SCHEMA_V7 || schema === SCHEMA_V6 || schema === SCHEMA_V5)
     return parseVignette(withoutTimed(data));
   if (schema === 'profile-studio/4') return importLegacyV4(data);
   throw new Error(
-    `Unknown record stamp: ${String(schema)}. Expected ${SCHEMA}, ${SCHEMA_V6}, ${SCHEMA_V5} or profile-studio/4.`,
+    `Unknown record stamp: ${String(schema)}. Expected ${SCHEMA}, ${SCHEMA_V7}, ${SCHEMA_V6}, ${SCHEMA_V5} or profile-studio/4.`,
   );
 }
 
 /**
- * Parse an import file into vignettes. Accepts a single v7, v6 or v5 profile, a single legacy v4
+ * Parse an import file into vignettes. Accepts a single v8, v7, v6 or v5 profile, a single legacy v4
  * record, a library export `{schema, library: [...]}` (this app's or the legacy one), or a plain array of
  * records (the shapes the legacy `P.parse` accepts). All or nothing: one bad record fails the
  * import, and the error names its position. Throws a readable Error.

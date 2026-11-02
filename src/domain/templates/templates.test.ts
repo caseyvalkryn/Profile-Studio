@@ -39,10 +39,10 @@ describe('TEMPLATES', () => {
     expect(templateById('blank')?.question).toBe('');
   });
 
-  it('every make() passes parseVignette with schema profile-studio/7', () => {
+  it('every make() passes parseVignette with schema profile-studio/8', () => {
     for (const t of TEMPLATES) {
       const v = parseVignette(t.make());
-      expect(v.schema).toBe('profile-studio/7');
+      expect(v.schema).toBe('profile-studio/8');
       expect([v.collection, v.version]).toEqual(['', 1]);
       expect([v.planes, v.events, v.snapshots, v.cards, v.debrief]).toEqual([[], [], [], [], null]);
       expect(v.threats.every((x) => x.group === '')).toBe(true);

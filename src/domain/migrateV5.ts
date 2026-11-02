@@ -1,14 +1,15 @@
-// v5 to v6 and v6 to v7 (spec section 5, upgrade rule 4). A v5 record gains empty height planes, authored
+// v5 to v6, v6 to v7 and v7 to v8 (spec section 5, upgrade rule 4). A v5 record gains empty height planes, authored
 // events, snapshots and cards, a null debrief, and `group: ''` on each threat. Area bottoms and
 // tops already exist in v5 (`zMinM`, `zMaxM`) and are kept; a missing one takes 0 for the bottom
 // and the kind default for the top (legacy C.VOL_DEFAULTS). A v6 record gains `collection` (its
 // site name), `class` 'Custom' and `version` 1, and loses the run fields (hypotheses, runs, sweep,
-// and on `report` everything but notes, dataSources and truth). Kept apart from migrate.ts so
+// and on `report` everything but notes, dataSources and truth). A v7 record takes the v8 stamp
+// and nothing else (v8 adds the `range` area kind). Kept apart from migrate.ts so
 // schema.ts can call it without an import cycle; migrate.ts re-exports it.
 
 import { AREA_DEFAULTS } from './catalog';
 import type { AreaKind } from './types';
-import { SCHEMA, SCHEMA_V5, SCHEMA_V6 } from './types';
+import { SCHEMA, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7 } from './types';
 
 type Obj = Record<string, unknown>;
 
@@ -16,12 +17,18 @@ const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !
 const fin = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 
 /**
- * Return a `profile-studio/7` copy of a `profile-studio/5` or `/6` record. Any other input comes
- * back unchanged, so callers can pass every record through it before validation.
+ * Return a `profile-studio/8` copy of a `profile-studio/5`, `/6` or `/7` record. Any other input
+ * comes back unchanged, so callers can pass every record through it before validation.
  */
-export function migrateToV7(doc: unknown): unknown {
+export function migrateToV8(doc: unknown): unknown {
   const v6 = migrateV5ToV6(doc);
-  return isObj(v6) && v6.schema === SCHEMA_V6 ? migrateV6ToV7(v6) : v6;
+  const v7 = isObj(v6) && v6.schema === SCHEMA_V6 ? migrateV6ToV7(v6) : v6;
+  return migrateV7ToV8(v7);
+}
+
+/** v7 to v8: the stamp only; any other input unchanged. */
+export function migrateV7ToV8(doc: unknown): unknown {
+  return isObj(doc) && doc.schema === SCHEMA_V7 ? { ...doc, schema: SCHEMA } : doc;
 }
 
 /** Return a `profile-studio/6` copy of a `profile-studio/5` record; any other input unchanged. */
@@ -65,7 +72,7 @@ function migrateV6ToV7(doc: Obj): Obj {
     : doc.report;
   return {
     ...rest,
-    schema: SCHEMA,
+    schema: SCHEMA_V7,
     collection:
       typeof doc.collection === 'string'
         ? doc.collection

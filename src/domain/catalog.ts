@@ -388,18 +388,20 @@ export const NODE_DEFAULTS: Record<
 };
 
 /** Legacy C.VOL_KINDS and C.VOL_DEFAULTS. zMaxM is the default top in metres. */
-export const AREA_KINDS: readonly AreaKind[] = ['asset', 'wez', 'nfz', 'ref'];
+export const AREA_KINDS: readonly AreaKind[] = ['asset', 'wez', 'nfz', 'ref', 'range'];
 export const AREA_LABELS: Record<AreaKind, string> = {
   asset: 'Defended asset',
   wez: 'Engagement zone',
   nfz: 'No-fly area',
   ref: 'Reference pattern',
+  range: 'Range area',
 };
 export const AREA_DEFAULTS: Record<AreaKind, { zMaxM: number; prefix: string }> = {
   asset: { zMaxM: 0, prefix: 'DA' },
   wez: { zMaxM: 1200, prefix: 'WEZ' },
   nfz: { zMaxM: 150, prefix: 'NFZ' },
   ref: { zMaxM: 0, prefix: 'REF' },
+  range: { zMaxM: 0, prefix: 'RNG' },
 };
 
 /** Seconds inside the EO/IR field of view to count as a positive ID. */
