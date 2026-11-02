@@ -11,6 +11,7 @@ import { UI_DEFAULTS, useUi } from '../../state/ui';
 import { useLibraryRequests } from '../library/newProfile';
 import { useToast } from '../shell/toastStore';
 import { M_PER_NM } from '../shared/units';
+import { GUT_L } from '../timeline/Timeline';
 import BuildWorkspace from './BuildWorkspace';
 import { cancel } from './board/Board';
 import { useBoard, BOARD_DEFAULTS } from './board/store';
@@ -32,7 +33,7 @@ const renderApp = () =>
 describe('Build workspace', () => {
   beforeEach(reset);
 
-  it('renders the rail, the bar, the map, the timeline, the thumbnails and the inspector', () => {
+  it('renders the rail, the bar, the map, the timeline and the inspector; no thumbnails', () => {
     act(() => useDocument.getState().open(testVignette()));
     render(<BuildWorkspace />);
     expect(screen.getByRole('navigation', { name: 'Scene' })).toBeInTheDocument();
@@ -40,7 +41,8 @@ describe('Build workspace', () => {
     const map = screen.getByRole('region', { name: 'Map' });
     expect(within(map).getByTestId('board-stage')).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Timeline' })).toBeInTheDocument();
-    expect(screen.getByRole('group', { name: 'Other views' })).toBeInTheDocument();
+    // Lane 12.2: the view segment switches the view; the thumbnails left.
+    expect(screen.queryByRole('group', { name: 'Other views' })).toBeNull();
     expect(screen.getByRole('complementary', { name: 'Inspector' })).toBeInTheDocument();
     // Lane 10.3: no readout panel, no Fit, Ref or units in the bar.
     expect(screen.queryByRole('region', { name: 'Readout' })).toBeNull();
@@ -291,10 +293,10 @@ describe('Build bar, scrub, thumbnails and cards (lane 10.3)', () => {
     fireEvent.keyDown(clock, { key: 'Enter' });
     expect(useUi.getState().tS).toBe(42);
     expect(clock).toHaveValue('t+0:42');
-    // jsdom lays nothing out: the strip takes its 800 px fallback, 740 px of axis after the gutter.
+    // jsdom lays nothing out: the strip takes its 800 px fallback, 716 px of axis after the gutter.
     const end = Math.max(60, previewOf(doc).tmaxS);
     const axis = screen.getByRole('group', { name: 'Timeline' }).querySelector('.tl-axis')!;
-    fireEvent.pointerDown(axis, { button: 0, clientX: 48 + 370 });
+    fireEvent.pointerDown(axis, { button: 0, clientX: GUT_L + 358 });
     expect(useUi.getState().tS).toBeCloseTo(end / 2, 0);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Time' }));
     expect(useUi.getState().timeOn).toBe(false);
@@ -333,18 +335,16 @@ describe('Build bar, scrub, thumbnails and cards (lane 10.3)', () => {
     expect(useBoard.getState().layers.reach).toBe(false);
   });
 
-  it('the thumbnails render the two other cameras; a click switches the view', () => {
+  it('the timeline strip sits under the map with its resize grip; the view segment switches the view', () => {
     act(() => useDocument.getState().open(testVignette()));
     render(<BuildWorkspace />);
-    const thumbs = within(screen.getByRole('group', { name: 'Other views' }));
-    expect(thumbs.queryByRole('button', { name: 'Plan thumbnail' })).toBeNull();
-    const elev = thumbs.getByRole('button', { name: 'Elevation thumbnail' });
-    expect(thumbs.getByRole('button', { name: '3D thumbnail' })).toBeInTheDocument();
-    expect(elev.querySelector('svg.board.thumb')).not.toBeNull();
-    fireEvent.click(elev);
+    expect(screen.getByRole('separator', { name: 'Resize timeline' })).toHaveAttribute(
+      'aria-valuenow',
+      String(UI_DEFAULTS.tlH),
+    );
+    const view = screen.getByRole('group', { name: 'View' });
+    fireEvent.click(within(view).getByRole('button', { name: 'Elevation' }));
     expect(useUi.getState().view).toBe('elevation');
-    expect(thumbs.getByRole('button', { name: 'Plan thumbnail' })).toBeInTheDocument();
-    expect(thumbs.queryByRole('button', { name: 'Elevation thumbnail' })).toBeNull();
   });
 
   it('Add waypoints arms the path placement on the selected threat', () => {

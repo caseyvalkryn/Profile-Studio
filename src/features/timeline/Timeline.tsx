@@ -4,11 +4,15 @@
 // the time cursor; a press scrubs, Shift and drag set the loop range, a double click clears it,
 // Ctrl or Cmd and the wheel zoom the span (the overview bar above the axis pans it; a double
 // click there fits the run). One lane per threat: the coverage bars of each sensor and effector
-// that sees it, the F2T2EA key points as ticks with the step name, the authored events as beads
-// with the board's letter, the defended asset entry, and the group splits across the lanes. A
+// that sees it, the F2T2EA key points as glyphs with the step name (glyphs.tsx), the authored
+// events as beads with the board's letter and their label when there is room, the defended
+// asset entry, and the group splits across the lanes. The lane area takes `ui.tlH`: the grip on
+// the strip's top edge drags it (ArrowUp and ArrowDown step it, a double click resets it), the
+// lanes share the height, and a lane tall enough gives each system its own labelled row. A
 // bead press sets the time there and selects the event; in Build a bead drags to move the event
-// (one undo step). The play bar: first, previous stop, play, next stop, last, rate, loop, the
-// clock (type a time and press Enter) and the Time checkbox. The strip mounts the playback clock.
+// (one undo step). The legend names the marks. The play bar: first, previous stop, play, next
+// stop, last, rate, loop, the clock (type a time and press Enter) and the Time checkbox. The
+// strip mounts the playback clock.
 import './timeline.css';
 import { ChevronFirst, ChevronLast, Pause, Play, SkipBack, SkipForward } from 'lucide-react';
 import {
@@ -25,7 +29,7 @@ import { EFFECTOR_KINDS } from '../../domain/catalog';
 import { nextStop, prevStop, stops, type Derived } from '../../engine';
 import type { Window } from '../../engine/geo';
 import { useDocument } from '../../state/document';
-import { useUi } from '../../state/ui';
+import { TL_H_DEFAULT, TL_H_MAX, TL_H_MIN, useUi } from '../../state/ui';
 import { ContextMenu, type MenuItem } from '../../ui';
 import { Tooltip } from '../../ui/Tooltip';
 import { focusRing } from '../../ui/focus';
@@ -34,13 +38,15 @@ import { usePlayback } from '../build/bar/usePlayback';
 import { boardDerived, boardScene } from '../build/board/derived';
 import { useSize } from '../shared/useSize';
 import { fmtTime } from '../shared/units';
+import { kindSwatch, stageGlyph } from './glyphs';
 import { keyPoints, type KeyPoint } from './stages';
 
 export const RATES = [0.25, 0.5, 1, 2, 4, 8, 16, 32] as const;
 /** The strip's shortest run, so an empty or short profile still has a usable axis. */
 export const MIN_RUN_S = 60;
 
-const GUT_L = 48;
+/** The left gutter: the threat id, and in a tall lane the system ids of its rows. */
+export const GUT_L = 72;
 const GUT_R = 12;
 const AXIS_H = 24;
 const MAJORS = [1, 2, 5, 10, 30, 60, 120, 300, 600, 1200, 3600];
@@ -63,8 +69,16 @@ const CH = 6.6; // px per mono character at 11 px
 const BAND = 16;
 const BEAD_R = 5;
 const STAGE_H = 13;
-/** One lane's height, the same whatever it holds, so an added system never moves the board. */
+/** One lane's least height, the same whatever it holds, so an added system never moves the board. */
 const LANE_H = 2 + BAND + 2 + STAGE_H + 2 * BEAD_R + 4;
+/** A tall lane: a header line with the threat id, then one labelled row per system. */
+const HEAD = 14;
+const ROW_MIN = 12;
+const ROW_MAX = 22;
+/** The lane's fixed parts around the rows: top pad, header, gap, stage row, beads, bottom pad. */
+const ROWS_FIXED = 2 + HEAD + 2 + STAGE_H + 2 * BEAD_R + 4;
+const GLYPH = 9;
+const STEP_PX = 16;
 
 export const runEnd = (tmaxS: number) => Math.max(MIN_RUN_S, tmaxS);
 const round1 = (t: number) => Math.round(t * 10) / 10;
@@ -112,16 +126,25 @@ type Lane = {
   top: number;
   h: number;
   rows: SysRow[];
-  /** The bar pitch and thickness inside the band. */
+  /** `rows`: each system on its own labelled row; `band`: the compact band of thin bars. */
+  layout: 'rows' | 'band';
+  /** The y of the first row, the row pitch and the bar thickness. */
+  rowsTop: number;
   pitch: number;
   bar: number;
   events: EventRec[];
   points: KeyPoint[];
 };
 
-/** Lane geometry: one lane per threat path, stacked from y = 2, each LANE_H tall. */
-export function buildLanes(scene: Scene, d: Derived): { lanes: Lane[]; height: number } {
+/**
+ * Lane geometry: one lane per threat path, stacked from y = 2. Every lane is the same height:
+ * LANE_H, or more when `areaH` (the lane area) has room, so the lanes share it. A lane whose rows
+ * get a pitch of ROW_MIN or more lays each system on its own labelled row.
+ */
+export function buildLanes(scene: Scene, d: Derived, areaH = 0): { lanes: Lane[]; height: number } {
   const lanes: Lane[] = [];
+  const n = scene.scene.paths.length;
+  const laneH = Math.max(LANE_H, n ? Math.floor((areaH - 4 - (n - 1)) / n) : LANE_H);
   let y = 2;
   for (const path of scene.scene.paths) {
     const rows: SysRow[] = [];
@@ -129,18 +152,26 @@ export function buildLanes(scene: Scene, d: Derived): { lanes: Lane[]; height: n
       const wins = d.windows[sys.id]?.[path.id] ?? [];
       if (wins.length) rows.push({ sys, wins });
     }
-    const pitch = rows.length <= 4 ? 4 : BAND / rows.length;
+    const free = laneH - ROWS_FIXED;
+    const tall = rows.length > 0 && free >= rows.length * ROW_MIN;
+    const pitch = tall
+      ? Math.min(ROW_MAX, Math.floor(free / rows.length))
+      : rows.length <= 4
+        ? 4
+        : BAND / rows.length;
     lanes.push({
       path,
       top: y,
-      h: LANE_H,
+      h: laneH,
       rows,
+      layout: tall ? 'rows' : 'band',
+      rowsTop: y + 2 + (tall ? HEAD : 0),
       pitch,
-      bar: Math.max(1, pitch - 1),
+      bar: tall ? pitch - 4 : Math.max(1, pitch - 1),
       events: scene.events.filter((e) => e.path === path.id),
       points: keyPoints(d, path.id),
     });
-    y += LANE_H + 1;
+    y += laneH + 1;
   }
   return { lanes, height: Math.max(y + 2, 20) };
 }
@@ -161,6 +192,7 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
   const loop = useUi((s) => s.loop);
   const rate = useUi((s) => s.rate);
   const tview = useUi((s) => s.tview);
+  const tlH = useUi((s) => s.tlH);
   const selectedKeys = useUi((s) => s.selectedKeys);
   const hoverKey = useUi((s) => s.hoverKey);
   const [plotRef, size] = useSize<HTMLDivElement>();
@@ -203,7 +235,7 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
     if (!u.timeOn) u.setTimeOn(true);
   };
 
-  const { lanes, height } = scene && d ? buildLanes(scene, d) : { lanes: [], height: 20 };
+  const { lanes, height } = scene && d ? buildLanes(scene, d, tlH) : { lanes: [], height: 20 };
   const warned = new Set<string>();
   for (const w of d?.warnings ?? []) if (w.eventId) warned.add(w.eventId);
 
@@ -361,6 +393,31 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
     if (drag.current?.kind === 'pan') drag.current = null;
   };
 
+  // the resize grip on the strip's top edge: a drag up grows the lane area
+  const resize = useRef<{ y0: number; h0: number } | null>(null);
+  const onGripDown = (e: RPointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    resize.current = { y0: e.clientY, h0: ui().tlH };
+    capture(e);
+    e.preventDefault();
+  };
+  const onGripMove = (e: RPointerEvent<HTMLDivElement>) => {
+    const r = resize.current;
+    if (r) ui().setTlH(r.h0 - (e.clientY - r.y0));
+  };
+  const onGripUp = () => {
+    resize.current = null;
+  };
+  const onGripKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      ui().setTlH(ui().tlH + (e.key === 'ArrowUp' ? STEP_PX : -STEP_PX));
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      ui().setTlH(TL_H_DEFAULT);
+    }
+  };
+
   // ---------------------------------------------------------------- play bar
 
   const stopList = () => (doc && d ? stops(doc, d) : [0]);
@@ -462,14 +519,33 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
   // ---------------------------------------------------------------- lanes
 
   const laneSvg = lanes.map((L) => {
-    const { path, top, h, rows, pitch, bar, events, points } = L;
+    const { path, top, h, rows, layout, rowsTop, pitch, bar, events, points } = L;
     const sel = selectedKeys.includes(path.key);
     const ink = inkOf(path.identity);
-    const stageY = top + 2 + BAND + 2;
-    const by = top + h - BEAD_R - 2;
+    const tall = layout === 'rows';
+    // the rows (or the band) at the lane's head, then the stage row, then the beads
+    const stageY = tall ? rowsTop + rows.length * pitch + 2 : top + 2 + BAND + 2;
+    const by = stageY + STAGE_H + BEAD_R;
     const items: ReactNode[] = [];
     rows.forEach(({ sys, wins }, k) => {
-      const yy = top + 2 + k * pitch;
+      const yy = rowsTop + k * pitch;
+      const cls = barClass(sys.kind);
+      if (tall)
+        items.push(
+          <g key={`r-${sys.id}`} className="tl-row" data-testid="tl-row">
+            {kindSwatch(cls, 4, yy + bar / 2)}
+            <text className="tl-rowlab" x={11} y={yy + bar / 2}>
+              {sys.id}
+            </text>
+            <line
+              className="tl-row-sep"
+              x1={GUT_L}
+              x2={W - GUT_R}
+              y1={yy + pitch - 1.5}
+              y2={yy + pitch - 1.5}
+            />
+          </g>,
+        );
       wins.forEach((w, i) => {
         if (!inView(w.tIn, w.tOut)) return;
         const x0 = cx(w.tIn);
@@ -478,12 +554,16 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
           <g key={`${sys.id}-${i}`} data-testid="tl-window">
             <title>{`${sys.id} sees ${path.id} from ${fmtTime(w.tIn)} to ${fmtTime(w.tOut)}, held ${mmss(w.tOut - w.tIn)}`}</title>
             <rect
-              className={`tl-bar ${barClass(sys.kind)}`}
+              className={`tl-bar ${cls}`}
               x={x0}
               y={yy}
               width={Math.max(1, x1 - x0)}
               height={bar}
             />
+            {/* the first see: a darker cap at the bar's start */}
+            {w.tIn >= tv0 ? (
+              <rect className="tl-bar-cap" x={x0} y={yy} width={1} height={bar} />
+            ) : null}
             <rect
               className="tl-bar-hit"
               x={x0}
@@ -495,12 +575,20 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
         );
       });
     });
-    let labEnd = -Infinity;
-    for (const p of points) {
-      if (p.t < tv0 || p.t > tv1) continue;
+    const gy = stageY + GLYPH / 2 + 1;
+    const shown = points.filter((p) => p.t >= tv0 && p.t <= tv1);
+    // The glyph always shows. Its label goes to the right when it ends before the next glyph,
+    // else to the left when that space is free of the last label, else it is dropped.
+    let used = GUT_L;
+    const hg = GLYPH / 2;
+    shown.forEach((p, i) => {
       const x = xOf(p.t);
-      const show = x >= labEnd + 6;
-      if (show) labEnd = x + 3 + p.label.length * CH;
+      const next = shown[i + 1];
+      const lw = p.label.length * CH;
+      let side: 'r' | 'l' | null = null;
+      if (x + hg + 3 >= used && (!next || x + hg + 3 + lw <= xOf(next.t) - hg - 2)) side = 'r';
+      else if (x - hg - 3 - lw >= used + 4) side = 'l';
+      used = side === 'r' ? x + hg + 3 + lw : x + hg;
       const who = p.system ? ` · ${p.system}` : '';
       items.push(
         <g
@@ -510,20 +598,30 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
           data-stage={p.stage}
         >
           <title>{`${p.label} · ${fmtTime(p.t)}${who}. ${p.definition}`}</title>
-          {/* a point whose label is dropped keeps a short tick under the text line */}
-          <line x1={x} x2={x} y1={show ? stageY : stageY + 9} y2={stageY + STAGE_H - 2} />
-          {show ? (
-            <text x={x + 3} y={stageY + 9}>
+          {/* the time's hairline up through the rows to the glyph */}
+          <line x1={x} x2={x} y1={top + 2 + (tall ? HEAD : 0)} y2={gy - GLYPH / 2 - 1} />
+          {stageGlyph(p.stage, x, gy)}
+          {side ? (
+            <text
+              x={side === 'r' ? x + hg + 3 : x - hg - 3}
+              y={stageY + 10}
+              textAnchor={side === 'r' ? 'start' : 'end'}
+            >
               {p.label}
             </text>
           ) : null}
         </g>,
       );
-    }
+    });
+    let evEnd = -Infinity;
     for (const e of events) {
       if (e.t < tv0 || e.t > tv1) continue;
       const x = xOf(e.t);
-      const cls = `tl-bead${selectedKeys.includes(e.key) ? ' tl-sel' : ''}${warned.has(e.id) ? ' tl-warn' : ''}`;
+      const warn = warned.has(e.id);
+      const cls = `tl-bead${selectedKeys.includes(e.key) ? ' tl-sel' : ''}${warn ? ' tl-warn' : ''}`;
+      const text = e.label || e.id;
+      const showLab = x >= evEnd;
+      if (showLab) evEnd = x + BEAD_R + 4 + text.length * CH + 8;
       items.push(
         <g
           key={e.key}
@@ -538,6 +636,17 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
           <text x={x} y={by}>
             {EV_TYPES[e.type] ?? '?'}
           </text>
+          {warn ? (
+            <polygon
+              className="tl-warn-tri"
+              points={`${x + 4},${by - 9} ${x + 8},${by - 2} ${x},${by - 2}`}
+            />
+          ) : null}
+          {showLab ? (
+            <text className="tl-evlab" x={x + BEAD_R + 4} y={by}>
+              {text}
+            </text>
+          ) : null}
         </g>,
       );
     }
@@ -585,6 +694,25 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
       className={`tl tl-${mode} mt-2 shrink-0`}
       data-testid="timeline"
     >
+      <div
+        className={`tl-resize ${focusRing}`}
+        role="separator"
+        tabIndex={0}
+        aria-orientation="horizontal"
+        aria-label="Resize timeline"
+        aria-valuemin={TL_H_MIN}
+        aria-valuemax={TL_H_MAX}
+        aria-valuenow={tlH}
+        title="Drag to resize the timeline"
+        onPointerDown={onGripDown}
+        onPointerMove={onGripMove}
+        onPointerUp={onGripUp}
+        onPointerCancel={onGripUp}
+        onDoubleClick={() => ui().setTlH(TL_H_DEFAULT)}
+        onKeyDown={onGripKey}
+      >
+        <div className="tl-resize-rule" />
+      </div>
       {tview ? (
         <div
           className="tl-ov"
@@ -627,7 +755,7 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
           >
             {axis}
           </svg>
-          <div ref={lanesRef} className="tl-lanes">
+          <div ref={lanesRef} className="tl-lanes" style={{ height: tlH }}>
             {lanes.length ? (
               <svg
                 width={W}
@@ -653,9 +781,53 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
             <svg className="tl-grip" viewBox="0 0 12 9" aria-hidden="true">
               <polygon points="0,0 12,0 6,9" />
             </svg>
+            <span className="tl-cursor-time" data-testid="tl-cursor-time">
+              {fmtTime(tS)}
+            </span>
           </div>
         </div>
       </ContextMenu>
+      <div className="tl-legend" data-testid="tl-legend" aria-label="Legend">
+        <span>
+          <svg width="12" height="8" aria-hidden="true">
+            <rect className="tl-bar tl-bar-s" x={0} y={1} width={12} height={6} rx={1} />
+          </svg>
+          Sensor
+        </span>
+        <span>
+          <svg width="12" height="8" aria-hidden="true">
+            <rect className="tl-bar tl-bar-e" x={0} y={1} width={12} height={6} rx={1} />
+          </svg>
+          Effector
+        </span>
+        <span>
+          <svg width="12" height="8" aria-hidden="true">
+            <rect className="tl-bar tl-bar-ew" x={0} y={1} width={12} height={6} rx={1} />
+          </svg>
+          EW
+        </span>
+        <span className="tl-stage">
+          <svg width="12" height="12" aria-hidden="true">
+            {stageGlyph('track', 6, 6)}
+          </svg>
+          F2T2EA step
+        </span>
+        <span className="tl-bead">
+          <svg width="12" height="12" aria-hidden="true">
+            <circle cx={6} cy={6} r={BEAD_R} />
+            <text x={6} y={6}>
+              D
+            </text>
+          </svg>
+          Event
+        </span>
+        <span className="tl-stage tl-da">
+          <svg width="12" height="12" aria-hidden="true">
+            {stageGlyph('da', 6, 6)}
+          </svg>
+          Defended asset
+        </span>
+      </div>
       <div className="tl-bar" role="toolbar" aria-label="Play bar">
         <label className="tl-check">
           <input
