@@ -125,7 +125,7 @@ export function restoreBuild(): void {
 
 /**
  * A card from a Build view: the stash while Brief is open (the view the user left), else the live
- * Build stores. The centre and zoom are the stash's (a 3D card keeps the fitted frame); the
+ * Build stores. The centre and zoom are the stash's; the
  * board's `ref` is a display id and the card stores the key.
  */
 export function cardFromBuild(v: Vignette, from: BuildStash = snapshotBuild()): Card {
@@ -155,14 +155,9 @@ export function addCard(): void {
     d.cards.push(card);
   });
   useUi.getState().setCardKey(card.key);
-  if (card.view.kind === '3d') showToast(ADDED_TOAST_3D);
   const next = doc();
   if (next) applyCard(next, card);
 }
-
-/** 3D has no inverse camera, so a card added from a 3D view keeps the default 3D view. */
-export const ADDED_TOAST_3D =
-  'Card added. 3D cards keep the default 3D view, not the pan and zoom.';
 
 /** "Card 3 at t+2:08" without its time, so a frame of a frame does not stack the suffix. */
 const baseName = (name: string) => name.replace(/ at (t\+\d+:\d{2}|full run)$/, '');
@@ -309,7 +304,7 @@ export function beginFrame(card: Card, what: 'zoom' | 'pan' | 'orbit'): void {
 export function updateFrame(key: string, frame: Frame): void {
   useDocument.getState().updateDrag((d) => {
     const c = d.cards.find((x) => x.key === key);
-    if (!c || c.view.kind === '3d') return;
+    if (!c) return;
     c.view.zoom = clampZoom(frame.zoom);
     c.view.centre = { x: frame.centre.x, y: frame.centre.y };
   });
@@ -332,7 +327,7 @@ export function endFrame(): void {
 export function zoomCard(factor: number): void {
   const v = doc();
   const card = currentCard(v, useUi.getState().cardKey);
-  if (!v || !card || card.view.kind === '3d') return;
+  if (!v || !card) return;
   const z = clampZoom(card.view.zoom * factor);
   if (z === card.view.zoom) return;
   edit(`zoom card ${card.id}`, setField(card.key, 'zoom', z));

@@ -15,7 +15,7 @@ import { GUT_L } from '../timeline/Timeline';
 import BuildWorkspace from './BuildWorkspace';
 import { cancel } from './board/Board';
 import { useBoard, BOARD_DEFAULTS } from './board/store';
-import { saveCard, SAVED_TOAST, SAVED_TOAST_3D } from './cards/cards';
+import { saveCard, SAVED_TOAST } from './cards/cards';
 
 const reset = () =>
   act(() => {
@@ -401,12 +401,11 @@ describe('Build bar, scrub, thumbnails and cards (lane 10.3)', () => {
       pitchDeg: 40,
       ref: doc0.sensors[0]!.key,
       elevationMode: 'fromAsset',
-      // 3D has no inverse camera: the card keeps the fitted frame and the toast says so (11.1)
       centre: { x: 0, y: 0 },
       zoom: 1,
     });
     expect(useDocument.getState().history.at(-1)).toBe('Save card');
-    expect(useToast.getState().text).toBe(SAVED_TOAST_3D);
+    expect(useToast.getState().text).toBe(SAVED_TOAST);
     // The bar button saves the next one, with time off.
     act(() => useUi.getState().setTimeOn(false));
     fireEvent.click(screen.getByRole('button', { name: 'Save as card' }));

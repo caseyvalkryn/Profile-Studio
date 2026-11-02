@@ -43,6 +43,8 @@ export type Cam = {
   frame: { x0: number; y0: number; x1: number; y1: number };
   project(x: number, y: number, z?: number): [number, number];
   unproject(sx: number, sy: number): { x: number; y: number } | { r: number; z: number } | null;
+  /** 3D only: the ground point (z 0) at a screen pixel. The axonometric map is affine on the ground, so it inverts. */
+  unprojectGround?(sx: number, sy: number): { x: number; y: number };
   axes: { xTicks: Tick[]; yTicks: Tick[]; xLabel: string; yLabel: string };
   preserveAspectRatio: string;
   hint: string | null;
@@ -367,6 +369,12 @@ const axon: {
       const q = pr(x, y, z || 0);
       return [(W / 2 + (q[0] - ox) * k) * v.zoom + v.px, (H / 2 - (q[1] - oy) * k) * v.zoom + v.py];
     };
+    // the inverse of `project` on the ground plane: undo the viewer and the fit, then the rotation
+    const unprojectGround = (sx: number, sy: number): { x: number; y: number } => {
+      const a = ((sx - v.px) / v.zoom - W / 2) / k + ox;
+      const b = (oy - ((sy - v.py) / v.zoom - H / 2) / k) / sp;
+      return { x: cx + a * cyw + b * syw, y: cy - a * syw + b * cyw };
+    };
     // screen direction of north: the ground vector (0, 1, 0)
     const nx = -syw;
     const ny = -(cyw * sp);
@@ -391,6 +399,7 @@ const axon: {
       frame: { x0: m, y0: m, x1: W - m, y1: H - m },
       project,
       unproject: () => null,
+      unprojectGround,
       axes: { xTicks, yTicks, xLabel: 'East', yLabel: 'North' },
       preserveAspectRatio: 'xMidYMid meet',
       hint: axonHint(zx, yawD, pitchD),

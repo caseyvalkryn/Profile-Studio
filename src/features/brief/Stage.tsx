@@ -13,7 +13,8 @@
 // slice from the loop (Scissors) takes the strip's loop into the card; an empty caption shows
 // what to write; the aids name the step of the threat in focus and the next card's time.
 // The frame (2026-11-02, user request): the wheel zooms the card about the cursor and a drag
-// pans it (in 3D a drag orbits), each burst one undo step (./stageFrame, cards.ts beginFrame); the
+// pans it; in 3D a drag orbits and Shift (or the middle button) and drag pans. Each burst is
+// one undo step (./stageFrame, cards.ts beginFrame); the
 // head prints the zoom. The camera segment in the head (Plan, Elevation, 3D; keys 1, 2, 3) sets
 // the card's camera as the Build bar's segment sets the view, one undo step (cards.ts
 // setCamera). The Readout display is the frame panel floating at the stage's top
@@ -142,8 +143,8 @@ function CameraSegment({ view }: { view: View }) {
   );
 }
 
-/** A pan or orbit in progress: the pointer's last position and whether the edit has begun. */
-type Drag = { id: number; x: number; y: number; begun: boolean };
+/** A pan or orbit in progress: the pointer's last position, the gesture, whether the edit has begun. */
+type Drag = { id: number; x: number; y: number; begun: boolean; pan: boolean };
 
 /** The next card's time in the aids: "at t+1:40", "t+0:10 to t+0:40" for a slice, "full run". */
 function nextWhen(card: Card): string {
@@ -271,7 +272,7 @@ export default function Stage({
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
       const { v, card, sz } = latest.current;
-      if (!card || card.view.kind === '3d') return;
+      if (!card) return;
       e.preventDefault();
       const r = el.getBoundingClientRect();
       const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
@@ -307,13 +308,16 @@ export default function Stage({
     };
   }, [ref]);
 
-  // A drag pans a Plan or Elevation card and orbits a 3D card; the edit begins at the first
-  // move, so a plain click records nothing.
+  // A drag pans a Plan or Elevation card; in 3D it orbits, and with Shift or the middle button
+  // it pans. The edit begins at the first move, so a plain click records nothing.
   const drag = useRef<Drag | null>(null);
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (!card || e.button !== 0 || (e.target as Element).closest('.brief-float')) return;
+    if (!card || (e.button !== 0 && e.button !== 1)) return;
+    if ((e.target as Element).closest('.brief-float')) return;
+    e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
-    drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY, begun: false };
+    const pan = card.view.kind !== '3d' || e.shiftKey || e.button === 1;
+    drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY, begun: false, pan };
   };
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     const d = drag.current;
@@ -323,7 +327,7 @@ export default function Stage({
     if (!d.begun && Math.hypot(dx, dy) < 3) return;
     const r = e.currentTarget.getBoundingClientRect();
     const k = sz.W / Math.max(1, r.width);
-    if (card.view.kind === '3d') {
+    if (!d.pan) {
       if (!d.begun) beginFrame(card, 'orbit');
       updateOrbit(card.key, orbitBy(card.view, dx, dy));
     } else {
@@ -362,7 +366,7 @@ export default function Stage({
         <span className="font-mono text-xs text-muted" data-testid="brief-time">
           {timeOn ? fmtTime(tS) : 'full run'}
         </span>
-        {card && card.view.kind !== '3d' && card.view.zoom !== 1 ? (
+        {card && card.view.zoom !== 1 ? (
           <span className="font-mono text-xs text-muted" data-testid="brief-zoom-head">
             {zoomText(card.view.zoom)}
           </span>

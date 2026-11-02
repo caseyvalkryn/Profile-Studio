@@ -261,8 +261,11 @@ the notes panel on the right.
   (the notes Camera select writes the same field) and starts the new camera from the fitted
   frame, since the centre is metres of the old one; with no card it sets the Build view the
   stage draws.
-- The frame on the stage (2026-11-02, user request): the wheel zooms a Plan or Elevation card
-  about the cursor (0.5 to 8) and a drag pans it; in 3D a drag orbits at the board's rates. One
+- The frame on the stage (2026-11-02, user request): the wheel zooms the card about the cursor
+  (0.5 to 8) and a drag pans it; in 3D a drag orbits at the board's rates and Shift (or the
+  middle button) and drag pans. A 3D card stores its frame like the others: the centre is the
+  ground point at the middle (the axon camera inverts on the ground plane), so Build's Save as
+  card and the Brief stage keep a 3D zoom and pan. One
   wheel burst or one drag is one undo step ("zoom card c2", "pan card c2", "orbit card c2"). The
   head prints the zoom ("x2.5") when it is not 1; = and - zoom about the middle; Fit (the notes
   button, the palette) returns to the fitted frame. The strip thumbnails and the print deck draw

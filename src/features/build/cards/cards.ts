@@ -13,9 +13,6 @@ import { useBoard } from '../board/store';
 import { toggledLayers } from '../bar/layers';
 
 export const SAVED_TOAST = 'Card saved. Write its caption in Brief.';
-/** 3D has no inverse camera, so a 3D card keeps the default 3D view, not the pan and zoom. */
-export const SAVED_TOAST_3D =
-  'Card saved. 3D cards keep the default 3D view, not the pan and zoom. Write its caption in Brief.';
 
 /** The lowest unused `c<n>` (spec section 3 item 5), minted as every other display id. */
 export function nextCardId(cards: readonly Card[]): string {
@@ -87,9 +84,9 @@ function boardSize(): { W: number; H: number } {
   return last ? { W: last.W, H: last.H } : useBoard.getState().size;
 }
 
-/** The world point at screen (sx, sy): plan x, y or elevation r, z; null in 3D. */
+/** The world point at screen (sx, sy): plan x, y, elevation r, z, or the 3D ground point. */
 function worldAt(cam: Cam, sx: number, sy: number): { x: number; y: number } | null {
-  const p = cam.unproject(sx, sy);
+  const p = cam.unprojectGround ? cam.unprojectGround(sx, sy) : cam.unproject(sx, sy);
   if (!p) return null;
   return 'r' in p ? { x: p.r, y: p.z } : { x: p.x, y: p.y };
 }
@@ -130,8 +127,8 @@ export type BuildCam = {
 };
 
 /**
- * The card view of a Build camera. Plan and Elevation keep the centre and zoom; 3D, whose camera
- * has no inverse, keeps the fitted frame (centre 0, 0, zoom 1) and its yaw and pitch.
+ * The card view of a Build camera: the centre and zoom of the view (in 3D the centre is the
+ * ground point at the middle), and the yaw and pitch.
  */
 export function cardViewOf(doc: Vignette, c: BuildCam): CardView {
   const p: CamParams = {
@@ -142,7 +139,6 @@ export function cardViewOf(doc: Vignette, c: BuildCam): CardView {
     elevationMode: c.elevationMode,
   };
   const ref = refToKey(doc, c.ref);
-  if (c.view === '3d') return { ...p, ref, centre: { x: 0, y: 0 }, zoom: 1 };
   return { ...p, ref, centre: centreOf(doc, p, c.zoom, c.px, c.py), zoom: c.zoom };
 }
 
@@ -194,14 +190,14 @@ export function saveCard(afterKey: string | null = null): string | null {
     if (i >= 0) d.cards.splice(i + 1, 0, card);
     else d.cards.push(card);
   });
-  showToast(card.view.kind === '3d' ? SAVED_TOAST_3D : SAVED_TOAST);
+  showToast(SAVED_TOAST);
   return card.key;
 }
 
 /** Board pan that puts the card's centre at the middle of the board; none in 3D. */
 function panFor(doc: Vignette, v: CardView): { px: number; py: number } {
   const last = boardCam();
-  if (!last || v.kind === '3d') return { px: 0, py: 0 };
+  if (!last) return { px: 0, py: 0 };
   const p: CamParams = { ...v, ref: refToId(doc, v.ref) };
   const fit = worldAt(camAt(doc, p, last, 1), last.W / 2, last.H / 2);
   if (!fit) return { px: 0, py: 0 };

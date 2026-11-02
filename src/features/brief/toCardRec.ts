@@ -11,7 +11,7 @@ export function toCardRec(v: Vignette, card: Card): CardRec {
   const scene = boardScene(v);
   const found = scene.cards.find((c) => c.key === card.key);
   // the stored frame (lane 11.F, F-02): the stage, the strip and print draw the card's zoom and
-  // centre; a 3D card keeps zoom 1 and centre 0, 0, the default 3D view
+  // centre
   const frame = { zoom: card.view.zoom, centre: { ...card.view.centre } };
   if (found) return { ...found, cam: { ...found.cam, ...frame } };
   const ids = idMaps(scene);
@@ -57,12 +57,10 @@ export const CAM_LABEL: Record<CardRec['cam']['proj'], string> = {
   axon: '3D',
 };
 
-/** The strip's small line: "3D · t+200 s · default 3D view · e4, e5" (a 3D card keeps the default
- *  3D view, not the pan and zoom: lane 11.F, F-05). */
+/** The strip's small line: "3D · t+200 s · e4, e5". */
 export function cardLine(rec: CardRec): string {
   const parts = [CAM_LABEL[rec.cam.proj]];
   if (rec.t != null) parts.push(`t+${Math.round(rec.t)} s`);
-  if (rec.cam.proj === 'axon') parts.push('default 3D view');
   if (rec.focus.length) parts.push(rec.focus.join(', '));
   return parts.join(' · ');
 }

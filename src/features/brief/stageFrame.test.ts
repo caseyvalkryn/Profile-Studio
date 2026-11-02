@@ -27,13 +27,30 @@ describe('stage frame maths', () => {
     expect(Math.abs(back.centre.y)).toBeLessThanOrEqual(1);
   });
 
-  it('clamps at the zoom limits and returns null at a limit or for a 3D card', () => {
+  it('clamps at the zoom limits and returns null at a limit', () => {
     const v = deck();
     expect(zoomAt(v, plan(v), SZ, 100, 0, 0)!.zoom).toBe(ZOOM_MAX);
     const at = { ...plan(v), view: { ...plan(v).view, zoom: ZOOM_MAX } };
     expect(zoomAt(v, at, SZ, 2, 0, 0)).toBeNull();
-    expect(zoomAt(v, v.cards[1]!, SZ, 2, 0, 0)).toBeNull();
-    expect(panBy(v, v.cards[1]!, SZ, 10, 10)).toBeNull();
+  });
+
+  it('a 3D card zooms and pans on the ground plane: a zoom about the middle keeps the centre, a corner zoom moves it', () => {
+    const v = deck();
+    const c = v.cards[1]!;
+    const mid = zoomAt(v, c, SZ, 2, SZ.W / 2, SZ.H / 2)!;
+    expect(mid).toEqual({ zoom: 2, centre: { x: 0, y: 0 } });
+    const corner = zoomAt(v, c, SZ, 2, 0, 0)!;
+    expect(corner.centre).not.toEqual({ x: 0, y: 0 });
+    const back = zoomAt(v, { ...c, view: { ...c.view, ...corner } }, SZ, 0.5, 0, 0)!;
+    expect(back.zoom).toBe(1);
+    expect(Math.abs(back.centre.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(back.centre.y)).toBeLessThanOrEqual(1);
+    const p = panBy(v, c, SZ, 100, 0)!;
+    expect(p.centre).not.toEqual({ x: 0, y: 0 });
+    // the pan undone by the opposite drag
+    const q = panBy(v, { ...c, view: { ...c.view, ...p } }, SZ, -100, 0)!;
+    expect(Math.abs(q.centre.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(q.centre.y)).toBeLessThanOrEqual(1);
   });
 
   it('a drag to the right and down moves the centre west and north by the pixels in metres', () => {

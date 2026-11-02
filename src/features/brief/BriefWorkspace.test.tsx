@@ -37,9 +37,7 @@ describe('Brief workspace', () => {
     expect(cards[0]).toHaveAttribute('aria-current', 'true');
     expect(cards[1]).not.toHaveAttribute('aria-current');
     expect(cards[1]!.querySelector('svg.board.thumb')?.getAttribute('data-proj')).toBe('axon');
-    expect(
-      within(cards[1]!).getByText('3D · t+200 s · default 3D view · T-01'),
-    ).toBeInTheDocument();
+    expect(within(cards[1]!).getByText('3D · t+200 s · T-01')).toBeInTheDocument();
     expect(stageProj()).toBe('plan');
     expect(useUi.getState().view).toBe('plan');
   });
@@ -339,9 +337,21 @@ describe('Brief timeline, readout, frames and key points', () => {
     const c2 = useDocument.getState().doc!.cards[1]!.view;
     expect(c2.yawDeg).toBeCloseTo(yaw0 + 100 * 0.45, 5);
     expect(c2.pitchDeg).toBe(pitch0);
+    // Shift and drag pans the 3D card: the ground point at the middle moves
+    fireEvent.pointerDown(stage, {
+      button: 0,
+      pointerId: 3,
+      clientX: 0,
+      clientY: 0,
+      shiftKey: true,
+    });
+    fireEvent.pointerMove(stage, { pointerId: 3, clientX: 60, clientY: 40 });
+    fireEvent.pointerUp(stage, { pointerId: 3, clientX: 60, clientY: 40 });
+    expect(useDocument.getState().doc!.cards[1]!.view.centre).not.toEqual({ x: 0, y: 0 });
     expect(useDocument.getState().past.map((e) => e.label)).toEqual([
       'pan card c1',
       'orbit card c2',
+      'pan card c2',
     ]);
   });
 

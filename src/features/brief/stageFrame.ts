@@ -1,8 +1,9 @@
 // The stage's frame maths: a wheel zooms the card about the cursor, a drag pans it, and in 3D a
-// drag orbits (the Build board's rates). Pure functions over the card and the stage size; they
-// return the new `CardView` frame and the stage writes it through the document's drag edit.
-// The camera is the one `render.card` builds for the stored frame (src/board/render.ts
-// framePan): the scene bounds, no pan, so a zoom here draws exactly where the stage shows it.
+// drag orbits (the Build board's rates) while Shift and drag pans. Pure functions over the card
+// and the stage size; they return the new `CardView` frame and the stage writes it through the
+// document's drag edit. The camera is the one `render.card` builds for the stored frame
+// (src/board/render.ts framePan): the scene bounds, no pan, so a zoom here draws exactly where
+// the stage shows it. In 3D the centre is a ground point (the camera's `unprojectGround`).
 import type { Card, CardView, Vignette } from '../../domain/types';
 import { cameras, VIEW_TO_CAM, type Cam } from '../../board';
 import { bounds as geoBounds } from '../../board/geo';
@@ -23,9 +24,8 @@ export type Frame = Pick<CardView, 'zoom' | 'centre'>;
 export type Size = { W: number; H: number };
 type Pt = { x: number; y: number };
 
-/** The card's Plan or Elevation camera at `zoom` with no pan; null for a 3D card. */
-function camAt(v: Vignette, card: Card, sz: Size, zoom: number): Cam | null {
-  if (card.view.kind === '3d') return null;
+/** The card's camera at `zoom` with no pan. */
+function camAt(v: Vignette, card: Card, sz: Size, zoom: number): Cam {
   const scene = boardScene(v);
   return cameras.get(VIEW_TO_CAM[card.view.kind]).setup(scene.scene, boardDerived(v), sz, {
     yaw: card.view.yawDeg,
@@ -39,9 +39,9 @@ function camAt(v: Vignette, card: Card, sz: Size, zoom: number): Cam | null {
   });
 }
 
-/** The world point at a stage pixel: plan x, y or elevation r, z. */
+/** The world point at a stage pixel: plan x, y, elevation r, z, or the 3D ground point. */
 function worldAt(cam: Cam, sx: number, sy: number): Pt | null {
-  const p = cam.unproject(sx, sy);
+  const p = cam.unprojectGround ? cam.unprojectGround(sx, sy) : cam.unproject(sx, sy);
   if (!p) return null;
   return 'r' in p ? { x: p.r, y: p.z } : { x: p.x, y: p.y };
 }
@@ -60,7 +60,7 @@ const round = (f: Frame): Frame => ({
 
 /**
  * Zoom by `factor` about the stage pixel (sx, sy): the world point under the cursor stays
- * under it. Null when the frame does not change (a 3D card, or at a zoom limit).
+ * under it. Null when the frame does not change (at a zoom limit).
  */
 export function zoomAt(
   v: Vignette,
@@ -75,7 +75,6 @@ export function zoomAt(
   if (z1 === z0) return null;
   const c0 = camAt(v, card, sz, z0);
   const c1 = camAt(v, card, sz, z1);
-  if (!c0 || !c1) return null;
   const d0 = offset(c0, sz, sx, sy);
   const d1 = offset(c1, sz, sx, sy);
   if (!d0 || !d1) return null;
@@ -88,10 +87,9 @@ export function zoomAt(
   });
 }
 
-/** Pan the card by a drag of (dx, dy) stage pixels; null for a 3D card. */
+/** Pan the card by a drag of (dx, dy) stage pixels. */
 export function panBy(v: Vignette, card: Card, sz: Size, dx: number, dy: number): Frame | null {
   const cam = camAt(v, card, sz, card.view.zoom);
-  if (!cam) return null;
   const d = offset(cam, sz, sz.W / 2 - dx, sz.H / 2 - dy);
   if (!d) return null;
   const { centre } = card.view;

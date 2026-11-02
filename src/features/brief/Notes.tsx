@@ -483,7 +483,7 @@ export default function Notes({
               </span>
             </Field>
             {/* the frame: the zoom factor (the wheel on the stage sets it too) and Fit back to
-                the fitted view; a 3D card keeps the default 3D view */}
+                the fitted view */}
             <Field id="brief-zoom" label="Zoom">
               <span className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                 <TextField
@@ -503,8 +503,7 @@ export default function Notes({
                   className="ps-btn mini quiet"
                   aria-label="Fit the card"
                   disabled={
-                    card.view.kind === '3d' ||
-                    (card.view.zoom === 1 && card.view.centre.x === 0 && card.view.centre.y === 0)
+                    card.view.zoom === 1 && card.view.centre.x === 0 && card.view.centre.y === 0
                   }
                   onClick={() => fitCard(card.key)}
                 >

@@ -6,7 +6,6 @@ import { useDocument } from '../../state/document';
 import { UI_DEFAULTS, useUi } from '../../state/ui';
 import { useToast } from '../shell/toastStore';
 import {
-  ADDED_TOAST_3D,
   addCard,
   applyCard,
   cardFromBuild,
@@ -130,14 +129,9 @@ describe('the card frame (lane 11.1)', () => {
     stashBuild();
     addCard();
     const c = doc().cards.at(-1)!;
-    expect(c.view).toMatchObject({
-      kind: '3d',
-      centre: { x: 0, y: 0 },
-      zoom: 1,
-      yawDeg: 15,
-      pitchDeg: 50,
-    });
-    expect(useToast.getState().text).toBe(ADDED_TOAST_3D);
+    // 3D keeps its frame too: the zoom, and the ground point at the middle as the centre
+    expect(c.view).toMatchObject({ kind: '3d', zoom: 2, yawDeg: 15, pitchDeg: 50 });
+    expect(c.view.centre).not.toEqual({ x: 0, y: 0 });
   });
 });
 
@@ -235,7 +229,7 @@ describe('the card frame on the stage, the strip and print (lane 11.F, F-02)', (
     return { ...c, view: { ...c.view, ...view } };
   };
 
-  it('draws a Plan card at its stored zoom and centre, and a 3D card at its default view', () => {
+  it('draws a Plan card at its stored zoom and centre, and a 3D card at its stored frame', () => {
     expect(doc().cards[0]!.view.kind).toBe('plan');
     expect(toCardRec(doc(), at({ zoom: 2, centre: { x: 100, y: -50 } })).cam).toMatchObject({
       zoom: 2,
@@ -254,12 +248,13 @@ describe('the card frame on the stage, the strip and print (lane 11.F, F-02)', (
       ref: 'asset',
     });
     expect(zx - cx).toBeCloseTo(100 * cam.scale, 0);
-    // 3D ignores the stored frame: the same render at any zoom and centre
+    // 3D draws the stored frame too: a zoom and a centre change the render
     const d3 = doc().cards[1]!;
     expect(d3.view.kind).toBe('3d');
     const r = (c: Card) =>
       render.card(boardScene(doc()), boardDerived(doc()), toCardRec(doc(), c), SZ);
-    expect(r({ ...d3, view: { ...d3.view, zoom: 3, centre: { x: 500, y: 0 } } })).toBe(r(d3));
+    expect(r({ ...d3, view: { ...d3.view, zoom: 3, centre: { x: 500, y: 0 } } })).not.toBe(r(d3));
+    expect(r({ ...d3, view: { ...d3.view, zoom: 1, centre: { x: 0, y: 0 } } })).toBe(r(d3));
   });
 
   it('opens in Build (card.open) at the frame the stage draws', () => {
