@@ -188,20 +188,20 @@ export const authoredEventSchema: z.ZodType<AuthoredEvent> = z.object({
 });
 
 // Legacy card rules (legacy/js/11-schema.js validate): the start before the end, a rate from the
-// rate menu, every beat inside the clip.
+// rate menu, every beat inside the slice.
 export const clipSchema: z.ZodType<Clip> = z
   .object({
     t0S: num,
     t1S: num,
-    rate: num.refine((r) => RATES.includes(r), 'The clip rate is not in the rate menu.'),
+    rate: num.refine((r) => RATES.includes(r), 'The slice rate is not in the rate menu.'),
     beatsS: z.array(num),
   })
   .refine((c) => c.t0S < c.t1S, {
-    message: 'The clip start must be before the clip end.',
+    message: 'The slice start must be before the slice end.',
     path: ['t1S'],
   })
   .refine((c) => c.beatsS.every((b) => b >= c.t0S && b <= c.t1S), {
-    message: 'A beat is outside the clip.',
+    message: 'A beat is outside the slice.',
     path: ['beatsS'],
   });
 

@@ -464,6 +464,90 @@ export function warn(sx: number, sy: number): string {
   );
 }
 
+/** A key point stage: the six F2T2EA steps and the defended asset entry. */
+export type KeyPointStage = 'find' | 'fix' | 'track' | 'target' | 'engage' | 'assess' | 'da';
+
+/**
+ * The key point glyph of one stage, centred on (sx, sy): the geometry of the strip's glyphs
+ * (src/features/timeline/glyphs.tsx, r = 4). Not in legacy (lane 13.3). `kpo` shapes are open
+ * (filled with the board), `kpf` shapes are filled with the mark's ink, `kpg` alone is a stroke.
+ */
+export function keyPoint(stage: KeyPointStage, sx: number, sy: number): string {
+  // direct strings, as S() would write them: a full board draws up to 7 marks per threat
+  const x = r1(sx);
+  const y = r1(sy);
+  const xy = (dx: number, dy: number) => r1(sx + dx) + ',' + r1(sy + dy);
+  const ring = '<circle cx="' + x + '" cy="' + y + '" r="4" class="kpg kpo"></circle>';
+  switch (stage) {
+    case 'find':
+      return ring;
+    case 'fix':
+      return ring + '<circle cx="' + x + '" cy="' + y + '" r="1.5" class="kpg kpf"></circle>';
+    case 'track':
+      return (
+        '<polygon points="' +
+        xy(0, -4.5) +
+        ' ' +
+        xy(4.5, 0) +
+        ' ' +
+        xy(0, 4.5) +
+        ' ' +
+        xy(-4.5, 0) +
+        '" class="kpg kpo"></polygon>'
+      );
+    case 'target':
+      // one path: the ring (board fill) and the cross (zero area, stroke only)
+      return (
+        '<path d="M' +
+        xy(-4, 0) +
+        'A4,4 0 1 0 ' +
+        xy(4, 0) +
+        'A4,4 0 1 0 ' +
+        xy(-4, 0) +
+        'M' +
+        xy(-4, 0) +
+        'H' +
+        r1(sx + 4) +
+        'M' +
+        xy(0, -4) +
+        'V' +
+        r1(sy + 4) +
+        '" class="kpg kpo"></path>'
+      );
+    case 'engage':
+      return (
+        '<polygon points="' +
+        xy(0, -4.5) +
+        ' ' +
+        xy(4.5, 4) +
+        ' ' +
+        xy(-4.5, 4) +
+        '" class="kpg kpf"></polygon>'
+      );
+    case 'assess':
+      // one path: the square (board fill) and the tick inside it
+      return (
+        '<path d="M' +
+        xy(-4, -4) +
+        'h8v8h-8ZM' +
+        xy(-2.5, 0) +
+        'L' +
+        xy(-0.5, 2) +
+        'L' +
+        xy(2.5, -2) +
+        '" class="kpg kpo"></path>'
+      );
+    case 'da':
+      return (
+        '<rect x="' +
+        r1(sx - 1.5) +
+        '" y="' +
+        r1(sy - 4.5) +
+        '" width="3" height="9" class="kpg kpda"></rect>'
+      );
+  }
+}
+
 export type Box = { x0: number; y0: number; x1: number; y1: number };
 
 /** Approximate text box for the label pass. size: font px; mono width 0.6 em per character. */
@@ -509,6 +593,7 @@ export const symbols = {
   compass,
   scaleBar,
   warn,
+  keyPoint,
   textBox,
   label,
 };

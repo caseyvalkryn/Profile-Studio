@@ -6,6 +6,7 @@
 // asks through `onPick` in the palette.
 import { registerCommands } from '../../commands/commands';
 import {
+  activeIn,
   currentContext,
   execute,
   forTarget,
@@ -208,9 +209,14 @@ export function toMenuItems(cmds: Command[], ctx: CommandContext, opts: MenuOpti
   return root;
 }
 
-/** The right-click menu for a target kind, with the pointer for "here" commands. */
+/**
+ * The right-click menu for a target kind, with the pointer for "here" commands: the commands of
+ * the current workspace only (review 13 F-05: the Brief strip lists no Build edit).
+ */
 export function menuItemsFor(kind: AssetKind, opts: MenuOptions): MenuItem[] {
-  return toMenuItems(forTarget(kind), currentContext(opts.pointer), opts);
+  const ctx = currentContext(opts.pointer);
+  const cmds = forTarget(kind).filter((c) => activeIn(c, ctx.ui.workspace));
+  return toMenuItems(cmds, ctx, opts);
 }
 
 /** Palette order of the groups: the common actions first. */

@@ -22,6 +22,10 @@
 .brief-tl-collapsed [data-testid='tl-legend'] {
   display: none;
 }
+/* The hostile ink as text: a negative engage margin, a defended asset already entered. */
+.brief-ink-hostile {
+  color: var(--hostile);
+}
 /* The print deck is for paper only. */
 .brief-print {
   display: none;
@@ -101,14 +105,42 @@
     page-break-after: auto;
   }
   .brief-page h2 {
-    margin: 0 0 6px;
+    margin: 0 0 2px;
     font: var(--fw-med) 15px / 20px var(--ui);
   }
+  /* the frame time or the slice under the card name */
+  .brief-page-time {
+    margin: 0 0 6px;
+    font: var(--fw) 12px / 16px var(--mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+  }
+  /* the render yields height to the frame table, so a card stays one page (principle 6.2) */
   .brief-page-render svg {
     display: block;
-    width: 100%;
+    width: auto;
+    max-width: 100%;
     height: auto;
+    max-height: 108mm;
     border: 1px solid var(--surface-3);
+  }
+  /* the Frame panel's lines as a small table under the caption */
+  .brief-page-frame {
+    margin: 8px 0 0;
+    border-collapse: collapse;
+    font: var(--fw) 11px / 14px var(--mono);
+    font-variant-numeric: tabular-nums;
+  }
+  .brief-page-frame th {
+    font: var(--fw) 11px / 14px var(--ui);
+    color: var(--text-muted);
+    text-align: left;
+  }
+  .brief-page-frame th,
+  .brief-page-frame td {
+    padding: 2px 10px 2px 0;
+    border-bottom: 1px solid var(--surface-3);
+    white-space: nowrap;
   }
   .brief-page-caption {
     margin: 10px 0 0;

@@ -1,223 +1,78 @@
 // The timeline strip (reference artifact `js/51-panel-timeline.js`, ported onto the React stores):
 // one strip that Build hosts under the board and Brief hosts under the stage, over the one time
-// state in `useUi` (tS, timeOn, playing, loop, rate, tview). The axis: ticks, the loop range and
-// the time cursor; a press scrubs, Shift and drag set the loop range, a double click clears it,
-// Ctrl or Cmd and the wheel zoom the span (the overview bar above the axis pans it; a double
-// click there fits the run; the context menu fits the run or the action span, fit.ts). A run
-// that is mostly empty ingress opens on its action span until the user zooms by hand (review of
-// 2026-11-01). One lane per threat: a header with the threat id and the F2T2EA key points as
-// glyphs at their times (glyphs.tsx; the legend names them), then the coverage rows of each
-// sensor and effector that sees it (one labelled row per system with room, else a compact
-// band), then the authored events as beads with the board's letter and their label when there
-// is room, the defended asset entry, and the group splits across the lanes. Each lane takes its
-// content height, the row pitch growing to ROW_MAX with room; `ui.tlH` caps the lane area, which
-// scrolls past it (the grip on the strip's top edge drags it; ArrowUp and ArrowDown step it, a
-// double click resets it). A bead press sets the time there and selects the event; in Build a
-// bead drags to move the event (one undo step). The play bar: first, previous stop, play, next
-// stop, last, rate, loop, the clock (type a time and press Enter) and the Time checkbox. The
-// strip mounts the playback clock.
+// state in `useUi` (tS, timeOn, playing, loop, rate, tview; kept per profile by
+// `state/timePersist.ts`). The axis (Axis.tsx): ticks, the loop range and the time cursor; a
+// press scrubs, Shift and drag set the loop range, a double click clears it, Ctrl or Cmd and the
+// wheel zoom the span (the overview bar above the axis pans it; a double click there fits the
+// run; the context menu fits the run or the action span, fit.ts). A run that is mostly empty
+// ingress opens on its action span until the user zooms by hand (review of 2026-11-01). The lane
+// area (LaneSvg.tsx, geometry in layout.ts): the DA row, the Cards row (each card at its time; a
+// press opens it in Brief, sets its time and slice in Build), then one lane per threat: a header
+// with the threat id, the step reached at the cursor and the F2T2EA key points as glyphs at their
+// times in their state at the cursor (glyphs.tsx; the legend names them), the coverage rows of
+// each sensor and effector that sees it, the authored events as beads, and the group splits.
+// The strip shares the selection and the hover with the board and the inspector (lane 13.1): a
+// row press selects its system, a glyph press sets the time and selects the system that gives
+// the step, and a selected or hovered system lights its rows. `ui.tlH` caps the lane area, which
+// scrolls past it (the grip on the strip's top edge drags it). A bead press sets the time and
+// selects the event; in Build a bead drags to move the event (one undo step). Every other
+// control works in Build and Brief. The play bar is PlayBar.tsx. The strip mounts the playback
+// clock.
 import './timeline.css';
-import {
-  ChevronFirst,
-  ChevronLast,
-  Pause,
-  Play,
-  SkipBack,
-  SkipForward,
-  TimerOff,
-} from 'lucide-react';
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type PointerEvent as RPointerEvent,
-  type ReactNode,
-} from 'react';
-import { EV_TYPES } from '../../board/layers/events';
-import type { EventRec, PathRec, Scene, SystemRec } from '../../board';
-import { EFFECTOR_KINDS } from '../../domain/catalog';
-import { nextStop, prevStop, stops, type Derived } from '../../engine';
-import type { Window } from '../../engine/geo';
+import { useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
+import { stops } from '../../engine';
 import { useDocument } from '../../state/document';
 import { TL_H_DEFAULT, TL_H_MAX, TL_H_MIN, useUi } from '../../state/ui';
 import { ContextMenu, type MenuItem } from '../../ui';
-import { Tooltip } from '../../ui/Tooltip';
 import { focusRing } from '../../ui/focus';
 import { menuItemsFor } from '../commands/adapter';
 import { usePlayback } from '../build/bar/usePlayback';
 import { boardDerived, boardScene } from '../build/board/derived';
 import { useSize } from '../shared/useSize';
 import { fmtTime } from '../shared/units';
+import { axisMarks } from './Axis';
 import { actionSpan, actionStart, runEnd, wantsFit } from './fit';
 import { GLYPH_ORDER, HATCH_EW, HATCH_S, kindPill, stageGlyph } from './glyphs';
-import { STAGE_LABEL, keyPoints, type KeyPoint } from './stages';
+import { cardMarksSvg, daMarks, laneMarks, splitMarks, type Geo, type Live } from './LaneSvg';
+import {
+  AXIS_H,
+  BEAD_R,
+  CH,
+  GUT_R,
+  buildLanes,
+  cardMarks,
+  clamp,
+  gutterFor,
+  round1,
+  stepAt,
+} from './layout';
+import PlayBar from './PlayBar';
+import { STAGE_LABEL } from './stages';
 
 export { MIN_RUN_S, runEnd } from './fit';
+export { tickSteps } from './Axis';
+export { GUT_L, GUT_WIDE, buildLanes, parseTime } from './layout';
+export { RATES } from './PlayBar';
 
-export const RATES = [0.25, 0.5, 1, 2, 4, 8, 16, 32] as const;
-
-/** The left gutter: the threat id, and in a tall lane the pill and id of each system row. */
-export const GUT_L = 56;
-const GUT_R = 12;
-const AXIS_H = 24;
-const MAJORS = [1, 2, 5, 10, 30, 60, 120, 300, 600, 1200, 3600];
-const MINOR: Record<number, number> = {
-  1: 0.2,
-  2: 0.5,
-  5: 1,
-  10: 2,
-  30: 5,
-  60: 10,
-  120: 30,
-  300: 60,
-  600: 120,
-  1200: 300,
-  3600: 600,
-};
 const MIN_SPAN_S = 10;
-/** The cursor time chip's width with its offset: "t+12:34" in the mono face plus padding. */
-const CHIP_W = 64;
-const CH = 6.6; // px per mono character at 11 px
-/** The band the coverage bars share: up to four at 3 px with a 1 px gap, more at a finer pitch. */
-const BAND = 16;
-/** An event bead: a circled letter, 7 px radius (the reference strip's size). */
-const BEAD_R = 7;
-/** The lane's header row: the threat id at the left, the key point glyphs at their times. */
-const HEAD = 14;
-/** A labelled system row: 14 px by default, growing to ROW_MAX with room (lane 12.4). */
-const ROW_MIN = 14;
-const ROW_MAX = 24;
-/** The bar thickness of a labelled row, centred in the row. */
-const BAR = 8;
-/** The lane's fixed parts around the rows: top pad, header, gap, beads, bottom pad. */
-const ROWS_FIXED = 2 + HEAD + 2 + 2 * BEAD_R + 4;
-/** The defended asset row at the top of the lane area: each threat's entry to the run end. */
-const DA_H = 12;
-/** Two glyphs within this many px stack: the later one draws STACK_DY lower. */
-const STACK_PX = 10;
-const STACK_DY = 10;
 const STEP_PX = 16;
-
-const round1 = (t: number) => Math.round(t * 10) / 10;
-const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
-
-/** "2:55", "175", "t+2:55" or "2:55.5" to seconds; null when the text is not a time. */
-export function parseTime(text: string): number | null {
-  const s = text.trim().replace(/^t\+/i, '');
-  if (!s) return null;
-  if (/^\d+(\.\d+)?$/.test(s)) return Number(s);
-  const m = /^(\d+):(\d{1,2}(?:\.\d+)?)$/.exec(s);
-  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
-}
-
-function mmss(s: number): string {
-  const a = Math.round(Math.abs(s));
-  return `${Math.floor(a / 60)}:${a % 60 < 10 ? '0' : ''}${a % 60}`;
-}
-
-function inkOf(identity: PathRec['identity']): string {
-  if (identity === 'friend') return 'tl-ink-friend';
-  if (identity === 'hostile' || identity === 'suspect') return 'tl-ink-hostile';
-  return 'tl-ink-unknown';
-}
-
-const isEff = (kind: string) => (EFFECTOR_KINDS as readonly string[]).includes(kind);
-const barClass = (kind: string) =>
-  kind === 'ew' ? 'tl-bar-ew' : isEff(kind) ? 'tl-bar-e' : 'tl-bar-s';
-
-/** The major and minor tick steps for a span at this scale: at most 8 labelled majors that fit. */
-export function tickSteps(spanS: number, pxPerS: number): { major: number; minor: number } {
-  // the widest label, "59:00", is five mono characters
-  const labMin = 5 * CH + 8;
-  let major = MAJORS[MAJORS.length - 1]!;
-  for (const m of MAJORS)
-    if (spanS / m <= 8 && m * pxPerS >= labMin) {
-      major = m;
-      break;
-    }
-  return { major, minor: MINOR[major] ?? major / 5 };
-}
-
-type SysRow = { sys: SystemRec; wins: Window[] };
-type Lane = {
-  path: PathRec;
-  top: number;
-  h: number;
-  rows: SysRow[];
-  /** `rows`: each system on its own labelled row; `band`: the compact band of thin bars. */
-  layout: 'rows' | 'band';
-  /** The y of the first row, the row pitch and the bar thickness. */
-  rowsTop: number;
-  pitch: number;
-  bar: number;
-  events: EventRec[];
-  points: KeyPoint[];
-};
-
-/**
- * Lane geometry: one lane per threat path, stacked from y = 2, each at its content height. The
- * rows share one pitch: the largest from ROW_MIN to ROW_MAX at which every lane fits `areaH`
- * (the lane area's cap, `ui.tlH`), else the compact band. The lanes may still overrun the cap
- * (the area scrolls); they never share blank space.
- */
-export function buildLanes(
-  scene: Scene,
-  d: Derived,
-  areaH = 0,
-): { lanes: Lane[]; height: number; daRow: boolean } {
-  const byPath = scene.scene.paths.map((path) => {
-    const rows: SysRow[] = [];
-    for (const sys of scene.scene.systems) {
-      const wins = d.windows[sys.id]?.[path.id] ?? [];
-      if (wins.length) rows.push({ sys, wins });
-    }
-    return { path, rows };
-  });
-  const n = byPath.length;
-  const hasDa = byPath.some(({ path }) => d.daEntry[path.id] != null);
-  const total = (pitch: number | null) =>
-    byPath.reduce(
-      (s, { rows }) => s + ROWS_FIXED + (pitch && rows.length ? rows.length * pitch : BAND),
-      4 + Math.max(0, n - 1) + (hasDa ? DA_H + 1 : 0),
-    );
-  let pitch: number | null = null;
-  for (let p = ROW_MAX; p >= ROW_MIN; p--)
-    if (total(p) <= areaH) {
-      pitch = p;
-      break;
-    }
-  const lanes: Lane[] = [];
-  // the DA row above the first lane, when a threat enters the defended asset
-  const daRow = hasDa;
-  let y = 2 + (daRow ? DA_H + 1 : 0);
-  for (const { path, rows } of byPath) {
-    const tall = pitch != null && rows.length > 0;
-    const rowPitch =
-      pitch != null && rows.length > 0 ? pitch : rows.length <= 4 ? 4 : BAND / rows.length;
-    const h = ROWS_FIXED + (tall ? rows.length * rowPitch : BAND);
-    lanes.push({
-      path,
-      top: y,
-      h,
-      rows,
-      layout: tall ? 'rows' : 'band',
-      rowsTop: y + 2 + HEAD,
-      pitch: rowPitch,
-      bar: tall ? BAR : Math.max(1, rowPitch - 1),
-      events: scene.events.filter((e) => e.path === path.id),
-      points: keyPoints(d, path.id),
-    });
-    y += h + 1;
-  }
-  return { lanes, height: Math.max(y + 2, 20), daRow };
-}
+/** The legend's hover title on each glyph: the three states at the cursor (lane 13.1 item 4). */
+const STATE_TITLE =
+  'With time on: reached in the text ink, the current key point in the accent with a ring, a later one dim.';
 
 type Drag =
   | { kind: 'scrub' }
   | { kind: 'range'; t0: number }
   | { kind: 'bead'; key: string; id: string; x0: number; moved: boolean }
-  | { kind: 'lane'; key: string | null; x0: number }
+  | {
+      kind: 'press';
+      x0: number;
+      /** A Cards row marker, a key to select (a row or a glyph, with its time) or a lane. */
+      card: string | null;
+      key: string | null;
+      t: number | null;
+      lane: string | null;
+    }
   | { kind: 'pan'; x0: number; t0: number; span: number };
 
 export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
@@ -225,15 +80,13 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
   const doc = useDocument((s) => s.doc);
   const tS = useUi((s) => s.tS);
   const timeOn = useUi((s) => s.timeOn);
-  const playing = useUi((s) => s.playing);
   const loop = useUi((s) => s.loop);
-  const rate = useUi((s) => s.rate);
   const tview = useUi((s) => s.tview);
   const tlH = useUi((s) => s.tlH);
   const selectedKeys = useUi((s) => s.selectedKeys);
   const hoverKey = useUi((s) => s.hoverKey);
+  const cardKey = useUi((s) => s.cardKey);
   const [plotRef, size] = useSize<HTMLDivElement>();
-  const lanesRef = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
   // the loop range being dragged: the ref for the pointer handlers, the state for the axis
   const rangeRef = useRef<{ t0: number; t1: number } | null>(null);
@@ -243,26 +96,32 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
     setRangeTmp(r);
   };
   const [menuT, setMenuT] = useState(0);
-  const [clockDraft, setClockDraft] = useState<string | null>(null);
 
   const scene = doc ? boardScene(doc) : null;
   const d = doc ? boardDerived(doc) : null;
   const tmax = d ? d.tmax : 0;
   const end = runEnd(tmax);
+  const marks = doc ? cardMarks(doc.cards) : [];
+  const { lanes, height, daRow, cardsTop } =
+    scene && d
+      ? buildLanes(scene, d, tlH, marks.length > 0)
+      : { lanes: [], height: 20, daRow: false, cardsTop: null };
+  const gut = gutterFor(lanes);
   const W = Math.max(240, Math.round(size.width) || 800);
   const tv0 = tview ? clamp(tview.t0S, 0, end) : 0;
   const tv1 = tview ? clamp(tview.t1S, tv0 + 1, Math.max(end, tv0 + 1)) : end;
   const span = tv1 - tv0;
-  const plotW = W - GUT_L - GUT_R;
-  const xOf = (t: number) => GUT_L + ((t - tv0) / span) * plotW;
-  const cx = (t: number) => clamp(xOf(t), GUT_L, W - GUT_R);
-  const inView = (a: number, b: number) => b >= tv0 && a <= tv1;
+  const plotW = W - gut - GUT_R;
+  const xOf = (t: number) => gut + ((t - tv0) / span) * plotW;
+  const cx = (t: number) => clamp(xOf(t), gut, W - GUT_R);
+  const geo: Geo = { W, gut, tv0, tv1, end, xOf, cx };
+  const live: Live = { selectedKeys, hoverKey, tS, timeOn };
 
   const tAt = (clientX: number): number => {
     const el = plotRef.current;
     if (!el) return 0;
     const r = el.getBoundingClientRect();
-    return clamp(tv0 + ((clientX - r.left - GUT_L) / plotW) * span, 0, end);
+    return clamp(tv0 + ((clientX - r.left - gut) / plotW) * span, 0, end);
   };
 
   const ui = useUi.getState;
@@ -272,14 +131,14 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
     if (!u.timeOn) u.setTimeOn(true);
   };
 
-  const { lanes, height, daRow } =
-    scene && d ? buildLanes(scene, d, tlH) : { lanes: [], height: 20, daRow: false };
   const warned = new Set<string>();
   for (const w of d?.warnings ?? []) if (w.eventId) warned.add(w.eventId);
+  const sysKey = new Map((scene?.scene.systems ?? []).map((s) => [s.id, s.key] as const));
 
   // The auto fit (lane 12.4): a run over three times its action span opens on the span, and
   // follows the span while the document changes, until a zoom by hand (the wheel, the overview
-  // pan, the fit commands: any tview this effect did not set). A new document resets that.
+  // pan, the fit commands: any tview this effect did not set). A new document resets that, unless
+  // it opens on a zoom of its own (one restored by timePersist).
   const docId = doc?.id ?? null;
   const aStart = d ? actionStart(d) : 0;
   const fit = useRef<{ docId: string | null; hand: boolean; set: typeof tview }>({
@@ -293,8 +152,9 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
   useEffect(() => {
     const f = fit.current;
     if (f.docId !== docId) {
+      const tv = ui().tview;
+      f.hand = tv != null && tv !== f.set;
       f.docId = docId;
-      f.hand = false;
       f.set = null;
     }
     if (!d || f.hand || !wantsFit(d)) return;
@@ -309,7 +169,7 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
     () => menuItemsFor('timeline', { pointer: { x: 0, y: 0, tS: menuT }, onArg: () => {} }),
     // Rebuilt for each right-click; the stores are read at that moment.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [menuT, doc],
+    [menuT, doc, loop],
   );
 
   // Ctrl or Cmd and the wheel zoom the span about the pointer. React's wheel is passive, so the
@@ -325,7 +185,7 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
       const a0 = u.tview ? u.tview.t0S : 0;
       const a1 = u.tview ? u.tview.t1S : end;
       const sp = a1 - a0;
-      const tp = clamp(a0 + ((e.clientX - r.left - GUT_L) / plotW) * sp, 0, end);
+      const tp = clamp(a0 + ((e.clientX - r.left - gut) / plotW) * sp, 0, end);
       const ns = clamp(sp * Math.exp(e.deltaY * 0.0025), MIN_SPAN_S, end);
       if (ns >= end - 1e-6) {
         u.setTview(null);
@@ -336,7 +196,7 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [plotRef, end, plotW, ui]);
+  }, [plotRef, end, plotW, gut, ui]);
 
   // ---------------------------------------------------------------- pointer
 
@@ -367,11 +227,15 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
       drag.current = { kind: 'scrub' };
       setTimeHere(tAt(e.clientX));
     } else {
-      const lane = t.closest('[data-path-key]');
+      const target = t.closest('[data-select-key]');
+      const time = target?.getAttribute('data-time');
       drag.current = {
-        kind: 'lane',
-        key: lane?.getAttribute('data-path-key') ?? null,
+        kind: 'press',
         x0: e.clientX,
+        card: t.closest('[data-card-key]')?.getAttribute('data-card-key') ?? null,
+        key: target?.getAttribute('data-select-key') ?? null,
+        t: time != null ? Number(time) : null,
+        lane: t.closest('[data-path-key]')?.getAttribute('data-path-key') ?? null,
       };
       return;
     }
@@ -379,11 +243,28 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
     e.preventDefault();
   };
 
+  /** A Cards row press: Brief opens the card; Build sets its time, and its slice as the loop. */
+  const onCardPress = (key: string) => {
+    const c = doc?.cards.find((x) => x.key === key);
+    if (!c) return;
+    if (mode === 'brief') {
+      ui().setCardKey(c.key);
+      return;
+    }
+    const t = c.tS ?? c.clip?.t0S;
+    if (t != null) setTimeHere(t);
+    if (c.clip) ui().setLoop({ startS: c.clip.t0S, endS: c.clip.t1S });
+  };
+
   const onMove = (e: RPointerEvent<HTMLDivElement>) => {
     const dr = drag.current;
-    const lane = (e.target as Element).closest('[data-path-key]');
-    const hk = lane?.getAttribute('data-path-key') ?? null;
-    if (!dr || dr.kind === 'lane') {
+    if (!dr || dr.kind === 'press') {
+      // the hover: a system row or glyph lights its system, the rest of a lane its threat
+      const el = e.target as Element;
+      const hk =
+        el.closest('[data-select-key]')?.getAttribute('data-select-key') ??
+        el.closest('[data-path-key]')?.getAttribute('data-path-key') ??
+        null;
       if (ui().hoverKey !== hk) ui().setHover(hk);
       return;
     }
@@ -420,8 +301,12 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
       const rg = rangeRef.current;
       if (rg && rg.t1 - rg.t0 >= 0.5) ui().setLoop({ startS: round1(rg.t0), endS: round1(rg.t1) });
       setRange(null);
-    } else if (dr.kind === 'lane' && dr.key && Math.abs(e.clientX - dr.x0) < 3) {
-      ui().setSelection([dr.key]);
+    } else if (dr.kind === 'press' && Math.abs(e.clientX - dr.x0) < 3) {
+      if (dr.card) onCardPress(dr.card);
+      else if (dr.key) {
+        if (dr.t != null) setTimeHere(dr.t);
+        ui().setSelection([dr.key]);
+      } else if (dr.lane) ui().setSelection([dr.lane]);
     }
   };
 
@@ -484,319 +369,43 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
     }
   };
 
-  // ---------------------------------------------------------------- play bar
-
   const stopList = () => (doc && d ? stops(doc, d) : [0]);
-  const loopMode: 'off' | 'all' | 'range' = !loop
-    ? 'off'
-    : loop.startS <= 0 && loop.endS >= tmax - 1e-9
-      ? 'all'
-      : 'range';
-  const onLoop = (v: string) => {
-    const u = ui();
-    if (v === 'off') u.setLoop(null);
-    else if (v === 'all') u.setLoop({ startS: 0, endS: tmax });
-    else
-      u.setLoop(u.tview ? { startS: u.tview.t0S, endS: u.tview.t1S } : { startS: 0, endS: tmax });
-  };
-  const clockText = timeOn ? fmtTime(tS) : '';
-  const onClockKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const v = parseTime(e.currentTarget.value);
-      if (v != null) setTimeHere(v);
-      setClockDraft(null);
-      e.currentTarget.blur();
-    } else if (e.key === 'Escape') {
-      setClockDraft(null);
-      e.currentTarget.blur();
-    }
-  };
 
-  // ---------------------------------------------------------------- axis
+  // ---------------------------------------------------------------- marks
 
-  const axis = (() => {
-    const { major, minor } = tickSteps(span, plotW / span);
-    const out: ReactNode[] = [];
-    const rg = rangeTmp ?? (loop ? { t0: loop.startS, t1: loop.endS } : null);
-    if (rg && rg.t1 > rg.t0) {
-      const x0 = Math.max(GUT_L, xOf(rg.t0));
-      const x1 = Math.min(W - GUT_R, xOf(rg.t1));
-      if (x1 > x0)
-        out.push(
-          <rect key="rg" className="tl-range" x={x0} y={0} width={x1 - x0} height={AXIS_H} />,
-          <line key="r0" className="tl-rangeedge" x1={x0} x2={x0} y1={0} y2={AXIS_H} />,
-          <line key="r1" className="tl-rangeedge" x1={x1} x2={x1} y1={0} y2={AXIS_H} />,
-        );
-    }
-    out.push(
-      <line
-        key="base"
-        className="tl-axbase"
-        x1={GUT_L}
-        x2={W - GUT_R}
-        y1={AXIS_H - 0.5}
-        y2={AXIS_H - 0.5}
-      />,
-    );
-    let labEnd = -Infinity;
-    for (let t = Math.ceil(tv0 / minor) * minor; t <= tv1 + 1e-6; t += minor) {
-      const tt = Math.round(t * 1000) / 1000;
-      const x = xOf(tt);
-      const maj = Math.abs(tt / major - Math.round(tt / major)) < 1e-6;
-      out.push(
-        <line
-          key={`t${tt}`}
-          className={maj ? 'tl-tick tl-tick-maj' : 'tl-tick'}
-          x1={x}
-          x2={x}
-          y1={maj ? AXIS_H - 7 : AXIS_H - 4}
-          y2={AXIS_H}
-        />,
-      );
-      if (!maj) continue;
-      const lab = major < 1 || tt % 1 ? tt.toFixed(1) : mmss(tt);
-      const atStart = x < GUT_L + 12;
-      const lw = lab.length * CH;
-      const lx0 = atStart ? x : x - lw / 2;
-      if (lx0 >= labEnd + 8) {
-        out.push(
-          <text
-            key={`l${tt}`}
-            className="tl-tlab"
-            x={x}
-            y={AXIS_H - 9}
-            textAnchor={atStart ? 'start' : 'middle'}
-          >
-            {lab}
-          </text>,
-        );
-        labEnd = lx0 + lw;
-      }
-    }
-    out.push(
-      <text key="t" className="tl-tlab" x={4} y={AXIS_H - 9}>
-        t
-      </text>,
-    );
-    return out;
-  })();
-
-  // ---------------------------------------------------------------- lanes
-
-  const laneSvg = lanes.map((L) => {
-    const { path, top, h, rows, layout, rowsTop, pitch, bar, events, points } = L;
-    const sel = selectedKeys.includes(path.key);
-    const ink = inkOf(path.identity);
-    const tall = layout === 'rows';
-    // the header (threat id, key point glyphs), then the rows (or the band), then the beads
-    const rowsEnd = rowsTop + (tall ? rows.length * pitch : BAND);
-    const by = rowsEnd + 2 + BEAD_R;
-    const foot = top + h - 2;
-    const items: ReactNode[] = [];
-    rows.forEach(({ sys, wins }, k) => {
-      const yy = rowsTop + k * pitch;
-      const cls = barClass(sys.kind);
-      // in a labelled row the bar is centred on the row; in the band it is the row
-      const barY = tall ? yy + Math.floor((pitch - 1 - bar) / 2) : yy;
-      if (tall)
-        items.push(
-          <g key={`r-${sys.id}`} className="tl-row" data-testid="tl-row">
-            {kindPill(cls, 4, barY + bar / 2)}
-            <text className="tl-rowlab" x={17} y={barY + bar / 2}>
-              {sys.id}
-            </text>
-            <line
-              className="tl-row-sep"
-              x1={GUT_L}
-              x2={W - GUT_R}
-              y1={yy + pitch - 1.5}
-              y2={yy + pitch - 1.5}
-            />
-          </g>,
-        );
-      wins.forEach((w, i) => {
-        if (!inView(w.tIn, w.tOut)) return;
-        const x0 = cx(w.tIn);
-        const x1 = cx(w.tOut);
-        const bw = Math.max(1, x1 - x0);
-        items.push(
-          <g key={`${sys.id}-${i}`} data-testid="tl-window">
-            <title>{`${sys.id} sees ${path.id} from ${fmtTime(w.tIn)} to ${fmtTime(w.tOut)}, held ${mmss(w.tOut - w.tIn)}`}</title>
-            <rect className={`tl-bar ${cls}`} x={x0} y={barY} width={bw} height={bar} />
-            {/* the first see: a darker cap at the bar's start */}
-            {w.tIn >= tv0 ? (
-              <rect className="tl-bar-cap" x={x0} y={barY} width={1} height={bar} />
-            ) : null}
-            <rect
-              className="tl-bar-hit"
-              x={x0}
-              y={barY - 1}
-              width={Math.max(3, x1 - x0)}
-              height={bar + 2}
-            />
-          </g>,
-        );
-      });
-    });
-    // The glyphs sit in the header row at their times; two within STACK_PX stack, the later
-    // one STACK_DY lower (the first row's top), each on its own hairline down to the lane foot.
-    const gy0 = top + 2 + HEAD / 2;
-    const shown = points.filter((p) => p.t >= tv0 && p.t <= tv1);
-    const lastX = [-Infinity, -Infinity];
-    for (const p of shown) {
-      const x = xOf(p.t);
-      const level = x - lastX[0]! < STACK_PX && x - lastX[1]! >= STACK_PX ? 1 : 0;
-      lastX[level] = x;
-      const gy = gy0 + level * STACK_DY;
-      const who = p.system ? ` · ${p.system}` : '';
-      items.push(
-        <g
-          key={`s-${p.stage}`}
-          className={`tl-stage${p.stage === 'da' ? ' tl-da' : ''}`}
-          data-testid="tl-stage"
-          data-stage={p.stage}
-          data-level={level}
-        >
-          <title>{`${p.label} · ${fmtTime(p.t)}${who}. ${p.definition}`}</title>
-          {/* the time's hairline from the glyph down through the rows to the lane foot */}
-          <line x1={x} x2={x} y1={gy + 5} y2={foot} />
-          {stageGlyph(p.stage, x, gy)}
-        </g>,
-      );
-    }
-    // The engage margin: a bracket along the header's foot from Engage to the latest engage
-    // that still gets an effect, with the margin beside it, when it spans 24 px or more.
-    const ws = d?.window[path.id];
-    const engT = d?.stages[path.id]?.engage?.t;
-    if (ws && engT != null && ws.latest != null && ws.margin != null) {
-      const x0 = cx(engT);
-      const x1 = cx(ws.latest);
-      const yb = top + 2 + HEAD - 1.5;
-      const label = `margin ${Math.round(ws.margin)} s`;
-      // the text goes right of the bracket, or left of it near the strip's right edge
-      const right = x1 + 4 + label.length * CH <= W - GUT_R;
-      if (x1 - x0 >= 24 && inView(engT, ws.latest))
-        items.push(
-          <g key="margin" className="tl-margin" data-testid="tl-margin">
-            <title>{`Latest engage ${fmtTime(ws.latest)}, margin ${Math.round(ws.margin)} s`}</title>
-            <polyline points={`${x0},${yb - 3} ${x0},${yb} ${x1},${yb} ${x1},${yb - 3}`} />
-            <text x={right ? x1 + 4 : x0 - 4} y={yb - 1} textAnchor={right ? 'start' : 'end'}>
-              {label}
-            </text>
-          </g>,
-        );
-    }
-    let evEnd = -Infinity;
-    for (const e of events) {
-      if (e.t < tv0 || e.t > tv1) continue;
-      const x = xOf(e.t);
-      const warn = warned.has(e.id);
-      const cls = `tl-bead${selectedKeys.includes(e.key) ? ' tl-sel' : ''}${warn ? ' tl-warn' : ''}`;
-      const text = e.label || e.id;
-      const showLab = x >= evEnd;
-      if (showLab) evEnd = x + BEAD_R + 4 + text.length * CH + 8;
-      items.push(
-        <g
-          key={e.key}
-          className={cls}
-          data-testid="tl-bead"
-          data-event-key={e.key}
-          data-event-id={e.id}
-          data-t={e.t}
-        >
-          <title>{`${e.id} ${e.label || e.type} · ${fmtTime(e.t)}`}</title>
-          <circle cx={x} cy={by} r={BEAD_R} />
-          <text x={x} y={by}>
-            {EV_TYPES[e.type] ?? '?'}
-          </text>
-          {warn ? (
-            <polygon
-              className="tl-warn-tri"
-              points={`${x + 4},${by - 9} ${x + 8},${by - 2} ${x},${by - 2}`}
-            />
-          ) : null}
-          {showLab ? (
-            <text className="tl-evlab" x={x + BEAD_R + 4} y={by}>
-              {text}
-            </text>
-          ) : null}
-        </g>,
-      );
-    }
-    return (
-      <g key={path.key} data-path-key={path.key} data-testid="tl-lane">
-        <rect
-          className={`tl-lane${sel ? ' tl-sel' : hoverKey === path.key ? ' tl-hov' : ''}`}
-          x={0}
-          y={top}
-          width={W}
-          height={h}
-        />
-        <text className={`tl-lab ${ink}`} x={4} y={top + 11}>
-          {path.id}
-        </text>
-        {items}
-        <line className="tl-lane-sep" x1={0} x2={W} y1={top + h + 0.5} y2={top + h + 0.5} />
-      </g>
-    );
-  });
-
-  // The DA row (lane 12.4, from the reference strip): each threat's defended asset entry as a
-  // bar in the hostile ink from its entry to the run end, labelled with the threat id when
-  // more than one threat enters.
-  const daSvg = (() => {
-    if (!daRow || !d) return null;
-    const entries = lanes
-      .map((L) => ({ id: L.path.id, t: d.daEntry[L.path.id] }))
-      .filter((e): e is { id: string; t: number } => e.t != null);
-    const y = 2 + (DA_H - 6) / 2;
-    return (
-      <g data-testid="tl-da-row">
-        <text className="tl-lab tl-ink-hostile" x={4} y={2 + DA_H - 2}>
-          DA
-        </text>
-        {entries
-          .filter((e) => e.t <= tv1)
-          .map((e) => {
-            const x0 = cx(e.t);
-            const x1 = cx(end);
-            return (
-              <g key={e.id} data-testid="tl-da-bar">
-                <title>{`${e.id} enters the defended asset at ${fmtTime(e.t)}`}</title>
-                <rect className="tl-da-bar" x={x0} y={y} width={Math.max(1, x1 - x0)} height={6} />
-                {entries.length > 1 && x0 - GUT_L > e.id.length * CH + 6 ? (
-                  <text className="tl-da-lab" x={x0 - 3} y={2 + DA_H - 3} textAnchor="end">
-                    {e.id}
-                  </text>
-                ) : null}
-              </g>
-            );
-          })}
-        <line className="tl-lane-sep" x1={0} x2={W} y1={2 + DA_H + 0.5} y2={2 + DA_H + 0.5} />
-      </g>
-    );
-  })();
-
-  // a split or merge: a dashed rule across every lane, its circled letter at the top row
-  const splitSvg = (d?.splits ?? [])
-    .filter((s) => s.t >= tv0 && s.t <= tv1)
-    .map((s, i) => {
-      const x = xOf(s.t);
-      return (
-        <g key={`sp${i}`} data-testid="tl-split">
-          <title>{`${s.to > s.from ? 'Split' : 'Merge'} to ${s.to} at ${fmtTime(s.t)}`}</title>
-          <line className="tl-split" x1={x} x2={x} y1={0} y2={height} />
-          <circle className="tl-splab-ring" cx={x} cy={8} r={6} />
-          <text className="tl-splab" x={x} y={8}>
-            {s.to > s.from ? 'S' : 'M'}
-          </text>
-        </g>
-      );
-    });
-
+  // the cursor chip: the time, and the step the selected threat has reached ("t+0:10 · Track")
+  const selLane = lanes.find((L) => selectedKeys.includes(L.path.key));
+  const chipStep = selLane ? stepAt(selLane.points, tS) : null;
+  const chip = `${fmtTime(tS)}${chipStep ? ` · ${chipStep.label}` : ''}`;
+  const chipW = chip.length * CH + 16;
   const cursorOn = timeOn && tS >= tv0 - 1e-6 && tS <= tv1 + 1e-6;
-  const mini = `ps-btn mini quiet ${focusRing}`;
+  // the chip flips to the cursor's left near the right edge; its box is 8 px off the cursor and
+  // its text plus 8 px of padding wide (timeline.css .tl-cursor-time)
+  const chipLeft = xOf(tS) > W - GUT_R - chipW;
+  const chipBox = chip.length * CH + 8;
+  const chipX0 = chipLeft ? xOf(tS) - 8 - chipBox : xOf(tS) + 8;
+
+  const axis = axisMarks({
+    W,
+    gut,
+    gutR: GUT_R,
+    tv0,
+    tv1,
+    xOf,
+    range: rangeTmp ?? (loop ? { t0: loop.startS, t1: loop.endS } : null),
+    chip: cursorOn ? { x0: chipX0, x1: chipX0 + chipBox } : null,
+  });
+  const laneSvg = lanes.map((L) => laneMarks(L, geo, live, d, warned, sysKey));
+  const daSvg = daRow && d ? daMarks(lanes, geo, d) : null;
+  // the current card: the Brief's (ui.cardKey, else the first); in Build only a keyed one
+  const deck = doc?.cards ?? [];
+  const curCard = deck.some((c) => c.key === cardKey)
+    ? cardKey
+    : mode === 'brief'
+      ? (deck[0]?.key ?? null)
+      : null;
+  const cardsSvg = cardsTop != null ? cardMarksSvg(marks, cardsTop, geo, curCard) : null;
+  const splitSvg = splitMarks(d, geo, height);
 
   return (
     <div
@@ -804,6 +413,7 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
       aria-label="Timeline"
       className={`tl tl-${mode} mt-2 shrink-0`}
       data-testid="timeline"
+      style={{ '--tl-gut': `${gut}px` } as React.CSSProperties}
     >
       <div
         className={`tl-resize ${focusRing}`}
@@ -892,11 +502,7 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
           </svg>
           {/* the area takes its lanes' height up to ui.tlH, then scrolls; with no lane it takes
               the hint's height (review of 2026-11-01) */}
-          <div
-            ref={lanesRef}
-            className="tl-lanes"
-            style={lanes.length ? { maxHeight: tlH } : undefined}
-          >
+          <div className="tl-lanes" style={lanes.length ? { maxHeight: tlH } : undefined}>
             {lanes.length ? (
               <svg
                 width={W}
@@ -906,6 +512,7 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
                 aria-label="Coverage and key points by threat"
               >
                 {daSvg}
+                {cardsSvg}
                 {laneSvg}
                 {splitSvg}
               </svg>
@@ -925,17 +532,21 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
             </svg>
             {/* the chip flips to the cursor's left near the right edge, so it never clips */}
             <span
-              className={`tl-cursor-time${xOf(tS) > W - GUT_R - CHIP_W ? ' tl-cursor-time-l' : ''}`}
+              className={`tl-cursor-time${chipLeft ? ' tl-cursor-time-l' : ''}`}
               data-testid="tl-cursor-time"
             >
-              {fmtTime(tS)}
+              {chip}
             </span>
           </div>
         </div>
       </ContextMenu>
       <div className="tl-legend" data-testid="tl-legend" aria-label="Legend">
         {GLYPH_ORDER.map((s) => (
-          <span key={s} className={`tl-stage${s === 'da' ? ' tl-da' : ''}`}>
+          <span
+            key={s}
+            className={`tl-stage${s === 'da' ? ' tl-da' : ''}`}
+            title={`${s === 'da' ? 'DA entry' : STAGE_LABEL[s]}. ${STATE_TITLE}`}
+          >
             <svg width="12" height="12" aria-hidden="true">
               {stageGlyph(s, 6, 6)}
             </svg>
@@ -960,108 +571,7 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
           Event
         </span>
       </div>
-      <div className="tl-bar" role="toolbar" aria-label="Play bar">
-        <Tooltip content="Time to start" shortcut="Home">
-          <button
-            type="button"
-            className={mini}
-            aria-label="Time to start"
-            onClick={() => setTimeHere(0)}
-          >
-            <ChevronFirst aria-hidden="true" />
-          </button>
-        </Tooltip>
-        <Tooltip content="Previous key point" shortcut="[">
-          <button
-            type="button"
-            className={mini}
-            aria-label="Previous key point"
-            onClick={() => setTimeHere(prevStop(stopList(), ui().tS))}
-          >
-            <SkipBack aria-hidden="true" />
-          </button>
-        </Tooltip>
-        <Tooltip content={playing ? 'Pause' : 'Play'} shortcut={mode === 'build' ? 'Space' : 'P'}>
-          <button
-            type="button"
-            className={mini}
-            aria-label={playing ? 'Pause' : 'Play'}
-            aria-pressed={playing}
-            onClick={() => ui().setPlaying(!ui().playing)}
-          >
-            {playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
-          </button>
-        </Tooltip>
-        <Tooltip content="Next key point" shortcut="]">
-          <button
-            type="button"
-            className={mini}
-            aria-label="Next key point"
-            onClick={() => setTimeHere(nextStop(stopList(), ui().tS, tmax))}
-          >
-            <SkipForward aria-hidden="true" />
-          </button>
-        </Tooltip>
-        <Tooltip content="Time to end" shortcut="End">
-          <button
-            type="button"
-            className={mini}
-            aria-label="Time to end"
-            onClick={() => setTimeHere(tmax)}
-          >
-            <ChevronLast aria-hidden="true" />
-          </button>
-        </Tooltip>
-        <select
-          aria-label="Play rate"
-          className={`ps-input tl-select ${focusRing}`}
-          value={String(rate)}
-          onChange={(e) => ui().setRate(Number(e.target.value))}
-        >
-          {RATES.map((r) => (
-            <option key={r} value={String(r)}>
-              x{r}
-            </option>
-          ))}
-        </select>
-        <select
-          aria-label="Loop"
-          className={`ps-input tl-select ${focusRing}`}
-          value={loopMode}
-          onChange={(e) => onLoop(e.target.value)}
-        >
-          <option value="off">Loop off</option>
-          <option value="all">Loop all</option>
-          <option value="range">Loop range</option>
-        </select>
-        <span className="tl-sp" />
-        <input
-          aria-label="Time"
-          className={`ps-input tl-clock ${focusRing}`}
-          type="text"
-          inputMode="numeric"
-          autoComplete="off"
-          spellCheck={false}
-          placeholder="full run"
-          value={clockDraft ?? clockText}
-          onFocus={() => setClockDraft(clockText)}
-          onChange={(e) => setClockDraft(e.target.value)}
-          onKeyDown={onClockKey}
-          onBlur={() => setClockDraft(null)}
-          data-testid="tl-clock"
-        />
-        <Tooltip content="Time off">
-          <button
-            type="button"
-            className={mini}
-            aria-label="Time off"
-            disabled={!timeOn}
-            onClick={() => ui().setTimeOn(false)}
-          >
-            <TimerOff aria-hidden="true" />
-          </button>
-        </Tooltip>
-      </div>
+      <PlayBar mode={mode} tmax={tmax} stopList={stopList} setTimeHere={setTimeHere} />
     </div>
   );
 }

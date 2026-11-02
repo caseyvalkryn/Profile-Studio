@@ -42,7 +42,7 @@
 .tl-ov {
   position: relative;
   height: 4px;
-  margin: 0 12px 0 56px;
+  margin: 0 12px 0 var(--tl-gut, 56px);
   background: var(--surface-3);
   border-radius: 2px;
   cursor: grab;
@@ -75,7 +75,7 @@
   display: block;
 }
 .tl-empty {
-  margin: 6px 0 8px 56px;
+  margin: 6px 0 8px var(--tl-gut, 56px);
 }
 .tl-cursor {
   position: absolute;
@@ -232,12 +232,44 @@
   stroke-width: 1;
   stroke-dasharray: 1 3;
 }
-.tl-stage line {
+/* the step reached at the cursor after the threat id ("T1 Track"), in the muted ink */
+.tl-step {
+  font: var(--fw) var(--fs-1) var(--mono);
+  fill: var(--text-muted);
+}
+/* press targets (lane 13.1): a system row's gutter, a glyph; transparent, over the marks */
+.tl-hit {
+  fill: transparent;
+}
+.tl-row,
+.tl-win,
+.tl-stage[data-select-key],
+.tl-card {
+  cursor: pointer;
+}
+/* a selected or hovered system (on the strip, the board or the inspector): its id in the accent,
+   its bars at full opacity and outlined in their ink; the other rows stay */
+.tl-lit .tl-rowlab {
+  fill: var(--accent);
+  font-weight: var(--fw-med);
+}
+.tl-lit .tl-bar-e {
+  opacity: 1;
+}
+.tl-win.tl-lit .tl-bar-s {
+  stroke: var(--friend);
+  stroke-width: var(--w1);
+}
+.tl-win.tl-lit .tl-bar-ew {
+  stroke: var(--ew);
+  stroke-width: var(--w1);
+}
+.tl-stage .tl-hair {
   stroke: var(--text-subtle);
   stroke-width: 1;
   stroke-dasharray: 2 2;
 }
-.tl-stage.tl-da line {
+.tl-stage.tl-da .tl-hair {
   stroke: var(--hostile);
 }
 /* the step glyphs (glyphs.tsx): open shapes stroked, filled shapes in the muted ink */
@@ -257,6 +289,76 @@
 .tl-gl-da {
   fill: var(--hostile);
   stroke: none;
+}
+/* The key point states at the time cursor (lane 13.1 item 4; principle 5.2, colour means
+   state): reached in the text ink, the current one (the latest reached) in the accent with a
+   halo ring, a later one dim. Not scoped to the strip: the Brief's notes panel (lane 13.2) puts
+   the same classes on an inline svg around stageGlyph. With time off no class is set. */
+.tl-reached .tl-gl {
+  stroke: var(--text);
+}
+.tl-reached .tl-gl-fill {
+  fill: var(--text);
+}
+.tl-current .tl-gl {
+  stroke: var(--accent);
+}
+.tl-current .tl-gl-fill,
+.tl-current .tl-gl-da {
+  fill: var(--accent);
+}
+.tl-future .tl-gl {
+  stroke: var(--text-subtle);
+}
+.tl-future .tl-gl-fill {
+  fill: var(--text-subtle);
+}
+.tl-future .tl-gl-da {
+  opacity: 0.45;
+}
+.tl-current .tl-gl-da,
+.tl-reached .tl-gl-da {
+  stroke: none;
+}
+.tl-halo {
+  fill: none;
+  stroke: color-mix(in srgb, var(--accent) 45%, transparent);
+  stroke-width: 1.5px;
+}
+/* the Cards row: a 12 px rounded square per card at its time, its number in the mark size; a
+   slice is a 6 px band under the marker; the current card in the accent */
+.tl-cards-lab {
+  fill: var(--text-muted);
+}
+.tl-card-mark {
+  fill: var(--surface-1);
+  stroke: var(--text-muted);
+  stroke-width: 1px;
+}
+.tl-card text {
+  fill: var(--text);
+  font: 500 8px var(--mono); /* mark, not text */
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+.tl-card-slice {
+  fill: var(--text-subtle);
+  opacity: 0.45;
+}
+.tl-card:hover .tl-card-mark {
+  stroke: var(--text);
+}
+.tl-card-cur .tl-card-mark {
+  stroke: var(--accent);
+  stroke-width: 2.25px;
+}
+.tl-card-cur text {
+  fill: var(--accent);
+}
+.tl-card-cur .tl-card-slice {
+  fill: var(--accent);
+  opacity: 0.35;
 }
 .tl-bead {
   cursor: pointer;
@@ -299,7 +401,7 @@
   align-items: center;
   gap: 0 12px;
   max-height: 36px;
-  padding: 0 8px 0 56px;
+  padding: 0 8px 0 var(--tl-gut, 56px);
   overflow: hidden;
   font: var(--fw) var(--fs-1) / 18px var(--mono);
   color: var(--text-muted);
@@ -362,4 +464,13 @@
   min-height: var(--ctl-mini);
   padding: 0 4px;
   font-size: var(--fs-2);
+}
+/* the loop: two pressed toggles, Repeat (the whole run) and Repeat1 (the range) */
+.tl-loop {
+  display: inline-flex;
+  gap: 2px;
+}
+.tl-loop .ps-btn[aria-pressed='true'] {
+  color: var(--text);
+  background: var(--surface-2);
 }

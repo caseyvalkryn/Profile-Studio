@@ -67,6 +67,9 @@ export type BuildStash = {
   elevationMode: ElevationMode;
   tS: number;
   timeOn: boolean;
+  /** The strip's loop and rate: a slice card sets both, so leaving Brief puts Build's back. */
+  loop: LoopRange | null;
+  rate: number;
   zoom: number;
   px: number;
   py: number;
@@ -106,9 +109,10 @@ export type UiState = {
   playing: boolean;
   loop: LoopRange | null;
   rate: number;
-  /** The timeline zoom, shared by Build and Brief (one strip, two hosts). */
+  /** The timeline zoom, shared by Build and Brief (one strip, two hosts). tS, timeOn, loop,
+   * rate, tview and tlH are kept per profile id in localStorage (src/state/timePersist.ts). */
   tview: TimeView | null;
-  /** The timeline's lane area height, shared by Build and Brief; not persisted. */
+  /** The timeline's lane area height, shared by Build and Brief; kept per profile (timePersist.ts). */
   tlH: number;
   view: View;
   units: Units;

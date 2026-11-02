@@ -61,8 +61,8 @@ Use these words in the UI. One word for one thing. The code keeps the type names
 | Card | A saved way of looking: view, layers, time, focus, caption, notes | card |
 | Debrief | Flown TSPI and events loaded after a range run, shown against the plan. Deferred | debrief |
 
-Clip, beat, capture and the debrief overlay are deferred (plan, phase 10). Their words return
-with them.
+Beat, capture and the debrief overlay are deferred (plan, phase 10). Their words return with
+them. A card's `clip` is the slice (lane 13.2): the user-facing word is "slice".
 
 ## 3. Standards
 
@@ -127,7 +127,7 @@ type AuthoredEvent = { id: string; tS: number
 type Card = { id: string; name: string; view: CardView
   layers: Partial<Record<LayerId, boolean>>
   displays: { timeline: boolean; chart: boolean; readout: boolean }   // chart deferred
-  clip: Clip | null /* deferred */; focus: string[] /* keys */; tS: number | null /* null: time off */
+  clip: Clip | null /* the slice */; focus: string[] /* keys */; tS: number | null /* null: time off */
   caption: string; notes: string }
 type CardView = { kind: 'plan'|'elevation'|'3d'; centre: { x: number; y: number }; zoom: number
   yawDeg: number; pitchDeg: number; ref: 'asset' | string /* key */
@@ -220,7 +220,14 @@ with its bar and strip in the centre, the inspector on the right, and the top ba
 - Under the board: the shared timeline strip (see Brief below; lanes 12.1, 12.2 and 12.4), time
   off by default. The strip is as tall as its lanes; a grip on its top edge sets the most it
   may take (96 to 720 px, default 200; arrows, Home and a double click reset) and the lanes
-  scroll past that; the stage takes the rest. The thumbnails of the other cameras left on
+  scroll past that; the stage takes the rest. The strip is the plan's clock (phase 13): its
+  time state (cursor, time on, loop, zoom span, height, rate) persists per profile across a
+  workspace switch and a reload; the selection does not. A system row or a key point glyph is a
+  press target that selects its system (a glyph also sets the time), and lights with the
+  board's and the inspector's selection and hover. A Cards row under the DA row marks each card
+  by number, with a band for a slice; a press sets its time in Build (a slice also sets the
+  loop) and opens the card in Brief. Glyphs take the state colour at the cursor: reached in the
+  text ink, current in the accent with a halo, future subtle. The thumbnails of the other cameras left on
   2026-11-01 (lane 12.2); the bar's view segment switches the view.
 - Inspector (lane 10.2): the whole scene, every object under its section (Purpose, Aircraft,
   Paths, Systems, Volumes, Reference planes, Events, Telemetry, Data products, Measures of
@@ -250,6 +257,16 @@ the notes panel on the right.
   leaving Brief restores the Build view.
 - The notes panel: name, camera, yaw and pitch, time, focus ids, layers, caption, presenter
   notes.
+- The Frame panel at the top of the notes (lane 13.2): for each threat in focus, the step
+  reached with its glyph, the next step's countdown (a press moves the time there), range,
+  height, speed and closing, the systems holding it as pills, the engage margin (in the hostile
+  ink when negative) and DA entry. A card with a slice lists its key points inside the slice.
+- The slice (lane 13.2): a card's `clip`, a time range and a rate. The Scissors head button
+  ("Set the slice from the loop", disabled with its reason when there is no loop) takes the
+  strip's loop and rate into the current card, or into a new card when the deck is empty. The
+  notes Slice field edits from, to and rate, and Clear removes it; each is one undo step. The
+  head shows "t+1:00 to t+2:00 · x2". Opening a slice card sets the loop, rate and time; P
+  plays the slice from its start. Leaving Brief restores Build's loop and rate with its view.
 - "Add card from current scene" when the deck is empty.
 - The shared timeline (2026-11-01, from the reference artifact): one strip,
   `src/features/timeline`, hosted under the Build board and under the Brief stage, over the one
@@ -285,7 +302,7 @@ the notes panel on the right.
   elapsed clock.
 - Export: the deck as PDF through the print stylesheet, one page per card with its render,
   caption and notes.
-- Deferred (plan, phase 10): clips and beats, caption tokens, the chart display, attachments,
+- Deferred (plan, phase 10): beats, caption tokens, the chart display, attachments,
   the phone stage. Each returns only when the user asks.
 
 **Theme.** One control cycles auto, light and dark. Auto follows the system. The choice persists.
@@ -309,7 +326,7 @@ item without dragging arms it for one click on the map.
 | Height plane | Set height, Delete |
 | Authored event | Change type, Move to geometry (when it carries a warning), Delete |
 | Threat (upgrade) | also: Add event here, Formation, Split here (with a time cursor), Merge (with two or more groups) |
-| Timeline | Set time here, Loop from here, Clear loop |
+| Timeline | Set time here, Loop from here, Clear loop, Save a frame here, Save the loop as a slice |
 | Card | Open, Open in Brief, Duplicate, Move up, Move down, Delete |
 | Empty map (upgrade) | also: Save card, Add height plane |
 

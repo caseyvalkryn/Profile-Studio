@@ -98,11 +98,13 @@ describe('Brief workspace', () => {
       target: { value: 'elev' },
     });
     expect(useDocument.getState().doc!.cards[0]!.view.kind).toBe('elevation');
-    const time = screen.getByRole('spinbutton', { name: 'Time s' });
+    const time = screen.getByRole('textbox', { name: 'Card time' });
     fireEvent.focus(time);
-    fireEvent.change(time, { target: { value: '120' } });
+    fireEvent.change(time, { target: { value: '2:00' } });
     fireEvent.blur(time);
     expect(useDocument.getState().doc!.cards[0]!.tS).toBe(120);
+    // shown in m:ss, as the Slice field beside it (F-08)
+    expect(time).toHaveValue('2:00');
     const focus = screen.getByRole('textbox', { name: 'Focus ids' });
     fireEvent.change(focus, { target: { value: 'T-02' } });
     fireEvent.blur(focus);
@@ -273,5 +275,97 @@ describe('Brief timeline, readout, frames and key points', () => {
     const d = boardDerived(useDocument.getState().doc!);
     expect(useUi.getState()).toMatchObject({ timeOn: true, tS: d.stages['T-01']!.find!.t });
     expect(screen.getByText('Definitions')).toBeInTheDocument();
+  });
+});
+
+describe('Brief frame and slice (lane 13.2)', () => {
+  const card2 = () => useDocument.getState().doc!.cards[1]!;
+  const commit = (testId: string, value: string) => {
+    const f = screen.getByTestId(testId);
+    fireEvent.focus(f);
+    fireEvent.change(f, { target: { value } });
+    fireEvent.keyDown(f, { key: 'Enter' });
+    fireEvent.blur(f);
+  };
+
+  it('the Slice field sets from, to and rate, one undo step each; bad text reverts; Clear clears', () => {
+    render(<BriefWorkspace />);
+    fireEvent.click(screen.getByRole('button', { name: 'Next card' }));
+    expect(screen.queryByTestId('brief-slice-head')).toBeNull();
+    commit('brief-slice-from', '1:00');
+    expect(card2().clip).toEqual({ t0S: 60, t1S: 90, rate: 1, beatsS: [] });
+    commit('brief-slice-to', '2:00');
+    commit('brief-slice-to', '0:30'); // before the start: reverts
+    commit('brief-slice-from', 'soon'); // not a time: reverts
+    expect(screen.getByTestId('brief-slice-from')).toHaveValue('1:00');
+    fireEvent.change(screen.getByTestId('brief-slice-rate'), { target: { value: '2' } });
+    expect(card2().clip).toEqual({ t0S: 60, t1S: 120, rate: 2, beatsS: [] });
+    expect(useDocument.getState().history).toEqual([
+      'set card c2 slice',
+      'set card c2 slice',
+      'set card c2 slice',
+    ]);
+    // the head reads the slice beside the live time; the card opens at the slice start
+    expect(screen.getByTestId('brief-slice-head')).toHaveTextContent('t+1:00 to t+2:00 · x2');
+    expect(screen.getByTestId('brief-time')).toHaveTextContent('t+1:00');
+    expect(useUi.getState()).toMatchObject({ loop: { startS: 60, endS: 120 }, rate: 2 });
+    fireEvent.click(screen.getByRole('button', { name: 'Clear the slice' }));
+    expect(card2().clip).toBeNull();
+    expect(screen.queryByTestId('brief-slice-head')).toBeNull();
+    expect(useUi.getState().loop).toBeNull();
+  });
+
+  it('Set the slice from the loop is disabled with a reason until a loop is set', () => {
+    render(<BriefWorkspace />);
+    const scissors = screen.getByRole('button', { name: 'Set the slice from the loop' });
+    expect(scissors).toHaveAttribute('aria-disabled', 'true');
+    expect(scissors).toHaveAccessibleDescription(
+      'Set a loop on the timeline first (Shift and drag)',
+    );
+    fireEvent.click(scissors);
+    expect(useDocument.getState().history).toEqual([]);
+    act(() => useUi.getState().setLoop({ startS: 10, endS: 40 }));
+    expect(scissors).not.toHaveAttribute('aria-disabled');
+    fireEvent.click(scissors);
+    expect(useDocument.getState().doc!.cards[0]!.clip).toMatchObject({ t0S: 10, t1S: 40 });
+    expect(screen.getByTestId('brief-slice-head')).toHaveTextContent('t+0:10 to t+0:40 · x1');
+  });
+
+  it('the Frame panel tops the notes; an empty caption says what to write; aids name the times', () => {
+    const v = testDeck();
+    v.cards[0]!.caption = '';
+    useDocument.getState().open(v);
+    render(<BriefWorkspace />);
+    const notes = screen.getByRole('complementary', { name: 'Notes' });
+    expect(notes.querySelector('section')).toBe(screen.getByTestId('brief-frame'));
+    expect(screen.getByTestId('brief-caption')).toHaveTextContent(
+      'Write what the viewer must see over the full run.',
+    );
+    expect(screen.getByRole('textbox', { name: 'Caption' })).toHaveValue('');
+    expect(screen.getByTestId('brief-aids')).toHaveTextContent('Next: 2 The loiter at t+3:20');
+    act(() => {
+      useUi.getState().setTime(100);
+      useUi.getState().setTimeOn(true);
+    });
+    expect(screen.getByTestId('brief-aids-step')).toHaveTextContent('T-01 Fix');
+    // the key points: the latest reached reads "now", the later ones are future
+    const kp = within(screen.getAllByTestId('brief-keypoints')[0]!).getAllByRole('button');
+    expect(kp[1]).toHaveAttribute('data-state', 'tl-current');
+    expect(kp[1]).toHaveTextContent('now');
+    expect(kp[0]).toHaveAttribute('data-state', 'tl-reached');
+    expect(kp[2]).toHaveAttribute('data-state', 'tl-future');
+  });
+
+  it('prints the frame time or the slice under the name and the frame lines as a table', () => {
+    const v = testDeck();
+    v.cards[0]!.clip = { t0S: 10, t1S: 40, rate: 2, beatsS: [] };
+    render(<PrintDeck v={v} />);
+    const pages = screen.getAllByTestId('brief-page');
+    expect(pages[0]!.querySelector('.brief-page-time')).toHaveTextContent('t+0:10 to t+0:40 · x2');
+    expect(pages[1]!.querySelector('.brief-page-time')).toHaveTextContent('t+3:20');
+    const rows = pages[1]!.querySelectorAll('.brief-page-frame tbody tr');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.textContent).toContain('T-01');
+    expect(rows[0]!.textContent).toContain('Track in 1:37');
   });
 });

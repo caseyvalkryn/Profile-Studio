@@ -16,6 +16,9 @@ import {
   nextCardId,
   restoreBuild,
   setFocusIds,
+  setSlice,
+  sliceFromLoop,
+  snapshotCard,
   stashBuild,
   step,
 } from './cards';
@@ -84,6 +87,22 @@ describe('the Build stash', () => {
       py: 6,
       layers: { labels: false },
     });
+  });
+
+  it('restores the loop and rate a slice card changed (lane 13.W)', () => {
+    useUi.getState().setLoop({ startS: 10, endS: 20 });
+    useUi.getState().setRate(2);
+    stashBuild();
+    useUi.getState().setLoop({ startS: 60, endS: 120 });
+    useUi.getState().setRate(8);
+    restoreBuild();
+    expect(useUi.getState()).toMatchObject({ loop: { startS: 10, endS: 20 }, rate: 2 });
+
+    useUi.getState().setLoop(null);
+    stashBuild();
+    useUi.getState().setLoop({ startS: 60, endS: 120 });
+    restoreBuild();
+    expect(useUi.getState().loop).toBeNull();
   });
 });
 
@@ -266,5 +285,80 @@ describe('the card frame on the stage, the strip and print (lane 11.F, F-02)', (
     const [gx, gy] = glyph(c);
     expect(Number(m[1]) - SZ.W / 2).toBeCloseTo(gx, 0);
     expect(Number(m[2]) - SZ.H / 2).toBeCloseTo(gy, 0);
+  });
+});
+
+describe('the slice (lane 13.2)', () => {
+  const slice = { t0S: 10, t1S: 40, rate: 2, beatsS: [] };
+  const hist = () => useDocument.getState().history;
+
+  it('setSlice writes the slice and its start as the card time in one undo step; null clears it', () => {
+    expect(setSlice('k-c2', slice)).toBe(true);
+    expect(doc().cards[1]).toMatchObject({ clip: slice, tS: 10 });
+    expect(hist()).toEqual(['set card c2 slice']);
+    expect(setSlice('k-c2', { ...slice, t1S: 5 })).toBe(false);
+    expect(hist()).toHaveLength(1);
+    setSlice('k-c2', null);
+    expect(doc().cards[1]).toMatchObject({ clip: null, tS: 10 });
+    useDocument.getState().undo();
+    expect(doc().cards[1]!.clip).toEqual(slice);
+  });
+
+  it('sliceFromLoop with no loop changes nothing and says how to set one', () => {
+    expect(sliceFromLoop()).toBeNull();
+    expect(hist()).toEqual([]);
+    expect(useToast.getState().text).toBe('Set a loop on the timeline first (Shift and drag).');
+  });
+
+  it('sliceFromLoop in Brief takes the loop and the rate into the current card', () => {
+    useUi.setState({
+      workspace: 'brief',
+      cardKey: 'k-c2',
+      loop: { startS: 60, endS: 120 },
+      rate: 4,
+    });
+    expect(sliceFromLoop()).toBe('k-c2');
+    expect(doc().cards[1]!.clip).toEqual({ t0S: 60, t1S: 120, rate: 4, beatsS: [] });
+    expect(hist()).toEqual(['set card c2 slice']);
+    expect(useToast.getState().text).toBe('Slice t+1:00 to t+2:00 · x4 set on card c2.');
+  });
+
+  it('sliceFromLoop in Build saves a new card after the current one', () => {
+    useUi.setState({
+      workspace: 'build',
+      cardKey: 'k-c1',
+      loop: { startS: 60, endS: 120 },
+      rate: 2,
+    });
+    const key = sliceFromLoop();
+    expect(ids()).toEqual(['c1', 'c3', 'c2']);
+    expect(doc().cards[1]).toMatchObject({
+      key,
+      tS: 60,
+      clip: { t0S: 60, t1S: 120, rate: 2, beatsS: [] },
+    });
+    expect(hist()).toEqual(['save slice c3']);
+    expect(useUi.getState().cardKey).toBe(key);
+  });
+
+  it('applyCard sets the loop, rate and time of a slice, and a frame clears the loop', () => {
+    setSlice('k-c2', slice);
+    openInBuild(doc().cards[1]!);
+    expect(useUi.getState()).toMatchObject({
+      loop: { startS: 10, endS: 40 },
+      rate: 2,
+      tS: 10,
+      timeOn: true,
+    });
+    useUi.getState().setTime(30);
+    openInBuild(doc().cards[0]!);
+    expect(useUi.getState()).toMatchObject({ loop: null, timeOn: false, tS: 30 });
+  });
+
+  it('a frame saved inside a slice keeps the frame only', () => {
+    setSlice('k-c2', slice);
+    useUi.setState({ workspace: 'brief', cardKey: 'k-c2', tS: 25, timeOn: true });
+    snapshotCard();
+    expect(doc().cards[2]).toMatchObject({ id: 'c3', tS: 25, clip: null });
   });
 });

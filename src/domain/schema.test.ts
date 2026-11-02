@@ -272,11 +272,11 @@ describe('vignette schema', () => {
       v.cards[0]!.clip = { ...v.cards[0]!.clip!, ...c };
       return v;
     };
-    expect(() => parseVignette(clip({ t0S: 60, t1S: 60 }))).toThrow(/clip start must be before/);
-    expect(() => parseVignette(clip({ t0S: 70 }))).toThrow(/clip start must be before/);
+    expect(() => parseVignette(clip({ t0S: 60, t1S: 60 }))).toThrow(/slice start must be before/);
+    expect(() => parseVignette(clip({ t0S: 70 }))).toThrow(/slice start must be before/);
     expect(() => parseVignette(clip({ rate: 3 }))).toThrow(/not in the rate menu/);
-    expect(() => parseVignette(clip({ beatsS: [61] }))).toThrow(/beat is outside the clip/);
-    expect(() => parseVignette(clip({ beatsS: [-1] }))).toThrow(/beat is outside the clip/);
+    expect(() => parseVignette(clip({ beatsS: [61] }))).toThrow(/beat is outside the slice/);
+    expect(() => parseVignette(clip({ beatsS: [-1] }))).toThrow(/beat is outside the slice/);
     for (const rate of [0.25, 0.5, 1, 2, 4, 8, 16, 32])
       expect(isVignette(clip({ rate }))).toBe(true);
     expect(isVignette(clip({ beatsS: [0, 60] }))).toBe(true);

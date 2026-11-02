@@ -212,7 +212,7 @@ function panFor(doc: Vignette, v: CardView): { px: number; py: number } {
   return { px: last.W / 2 - at[0], py: last.H / 2 - at[1] };
 }
 
-/** Put the board back to a card: view, camera, layers, time and focus. */
+/** Put the board back to a card: view, camera, layers, time (or slice) and focus. */
 export function applyCard(card: Card): void {
   const doc = useDocument.getState().doc;
   if (!doc) return;
@@ -228,10 +228,20 @@ export function applyCard(card: Card): void {
     ...panFor(doc, card.view),
     layers: { ...b.layers, ...card.layers },
   });
-  if (card.tS == null) ui.setTimeOn(false);
-  else {
+  // A slice (lane 13.2): the loop is the slice, the rate its rate, the time its start with the
+  // cursor on. A frame: the card's time (off for the full run) and no loop.
+  if (card.clip) {
+    ui.setLoop({ startS: card.clip.t0S, endS: card.clip.t1S });
+    ui.setRate(card.clip.rate);
     ui.setTimeOn(true);
-    ui.setTime(card.tS);
+    ui.setTime(card.clip.t0S);
+  } else {
+    ui.setLoop(null);
+    if (card.tS == null) ui.setTimeOn(false);
+    else {
+      ui.setTimeOn(true);
+      ui.setTime(card.tS);
+    }
   }
   ui.setSelection(card.focus.filter((k) => !!find(doc, k) || doc.events.some((e) => e.key === k)));
 }

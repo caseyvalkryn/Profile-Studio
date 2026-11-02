@@ -1,5 +1,5 @@
 // Key events to commands. While a text input has focus only Cmd+K passes; Escape there blurs the
-// input and does nothing else. An event a handler already took (defaultPrevented) is skipped, so
+// input and does nothing else. Space and Enter on a focused button are the button's. An event a handler already took (defaultPrevented) is skipped, so
 // one Escape closes one layer. Held keys repeat only the time steps, undo and redo. A key binds
 // only to the command active in the current workspace (Command.workspaces). A key on a command that
 // cannot run shows the reason in the toast, as the legacy status line did (review 9.1 F-08).
@@ -71,6 +71,12 @@ export function isTextInput(target: EventTarget | null): boolean {
   return el.isContentEditable === true;
 }
 
+/** True when the target is a button or `[role="button"]`, whose own Space and Enter press it. */
+export function isButton(target: EventTarget | null): boolean {
+  const el = target as Element | null;
+  return typeof el?.matches === 'function' && el.matches('button, [role="button"]');
+}
+
 /** A disabled command's reason as toast text: one sentence with a full stop. */
 export const reasonText = (reason: string) => (/[.!?]$/.test(reason) ? reason : `${reason}.`);
 
@@ -89,6 +95,8 @@ export function dispatchKey(
     if (shortcut === 'Escape') (e.target as HTMLElement).blur?.();
     return null;
   }
+  // Space and Enter on a focused button press the button, in every workspace (review 13 F-03).
+  if ((shortcut === 'Space' || shortcut === 'Enter') && isButton(e.target)) return null;
   const c = ctx();
   const cmd = byShortcut(shortcut, c.ui.workspace);
   if (!cmd) return null;

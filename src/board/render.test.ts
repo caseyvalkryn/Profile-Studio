@@ -262,6 +262,8 @@ describe('legacy render cases on the fixtures', () => {
       'systems',
       'envelopes',
       'paths',
+      'keypoints',
+      'keypoints-now',
       'events',
       'tracks',
       'target',
@@ -342,6 +344,22 @@ const PHASE_10_DEVIATIONS: readonly LegacyPatch[] = [
   ],
 ];
 
+// Phase 13 deviation (lane 13.3): the key point marks on the track. The port's `keypoints` and
+// `keypoints-now` layers (registered in layers/events.ts, under the Events chip) draw each
+// threat's F2T2EA stages and its defended asset entry as `<g class="kp ...">` groups, and the
+// root svg carries the cursor time as `style="--t:<t>"` for their CSS state. Legacy has no such
+// layer, its derive has no `stages` and its root has no style, so a source patch would have to
+// write the whole feature again in ES5 (the stage loop, the declutter, the seven glyphs, the
+// title, the current mark). The layers add no hit and no label candidate, so stripping their
+// groups and the root style leaves every other byte comparable. The marks' presence,
+// positions, `--kt` and the root `--t` are asserted in keypoints.test.ts.
+const KP_LAYER =
+  /<g class="ly ly-keypoints(?:-now)?">(?:<g class="kp [^"]*" data-k="keypoint(?:-now)?"[^>]*>.*?<\/g>)+<\/g>/g;
+const ROOT_T = /^(<svg [^>]*?) style="--t:[^"]*"/;
+function withoutKeyPoints(svg: string): string {
+  return svg.replace(KP_LAYER, '').replace(ROOT_T, '$1');
+}
+
 describe('byte parity with the legacy renderer', () => {
   const PS = loadLegacy(PHASE_10_DEVIATIONS);
   const seeds = PS.seed.load();
@@ -384,23 +402,27 @@ describe('byte parity with the legacy renderer', () => {
     for (const v of views) {
       for (const mode of [{}, { edit: true }, { thumb: true }]) {
         const a = PS.render.scene(r, { ...v, units: 'nav' }, W, { derived: d, ...mode }).svg;
-        const b = scene(sc, { ...v, units: 'nav' }, W, { derived: d, ...mode }).svg;
+        const b = withoutKeyPoints(
+          scene(sc, { ...v, units: 'nav' }, W, { derived: d, ...mode }).svg,
+        );
         expect(b, id + ' ' + JSON.stringify(v) + ' ' + JSON.stringify(mode)).toBe(a);
       }
     }
     ((r.cards as unknown[] | undefined) ?? []).forEach((c, i) => {
-      expect(card(sc, d, sc.cards[i], { W: 300, H: 160 }, true), id + ' card ' + i).toBe(
-        PS.render.card(r, c, { W: 300, H: 160 }, true),
-      );
+      expect(
+        withoutKeyPoints(card(sc, d, sc.cards[i], { W: 300, H: 160 }, true)),
+        id + ' card ' + i,
+      ).toBe(PS.render.card(r, c, { W: 300, H: 160 }, true));
     });
-    expect(card(sc, d, null, null, false), id + ' null card').toBe(
+    expect(withoutKeyPoints(card(sc, d, null, null, false)), id + ' null card').toBe(
       PS.render.card(r, null, null, false),
     );
     PS.units.set('si');
     const a = PS.render.scene(r, { proj: 'elev', t: 60, units: 'si' }, W, { derived: d }).svg;
-    expect(scene(sc, { proj: 'elev', t: 60, units: 'si' }, W, { derived: d }).svg, id + ' si').toBe(
-      a,
-    );
+    expect(
+      withoutKeyPoints(scene(sc, { proj: 'elev', t: 60, units: 'si' }, W, { derived: d }).svg),
+      id + ' si',
+    ).toBe(a);
     PS.units.set('nav');
   });
 
@@ -465,7 +487,7 @@ describe('byte parity with the legacy renderer', () => {
     for (const v of views) {
       const a = PS.render.scene(r, { ...v, units: 'nav' }, W, { derived: d, edit: true }).svg;
       expect(
-        scene(sc, { ...v, units: 'nav' }, W, { derived: d, edit: true }).svg,
+        withoutKeyPoints(scene(sc, { ...v, units: 'nav' }, W, { derived: d, edit: true }).svg),
         JSON.stringify(v),
       ).toBe(a);
     }
@@ -481,7 +503,7 @@ describe('byte parity with the legacy renderer', () => {
       W,
       { derived: d, edit: true, ghost: { rec: sc, derived: d } },
     ).svg;
-    expect(gb).toBe(ga);
+    expect(withoutKeyPoints(gb)).toBe(ga);
   });
 });
 

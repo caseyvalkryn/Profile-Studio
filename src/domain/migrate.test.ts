@@ -367,7 +367,7 @@ describe('legacy v4 round trip (acceptance item 18)', () => {
     expect(bad((r) => (r.events[0]!.type = 'boom'))).toThrow('e1 has the type boom');
     expect(bad((r) => ((r.cards[0]!.cam as L).proj = 'iso'))).toThrow('c1 has a camera');
     expect(bad((r) => (r.cards[0]!.clip = { t0: 5, t1: 5, rate: 1, beats: [] }))).toThrow(
-      /clip start must be before/,
+      /slice start must be before/,
     );
     expect(bad((r) => (r.debrief = { tspi: { T9: [] }, events: [] }))).toThrow(
       'Debrief refers to path T9 that does not exist.',
