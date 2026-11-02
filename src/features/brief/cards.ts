@@ -75,6 +75,8 @@ export function snapshotBuild(): BuildStash {
     elevationMode: ui.elevationMode,
     tS: ui.tS,
     timeOn: ui.timeOn,
+    loop: ui.loop ? { ...ui.loop } : null,
+    rate: ui.rate,
     zoom: b.zoom,
     px: b.px,
     py: b.py,
@@ -100,6 +102,8 @@ export function restoreBuild(): void {
   ui.setElevationMode(s.elevationMode);
   ui.setTime(s.tS);
   ui.setTimeOn(s.timeOn);
+  ui.setLoop(s.loop);
+  ui.setRate(s.rate);
   useBoard.getState().set({
     zoom: s.zoom,
     px: s.px,
