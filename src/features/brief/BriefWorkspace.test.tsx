@@ -279,6 +279,52 @@ describe('Brief timeline, readout, frames and key points', () => {
     }
   });
 
+  it('Emphasis puts every threat in an empty focus and draws the rest faint; one undo step; the strip follows', () => {
+    render(<BriefWorkspace />);
+    expect(useDocument.getState().doc!.cards[0]!.focus).toEqual([]);
+    const stage = () => screen.getByTestId('brief-stage').parentElement!;
+    expect(stage()).not.toHaveClass('brief-emphasis');
+    fireEvent.click(screen.getByRole('button', { name: /^Emphasis/ }));
+    const v = useDocument.getState().doc!;
+    expect(v.cards[0]!.displays.emphasis).toBe(true);
+    expect(v.cards[0]!.focus).toEqual(v.threats.map((t) => t.key));
+    expect(useDocument.getState().past.map((e) => e.label)).toEqual(['emphasise card c1']);
+    expect(stage()).toHaveClass('brief-emphasis');
+    expect(screen.getByRole('checkbox', { name: 'Emphasis' })).toBeChecked();
+    const strip = screen.getByRole('complementary', { name: 'Cards' });
+    expect(strip.querySelector('.brief-emphasis')).not.toBeNull();
+    // off again keeps the focus
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Emphasis' }));
+    expect(useDocument.getState().doc!.cards[0]!.displays.emphasis).toBe(false);
+    expect(useDocument.getState().doc!.cards[0]!.focus).toEqual(v.threats.map((t) => t.key));
+    expect(stage()).not.toHaveClass('brief-emphasis');
+  });
+
+  it('the Question box puts the question on the stage as a floating title; a press on the title takes it off', () => {
+    render(<BriefWorkspace />);
+    expect(screen.queryByTestId('brief-question')).toBeNull();
+    fireEvent.click(screen.getByTestId('brief-question-box'));
+    expect(screen.getByTestId('brief-question')).toHaveTextContent(
+      'Does the radar hold the hover?',
+    );
+    expect(screen.getByTestId('brief-question-box')).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Next card' }));
+    expect(screen.getByTestId('brief-question')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('brief-question'));
+    expect(screen.queryByTestId('brief-question')).toBeNull();
+    expect(useDocument.getState().past).toHaveLength(0);
+  });
+
+  it('the notes panel closes with the inspector state and the stage takes the width', () => {
+    render(<BriefWorkspace />);
+    expect(screen.getByRole('complementary', { name: 'Notes' })).toBeInTheDocument();
+    act(() => useUi.getState().togglePanel('inspector'));
+    expect(screen.queryByRole('complementary', { name: 'Notes' })).toBeNull();
+    expect(document.querySelector('.brief-screen')).toHaveClass('grid-cols-[220px_minmax(0,1fr)]');
+    act(() => useUi.getState().togglePanel('inspector'));
+    expect(screen.getByRole('complementary', { name: 'Notes' })).toBeInTheDocument();
+  });
+
   it('the camera segment sets the card camera as one undo step; with no card it sets the Build view', () => {
     render(<BriefWorkspace />);
     const seg = () => within(screen.getByTestId('brief-camera'));

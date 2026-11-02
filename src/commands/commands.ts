@@ -907,6 +907,14 @@ const COMMANDS: Command[] = [
     run: (ctx) => cycleKind(ctx, -1),
   },
   {
+    id: 'panel.list',
+    label: 'Asset list open or closed',
+    group: 'view',
+    workspaces: BUILD,
+    when: () => true,
+    run: (ctx) => ctx.ui.togglePanel('list'),
+  },
+  {
     id: 'panel.inspector',
     label: 'Inspector open or closed',
     group: 'view',

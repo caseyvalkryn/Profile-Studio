@@ -152,7 +152,12 @@ function asLegacy(v: Vignette) {
         ref: idOf.get(c.view.ref) ?? c.view.ref,
       },
       layers: c.layers,
-      displays: c.displays,
+      // emphasis (2026-11-02) is not a legacy field
+      displays: {
+        timeline: c.displays.timeline,
+        chart: c.displays.chart,
+        readout: c.displays.readout,
+      },
       clip: c.clip && { t0: c.clip.t0S, t1: c.clip.t1S, rate: c.clip.rate, beats: c.clip.beatsS },
       focus: c.focus.map((k) => idOf.get(k)),
       t: c.tS,

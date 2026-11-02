@@ -279,6 +279,7 @@ export function importLegacyV4(doc: unknown): Vignette {
         timeline: bool(d.timeline, true),
         chart: bool(d.chart, false),
         readout: bool(d.readout, false),
+        emphasis: bool(d.emphasis, false),
       },
       clip: k && {
         t0S: num(k.t0, NaN),

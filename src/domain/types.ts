@@ -212,7 +212,8 @@ export type Card = {
   name: string;
   view: CardView;
   layers: Partial<Record<LayerId, boolean>>;
-  displays: { timeline: boolean; chart: boolean; readout: boolean };
+  /** Emphasis (2026-11-02): the focus strong and the rest faint, its labels hidden. */
+  displays: { timeline: boolean; chart: boolean; readout: boolean; emphasis: boolean };
   clip: Clip | null;
   focus: string[]; // keys
   tS: number | null; // null: time off

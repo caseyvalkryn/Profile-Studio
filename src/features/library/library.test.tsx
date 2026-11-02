@@ -287,7 +287,7 @@ describe('LibraryScreen', () => {
         elevationMode: 'fromAsset' as const,
       },
       layers: {},
-      displays: { timeline: false, chart: false, readout: false },
+      displays: { timeline: false, chart: false, readout: false, emphasis: false },
       clip: null,
       focus: [],
       tS: null,

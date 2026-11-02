@@ -119,6 +119,8 @@ export type UiState = {
   theme: Theme;
   paletteOpen: boolean;
   shortcutsOpen: boolean;
+  /** Brief: the question as a floating title on the stage (the notes Question box, Q). */
+  questionOnStage: boolean;
   /** The open export or import dialog, else null. */
   dialog: ShellDialog | null;
   workspace: Workspace;
@@ -153,6 +155,7 @@ export type UiState = {
   setTheme: (theme: Theme) => void;
   setPaletteOpen: (open: boolean) => void;
   setShortcutsOpen: (open: boolean) => void;
+  setQuestionOnStage: (on: boolean) => void;
   setDialog: (dialog: ShellDialog | null) => void;
   setWorkspace: (w: Workspace) => void;
   /** Set one panel; `show` omitted flips it. */
@@ -186,6 +189,7 @@ export const UI_DEFAULTS = {
   theme: 'auto',
   paletteOpen: false,
   shortcutsOpen: false,
+  questionOnStage: false,
   dialog: null as ShellDialog | null,
   // The shell sets the workspace from the route. Build is the default so a Build view mounted
   // without the shell (unit tests) gets the Build keys.
@@ -225,6 +229,7 @@ export const useUi = create<UiState>()((set) => ({
   setTheme: (theme) => set({ theme }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
   setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
+  setQuestionOnStage: (questionOnStage) => set({ questionOnStage }),
   setDialog: (dialog) => set({ dialog }),
   setWorkspace: (workspace) => set({ workspace }),
   togglePanel: (name, show) =>

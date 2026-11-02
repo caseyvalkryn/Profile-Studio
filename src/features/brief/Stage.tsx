@@ -17,9 +17,14 @@
 // one undo step (./stageFrame, cards.ts beginFrame); the
 // head prints the zoom. The camera segment in the head (Plan, Elevation, 3D; keys 1, 2, 3) sets
 // the card's camera as the Build bar's segment sets the view, one undo step (cards.ts
-// setCamera). The Readout display is the frame panel floating at the stage's top
+// setCamera). Emphasis (the Focus button, E, the notes checkbox, cards.ts toggleEmphasis)
+// draws the rest faint with its labels hidden (`brief-emphasis`, brief.css); the strip and the
+// print deck apply it too. The question floats at the top left as a title (`brief-question`)
+// while `ui.questionOnStage` is on: the notes Question box, Q, or a press on the title.
+// The strip and the
+// print deck apply it too. The Readout display is the frame panel floating at the stage's top
 // right: "Frame at t+2:06", then each threat in focus as the notes' Frame block (at most three).
-import { Camera, ChartNoAxesGantt, Gauge, ImageIcon, Scissors } from 'lucide-react';
+import { Camera, ChartNoAxesGantt, Focus, Gauge, ImageIcon, Scissors } from 'lucide-react';
 import {
   useEffect,
   useId,
@@ -50,6 +55,7 @@ import {
   snapshotBuild,
   snapshotCard,
   toggleDisplay,
+  toggleEmphasis,
   updateFrame,
   updateOrbit,
 } from './cards';
@@ -140,6 +146,23 @@ function CameraSegment({ view }: { view: View }) {
         );
       })}
     </div>
+  );
+}
+
+/** The question as a floating title at the stage's top left (the notes Question box, Q). */
+function QuestionTitle({ text }: { text: string }) {
+  const set = useUi((s) => s.setQuestionOnStage);
+  return (
+    <button
+      type="button"
+      className={`brief-question ${focusRing}`}
+      aria-label="Question on the stage"
+      title="Take the question off the stage"
+      data-testid="brief-question"
+      onClick={() => set(false)}
+    >
+      {text}
+    </button>
   );
 }
 
@@ -235,6 +258,7 @@ export default function Stage({
   const selectedKeys = useUi((s) => s.selectedKeys);
   const stash = useUi((s) => s.buildStash);
   const hasLoop = useUi((s) => s.loop != null);
+  const questionOn = useUi((s) => s.questionOnStage);
   const n = v.cards.length;
   const sz = stageSize(size.width, size.height);
   // No current card: a transient card of the Build view (the stash, else the stores now), its
@@ -313,7 +337,7 @@ export default function Stage({
   const drag = useRef<Drag | null>(null);
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!card || (e.button !== 0 && e.button !== 1)) return;
-    if ((e.target as Element).closest('.brief-float')) return;
+    if ((e.target as Element).closest('.brief-float, .brief-question')) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
     const pan = card.view.kind !== '3d' || e.shiftKey || e.button === 1;
@@ -390,6 +414,14 @@ export default function Stage({
               >
                 <Gauge aria-hidden="true" />
               </HeadButton>
+              <HeadButton
+                label="Emphasis: the focus strong, the rest faint"
+                shortcut="E"
+                pressed={card.displays.emphasis}
+                onClick={() => toggleEmphasis()}
+              >
+                <Focus aria-hidden="true" />
+              </HeadButton>
             </>
           ) : null}
           <HeadButton
@@ -426,7 +458,7 @@ export default function Stage({
         </span>
       </div>
       <div
-        className={`relative min-h-[360px] flex-1${card ? ' brief-stage-grab' : ''}`}
+        className={`relative min-h-[360px] flex-1${card ? ' brief-stage-grab' : ''}${card?.displays.emphasis ? ' brief-emphasis' : ''}`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -439,6 +471,7 @@ export default function Stage({
           dangerouslySetInnerHTML={{ __html: svg }}
         />
         {rec && showReadout ? <FrameFloat v={v} rec={rec} t={t} /> : null}
+        {questionOn && question ? <QuestionTitle text={question} /> : null}
       </div>
       <p
         className="m-0 min-h-[30px] max-w-[72ch] shrink-0 px-0.5 pt-2.5 text-[15px] leading-[1.5] text-text"

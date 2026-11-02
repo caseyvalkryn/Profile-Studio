@@ -131,7 +131,7 @@ function small(): Vignette {
           elevationMode: 'fromAsset',
         },
         layers: { reach: true, rings: false },
-        displays: { timeline: true, chart: false, readout: false },
+        displays: { timeline: true, chart: false, readout: false, emphasis: false },
         clip: { t0S: 0, t1S: 60, rate: 2, beatsS: [10, 60] },
         focus: [t1],
         tS: null,
@@ -251,6 +251,14 @@ describe('vignette schema', () => {
     const back = parseVignette(JSON.parse(JSON.stringify(v)));
     expect(back).toEqual(v);
     expect(isVignette(back)).toBe(true);
+  });
+
+  it('reads a v8 card saved before Emphasis (no displays.emphasis) as emphasis off', () => {
+    const raw = JSON.parse(JSON.stringify(small())) as {
+      cards: { displays: Record<string, unknown> }[];
+    };
+    delete raw.cards[0]!.displays.emphasis;
+    expect(parseVignette(raw).cards[0]!.displays.emphasis).toBe(false);
   });
 
   it('loads a stored v6 node without fovDeg and bearingDeg with the catalog defaults', () => {

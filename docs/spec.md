@@ -124,7 +124,7 @@ type AuthoredEvent = { id: string; tS: number
   label: string; threatKey: string; sensorKey: string | null }
 type Card = { id: string; name: string; view: CardView
   layers: Partial<Record<LayerId, boolean>>
-  displays: { timeline: boolean; chart: boolean; readout: boolean }   // chart not built
+  displays: { timeline: boolean; chart: boolean; readout: boolean; emphasis: boolean }   // chart not built; emphasis reads false when absent
   clip: Clip | null /* the slice */; focus: string[] /* keys */; tS: number | null /* null: time off */
   caption: string; notes: string }
 type CardView = { kind: 'plan'|'elevation'|'3d'; centre: { x: number; y: number }; zoom: number
@@ -255,7 +255,15 @@ the notes panel on the right.
 - Previous and Next; Left, Right and Space move between cards. Opening a card applies its view;
   leaving Brief restores the Build view.
 - The notes panel: name, camera, yaw and pitch, zoom with Fit, time, focus ids, layers, caption,
-  presenter notes.
+  presenter notes. It opens and closes with the Build inspector's state (the top bar's panel
+  button, I), so the stage takes the width (2026-11-02, user request). The card strip stays.
+- The question on the stage (2026-11-02, user request): a press on the notes Question box, or
+  Q, floats the question at the stage's top left as a title (17 px, weight 500); a second press,
+  or a press on the title, takes it off. View state, not a card field.
+- Emphasis (2026-11-02, user request): a card display. The head's Focus button, E, or the notes
+  checkbox draws the focus strong and the rest at 10 percent with its labels hidden, on the
+  stage, the strip thumbnail and the print page. Turning it on with no focus puts every threat
+  in the focus, so the flight paths stand out. One undo step ("emphasise card c1").
 - The camera segment in the stage head (2026-11-02, user request): Plan, Elevation, 3D, as the
   Build bar's view segment; keys 1, 2, 3. It sets the current card's camera as one undo step
   (the notes Camera select writes the same field) and starts the new camera from the fitted
@@ -403,12 +411,12 @@ bypasses every snap.
 | Shift+1 to 5 | Layer toggle by number: Reach, Events, Envelopes, Telemetry, Labels |
 | =, - | Zoom in, out |
 | Tab, Shift+Tab | Next or previous object of the same kind |
-| I | Inspector open or closed |
+| I | Inspector open or closed (the notes panel in Brief) |
 | \ | Both side panels open or closed |
 
 Brief keys (only in Brief): Right or Space next card; Left previous card; Home, End; Up and
 Down move the current card in the strip; Delete removes it with undo; 1, 2, 3 set the card's
-camera; =, - zoom the card. Build keys that edit are off in Brief. The registry scopes a shortcut by workspace.
+camera; =, - zoom the card; E emphasis; Q the question on the stage. Build keys that edit are off in Brief. The registry scopes a shortcut by workspace.
 
 **Commands.** One registry (`src/commands/`) defines each action once: ID, label, shortcut,
 enable rule with a reason, the kinds it applies to, and the workspaces it is active in. The

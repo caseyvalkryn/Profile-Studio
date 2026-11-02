@@ -223,7 +223,13 @@ export const cardSchema: z.ZodType<Card> = z.object({
   name: z.string(),
   view: cardViewSchema,
   layers: z.partialRecord(z.enum(LAYER_IDS), z.boolean()),
-  displays: z.object({ timeline: z.boolean(), chart: z.boolean(), readout: z.boolean() }),
+  displays: z.object({
+    timeline: z.boolean(),
+    chart: z.boolean(),
+    readout: z.boolean(),
+    // added 2026-11-02 without a stamp change: a missing field reads false
+    emphasis: z.boolean().default(false),
+  }),
   clip: clipSchema.nullable(),
   focus: z.array(key),
   tS: num.nullable(),

@@ -382,7 +382,7 @@ describe('Build bar, scrub, thumbnails and cards (lane 10.3)', () => {
       name: 'Card 1',
       tS: 200,
       focus: [doc0.threats[0]!.key],
-      displays: { timeline: true, chart: false, readout: false },
+      displays: { timeline: true, chart: false, readout: false, emphasis: false },
       clip: null,
       caption: '',
       notes: '',

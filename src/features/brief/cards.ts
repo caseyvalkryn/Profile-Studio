@@ -137,7 +137,7 @@ export function cardFromBuild(v: Vignette, from: BuildStash = snapshotBuild()): 
     name: `Card ${v.cards.length + 1}`,
     view: cardViewOf(v, from),
     layers,
-    displays: { timeline: true, chart: false, readout: false },
+    displays: { timeline: true, chart: false, readout: false, emphasis: false },
     clip: null,
     focus: useUi.getState().selectedKeys.slice(),
     tS: from.timeOn ? from.tS : null,
@@ -198,7 +198,26 @@ export function snapshotCard(): string | null {
   return card.key;
 }
 
-/** Set the card's displays (timeline, chart, readout); one undo step. */
+/**
+ * Emphasis on or off (the head button, E, the notes checkbox): the focus drawn strong and the
+ * rest faint. Turning it on with no focus puts every threat in the focus, so the flight paths
+ * stand out. One undo step.
+ */
+export function toggleEmphasis(): void {
+  const v = doc();
+  const card = currentCard(v, useUi.getState().cardKey);
+  if (!v || !card) return;
+  const on = !card.displays.emphasis;
+  const focus = on && !card.focus.length ? v.threats.map((t) => t.key) : null;
+  edit(`${on ? 'emphasise' : 'unemphasise'} card ${card.id}`, (d) => {
+    const c = d.cards.find((x) => x.key === card.key);
+    if (!c) return;
+    c.displays.emphasis = on;
+    if (focus) c.focus = focus;
+  });
+}
+
+/** Set the card's displays (timeline, chart, readout, emphasis); one undo step. */
 export function setDisplays(key: string, patch: Partial<Card['displays']>): void {
   const id = doc()?.cards.find((c) => c.key === key)?.id ?? '';
   edit(`set card ${id} ${Object.keys(patch).join(', ')}`, (d) => {

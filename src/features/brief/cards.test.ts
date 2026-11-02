@@ -157,7 +157,7 @@ describe('card edits', () => {
       caption: '',
       notes: '',
       clip: null,
-      displays: { timeline: true, chart: false, readout: false },
+      displays: { timeline: true, chart: false, readout: false, emphasis: false },
     });
     expect(c.view).toMatchObject({ kind: 'elevation', ref: doc().sensors[0]!.key });
     expect(useDocument.getState().past.length).toBe(before + 1);

@@ -30,6 +30,7 @@ import {
   setFocusIds,
   setLayers,
   setSlice,
+  toggleEmphasis,
   type CardField,
 } from './cards';
 import { ZOOM_MAX, ZOOM_MIN } from './stageFrame';
@@ -293,6 +294,7 @@ function SliceField({ card }: { card: Card }) {
 const DISPLAYS: readonly [keyof Card['displays'], string][] = [
   ['timeline', 'Timeline'],
   ['readout', 'Readout'],
+  ['emphasis', 'Emphasis'],
 ];
 
 /**
@@ -369,6 +371,30 @@ function KeyPoints({ v, focus }: { v: Vignette; focus: readonly string[] }) {
           <dd className="m-0 text-text">{DA_DEFINITION}</dd>
         </dl>
       </details>
+    </Section>
+  );
+}
+
+/**
+ * The Question box (2026-11-02, user request): a press puts the question on the stage as a
+ * floating title at the top left, front and centre for the room; a second press takes it off.
+ */
+function QuestionBox({ question, hint }: { question: string; hint?: boolean }) {
+  const on = useUi((s) => s.questionOnStage);
+  const set = useUi((s) => s.setQuestionOnStage);
+  return (
+    <Section title="Question">
+      <button
+        type="button"
+        className={`m-0 w-full rounded px-1 py-0.5 text-left hover:bg-surface-2 ${hint ? 'ps-hint' : 'text-text'} ${focusRing}`}
+        aria-pressed={on}
+        aria-label="Question on the stage"
+        title={on ? 'Take the question off the stage' : 'Show the question on the stage'}
+        data-testid="brief-question-box"
+        onClick={() => set(!on)}
+      >
+        {question}
+      </button>
     </Section>
   );
 }
@@ -564,7 +590,11 @@ export default function Notes({
                     <input
                       type="checkbox"
                       checked={card.displays[k]}
-                      onChange={(e) => setDisplays(card.key, { [k]: e.target.checked })}
+                      onChange={(e) =>
+                        k === 'emphasis'
+                          ? toggleEmphasis()
+                          : setDisplays(card.key, { [k]: e.target.checked })
+                      }
                     />
                     {label}
                   </label>
@@ -592,16 +622,12 @@ export default function Notes({
               value={card.notes}
             />
           </Section>
-          <Section title="Question">
-            <p className="ps-hint">{question}</p>
-          </Section>
+          <QuestionBox question={question} hint />
         </>
       ) : (
         <>
           <Frame v={v} card={null} />
-          <Section title="Question">
-            <p className="m-0 text-text">{question}</p>
-          </Section>
+          <QuestionBox question={question} />
           <KeyPoints v={v} focus={[]} />
         </>
       )}

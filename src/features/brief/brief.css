@@ -23,6 +23,31 @@
 .brief-stage-grab:active .brief-stage svg {
   cursor: grabbing;
 }
+/* Emphasis: the focus strong, the rest faint with its labels hidden. The stage, the strip and
+   the print deck carry the class. */
+.brief-emphasis svg.board .dim {
+  opacity: 0.1;
+}
+.brief-emphasis svg.board .dim text {
+  display: none;
+}
+/* The question as a floating title at the stage's top left: the 17/24 size at weight 500. */
+.brief-question {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  max-width: min(46ch, calc(100% - 300px));
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--surface-3);
+  border-radius: 6px;
+  background: var(--surface-1);
+  box-shadow: var(--elev);
+  font: var(--fw-med) 17px / 24px var(--ui);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
 /* The frame panel floating at the stage's top right (the Readout display). */
 .brief-float {
   position: absolute;

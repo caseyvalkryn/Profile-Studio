@@ -1,6 +1,7 @@
 // The Brief workspace (spec section 7, Brief; `legacy/mockup-v3.html` drawBrief, line 491):
 // the card strip (220 px), the stage with the shared timeline strip under it (src/features/
-// timeline), the notes panel (300 px). The strip always shows (lane 12.3): a card whose Timeline
+// timeline), the notes panel (300 px; `ui.panels.inspector` closes it, as the inspector in
+// Build: the top bar's panel button or I). The strip always shows (lane 12.3): a card whose Timeline
 // display is off collapses it to its play bar (`brief-tl-collapsed`, brief.css). Mounting stashes the Build view
 // and applies the current card; unmounting restores Build as it was (principle 8.1). The print
 // deck is a hidden list, one page per card, shown by the print stylesheet (brief.css): the card
@@ -112,7 +113,10 @@ export function PrintDeck({ v }: { v: Vignette }) {
           <p className="brief-page-time">
             {card.clip ? sliceText(card.clip) : card.tS == null ? 'Full run' : fmtTime(card.tS)}
           </p>
-          <div className="brief-page-render" dangerouslySetInnerHTML={{ __html: svg }} />
+          <div
+            className={`brief-page-render${card.displays.emphasis ? ' brief-emphasis' : ''}`}
+            dangerouslySetInnerHTML={{ __html: svg }}
+          />
           {card.caption ? <p className="brief-page-caption">{card.caption}</p> : null}
           <FrameTable v={v} card={card} units={units} />
           {card.notes ? <p className="brief-page-notes">{card.notes}</p> : null}
@@ -130,6 +134,8 @@ export default function BriefWorkspace() {
   // The playback clock runs here too, so P plays while the card hides its timeline.
   usePlayback();
   const v = useDocument((s) => s.doc);
+  // The notes panel opens and closes with the Build inspector's state (the top bar button, I).
+  const notesOpen = useUi((s) => s.panels.inspector);
   const cardKey = useUi((s) => s.cardKey);
   const index = v ? currentIndex(v.cards, cardKey) : -1;
   const card = v && index >= 0 ? (v.cards[index] ?? null) : null;
@@ -158,7 +164,9 @@ export default function BriefWorkspace() {
   if (!v) return null;
   return (
     <main aria-label="Brief" className="brief flex-1 min-h-0">
-      <div className="brief-screen grid h-full min-h-0 grid-cols-[220px_minmax(0,1fr)_300px]">
+      <div
+        className={`brief-screen grid h-full min-h-0 ${notesOpen ? 'grid-cols-[220px_minmax(0,1fr)_300px]' : 'grid-cols-[220px_minmax(0,1fr)]'}`}
+      >
         <CardStrip v={v} current={index} onPick={goTo} onAdd={addCard} />
         <div className="flex min-h-0 min-w-0 flex-col">
           <Stage v={v} card={card} index={index} onStep={step} startMs={startMs} />
@@ -169,7 +177,9 @@ export default function BriefWorkspace() {
             <Timeline mode="brief" />
           </div>
         </div>
-        <Notes v={v} card={card} index={index} onMove={moveCard} onDelete={deleteCard} />
+        {notesOpen ? (
+          <Notes v={v} card={card} index={index} onMove={moveCard} onDelete={deleteCard} />
+        ) : null}
       </div>
       <PrintDeck v={v} />
     </main>

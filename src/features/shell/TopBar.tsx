@@ -4,6 +4,7 @@
 // a registry command, so the bar, the keys and the palette do the same thing. On the Library
 // route the Library screen has its own New, Import and Export, so the bar leaves them out (one
 // of each per screen, review 9.1 F-20).
+import { PanelLeft, PanelRight } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { currentContext, execute, get, shortcutLabel } from '../../commands/registry';
@@ -208,6 +209,9 @@ export default function TopBar({ status }: { status?: string | null }) {
   const redoLabel = useDocument((s) => s.future[0]?.label);
   const theme = useUi((s) => s.theme);
   const help = useUi((s) => s.shortcutsOpen);
+  const onBrief = useLocation().pathname === '/brief';
+  const listOpen = useUi((s) => s.panels.list);
+  const inspectorOpen = useUi((s) => s.panels.inspector);
   return (
     <header className="ps-top">
       <div className="tb-bar">
@@ -246,6 +250,31 @@ export default function TopBar({ status }: { status?: string | null }) {
                 Import
               </BarButton>
             </>
+          )}
+          {/* The side panels, one click each (2026-11-02): the asset list in Build; the
+              inspector in Build, which is the notes panel in Brief. */}
+          {onLibrary || onBrief ? null : (
+            <BarButton
+              id="panel.list"
+              quiet
+              pressed={listOpen}
+              ariaLabel="Asset list"
+              className="tb-panel [&>svg]:size-4"
+            >
+              <PanelLeft aria-hidden="true" />
+            </BarButton>
+          )}
+          {onLibrary ? null : (
+            <BarButton
+              id="panel.inspector"
+              quiet
+              pressed={inspectorOpen}
+              ariaLabel={onBrief ? 'Notes panel' : 'Inspector'}
+              tip={onBrief ? 'Notes panel open or closed' : undefined}
+              className="tb-panel [&>svg]:size-4"
+            >
+              <PanelRight aria-hidden="true" />
+            </BarButton>
           )}
           <BarButton id="view.theme" quiet className="tb-theme">
             {THEME_LABEL[theme]}

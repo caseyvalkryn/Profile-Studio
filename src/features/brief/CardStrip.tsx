@@ -20,7 +20,7 @@ export function CardThumb({ v, card }: { v: Vignette; card: Card }) {
   );
   return (
     <span
-      className="block bg-surface-0 [&>svg]:pointer-events-none [&>svg]:block [&>svg]:h-auto [&>svg]:w-full"
+      className={`block bg-surface-0 [&>svg]:pointer-events-none [&>svg]:block [&>svg]:h-auto [&>svg]:w-full${card.displays.emphasis ? ' brief-emphasis' : ''}`}
       dangerouslySetInnerHTML={{ __html: svg.replace('<svg ', '<svg aria-hidden="true" ') }}
     />
   );

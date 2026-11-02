@@ -18,7 +18,7 @@ export function testCard(over: Partial<Card> = {}): Card {
       elevationMode: 'fromAsset',
     },
     layers: {},
-    displays: { timeline: true, chart: false, readout: false },
+    displays: { timeline: true, chart: false, readout: false, emphasis: false },
     clip: null,
     focus: [],
     tS: null,

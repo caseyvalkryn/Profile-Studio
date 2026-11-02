@@ -168,7 +168,7 @@ export function cardFromBuild(doc: Vignette): Card {
     name: `Card ${doc.cards.length + 1}`,
     view: cardViewNow(doc),
     layers: toggledLayers(useBoard.getState().layers),
-    displays: { timeline: true, chart: false, readout: false },
+    displays: { timeline: true, chart: false, readout: false, emphasis: false },
     clip: null,
     focus,
     tS: ui.timeOn ? ui.tS : null,
