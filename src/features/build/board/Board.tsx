@@ -49,12 +49,21 @@ const LABEL_STYLE: React.CSSProperties = {
   zIndex: 2,
 };
 
+/** The selection rectangle: the accent as a dashed stroke and a faint fill (principle 5.2).
+ *  `--accent` (tokens.css), not `--select`, which board.css scopes to the SVG. */
+const MARQUEE_STYLE: React.CSSProperties = {
+  border: '1px dashed var(--accent)',
+  background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
+  zIndex: 1,
+};
+
 export default function Board({ width, height }: BoardProps) {
   const stageEl = useRef<HTMLDivElement>(null);
   const svgEl = useRef<SVGSVGElement>(null);
   const msgEl = useRef<HTMLDivElement>(null);
   const cursorEl = useRef<HTMLDivElement>(null);
   const labelEl = useRef<HTMLDivElement>(null);
+  const marqueeEl = useRef<HTMLDivElement>(null);
   const [menu, setMenu] = useState<{ items: MenuItem[]; x: number; y: number } | null>(null);
   const [arg, setArg] = useState<ArgRequest | null>(null);
   const pointer = useBoard((s) => s.pointer);
@@ -91,7 +100,15 @@ export default function Board({ width, height }: BoardProps) {
   useEffect(() => {
     const stage = stageEl.current;
     const svg = svgEl.current;
-    if (!stage || !svg || !msgEl.current || !cursorEl.current || !labelEl.current) return;
+    if (
+      !stage ||
+      !svg ||
+      !msgEl.current ||
+      !cursorEl.current ||
+      !labelEl.current ||
+      !marqueeEl.current
+    )
+      return;
     const size = () => {
       if (width && height) return { W: width, H: height };
       const r = stage.getBoundingClientRect();
@@ -112,7 +129,13 @@ export default function Board({ width, height }: BoardProps) {
       });
     };
     const gestures = new BoardGestures(
-      { stage, label: labelEl.current, cursor: cursorEl.current, msg: msgEl.current },
+      {
+        stage,
+        label: labelEl.current,
+        cursor: cursorEl.current,
+        msg: msgEl.current,
+        marquee: marqueeEl.current,
+      },
       renderer,
       onMenu,
     );
@@ -275,6 +298,13 @@ export default function Board({ width, height }: BoardProps) {
         ref={cursorEl}
         className="pointer-events-none absolute bottom-1.5 right-2 whitespace-pre font-mono text-data text-muted"
         data-testid="board-cursor"
+      />
+      <div
+        ref={marqueeEl}
+        aria-hidden
+        className="pointer-events-none absolute left-0 top-0 hidden"
+        style={MARQUEE_STYLE}
+        data-testid="board-marquee"
       />
       <div
         ref={labelEl}

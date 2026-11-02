@@ -19,6 +19,8 @@ export default function Inspector() {
   const keys = useUi((s) => s.selectedKeys);
   const stack = useUi((s) => s.stack);
   const inStack = stack && keys.length === 1 && keys[0] === stack.key ? stack : null;
+  // a marquee or Shift-click selection: no row expands, the count says why
+  const many = keys.length > 1 ? keys.length : 0;
 
   return (
     <aside
@@ -31,6 +33,14 @@ export default function Inspector() {
           className="absolute top-2 right-2.5 font-mono text-micro text-muted"
         >
           {inStack.n} of {inStack.m}
+        </span>
+      ) : many ? (
+        <span
+          title="Shift-click an object, or drag a rectangle on the board, to change the selection"
+          className="absolute top-2 right-2.5 font-mono text-micro text-muted"
+          data-testid="inspector-many"
+        >
+          {many} selected
         </span>
       ) : null}
       {doc ? (

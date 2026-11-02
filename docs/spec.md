@@ -336,6 +336,16 @@ Each item shows its shortcut. A disabled item says why in its tooltip.
 handle to rotate. Drag a waypoint to move it. Shift-drag a waypoint to change altitude. Alt
 disables snap. The value shows beside the cursor during the drag.
 
+**Selection** (2026-11-02). A click selects one object. A mouse drag on the empty board in Plan
+or Elevation draws a rectangle and selects every system, flight path and area with a point
+inside it (events and height planes are not selected this way); the count shows beside the
+cursor, the ids in the readout. Shift adds the rectangle's objects to the selection. Shift-click
+adds one object or removes it. Every selected object draws in the accent; the handles belong to
+the first. A drag on one of several selected objects moves them all by one snapped offset, one
+undo step, with the pre-drag ghost; the arrows nudge them together. Delete, Duplicate and
+Copy act on the whole selection. The inspector expands no row and shows the count. A
+one-finger touch drag still pans; Escape drops a rectangle in progress.
+
 **Snap** (upgrade). The placement ghost and a dragged waypoint snap to sensor rings, area
 vertices and edges within 8 px, to 15 degree bearings with Shift, else to the grid. The label
 names the snap ("on RDR-1 ring") and the leg ("1.40 nm, 93 s"). G toggles grid snap. Alt
@@ -476,3 +486,5 @@ pass:
 24. A v6 record migrates to v7 and round-trips through export and import without loss.
 25. The whole-scene inspector lists every object of CUAS-001 under its section; a waypoint edit
     is one undo step; the measures picker lists the 67 DroneScore rows.
+26. A drag on the empty board selects everything inside the rectangle; a drag on one selected
+    object moves them all by the same offset; one undo puts them back.
