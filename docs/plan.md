@@ -636,16 +636,21 @@ removed from the tree on 2026-11-01 (`git show 70caf07` has them); the findings 
 | 13.2 | done | be5b8fa | the Brief teaches the frame and the slice: `Card.clip` live as the slice (`setSlice` one undo step, also sets the card's time to the slice start; `sliceFromLoop` from the loop into the current card in Brief or a new card after the current one in Build, a toast either way; `applyCard` sets the loop, the rate and the time for a slice and clears the loop for a frame; P plays the slice from its start when the cursor is outside it, Space stays Next card per spec section 8); the notes Slice field (from, to in "m:ss", rate, Clear; a first "from" or "to" makes a 30 s slice); the head "t+1:00 to t+2:00 · x2"; the Frame panel at the top of the notes (`Frame.tsx`, `frameData.ts`: the step reached with its glyph, the next step countdown as a press, range, height, speed, closing, Held by pills, the engage margin in the hostile ink when negative, DA in; at most six threats; "Inside the slice" in time order); key points with state glyphs and "now"; the aids line with the step glyph and "Next: 2 name at t+3:20"; the caption placeholder "Write what the viewer must see at t+1:40."; the print deck with the time line and the frame table (render capped at 108 mm); the Scissors head button "Set the slice from the loop" with its reason; the Brief re-applies the card only when its view, layers, focus, time or slice change (a caption edit no longer resets the time); `Section.tsx` shared; the parser copied into `cards.ts`; after both merges 59 unit files, 543 tests, 8 e2e; entry 243.17 kB, Brief chunk 8.62 kB gzip; four `reviews/phase-13/13.2-*.jpg`. Open: `clipSchema` messages say "clip"; the Build stash does not hold the loop and the rate, so a slice card's loop stays in Build after leaving Brief; the fallback glyph state rules in `brief.css` (13.W) |
 | 13.3 | done | dce3481 | the board draws each threat's F2T2EA key points and its defended asset entry on its track as the strip's seven glyphs (`symbols.keyPoint`, r = 4, `--w2` stroke): a static `keypoints` layer with no `t` input (each mark `data-k="keypoint"`, `--kt`, a title "T1 Track · 1:40 · RDR-1"; positions cached per derived object and camera string; Find at the first-see tick) and a `keypoints-now` layer that draws the latest mark at or before the cursor in the accent with a 6 px halo; the time state in CSS (the root svg carries `--t` when time is on, from `render.ts` for cards and the stage and from `renderer.ts` on every tick; `board.css` computes the reached ink and the 45 percent future opacity from `--kt` and `--t`; the DA mark hostile in every state); marks take no pointer events and are no hit targets; none in thumb mode or with Events off; declutter 10 px along the normal within 6 px; parity by stripping the two kp layers and the root style before the byte compare (legacy derive has no stages); three rounds: 16 bucket layers (round 1), one cached layer at 19.7 ms per tick in the gate (round 2), the CSS split at 3.9 to 4.6 ms isolated and 8.3 ms in the gate (round 3; budget 16, no-marks baseline 4.9); 9 keypoints tests, a Board `--t` test; after the merge 60 unit files, 553 tests, 8 e2e; entry 244.57 kB gzip; four `reviews/phase-13/13.3-*.jpg`. Open: `--kt` rounds to 0.1 s while the now layer uses the exact time; a doc-null render leaves the last `--t` until the next render; `render.perf.test.ts` has no stages, so its budget does not exercise the marks; `DerivedView` in `types.ts` lacks `stages` and `daEntry` (a local type in the layer) |
 | 13.W | done | c78b1aa | `timelineCommands` registered in Build and Brief (the palette lists them; the sheet shows no key) and the strip's local fallback menu loop removed; the Brief's fallback glyph rules removed (timeline.css covers `brief-glyph`); `BuildStash` holds `loop` and `rate`, copied and restored by `snapshotBuild` and `restoreBuild`; `clipSchema` messages say "slice"; e2e `12-20-timeline` (a row press selects the sensor on the board and the inspector, a glyph press moves the clock, the time persists over a reload after the autosave; the selection does not) and `12-21-slice` (Shift drag sets the loop, the Scissors button saves the slice and the head reads the span, P plays inside it); spec sections 2, 5, 7 and 8 and principles 8.5 and 8.6 amended; 60 unit files, 554 tests, 10 e2e; entry 244.52 kB gzip. Open: the `pagehide` flush of the time state and a reload within 500 ms of the first edit (the profile copy is not yet saved) |
+| 13.R | done | f096bc2 | `reviews/phase-13.md`: 0 blockers, 2 majors (a reload in Brief puts the Brief time and loop into Build when the user leaves, because the memory-only stash snapshots the restored Brief state; the lane helpers `mmss`, `parseTime`, `round1`, `stepAt`, `pointStates` and the bar class were written two or three times and two copies already differ), 8 minors (Space on a focused strip button runs the global command; the light future board mark at 2.07:1; "Add event here" enabled in the Brief strip menu; the unsigned margin label touches the Engage glyph; e2e gaps; "Time s" in raw seconds beside the m:ss slice field; the cursor chip covers a tick label; Build Tab never leaves the page, pre-existing), 15 notes; acceptance: linked, the Brief teaches any frame or slice, and the Brief strip as robust as Build pass; persistent and polish partial; entry 244.52 kB gzip; tick 0.37 to 0.48 ms in the perf set, the Swarm at x8 in the browser p95 16.7 ms with no frame over 20 ms; 32 `R-*.jpg` |
+| 13.F | done | d9c4f09 | all 10 findings and 7 notes: the Build time state persists while Brief is open (`timePersist` saves the stash's fields and seeds the stash on a restore from Brief; `cardKey` persisted, so a Brief reload reopens the same card and a leave restores Build's time with no loop); one `mmss(s, signed)` in `engine/tokens.ts`, one `parseTime`, `round1`, `stepAt`, `pointStates`, `barClass`, `marginSeconds` and `NO_LOOP_REASON` in `timeline/layout.ts` imported by the Brief (the Brief chunk stays lazy, 8.59 kB); Space and Enter left to a focused button in every workspace, Space stays Next card in Brief (spec section 8 over the 13.2 text); future board marks in `--text-subtle` at opacity 1 (light 4.55:1), the future DA mark floored at 80 percent (about 3.2:1, orchestrator's edit); `menuItemsFor` filters by workspace and the five strip commands are active in Build and Brief; the margin label signed and clear of the Engage glyph; e2e 12-20 adds the Cards row press in Brief and the Brief reload then leave, 12-21 starts P outside the slice and asserts the first sample at the slice start, no `force` clicks, the clock locators exact; the Card time field in m:ss (accessible name "Card time"); a tick label under the cursor chip hides; stale comments gone; the toasts name the card by id; Loop range disabled at the full view ("Zoom the timeline first"); the board mark title "t+1:40"; F-10 (Build Tab, legacy tabFree) and N-02 (the grip branch is live, the review's premise was wrong) declared; 60 unit files, 558 tests, 10 e2e; entry 245.06 kB gzip; four `after-13F-*.jpg`. Notes left: N-04, N-06, N-07, N-08, N-10, N-11, N-12, N-14 |
 
 ## 8. Handoff
 
-State on 2026-11-01, end of the twelfth session. Phase 11 is done, approved for the merge and
-merged into `main` and pushed (section 7, row 11.M). Rows 12.1 to 12.3 followed on the user's
-direct requests (the shared timeline, its upgrade, the Brief stage), merged into `rebuild/mvp`
-and `main` with the gate green: 57 unit files, 514 tests, 8 Playwright specs on `vite preview`,
-build; entry 741 kB raw, 239.9 kB gzip (budget 300); 100 kB of Geist woff2 outside the entry. The type is Geist and Geist Mono (section 1,
-"Typeface"); the two packages were the one download of the session. Tag `pre-pivot` (d1f56d1)
-holds the last head with the run and score code. No lane is in flight; no worktree exists.
+State on 2026-11-01, end of the thirteenth session. Phase 13 (the timeline as the plan's clock,
+the Brief as the teaching space) is done on `rebuild/mvp` at d9c4f09 with the gate green: 60
+unit files, 558 tests, 10 Playwright specs on `vite preview`, build; entry 754 kB raw, 245.06 kB
+gzip (budget 300); the Brief chunk 8.59 kB; 100 kB of Geist woff2 outside the entry. It is not
+merged into `main` (`main` holds 12.4 at 867935c); the merge and any push wait for the user.
+Rows 13.1 to 13.F in section 7 say what landed. The four readings of the user's request
+(section 6, phase 13) are assumptions on record; none has been confirmed or rejected by the
+user. Tag `pre-pivot` (d1f56d1) holds the last head with the run and score code. No lane is in
+flight; no worktree exists. The review notes left open are N-04, N-06, N-07, N-08, N-10, N-11,
+N-12 and N-14 of `reviews/phase-13.md`, plus the open items in the 13.1 to 13.W rows.
 
 **The product.** A polished version of the v3 mockup `legacy/mockup-v3.html` (served at
 `/legacy/mockup-v3.html`): three workspaces (Library, Build, Brief), one board with three
@@ -656,33 +661,35 @@ is a source of parts.
 **Decisions.** Section 1 has all of phase 10 and the three of 2026-11-01 that open phase 11:
 phase 10 approved and merged, the typeface direction, the scope hold.
 
-**Next.** No phase is open. Rows 12.1 to 12.3 (section 7) are the shared timeline and its
-upgrade, built on the user's direct requests of 2026-11-01 outside a phase: 12.1 committed, 12.2,
-12.3 and the fix 12.F merged `--no-ff` into `rebuild/mvp` with the gate green, then merged
-into `main` on the user's instruction of 2026-11-01; 12.4 (the user's review items 1 to 7 and
-the reference strip's language) merged into `rebuild/mvp` after that. Review items 8 to 10
-wait: the Plan fit on the site with a long path off the frame, the `PROF-n` id for a template
-copy (the top bar shows a UUID), the trailing comma on a first-see label. The plan ends at phase 11; the held list
-(section 6, "Held for product complete": the vos port, the dropped domain fields, the phase 10
-deferred list) and the review notes below return only when the user asks. The next session
-starts by asking the user which of them, if any, opens phase 12, and writes that phase into
-section 6 before any lane. Open from 12.2 and 12.3: with one threat and a tall strip the lane
-area under the beads is empty (the rows could take the slack); two key points at one time (Find
-and Fix at the first see) overlap, the hover titles tell them apart; no palette command for
-Save a screenshot; the PNG draws text in the canvas's fallback font, not Geist.
+**Next.** The next session starts by asking the user, with a poll, (a) whether phase 13 is
+approved for the merge into `main` (if this session's poll was not answered), (b) whether the
+four readings stand, and (c) which open item opens phase 14: the 12.4 review items 8 to 10
+(the Plan fit on the site with a long path off the frame, the `PROF-n` id for a template copy,
+the trailing comma on a first-see label), the phase 13 notes (N-10 the board marks of one
+threat do not declutter against another threat's, N-11 the Swarm shows four of six lanes at the
+default strip height, N-12 event labels overlap their circled letters and the beads cover the
+board marks at the same times, N-07 the perf set omits `keypoints-now` and has no stages, N-08
+the two strip commands have no key so the sheet omits them, N-06 `--kt` rounds to 0.1 s, N-04
+a card named "at t+1:40" keeps its name when its slice moves, N-14 the dynamic import of
+`brief/cards` in `timeline/commands.ts`), the earlier open items (from 12.2 and 12.3: a tall
+strip with one threat leaves the lane foot empty; no palette command for Save a screenshot;
+the PNG draws text in the canvas's fallback font, not Geist), or the held list (section 6,
+"Held for product complete": the vos port, the dropped domain fields, the phase 10 deferred
+list). Write the phase into section 6 before any lane.
 
 **Orchestrator prompt.** Paste this to start the next session:
 
 ```text
 You are the orchestrator for Profile Studio at /Users/caseytalbot/Projects/profile-studio,
 branch rebuild/mvp. Read CLAUDE.md, docs/design-principles.md, docs/spec.md, then docs/plan.md
-sections 1 to 5, phases 10 and 11 in section 6, then 7 and 8. Start the dev server from
+sections 1 to 5, phases 10, 11 and 13 in section 6, then 7 and 8. Start the dev server from
 .claude/launch.json ("dev", port 5174) and use the product at / beside the mockup at
-/legacy/mockup-v3.html for ten minutes. Run `npm run gate` to confirm the baseline: 54 unit
-files, 481 tests, 7 Playwright specs, build.
+/legacy/mockup-v3.html for ten minutes. Run `npm run gate` to confirm the baseline: 60 unit
+files, 558 tests, 10 Playwright specs, build.
 
-No phase is open. Ask me, with a poll, which of the held items (section 6 "Held for product
-complete") and the section 8 open items opens phase 12, then write the phase into section 6
+Phase 13 is done on rebuild/mvp and not merged into main. Ask me, with a poll, whether to
+merge it, whether its four readings stand, and which of the section 8 "Next" items opens
+phase 14, then write the phase into section 6
 with lanes, owned files and budgets before any lane starts. Plan section 5 rules apply: one
 worker per lane in a worktree under .worktrees/<id>, workers do not commit, gate and git diff
 --stat before each --no-ff merge, gate on rebuild/mvp after, worktree removed, sections 7 and 8
@@ -723,6 +730,17 @@ element because they all carry `data-k="system"`, and the review found the secto
 (F-02). A specimen page at `reviews/phase-11/type-choices.html` (Google Fonts at view time,
 nothing installed) let the user pick a typeface before any download; the plan's step 3
 specimens per candidate were not needed.
+
+**Lessons from phase 13.** A layer whose string changes on every time tick is rewritten whole
+by jsdom (62 KB, 8 ms for 280 marks); the fix was to take `t` out of the static layer and carry
+the time state in CSS (`--t` on the root svg, `--kt` per mark, `clamp` and `color-mix`) with a
+small `t` layer for the current mark only (13.3, three rounds; bucket layers and a geometry
+cache did not do it). A parallel lane that needs a formatter writes its own; the wiring lane
+must dedupe by name (`mmss`, `parseTime`, `round1`, `stepAt`) or the review finds the copies
+already diverging (F-02). A memory-only stash under a persisted state leaks on reload (F-01):
+persist what the stash holds. A lane brief that lets a worker stop on a line outside its files
+(rule 15) works: 13.W handed back a tested patch for one test line. A reviewer's premise is
+checked in the fix lane too: N-02 named a dead branch that was live.
 
 **Approvals on record.** 2026-10-30: the phase 0 commits, the first phase 1 commit, three
 merges to `main` with pushes, the Playwright Chromium download. 2026-10-31: the install of
