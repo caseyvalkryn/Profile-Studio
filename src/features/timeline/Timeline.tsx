@@ -64,6 +64,8 @@ const MINOR: Record<number, number> = {
   3600: 600,
 };
 const MIN_SPAN_S = 10;
+/** The cursor time chip's width with its offset: "t+12:34" in the mono face plus padding. */
+const CHIP_W = 64;
 const CH = 6.6; // px per mono character at 11 px
 /** The band the coverage bars share: up to four at 3 px with a 1 px gap, more at a finer pitch. */
 const BAND = 16;
@@ -755,7 +757,12 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
           >
             {axis}
           </svg>
-          <div ref={lanesRef} className="tl-lanes" style={{ height: tlH }}>
+          {/* with no lane the area is the hint's height, not the grip's (review of 2026-11-01) */}
+          <div
+            ref={lanesRef}
+            className="tl-lanes"
+            style={lanes.length ? { height: tlH } : undefined}
+          >
             {lanes.length ? (
               <svg
                 width={W}
@@ -781,7 +788,11 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
             <svg className="tl-grip" viewBox="0 0 12 9" aria-hidden="true">
               <polygon points="0,0 12,0 6,9" />
             </svg>
-            <span className="tl-cursor-time" data-testid="tl-cursor-time">
+            {/* the chip flips to the cursor's left near the right edge, so it never clips */}
+            <span
+              className={`tl-cursor-time${xOf(tS) > W - GUT_R - CHIP_W ? ' tl-cursor-time-l' : ''}`}
+              data-testid="tl-cursor-time"
+            >
               {fmtTime(tS)}
             </span>
           </div>

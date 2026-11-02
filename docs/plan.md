@@ -441,15 +441,18 @@ removed from the tree on 2026-11-01 (`git show 70caf07` has them); the findings 
 | 11.R | done | 4d340b5 | `reviews/phase-11.md`: 0 blockers, 2 majors (every reach element carries the range role, so a press on a sector edge, the min range ring or a limit ray sets max range to the press distance; `render.card` drops the card's zoom and centre, so the Brief stage, thumbnails and print draw every card at the fitted frame), 5 minors (the append hint, the leg readout left by Escape, the 3D note in a toast only, the `offGlyph` tolerance, "fitted 3D frame" wording), 10 notes; the Geist lane clean in light, dark and print; ring drag, selected row, append, Library thumbnails and the entry budget pass; 28 screenshots `R-*.jpg` |
 | 11.F | done | 23d7e2b | all 7 findings and N-05 fixed: the range role only on the max range ring (`data-role="range"` in `reach.ts`, `Hit.part` in `hitAt`, the arc test in `beginDrag`; a press on a sector edge, the min range ring or a limit ray selects and starts nothing); the card's zoom and centre in `CardRec.cam`, drawn by `render.card` on the Brief stage, the strip thumbnails and print, 3D cards keep the default view; the append hint names the path and the leg readout shows after the first point; Escape ends an append and clears the readout; the 3D note in the strip line, the toasts without "fitted"; `offGlyph` on the `hitAt` tolerance with the touch flag; `saveVignette` and `deleteVignette` keep the cached listing current; four parity patches; 54 unit files, 481 tests, 7 e2e; entry 233.04 kB gzip; seven `after-11F-*.jpg`; open: the Library thumbnail draws the first card at the fitted frame (`scene.ts` has no frame); the Elevation limit rays are covered by code only |
 | 11.M | done | main | phase 11 merge into `main` approved by the user on 2026-11-01; `rebuild/mvp` merged `--no-ff` into `main` with this handoff; the gate run on `main`; both branches pushed on 2026-11-01 |
-| 12.1 | done | working tree | the shared timeline (user request of 2026-11-01, from the reference artifact `js/51-panel-timeline.js`): `src/features/timeline/` (the strip, its stylesheet, the F2T2EA key points with definitions) hosted under the Build board in place of the scrub (`Scrub.tsx` deleted) and under the Brief stage when the card's Timeline display is on; `ui.tview` for the zoom; `[` and `]` real in Build and Brief over `engine/stops`; the Brief stage at the live time with the Timeline, Readout and Frame buttons, the readout line and the presenter aids; `snapshotCard`, `setDisplays`, `toggleDisplay`; Brief keys P, C, L; the notes panel's Displays row and Key points section; spec section 7 and principle 8.5 amended; 55 unit files, 495 tests, 7 e2e; entry 237.9 kB gzip; lane height fixed per threat so an added system never moves the board (12-02 and 12-03 held at 3 px) |
+| 12.1 | done | 6e55294 | the shared timeline (user request of 2026-11-01, from the reference artifact `js/51-panel-timeline.js`): `src/features/timeline/` (the strip, its stylesheet, the F2T2EA key points with definitions) hosted under the Build board in place of the scrub (`Scrub.tsx` deleted) and under the Brief stage when the card's Timeline display is on; `ui.tview` for the zoom; `[` and `]` real in Build and Brief over `engine/stops`; the Brief stage at the live time with the Timeline, Readout and Frame buttons, the readout line and the presenter aids; `snapshotCard`, `setDisplays`, `toggleDisplay`; Brief keys P, C, L; the notes panel's Displays row and Key points section; spec section 7 and principle 8.5 amended; 55 unit files, 495 tests, 7 e2e; entry 237.9 kB gzip; lane height fixed per threat so an added system never moves the board (12-02 and 12-03 held at 3 px) |
+| 12.2 | done | lane/12.2 merged | the timeline upgraded as the reference for Build and Brief (user request of 2026-11-01): the two camera thumbnails under the Build board removed (`Thumbnails.tsx` deleted; the bar's view segment switches the view); the strip resizable by a grip on its top edge (`ui.tlH`, 96 to 720 px, default 200; arrows, Home and double click; the board section `min-h-56`); lanes share the area height and, with room, each sensor and effector gets a labelled row with a swatch and its id; the F2T2EA key points as glyphs (`glyphs.tsx`: Find, Fix, Track, Target, Engage, Assess, DA) with two-sided label placement; event labels beside the beads and a warn triangle; a first-see cap on each bar; a legend line; the cursor time readout; 55 unit files, 499 tests, 7 e2e on the lane; three `reviews/phase-12/after-12.2-*.jpg` |
+| 12.3 | done | lane/12.3 merged | the Brief stage renders the build and the timeline (user request of 2026-11-01): with no current card the stage draws the live scene at the stashed Build view through a transient card that is never saved, the head reads "Build view · id" and the live time, the readout line shows; the strip always shows under the stage, a card with its Timeline display off collapses it to the play bar (`brief-tl-collapsed`); Save a screenshot downloads the stage as a 2x PNG (`screenshot.ts`); new cards default `timeline: true`; the notes panel lists the question and every threat's key points with no card; e2e 12-19 extended and a second test; 56 unit files, 504 tests, 8 e2e on the lane; two `reviews/phase-12/after-12.3-*.jpg`. After both merges the gate on `rebuild/mvp`: 508 tests, 8 e2e, entry 238.7 kB gzip |
+| 12.F | done | lane/12.F merged | the browser check of 12.2 and 12.3 (eight steps pass, no console errors, eight `reviews/phase-12/after-12-*.jpg`) and its two fixes: the cursor time chip flips to the cursor's left near the right edge so the strip edge never clips it; a strip with no threat takes the hint's height, not the grip's. Follow-ups from the check: L toggles a card display as an undo step (by design, 12.1); the toast covers the legend for its few seconds; board labels overlap in Brief ("T1" on the sector edge, "RF-1" on the ring; the "Defended asset" label crosses the DA frame); Build and Brief differ on system id labels with Labels on; Find and Fix glyphs touch at one time; the light theme's filled inputs sit low in contrast; one threat and a tall strip leave the lane foot empty |
 
 ## 8. Handoff
 
-State on 2026-11-01, end of the eleventh session. Phase 11 is done, approved for the merge and
-merged into `main` and pushed (section 7, row 11.M). `rebuild/mvp` and `main` hold the same tree: lanes
-11.1 and 11.2, the review 11.R and the fix lane 11.F, with the gate green: 54 unit files, 481
-tests, 7 Playwright specs on `vite preview`, build; entry 720 kB raw, 233.0 kB gzip (budget
-300); 100 kB of Geist woff2 outside the entry. The type is Geist and Geist Mono (section 1,
+State on 2026-11-01, end of the twelfth session. Phase 11 is done, approved for the merge and
+merged into `main` and pushed (section 7, row 11.M). Rows 12.1 to 12.3 followed on the user's
+direct requests (the shared timeline, its upgrade, the Brief stage), merged into `rebuild/mvp`
+and `main` with the gate green: 56 unit files, 508 tests, 8 Playwright specs on `vite preview`,
+build; entry 738 kB raw, 238.7 kB gzip (budget 300); 100 kB of Geist woff2 outside the entry. The type is Geist and Geist Mono (section 1,
 "Typeface"); the two packages were the one download of the session. Tag `pre-pivot` (d1f56d1)
 holds the last head with the run and score code. No lane is in flight; no worktree exists.
 
@@ -462,12 +465,17 @@ is a source of parts.
 **Decisions.** Section 1 has all of phase 10 and the three of 2026-11-01 that open phase 11:
 phase 10 approved and merged, the typeface direction, the scope hold.
 
-**Next.** No phase is open. Row 12.1 (section 7) is the shared timeline, built on the user's
-direct request of 2026-11-01 outside a phase, on `rebuild/mvp` uncommitted: the user decides
-the commit, a review and the merge. The plan ends at phase 11; the held list (section 6, "Held
-for product complete": the vos port, the dropped domain fields, the phase 10 deferred list) and
-the review notes below return only when the user asks. The next session starts by asking the
-user which of them, if any, opens phase 12, and writes that phase into section 6 before any lane.
+**Next.** No phase is open. Rows 12.1 to 12.3 (section 7) are the shared timeline and its
+upgrade, built on the user's direct requests of 2026-11-01 outside a phase: 12.1 committed, 12.2,
+12.3 and the fix 12.F merged `--no-ff` into `rebuild/mvp` with the gate green, then merged
+into `main` on the user's instruction of 2026-11-01. The plan ends at phase 11; the held list
+(section 6, "Held for product complete": the vos port, the dropped domain fields, the phase 10
+deferred list) and the review notes below return only when the user asks. The next session
+starts by asking the user which of them, if any, opens phase 12, and writes that phase into
+section 6 before any lane. Open from 12.2 and 12.3: with one threat and a tall strip the lane
+area under the beads is empty (the rows could take the slack); two key points at one time (Find
+and Fix at the first see) overlap, the hover titles tell them apart; no palette command for
+Save a screenshot; the PNG draws text in the canvas's fallback font, not Geist.
 
 **Orchestrator prompt.** Paste this to start the next session:
 
