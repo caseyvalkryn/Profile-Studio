@@ -7,8 +7,8 @@ Studio plans real tests. It does not run or score them.
 
 Be brilliant at the basics. A small set of things that work every time beats a large set that
 works most of the time. Simple does not mean less capable. The planner gets what the v3 mockup
-does, polished and on a sound engine. The denser legacy app (`docs/reference/artifact-study.md`)
-is a source of parts, and a part returns only when the planner asks for it.
+does, polished and on a sound engine. The denser legacy app (`legacy/index.html`) is a source
+of parts, and a part returns only when the planner asks for it.
 
 Amended 2026-10-31 from the artifact study: sections 2, 3, 5, 7 and the new section 8. Amended
 2026-11-01 in lane 10.1 (the opening paragraph, item 3.2 and section 4) and in the handoff of

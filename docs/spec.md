@@ -1,8 +1,7 @@
 # Profile Studio specification
 
-Status: definitive for phase 10. Date: 2026-10-30, amended 2026-10-31 from
-`docs/reference/artifact-study.md`, amended 2026-11-01 in lane 10.1 and again in the handoff
-of the same day (sections 1, 2, 5 and 7 to 12 pruned to the pivot). Read
+Status: current as built. Dated 2026-10-30; amended through 2026-11-02 (the last prune removed
+the phase and lane references; `git show 6a2e658:docs/spec.md` has the annotated copy). Read
 `docs/design-principles.md` first. When this spec and a principle disagree, the principle wins
 and this spec is corrected. The word "vignette" in code and in sections written before the
 amendment means the record the UI calls a profile.
@@ -14,7 +13,7 @@ test profiles as interactive, detailed mockups. The planner builds a profile on 
 profile states one question, its data products and its measures of performance by DroneScore
 ID, grouped by F2T2EA. The planner saves views as cards and briefs the profile from the app.
 Profile Studio plans real tests. It does not run or score them. The product is a more polished
-version of the v3 mockup `legacy/mockup-v3.html` (pivot of 2026-11-01, plan phase 10).
+version of the v3 mockup `legacy/mockup-v3.html` (the pivot of 2026-11-01).
 
 **User.** A test engineer or evaluator. A domain expert, not a programmer. The user knows C-UAS
 sensors, effectors, threats and test design. The user does not know the app.
@@ -22,14 +21,13 @@ sensors, effectors, threats and test design. The user does not know the app.
 **First-use goal.** With no help, a new user opens a template, moves one sensor, saves a card
 and briefs it in under 10 minutes.
 
-**Non-goals.** Running or scoring a test. Later phases: backend, accounts, multi-user editing,
+**Non-goals.** Running or scoring a test. Out of scope: backend, accounts, multi-user editing,
 vos integration, live data feeds, false alarm simulation, real-system specification library.
 
-**History.** The MVP passed its acceptance suite on 2026-10-30. The upgrade of 2026-10-31
-(plan phase 9) ported the legacy board, rail, palette, menus, inspector and readout onto the
-MVP engine. Its remaining sub-phases were superseded on 2026-11-01 by phase 10, which makes
-the build a polished version of the mockup. `docs/reference/artifact-study.md` records the
-upgrade's scope. The first-use goal did not change.
+**History.** The MVP passed its acceptance suite on 2026-10-30. On 2026-10-31 the legacy
+board, rail, palette, menus, inspector and readout were ported onto the MVP engine. On
+2026-11-01 the product became a polished version of the mockup and the run and score surface
+was removed. The first-use goal did not change. `docs/decisions.md` lists what the user settled.
 
 ## 2. Terms
 
@@ -59,10 +57,10 @@ Use these words in the UI. One word for one thing. The code keeps the type names
 | Threshold | The value a measure must meet in this profile | none |
 | Brief | The workspace that presents a profile as cards | Brief mode |
 | Card | A saved way of looking: view, layers, time, focus, caption, notes | card |
-| Debrief | Flown TSPI and events loaded after a range run, shown against the plan. Deferred | debrief |
+| Debrief | Flown TSPI and events loaded after a range run, shown against the plan. Not built | debrief |
 
-Beat, capture and the debrief overlay are deferred (plan, phase 10). Their words return with
-them. A card's `clip` is the slice (lane 13.2): the user-facing word is "slice".
+Beat, capture and the debrief overlay are not built. Their words return with them. A card's
+`clip` is the slice: the user-facing word is "slice".
 
 ## 3. Standards
 
@@ -97,7 +95,7 @@ TypeScript types in `src/domain/types.ts`. Runtime validation with zod in `src/d
 
 ```ts
 type Vignette = {
-  schema: 'profile-studio/8'       // v7 in lane 10.5, v8 in lane 14.1
+  schema: 'profile-studio/8'       // v8
   id: string; name: string; updated: string
   collection: string; class: ProfileClass; version: number   // v7 (10.5); site.name migrates into collection
   site: { name: string; lat: number; lon: number; elevM: number }
@@ -126,7 +124,7 @@ type AuthoredEvent = { id: string; tS: number
   label: string; threatKey: string; sensorKey: string | null }
 type Card = { id: string; name: string; view: CardView
   layers: Partial<Record<LayerId, boolean>>
-  displays: { timeline: boolean; chart: boolean; readout: boolean }   // chart deferred
+  displays: { timeline: boolean; chart: boolean; readout: boolean }   // chart not built
   clip: Clip | null /* the slice */; focus: string[] /* keys */; tS: number | null /* null: time off */
   caption: string; notes: string }
 type CardView = { kind: 'plan'|'elevation'|'3d'; centre: { x: number; y: number }; zoom: number
@@ -169,9 +167,9 @@ Upgrade rules for the record:
    session memory only and are not part of the record or of IndexedDB.
 3. Cards are `Vignette.cards`. `report.dataSources` is the data products list.
 4. The schema stamp is `profile-studio/8`. A v5 record migrates with empty lists and a null
-   debrief. v7 (lane 10.5) adds `collection`, `class` and `version`, keeps the data products,
+   debrief. v7 adds `collection`, `class` and `version`, keeps the data products,
    the telemetry (`report.truth`) and the import notes (`report.notes`), and drops the run fields.
-   A v6 record migrates without loss. v8 (lane 14.1) adds the area kind `range`; a v7 record
+   A v6 record migrates without loss. v8 adds the area kind `range`; a v7 record
    migrates by its stamp alone. Import accepts v8, v7, v6, v5 and legacy v4.
 
 ## 6. Engine
@@ -201,7 +199,7 @@ label, the units toggle and the theme control (auto, light, dark).
 **Library.** A New button first. Templates in one row of cards with a map thumbnail, the
 question and the F2T2EA steps it exercises, Blank last. Saved profiles below, grouped by
 collection, newest first, each with a thumbnail from its first card and the line "id v3 ·
-class · n cards · n paths" (lane 10.5). Search filters both. Actions: Open, Brief, Duplicate,
+class · n cards · n paths". Search filters both. Actions: Open, Brief, Duplicate,
 Export, Delete with undo, import JSON (v8, v7, v6, v5 or legacy v4) or a KML or KMZ site file
 as a new profile, export the library as one JSON.
 
@@ -215,13 +213,13 @@ with its bar and strip in the centre, the inspector on the right, and the top ba
 - Rail: the asset library, grouped as Threats, Sensors, Effectors, C2 and TSPI, Areas, Height
   planes. The command palette's Add group is the quick-add: search by name, catalog values per
   row, shortcut hints; A opens it, S, V and E open it on a group.
-- Bar (lane 10.3): the view segment (Plan, Elevation, 3D), Add waypoints as a pressed toggle,
+- Bar: the view segment (Plan, Elevation, 3D), Add waypoints as a pressed toggle,
   the five layer toggles (Reach, Events, Envelopes, Telemetry, Labels), Save as card (C) and the
   one-line readout. Fit, Ref and the units toggle live in the palette.
 - Under the board: the shared timeline strip (see Brief below; lanes 12.1, 12.2 and 12.4), time
   off by default. The strip is as tall as its lanes; a grip on its top edge sets the most it
   may take (96 to 720 px, default 200; arrows, Home and a double click reset) and the lanes
-  scroll past that; the stage takes the rest. The strip is the plan's clock (phase 13): its
+  scroll past that; the stage takes the rest. The strip is the plan's clock: its
   time state (cursor, time on, loop, zoom span, height, rate) persists per profile across a
   workspace switch and a reload; the selection does not. A system row or a key point glyph is a
   press target that selects its system (a glyph also sets the time), and lights with the
@@ -229,8 +227,8 @@ with its bar and strip in the centre, the inspector on the right, and the top ba
   by number, with a band for a slice; a press sets its time in Build (a slice also sets the
   loop) and opens the card in Brief. Glyphs take the state colour at the cursor: reached in the
   text ink, current in the accent with a halo, future subtle. The thumbnails of the other cameras left on
-  2026-11-01 (lane 12.2); the bar's view segment switches the view.
-- Inspector (lane 10.2): the whole scene, every object under its section (Purpose, Aircraft,
+  2026-11-01; the bar's view segment switches the view.
+- Inspector: the whole scene, every object under its section (Purpose, Aircraft,
   Paths, Systems, Volumes, Reference planes, Events, Telemetry, Data products, Measures of
   performance, Site), the selected object's row expanded. A row click selects it on the board.
   Every field writes to the document on input, one undo step per field.
@@ -247,7 +245,7 @@ with its bar and strip in the centre, the inspector on the right, and the top ba
 - Drag labels. A drag shows the value under the cursor and, on a second line, the largest
   downstream change, for example "T1 window -0:08".
 
-**Brief** (lane 10.4). The card strip with thumbnails on the left, the stage in the centre,
+**Brief**. The card strip with thumbnails on the left, the stage in the centre,
 the notes panel on the right.
 - Save as card (C, anywhere in Build) stores the view, layers, time and focus as a card in one
   undo step, inserted after the current card. Cards move (Up, Down), duplicate and delete with
@@ -258,11 +256,11 @@ the notes panel on the right.
   leaving Brief restores the Build view.
 - The notes panel: name, camera, yaw and pitch, time, focus ids, layers, caption, presenter
   notes.
-- The Frame panel at the top of the notes (lane 13.2): for each threat in focus, the step
+- The Frame panel at the top of the notes: for each threat in focus, the step
   reached with its glyph, the next step's countdown (a press moves the time there), range,
   height, speed and closing, the systems holding it as pills, the engage margin (in the hostile
   ink when negative) and DA entry. A card with a slice lists its key points inside the slice.
-- The slice (lane 13.2): a card's `clip`, a time range and a rate. The Scissors head button
+- The slice: a card's `clip`, a time range and a rate. The Scissors head button
   ("Set the slice from the loop", disabled with its reason when there is no loop) takes the
   strip's loop and rate into the current card, or into a new card when the deck is empty. The
   notes Slice field edits from, to and rate, and Clear removes it; each is one undo step. The
@@ -274,8 +272,8 @@ the notes panel on the right.
   time state. The axis scrubs; Shift and drag set the loop range; Ctrl or Cmd and the wheel zoom.
   The view opens on the action span (the first coverage window less a lead, to the run end)
   when the run is more than three times it; "Fit run" and "Fit action" in the strip's menu; a
-  hand zoom holds (lane 12.4). A DA row above the lanes draws each threat's entry. One lane per
-  threat (lane 12.4, after the reference strip): a 14 px header with the threat id, the F2T2EA
+  hand zoom holds. A DA row above the lanes draws each threat's entry. One lane per
+  threat: a 14 px header with the threat id, the F2T2EA
   key points as glyphs (Find open circle, Fix circle with a dot, Track diamond, Target circle
   with a cross, Engage filled triangle, Assess square with a tick, DA bar; two within 10 px
   stack) with the step, the time and a definition on hover, and the engage margin bracket from
@@ -287,10 +285,10 @@ the notes panel on the right.
   three fills and the bead. Axis labels read "0:00"; the cursor carries "t+0:00". The play bar:
   first, previous and next key point ([ and ]), play, last, rate, loop, the boxed clock and
   Time off. In Brief the strip always shows under the
-  stage (lane 12.3); a card whose Timeline display is off (the stage's Timeline button, L, or
+  stage; a card whose Timeline display is off (the stage's Timeline button, L, or
   the notes checkbox) collapses it to the play bar; new cards open with it on. The Readout
   display adds the live line of the threat in focus under the caption.
-- With no card (lane 12.3) the stage draws the build: the live scene at the Build view that
+- With no card the stage draws the build: the live scene at the Build view that
   was open, the head "Build view · id" and the live time, the question as caption, the readout
   line. Save a screenshot downloads the stage as a PNG at twice its size; Save a frame as a
   card (C) keeps the view as card 1.
@@ -303,7 +301,7 @@ the notes panel on the right.
   elapsed clock.
 - Export: the deck as PDF through the print stylesheet, one page per card with its render,
   caption and notes.
-- Deferred (plan, phase 10): beats, caption tokens, the chart display, attachments,
+- Not built: beats, caption tokens, the chart display, attachments,
   the phone stage. Each returns only when the user asks.
 
 **Theme.** One control cycles auto, light and dark. Auto follows the system. The choice persists.
@@ -430,7 +428,7 @@ orbit, racetrack, hover and stare, terminal dive, split, multi-axis salvo.
 ## 10. Export
 
 - The profile as JSON: the record plus the resolved waypoint times per path (`timed`: x, y, z,
-  arrive, depart), as the mockup exports for the range's VAL tooling (lane 10.5). The library
+  arrive, depart), as the mockup exports for the range's VAL tooling. The library
   as one JSON.
 - The brief deck as PDF through the print stylesheet, light theme, one page per card. An export
   stores nothing.
@@ -451,25 +449,25 @@ orbit, racetrack, hover and stare, terminal dive, split, multi-axis salvo.
 The MVP is done when all of these pass in the end-to-end suite:
 
 1. ~~A new user opens "Point defence, single quadrotor", runs it, and sees 1.1.2 with a value,
-   interval, threshold and evaluation.~~ Retired 2026-11-01, phase 10.
+   interval, threshold and evaluation.~~ Retired 2026-11-01 (the pivot).
 2. Dragging a radar from the library places it at the drop point. One undo removes it.
 3. Right-click on empty map, Add here, Sensor, Radar places a radar at the click point.
 4. Dragging a sensor ring changes range. The preview and the timeline update within 100 ms.
 5. ~~A hypothesis with a prediction locks at the first run. The Results row shows Meets, Does
-   not meet or Inconclusive.~~ Retired 2026-11-01, phase 10.
+   not meet or Inconclusive.~~ Retired 2026-11-01 (the pivot).
 6. ~~Two runs compare side by side with the difference shown.~~
-   Retired 2026-11-01, phase 10.
+   Retired 2026-11-01 (the pivot).
 7. ~~A one-factor sweep shows a line chart of the measure against the factor.~~
-   Retired 2026-11-01, phase 10.
+   Retired 2026-11-01 (the pivot).
 8. ~~The AAR exports as PDF with all seven sections, and each chart exports as PNG and SVG.~~
-   Retired 2026-11-01, phase 10.
+   Retired 2026-11-01 (the pivot).
 9. A legacy v4 JSON from the current app imports without loss of assets, paths or text.
 10. Every command is reachable from the palette, and its shortcut matches the shortcut sheet.
 11. ~~The engine package builds and runs headless in Node with no DOM.~~
-    Retired 2026-11-01, phase 10.
+    Retired 2026-11-01 (the pivot).
 
-Phase 10 is done when the items of 1 to 11 that are not retired still pass and all of these
-pass:
+The product is done when the items of 1 to 11 that are not retired still pass and all of
+these pass:
 
 12. New (button and Cmd+N) opens Build with "Untitled profile" and the name field focused; the
     renamed profile appears in the Library.
@@ -481,8 +479,7 @@ pass:
     readout follows the selection.
 16. An authored event shows as a bead on the scrub at its time; a time edit in the inspector
     moves the bead in one undo step.
-17. ~~A debrief CSV loads and the flown row and flown track appear.~~ Deferred 2026-11-01,
-    phase 10.
+17. ~~A debrief CSV loads and the flown row and flown track appear.~~ Not built (2026-11-01).
 18. A legacy v4 record with height planes, no-fly and reference areas, snapshots, events, cards
     and a data list round-trips through import and export without loss.
 19. Save card from Build creates a card; Brief opens it at its view and time; Left and Right
@@ -501,3 +498,33 @@ pass:
 27. A KML or KMZ file with polygons, imported from the Library or dropped on the board, draws
     each polygon as a range area at true scale about the site; two files of one site land at
     their true offset; one undo removes an import.
+
+## 13. Known gaps
+
+Observed defects and limits on 2026-11-02, none scheduled. Each is small; fix one only when the
+user asks.
+
+- An edit of one vertex line in the inspector rewrites every vertex of the area from the shown
+  text (0.001 nm rounding), so the other vertices move by up to 0.9 m.
+- The Elevation axis reads "Range from asset" when the profile has no defended asset; range
+  areas then draw as flat lines at 0.
+- "Range" has three meanings on Build: the Range area, the Elevation axis, and a system's reach.
+- `siteFile.ts` (about 3 kB gzip) loads with the entry; the KMZ reader has no Zip64 path.
+- The inspector rows do not mark each object of a multi-selection, because a row's current flag
+  also expands it; the chip "n selected" stands in.
+- A drag on a selected path's line moves nothing unless the path is in a group selection.
+- The site file picker and the board drop take one file; a drop of several reads the first.
+- Board marks of one threat do not declutter against another threat's; event labels can overlap
+  their circled letters at the same time; the Swarm template shows four of six lanes at the
+  default strip height.
+- A card named "at t+1:40" keeps its name when its slice moves; `--kt` rounds to 0.1 s.
+- The perf spec does not measure the deck PDF or a long-task quiet window; preview latency is
+  taken at the DOM mutation.
+- The parsed-record cache keys on `updated`, so an import that keeps id and `updated` but
+  changes content draws the old thumbnail.
+- The Library thumbnail draws the first card at the fitted frame; the Elevation limit rays have
+  no test that presses one.
+- `importJson` refuses records with no schema stamp and the mockup's `profile-studio/3`.
+  Legacy import sets site latitude and longitude to 0 and keeps the MOP text as a question note.
+- The inspector leaves out `chainTime`, the sensor `model`, the asset `entered` fields, a path
+  Id and Speed field and the event system select; the fields stay in the domain.

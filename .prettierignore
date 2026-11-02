@@ -7,6 +7,4 @@ package-lock.json
 playwright-report/
 test-results/
 .claude/
-.worktrees/
-reviews/
 e2e/__results__/

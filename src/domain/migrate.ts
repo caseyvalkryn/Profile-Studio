@@ -271,7 +271,7 @@ export function importLegacyV4(doc: unknown): Vignette {
         // 'asset' and 'asset-edge' stay; a system id becomes its key; a missing system reads
         // 'asset', as legacy Sl.originId does.
         ref: ref === 'asset' || ref === 'asset-edge' ? ref : (keyOfSystem.get(ref) ?? 'asset'),
-        // Legacy elevation is the From asset reading (artifact-study decision 6).
+        // Legacy elevation is the From asset reading (a user decision of 2026-10-31).
         elevationMode: 'fromAsset',
       },
       layers,

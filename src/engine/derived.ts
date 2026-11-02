@@ -1,5 +1,5 @@
-// The renderer's derived object (plan section 6, phase 9 renderer contract), built from `Preview`.
-// Field names and shapes follow docs/reference/legacy-app.md section 5, keyed by display id
+// The renderer's derived object, built from `Preview`.
+// Field names and shapes follow the legacy app's derive output (legacy/js), keyed by display id
 // (`Threat.id`, system `id`, `Area.id`) as the legacy app was, with F2T2EA `stages` in place of
 // the five-rung ladder; the legacy rungs stay internal to `ladderFor`. Pure: no React, DOM or
 // store. Memoised by (vignette, preview) reference.

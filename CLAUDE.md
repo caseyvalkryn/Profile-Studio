@@ -1,67 +1,63 @@
 # Profile Studio
 
-Counter-UAS test-profile planner: create a profile on a board, iterate it in three views,
-save cards and brief it. It plans real tests as interactive, detailed mockups; it does not run
-them (user decision of 2026-11-01, `docs/plan.md` phase 10). The direction is the v3 mockup
-`legacy/mockup-v3.html`, served at `/legacy/mockup-v3.html` on the dev server. The legacy v4
-app is plain ES5 in `legacy/`, loaded by `legacy/index.html`, served at `/legacy/index.html`.
-The product is a React, TypeScript and Vite build in `src/`.
+Counter-UAS test-profile planner: create a profile on a board, iterate it in three views (Plan,
+Elevation, 3D), save cards and brief it. It plans real tests as interactive mockups; it does not
+run or score them. React, TypeScript and Vite in `src/`. The design direction is the v3 mockup
+`legacy/mockup-v3.html` (served at `/legacy/mockup-v3.html` on the dev server).
+
+## Commands
+
+- `npm run gate`: typecheck, lint, unit tests, build, Playwright on `vite preview` (port 5175).
+  Run it before you call any change done. Baseline on 2026-11-02: 61 unit files, 584 tests,
+  12 e2e specs, entry 248.74 kB gzip (budget 300).
+- `npm run dev -- --port 5174 --strictPort` (also `.claude/launch.json` "dev"). Port 5173 is
+  the user's rangeboard server; do not take it.
+- `npm run legacy:smoke`: the frozen ES5 app's cases in `legacy/test/cases/`.
+- Prettier and ESLint are part of the gate; `npm run format` fixes formatting.
+
+## Layout
+
+- `src/engine/` pure geometry, preview and derived values (no DOM). `src/domain/` types, zod
+  schema (stamp `profile-studio/8`), catalog, templates, migrations, `siteFile.ts` (KML, KMZ).
+- `src/state/` document store with patch undo, ui store, IndexedDB persistence.
+  `src/commands/` the command registry. `src/board/` the SVG renderer (cameras, layers).
+- `src/features/` shell, library, build (board, rail, palette, menu, inspector, timeline), brief.
+- `e2e/` Playwright specs named by spec acceptance item; `e2e/perf/` the budgets, outside the
+  gate. `fixtures/` legacy derive goldens and synthetic KML. `legacy/` the frozen v4 app and
+  the mockup; `src/board/render.test.ts` compares bytes with the legacy renderer, so keep it.
+- `docs/spec.md` what is built (section 12 acceptance, section 13 known gaps);
+  `docs/design-principles.md`; `docs/decisions.md` the user's settled choices;
+  `docs/reference/` the DroneScore measures, JIATF-401 conventions and the local source list.
 
 ## The standard
 
-DroneScore measures are the naming standard. Name every measure of performance by its
-DroneScore ID and name, and place it under one F2T2EA step (Find, Fix, Track, Target, Engage,
-Assess). The app does not score them.
+DroneScore measures are the naming standard: every measure of performance carries its
+DroneScore ID and name under one F2T2EA step (Find, Fix, Track, Target, Engage, Assess). Read
+`docs/reference/dronescore-measures.md` before you add, rename or compute a measure, and
+`docs/reference/jiatf-401.md` for the C4 conventions. DroneScore wins over C4. Read
+`docs/design-principles.md` before any UI, chart or export change. User-facing T&E wording
+follows the `stat-te-terminology` skill ("Envelopes" and "C2 and TSPI" are allowed exceptions).
 
-- Read `docs/reference/dronescore-measures.md` before you add, rename or compute a measure.
-- Read `docs/reference/jiatf-401.md` for JIATF-401 C4 conventions, the F2T2EA mapping and the
-  handbook vocabulary.
-- Read `docs/design-principles.md` before you design or change any UI, chart or export.
-- Use the `stat-te-terminology` skill for user-facing T&E wording.
+## Conventions
 
-## Starting cold
+- Metres in the world frame; display units convert at the boundary (`src/features/shared/units`).
+- References between records use `key`, never `id` or an array index. Ids are display only.
+- One committed `edit(label, recipe)` is one undo step and one version. Drags use
+  `beginDrag`, `updateDrag`, `endDrag`.
+- One accent marks selection (principle 5.2). Colour means state, not category.
+- Toasts are one short sentence with a full stop.
 
-Read `docs/design-principles.md`, `docs/spec.md`, then `docs/plan.md` (phase 10 is the work;
-section 8 is the handoff). Open `legacy/mockup-v3.html` and use it: that is the product. Each
-lane names the reference it needs:
+## Gotchas
 
-- `docs/reference/legacy-app.md`: what the ES5 app does today, as a parity checklist.
-- `docs/reference/rangeboard-parts.md`: engine and UI parts to transfer, with paths and APIs.
-- `docs/reference/vos.md`: vos facts and the portability rules for the MVP.
-- `docs/reference/sources.md`: the local VALKRYN library, with the top 10 for this project.
-- `docs/reference/artifact-study.md`: the phase 9 upgrade scope, superseded by phase 10; a
-  record of what the legacy app does well and the decisions of 2026-10-31.
+- No downloads without the user (npm install included). Sources are local in
+  `~/Desktop/MASTER/VALKRYN`. rangeboard (`~/projects/rangeboard`) and vos are read-only.
+- Autosave writes IndexedDB for `localhost:5174`; clear site data between browser checks when
+  it matters. The mockup keeps its own `profileStudio.v3` in localStorage.
+- Playwright cannot drive native HTML5 drag; build a `DataTransfer` in the page.
+- The reach layer also emits `data-k="system"`; scope selectors to `g[data-layer="systems"]`.
+- The two real site files (TST Ranch, UAS Fly Area) live in the user's Downloads and stay out
+  of the repo.
 
-## Decisions on record (2026-10-30)
+## Git
 
-- 2026-11-01: the pivot. The product is a polished version of the v3 mockup: three modes
-  (Library, Build, Brief), one board with three cameras, a whole-scene inspector, cards and a
-  brief. The run and score surface (Monte Carlo, Results, Report) was deleted in lane 10.1
-  (decision 1; tag `pre-pivot` keeps it). Decision 3: the warm paper and graphite palette, in
-  lane 10.6. The mockup, not the legacy v4 app, is the parity oracle for phase 10.
-
-- 2026-10-31: the upgrade (plan phase 9) ports the legacy interface in `legacy/` one to one onto
-  the MVP engine, domain and state. `src/board/` is the renderer; MapLibre leaves in lane 9.2.6.
-  The legacy app is the parity oracle, served at `/legacy/index.html` on the dev server.
-
-- vos (`~/Projects/vos`): fit later. Build the standalone MVP first, then port it as a training
-  sub-route that reuses the vos map and debrief views.
-- Profile Studio is designed from first principles (`docs/design-principles.md`). rangeboard
-  (`~/projects/rangeboard`) is a source of parts, not a template. Transfer and modify any piece
-  that serves a principle (its headless engine in `src/playback` and `src/analysis` is the main
-  one). Its layout, form factor and visual design do not carry over by default.
-- F2T2EA grouping over DroneScore `stage_reached` is confirmed. See `docs/reference/jiatf-401.md`
-  section c.
-- Sources live in `~/Desktop/MASTER/VALKRYN`. Use local sources only.
-
-## Gate
-
-MVP: `npm run gate` runs typecheck, lint, unit tests and build. Run it before you mark any lane
-done. Legacy app: `npm run legacy:smoke` runs every case in `legacy/test/cases/` against the
-scripts in `legacy/index.html` order.
-
-## Orchestration
-
-`docs/plan.md` sections 5, 7 and 8 are the operating manual: lane rules, the status table and
-the handoff. Lanes run in git worktrees under `.worktrees/<lane>` (ignored by git, ESLint and
-Prettier). Reviews live in `reviews/phase-<n>.md`; each review is followed by a fix lane.
+`main` is the only branch. Commit, push and merge only on the user's word.

@@ -1,4 +1,4 @@
-// Budget measurements for docs/spec.md section 11 (lane 7.3, reviews/phase-7-budgets.md).
+// Budget measurements for docs/spec.md section 11. Runs outside the gate (see the config beside it).
 // Excluded from `npm run e2e`. Run: npx playwright test -c e2e/perf/playwright.perf.config.mts
 // Every budget is measured REPS times; each test logs one `PERF` line per sample and a summary.
 import { gzipSync } from 'node:zlib';
