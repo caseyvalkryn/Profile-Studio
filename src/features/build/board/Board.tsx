@@ -18,6 +18,7 @@ import { BoardRenderer } from './renderer';
 import { useBoard } from './store';
 import { anchor, cancelPlacing, finishPlacing, fit, placeAt, placingFor, ruler } from './tools';
 import { ASSET_MIME, parseAssetPayload } from '../rail/dnd';
+import { importSiteFile, isSiteFile } from '../../../commands/commands';
 
 export type BoardProps = {
   /** Fixed board size in pixels; otherwise the stage size is observed. */
@@ -75,12 +76,20 @@ export default function Board({ width, height }: BoardProps) {
 
   // A library row dropped on the board (lane 9.2.6): arm it, then place it at the drop point.
   // A threat starts its path there; the user continues it as after an armed click.
+  // A KML or KMZ file dropped on the board imports its polygons as range areas (lane 14.2).
   const onDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    if (!Array.from(e.dataTransfer.types).includes(ASSET_MIME)) return;
+    const types = Array.from(e.dataTransfer.types);
+    if (!types.includes(ASSET_MIME) && !types.includes('Files')) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
   };
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    const file = e.dataTransfer.files?.[0];
+    if (file && isSiteFile(file)) {
+      e.preventDefault();
+      importSiteFile(file).catch(() => undefined);
+      return;
+    }
     const item = parseAssetPayload(e.dataTransfer.getData(ASSET_MIME));
     const last = handleRef.current?.renderer.last;
     if (!item || !last || !stageEl.current) return;
