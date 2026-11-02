@@ -425,6 +425,53 @@ svg.chart .beadtx {
 :where(svg.board, svg.chart) .ev.warned .bead {
   stroke: var(--warn);
 }
+/* key point marks (lane 13.3, symbols.keyPoint): the strip's glyphs on the track. Each mark
+   carries its time as --kt; the root svg carries the cursor time as --t, none with time off. The
+   state is computed here, so a time tick rewrites no mark: a reached mark (--kt <= --t) is full
+   opacity in the text ink, a future one 45 percent in the muted ink, and with time off every mark
+   is full in the muted ink. --kp is the mark's ink. The current mark is drawn again by the
+   keypoints-now layer (.kp-now) in the accent with a halo. The DA mark is always hostile. */
+svg.board .kp {
+  --kp-on: clamp(0, (var(--t, -1) - var(--kt)) * 1e6 + 1, 1);
+  --kp: color-mix(in srgb, var(--t1) calc(var(--kp-on) * 100%), var(--t2));
+  opacity: clamp(0.45, 1 - (var(--kt) - var(--t, 1e9)) * 1e6, 1);
+  pointer-events: none;
+}
+svg.board .kp.kp-now {
+  --kp: var(--select);
+  opacity: 1;
+}
+/* the DA mark keeps the hostile ink in every state, as the strip's .tl-gl-da; the state shows
+   only in its opacity (future) and the current halo */
+svg.board .kp.kp-da {
+  --kp: var(--hostile);
+}
+svg.board .kp.dim {
+  opacity: 0.32;
+}
+svg.board .kpg {
+  stroke: var(--kp);
+  stroke-width: var(--w2);
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+svg.board .kpo {
+  fill: var(--board);
+}
+svg.board .kpf {
+  fill: var(--kp);
+}
+svg.board .kpda {
+  fill: var(--kp);
+  stroke: none;
+}
+svg.board .kp-halo {
+  fill: var(--board);
+  stroke: var(--select);
+  stroke-width: var(--w2);
+  stroke-opacity: 0.45;
+}
 svg.board .wt {
   fill: var(--warn);
   stroke: var(--board);
@@ -776,6 +823,8 @@ svg.chart .empty {
 :where(svg.board, svg.chart) .ly-envelopes,
 :where(svg.board, svg.chart) .ly-paths,
 :where(svg.board, svg.chart) .ly-telemetry,
+:where(svg.board, svg.chart) .ly-keypoints,
+:where(svg.board, svg.chart) .ly-keypoints-now,
 :where(svg.board, svg.chart) .ly-events,
 :where(svg.board, svg.chart) .ly-tracks,
 :where(svg.board, svg.chart) .ly-handles,
@@ -850,5 +899,12 @@ svg.chart .empty {
 :where(svg.board, svg.chart) .gf-ew,
 :where(svg.board, svg.chart) .gf-tspi,
 :where(svg.board, svg.chart) .gf-c2,
-:where(svg.board, svg.chart) .gf-asset {
+:where(svg.board, svg.chart) .gf-asset,
+:where(svg.board, svg.chart) .kp-find,
+:where(svg.board, svg.chart) .kp-fix,
+:where(svg.board, svg.chart) .kp-track,
+:where(svg.board, svg.chart) .kp-target,
+:where(svg.board, svg.chart) .kp-engage,
+:where(svg.board, svg.chart) .kp-assess,
+:where(svg.board, svg.chart) .kp-da {
 }

@@ -132,6 +132,23 @@ describe('Board', () => {
     expect(container.querySelector('svg.board')!.getAttribute('aria-label')).toBe('Board in plan');
   });
 
+  it('a tick sets the cursor time as --t on the svg and time off removes it (lane 13.3)', () => {
+    useUi.setState({ timeOn: true, tS: 10 });
+    const { h, container } = mount();
+    const svg = container.querySelector('svg.board') as SVGSVGElement;
+    expect(svg.style.getPropertyValue('--t')).toBe('10');
+    const writes = { ...h.writes };
+    act(() => useUi.getState().setTime(42));
+    act(() => boardFlush());
+    expect(h.renders.partial).toBe(1);
+    expect(svg.style.getPropertyValue('--t')).toBe('42');
+    // the static key point layer does not read the time
+    expect(h.writes.keypoints).toBe(writes.keypoints);
+    act(() => useUi.setState({ timeOn: false }));
+    act(() => boardFlush());
+    expect(svg.style.getPropertyValue('--t')).toBe('');
+  });
+
   it('click selects, click on empty deselects, repeat click cycles the stack (ui.stack)', () => {
     const { stage } = mount();
     const s1 = hitOf('system', 'S-01');

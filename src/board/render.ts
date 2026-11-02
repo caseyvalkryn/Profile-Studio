@@ -222,6 +222,9 @@ export function scene(
           : kind === 'elev'
             ? 'Board in elevation'
             : 'Board in axonometric',
+      // lane 13.3: the cursor time for the key point marks' CSS state (board.css .kp); none
+      // with time off. Not in legacy.
+      style: ctx.t == null ? null : '--t:' + ctx.t,
     },
     body,
   );
