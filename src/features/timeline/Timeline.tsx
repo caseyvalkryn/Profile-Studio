@@ -3,18 +3,29 @@
 // state in `useUi` (tS, timeOn, playing, loop, rate, tview). The axis: ticks, the loop range and
 // the time cursor; a press scrubs, Shift and drag set the loop range, a double click clears it,
 // Ctrl or Cmd and the wheel zoom the span (the overview bar above the axis pans it; a double
-// click there fits the run). One lane per threat: the coverage bars of each sensor and effector
-// that sees it, the F2T2EA key points as glyphs with the step name (glyphs.tsx), the authored
-// events as beads with the board's letter and their label when there is room, the defended
-// asset entry, and the group splits across the lanes. The lane area takes `ui.tlH`: the grip on
-// the strip's top edge drags it (ArrowUp and ArrowDown step it, a double click resets it), the
-// lanes share the height, and a lane tall enough gives each system its own labelled row. A
-// bead press sets the time there and selects the event; in Build a bead drags to move the event
-// (one undo step). The legend names the marks. The play bar: first, previous stop, play, next
+// click there fits the run; the context menu fits the run or the action span, fit.ts). A run
+// that is mostly empty ingress opens on its action span until the user zooms by hand (review of
+// 2026-11-01). One lane per threat: a header with the threat id and the F2T2EA key points as
+// glyphs at their times (glyphs.tsx; the legend names them), then the coverage rows of each
+// sensor and effector that sees it (one labelled row per system with room, else a compact
+// band), then the authored events as beads with the board's letter and their label when there
+// is room, the defended asset entry, and the group splits across the lanes. Each lane takes its
+// content height, the row pitch growing to ROW_MAX with room; `ui.tlH` caps the lane area, which
+// scrolls past it (the grip on the strip's top edge drags it; ArrowUp and ArrowDown step it, a
+// double click resets it). A bead press sets the time there and selects the event; in Build a
+// bead drags to move the event (one undo step). The play bar: first, previous stop, play, next
 // stop, last, rate, loop, the clock (type a time and press Enter) and the Time checkbox. The
 // strip mounts the playback clock.
 import './timeline.css';
-import { ChevronFirst, ChevronLast, Pause, Play, SkipBack, SkipForward } from 'lucide-react';
+import {
+  ChevronFirst,
+  ChevronLast,
+  Pause,
+  Play,
+  SkipBack,
+  SkipForward,
+  TimerOff,
+} from 'lucide-react';
 import {
   useEffect,
   useMemo,
@@ -38,15 +49,16 @@ import { usePlayback } from '../build/bar/usePlayback';
 import { boardDerived, boardScene } from '../build/board/derived';
 import { useSize } from '../shared/useSize';
 import { fmtTime } from '../shared/units';
-import { kindSwatch, stageGlyph } from './glyphs';
-import { keyPoints, type KeyPoint } from './stages';
+import { actionSpan, actionStart, runEnd, wantsFit } from './fit';
+import { GLYPH_ORDER, HATCH_EW, HATCH_S, kindPill, stageGlyph } from './glyphs';
+import { STAGE_LABEL, keyPoints, type KeyPoint } from './stages';
+
+export { MIN_RUN_S, runEnd } from './fit';
 
 export const RATES = [0.25, 0.5, 1, 2, 4, 8, 16, 32] as const;
-/** The strip's shortest run, so an empty or short profile still has a usable axis. */
-export const MIN_RUN_S = 60;
 
-/** The left gutter: the threat id, and in a tall lane the system ids of its rows. */
-export const GUT_L = 72;
+/** The left gutter: the threat id, and in a tall lane the pill and id of each system row. */
+export const GUT_L = 56;
 const GUT_R = 12;
 const AXIS_H = 24;
 const MAJORS = [1, 2, 5, 10, 30, 60, 120, 300, 600, 1200, 3600];
@@ -69,20 +81,24 @@ const CHIP_W = 64;
 const CH = 6.6; // px per mono character at 11 px
 /** The band the coverage bars share: up to four at 3 px with a 1 px gap, more at a finer pitch. */
 const BAND = 16;
-const BEAD_R = 5;
-const STAGE_H = 13;
-/** One lane's least height, the same whatever it holds, so an added system never moves the board. */
-const LANE_H = 2 + BAND + 2 + STAGE_H + 2 * BEAD_R + 4;
-/** A tall lane: a header line with the threat id, then one labelled row per system. */
+/** An event bead: a circled letter, 7 px radius (the reference strip's size). */
+const BEAD_R = 7;
+/** The lane's header row: the threat id at the left, the key point glyphs at their times. */
 const HEAD = 14;
-const ROW_MIN = 12;
-const ROW_MAX = 22;
-/** The lane's fixed parts around the rows: top pad, header, gap, stage row, beads, bottom pad. */
-const ROWS_FIXED = 2 + HEAD + 2 + STAGE_H + 2 * BEAD_R + 4;
-const GLYPH = 9;
+/** A labelled system row: 14 px by default, growing to ROW_MAX with room (lane 12.4). */
+const ROW_MIN = 14;
+const ROW_MAX = 24;
+/** The bar thickness of a labelled row, centred in the row. */
+const BAR = 8;
+/** The lane's fixed parts around the rows: top pad, header, gap, beads, bottom pad. */
+const ROWS_FIXED = 2 + HEAD + 2 + 2 * BEAD_R + 4;
+/** The defended asset row at the top of the lane area: each threat's entry to the run end. */
+const DA_H = 12;
+/** Two glyphs within this many px stack: the later one draws STACK_DY lower. */
+const STACK_PX = 10;
+const STACK_DY = 10;
 const STEP_PX = 16;
 
-export const runEnd = (tmaxS: number) => Math.max(MIN_RUN_S, tmaxS);
 const round1 = (t: number) => Math.round(t * 10) / 10;
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
@@ -112,7 +128,8 @@ const barClass = (kind: string) =>
 
 /** The major and minor tick steps for a span at this scale: at most 8 labelled majors that fit. */
 export function tickSteps(spanS: number, pxPerS: number): { major: number; minor: number } {
-  const labMin = 6 * CH + 8;
+  // the widest label, "59:00", is five mono characters
+  const labMin = 5 * CH + 8;
   let major = MAJORS[MAJORS.length - 1]!;
   for (const m of MAJORS)
     if (spanS / m <= 8 && m * pxPerS >= labMin) {
@@ -139,43 +156,61 @@ type Lane = {
 };
 
 /**
- * Lane geometry: one lane per threat path, stacked from y = 2. Every lane is the same height:
- * LANE_H, or more when `areaH` (the lane area) has room, so the lanes share it. A lane whose rows
- * get a pitch of ROW_MIN or more lays each system on its own labelled row.
+ * Lane geometry: one lane per threat path, stacked from y = 2, each at its content height. The
+ * rows share one pitch: the largest from ROW_MIN to ROW_MAX at which every lane fits `areaH`
+ * (the lane area's cap, `ui.tlH`), else the compact band. The lanes may still overrun the cap
+ * (the area scrolls); they never share blank space.
  */
-export function buildLanes(scene: Scene, d: Derived, areaH = 0): { lanes: Lane[]; height: number } {
-  const lanes: Lane[] = [];
-  const n = scene.scene.paths.length;
-  const laneH = Math.max(LANE_H, n ? Math.floor((areaH - 4 - (n - 1)) / n) : LANE_H);
-  let y = 2;
-  for (const path of scene.scene.paths) {
+export function buildLanes(
+  scene: Scene,
+  d: Derived,
+  areaH = 0,
+): { lanes: Lane[]; height: number; daRow: boolean } {
+  const byPath = scene.scene.paths.map((path) => {
     const rows: SysRow[] = [];
     for (const sys of scene.scene.systems) {
       const wins = d.windows[sys.id]?.[path.id] ?? [];
       if (wins.length) rows.push({ sys, wins });
     }
-    const free = laneH - ROWS_FIXED;
-    const tall = rows.length > 0 && free >= rows.length * ROW_MIN;
-    const pitch = tall
-      ? Math.min(ROW_MAX, Math.floor(free / rows.length))
-      : rows.length <= 4
-        ? 4
-        : BAND / rows.length;
+    return { path, rows };
+  });
+  const n = byPath.length;
+  const hasDa = byPath.some(({ path }) => d.daEntry[path.id] != null);
+  const total = (pitch: number | null) =>
+    byPath.reduce(
+      (s, { rows }) => s + ROWS_FIXED + (pitch && rows.length ? rows.length * pitch : BAND),
+      4 + Math.max(0, n - 1) + (hasDa ? DA_H + 1 : 0),
+    );
+  let pitch: number | null = null;
+  for (let p = ROW_MAX; p >= ROW_MIN; p--)
+    if (total(p) <= areaH) {
+      pitch = p;
+      break;
+    }
+  const lanes: Lane[] = [];
+  // the DA row above the first lane, when a threat enters the defended asset
+  const daRow = hasDa;
+  let y = 2 + (daRow ? DA_H + 1 : 0);
+  for (const { path, rows } of byPath) {
+    const tall = pitch != null && rows.length > 0;
+    const rowPitch =
+      pitch != null && rows.length > 0 ? pitch : rows.length <= 4 ? 4 : BAND / rows.length;
+    const h = ROWS_FIXED + (tall ? rows.length * rowPitch : BAND);
     lanes.push({
       path,
       top: y,
-      h: laneH,
+      h,
       rows,
       layout: tall ? 'rows' : 'band',
-      rowsTop: y + 2 + (tall ? HEAD : 0),
-      pitch,
-      bar: tall ? pitch - 4 : Math.max(1, pitch - 1),
+      rowsTop: y + 2 + HEAD,
+      pitch: rowPitch,
+      bar: tall ? BAR : Math.max(1, rowPitch - 1),
       events: scene.events.filter((e) => e.path === path.id),
       points: keyPoints(d, path.id),
     });
-    y += laneH + 1;
+    y += h + 1;
   }
-  return { lanes, height: Math.max(y + 2, 20) };
+  return { lanes, height: Math.max(y + 2, 20), daRow };
 }
 
 type Drag =
@@ -237,9 +272,38 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
     if (!u.timeOn) u.setTimeOn(true);
   };
 
-  const { lanes, height } = scene && d ? buildLanes(scene, d, tlH) : { lanes: [], height: 20 };
+  const { lanes, height, daRow } =
+    scene && d ? buildLanes(scene, d, tlH) : { lanes: [], height: 20, daRow: false };
   const warned = new Set<string>();
   for (const w of d?.warnings ?? []) if (w.eventId) warned.add(w.eventId);
+
+  // The auto fit (lane 12.4): a run over three times its action span opens on the span, and
+  // follows the span while the document changes, until a zoom by hand (the wheel, the overview
+  // pan, the fit commands: any tview this effect did not set). A new document resets that.
+  const docId = doc?.id ?? null;
+  const aStart = d ? actionStart(d) : 0;
+  const fit = useRef<{ docId: string | null; hand: boolean; set: typeof tview }>({
+    docId,
+    hand: false,
+    set: null,
+  });
+  useEffect(() => {
+    if (tview !== fit.current.set) fit.current.hand = true;
+  }, [tview]);
+  useEffect(() => {
+    const f = fit.current;
+    if (f.docId !== docId) {
+      f.docId = docId;
+      f.hand = false;
+      f.set = null;
+    }
+    if (!d || f.hand || !wantsFit(d)) return;
+    const span = actionSpan(d);
+    f.set = span;
+    ui().setTview(span);
+    // Keyed on the run's end and the action start: the two numbers the span is made of.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docId, tmax, aStart, ui]);
 
   const menuItems: MenuItem[] = useMemo(
     () => menuItemsFor('timeline', { pointer: { x: 0, y: 0, tS: menuT }, onArg: () => {} }),
@@ -491,7 +555,7 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
         />,
       );
       if (!maj) continue;
-      const lab = major < 1 || tt % 1 ? `t+${tt.toFixed(1)}` : fmtTime(tt);
+      const lab = major < 1 || tt % 1 ? tt.toFixed(1) : mmss(tt);
       const atStart = x < GUT_L + 12;
       const lw = lab.length * CH;
       const lx0 = atStart ? x : x - lw / 2;
@@ -525,18 +589,21 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
     const sel = selectedKeys.includes(path.key);
     const ink = inkOf(path.identity);
     const tall = layout === 'rows';
-    // the rows (or the band) at the lane's head, then the stage row, then the beads
-    const stageY = tall ? rowsTop + rows.length * pitch + 2 : top + 2 + BAND + 2;
-    const by = stageY + STAGE_H + BEAD_R;
+    // the header (threat id, key point glyphs), then the rows (or the band), then the beads
+    const rowsEnd = rowsTop + (tall ? rows.length * pitch : BAND);
+    const by = rowsEnd + 2 + BEAD_R;
+    const foot = top + h - 2;
     const items: ReactNode[] = [];
     rows.forEach(({ sys, wins }, k) => {
       const yy = rowsTop + k * pitch;
       const cls = barClass(sys.kind);
+      // in a labelled row the bar is centred on the row; in the band it is the row
+      const barY = tall ? yy + Math.floor((pitch - 1 - bar) / 2) : yy;
       if (tall)
         items.push(
           <g key={`r-${sys.id}`} className="tl-row" data-testid="tl-row">
-            {kindSwatch(cls, 4, yy + bar / 2)}
-            <text className="tl-rowlab" x={11} y={yy + bar / 2}>
+            {kindPill(cls, 4, barY + bar / 2)}
+            <text className="tl-rowlab" x={17} y={barY + bar / 2}>
               {sys.id}
             </text>
             <line
@@ -552,24 +619,19 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
         if (!inView(w.tIn, w.tOut)) return;
         const x0 = cx(w.tIn);
         const x1 = cx(w.tOut);
+        const bw = Math.max(1, x1 - x0);
         items.push(
           <g key={`${sys.id}-${i}`} data-testid="tl-window">
             <title>{`${sys.id} sees ${path.id} from ${fmtTime(w.tIn)} to ${fmtTime(w.tOut)}, held ${mmss(w.tOut - w.tIn)}`}</title>
-            <rect
-              className={`tl-bar ${cls}`}
-              x={x0}
-              y={yy}
-              width={Math.max(1, x1 - x0)}
-              height={bar}
-            />
+            <rect className={`tl-bar ${cls}`} x={x0} y={barY} width={bw} height={bar} />
             {/* the first see: a darker cap at the bar's start */}
             {w.tIn >= tv0 ? (
-              <rect className="tl-bar-cap" x={x0} y={yy} width={1} height={bar} />
+              <rect className="tl-bar-cap" x={x0} y={barY} width={1} height={bar} />
             ) : null}
             <rect
               className="tl-bar-hit"
               x={x0}
-              y={yy - 1}
+              y={barY - 1}
               width={Math.max(3, x1 - x0)}
               height={bar + 2}
             />
@@ -577,20 +639,16 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
         );
       });
     });
-    const gy = stageY + GLYPH / 2 + 1;
+    // The glyphs sit in the header row at their times; two within STACK_PX stack, the later
+    // one STACK_DY lower (the first row's top), each on its own hairline down to the lane foot.
+    const gy0 = top + 2 + HEAD / 2;
     const shown = points.filter((p) => p.t >= tv0 && p.t <= tv1);
-    // The glyph always shows. Its label goes to the right when it ends before the next glyph,
-    // else to the left when that space is free of the last label, else it is dropped.
-    let used = GUT_L;
-    const hg = GLYPH / 2;
-    shown.forEach((p, i) => {
+    const lastX = [-Infinity, -Infinity];
+    for (const p of shown) {
       const x = xOf(p.t);
-      const next = shown[i + 1];
-      const lw = p.label.length * CH;
-      let side: 'r' | 'l' | null = null;
-      if (x + hg + 3 >= used && (!next || x + hg + 3 + lw <= xOf(next.t) - hg - 2)) side = 'r';
-      else if (x - hg - 3 - lw >= used + 4) side = 'l';
-      used = side === 'r' ? x + hg + 3 + lw : x + hg;
+      const level = x - lastX[0]! < STACK_PX && x - lastX[1]! >= STACK_PX ? 1 : 0;
+      lastX[level] = x;
+      const gy = gy0 + level * STACK_DY;
       const who = p.system ? ` · ${p.system}` : '';
       items.push(
         <g
@@ -598,23 +656,37 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
           className={`tl-stage${p.stage === 'da' ? ' tl-da' : ''}`}
           data-testid="tl-stage"
           data-stage={p.stage}
+          data-level={level}
         >
           <title>{`${p.label} · ${fmtTime(p.t)}${who}. ${p.definition}`}</title>
-          {/* the time's hairline up through the rows to the glyph */}
-          <line x1={x} x2={x} y1={top + 2 + (tall ? HEAD : 0)} y2={gy - GLYPH / 2 - 1} />
+          {/* the time's hairline from the glyph down through the rows to the lane foot */}
+          <line x1={x} x2={x} y1={gy + 5} y2={foot} />
           {stageGlyph(p.stage, x, gy)}
-          {side ? (
-            <text
-              x={side === 'r' ? x + hg + 3 : x - hg - 3}
-              y={stageY + 10}
-              textAnchor={side === 'r' ? 'start' : 'end'}
-            >
-              {p.label}
-            </text>
-          ) : null}
         </g>,
       );
-    });
+    }
+    // The engage margin: a bracket along the header's foot from Engage to the latest engage
+    // that still gets an effect, with the margin beside it, when it spans 24 px or more.
+    const ws = d?.window[path.id];
+    const engT = d?.stages[path.id]?.engage?.t;
+    if (ws && engT != null && ws.latest != null && ws.margin != null) {
+      const x0 = cx(engT);
+      const x1 = cx(ws.latest);
+      const yb = top + 2 + HEAD - 1.5;
+      const label = `margin ${Math.round(ws.margin)} s`;
+      // the text goes right of the bracket, or left of it near the strip's right edge
+      const right = x1 + 4 + label.length * CH <= W - GUT_R;
+      if (x1 - x0 >= 24 && inView(engT, ws.latest))
+        items.push(
+          <g key="margin" className="tl-margin" data-testid="tl-margin">
+            <title>{`Latest engage ${fmtTime(ws.latest)}, margin ${Math.round(ws.margin)} s`}</title>
+            <polyline points={`${x0},${yb - 3} ${x0},${yb} ${x1},${yb} ${x1},${yb - 3}`} />
+            <text x={right ? x1 + 4 : x0 - 4} y={yb - 1} textAnchor={right ? 'start' : 'end'}>
+              {label}
+            </text>
+          </g>,
+        );
+    }
     let evEnd = -Infinity;
     for (const e of events) {
       if (e.t < tv0 || e.t > tv1) continue;
@@ -670,6 +742,43 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
     );
   });
 
+  // The DA row (lane 12.4, from the reference strip): each threat's defended asset entry as a
+  // bar in the hostile ink from its entry to the run end, labelled with the threat id when
+  // more than one threat enters.
+  const daSvg = (() => {
+    if (!daRow || !d) return null;
+    const entries = lanes
+      .map((L) => ({ id: L.path.id, t: d.daEntry[L.path.id] }))
+      .filter((e): e is { id: string; t: number } => e.t != null);
+    const y = 2 + (DA_H - 6) / 2;
+    return (
+      <g data-testid="tl-da-row">
+        <text className="tl-lab tl-ink-hostile" x={4} y={2 + DA_H - 2}>
+          DA
+        </text>
+        {entries
+          .filter((e) => e.t <= tv1)
+          .map((e) => {
+            const x0 = cx(e.t);
+            const x1 = cx(end);
+            return (
+              <g key={e.id} data-testid="tl-da-bar">
+                <title>{`${e.id} enters the defended asset at ${fmtTime(e.t)}`}</title>
+                <rect className="tl-da-bar" x={x0} y={y} width={Math.max(1, x1 - x0)} height={6} />
+                {entries.length > 1 && x0 - GUT_L > e.id.length * CH + 6 ? (
+                  <text className="tl-da-lab" x={x0 - 3} y={2 + DA_H - 3} textAnchor="end">
+                    {e.id}
+                  </text>
+                ) : null}
+              </g>
+            );
+          })}
+        <line className="tl-lane-sep" x1={0} x2={W} y1={2 + DA_H + 0.5} y2={2 + DA_H + 0.5} />
+      </g>
+    );
+  })();
+
+  // a split or merge: a dashed rule across every lane, its circled letter at the top row
   const splitSvg = (d?.splits ?? [])
     .filter((s) => s.t >= tv0 && s.t <= tv1)
     .map((s, i) => {
@@ -678,9 +787,9 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
         <g key={`sp${i}`} data-testid="tl-split">
           <title>{`${s.to > s.from ? 'Split' : 'Merge'} to ${s.to} at ${fmtTime(s.t)}`}</title>
           <line className="tl-split" x1={x} x2={x} y1={0} y2={height} />
-          <text className="tl-splab" x={x + 3} y={10}>
-            {s.to > s.from ? 'S ' : 'M '}
-            {s.to}
+          <circle className="tl-splab-ring" cx={x} cy={8} r={6} />
+          <text className="tl-splab" x={x} y={8}>
+            {s.to > s.from ? 'S' : 'M'}
           </text>
         </g>
       );
@@ -713,8 +822,32 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
         onDoubleClick={() => ui().setTlH(TL_H_DEFAULT)}
         onKeyDown={onGripKey}
       >
-        <div className="tl-resize-rule" />
+        <div className="tl-resize-pill" />
       </div>
+      {/* the coverage textures (lane 12.4, from the reference strip): sensor windows hatched in
+          the friend ink at 45 degrees, EW windows in the ew ink at the opposite angle, both at
+          a 3 px pitch with 1 px lines; effector windows are a solid band (timeline.css) */}
+      <svg className="tl-defs" width={0} height={0} aria-hidden="true">
+        <defs>
+          {(
+            [
+              [HATCH_S, 'tl-hatch-s', 45],
+              [HATCH_EW, 'tl-hatch-ew', -45],
+            ] as const
+          ).map(([id, cls, deg]) => (
+            <pattern
+              key={id}
+              id={id}
+              width={3}
+              height={3}
+              patternUnits="userSpaceOnUse"
+              patternTransform={`rotate(${deg})`}
+            >
+              <line className={cls} x1={0.5} x2={0.5} y1={0} y2={3} />
+            </pattern>
+          ))}
+        </defs>
+      </svg>
       {tview ? (
         <div
           className="tl-ov"
@@ -757,11 +890,12 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
           >
             {axis}
           </svg>
-          {/* with no lane the area is the hint's height, not the grip's (review of 2026-11-01) */}
+          {/* the area takes its lanes' height up to ui.tlH, then scrolls; with no lane it takes
+              the hint's height (review of 2026-11-01) */}
           <div
             ref={lanesRef}
             className="tl-lanes"
-            style={lanes.length ? { height: tlH } : undefined}
+            style={lanes.length ? { maxHeight: tlH } : undefined}
           >
             {lanes.length ? (
               <svg
@@ -771,6 +905,7 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
                 role="img"
                 aria-label="Coverage and key points by threat"
               >
+                {daSvg}
                 {laneSvg}
                 {splitSvg}
               </svg>
@@ -799,30 +934,22 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
         </div>
       </ContextMenu>
       <div className="tl-legend" data-testid="tl-legend" aria-label="Legend">
-        <span>
-          <svg width="12" height="8" aria-hidden="true">
-            <rect className="tl-bar tl-bar-s" x={0} y={1} width={12} height={6} rx={1} />
-          </svg>
-          Sensor
-        </span>
-        <span>
-          <svg width="12" height="8" aria-hidden="true">
-            <rect className="tl-bar tl-bar-e" x={0} y={1} width={12} height={6} rx={1} />
-          </svg>
-          Effector
-        </span>
-        <span>
-          <svg width="12" height="8" aria-hidden="true">
-            <rect className="tl-bar tl-bar-ew" x={0} y={1} width={12} height={6} rx={1} />
-          </svg>
-          EW
-        </span>
-        <span className="tl-stage">
-          <svg width="12" height="12" aria-hidden="true">
-            {stageGlyph('track', 6, 6)}
-          </svg>
-          F2T2EA step
-        </span>
+        {GLYPH_ORDER.map((s) => (
+          <span key={s} className={`tl-stage${s === 'da' ? ' tl-da' : ''}`}>
+            <svg width="12" height="12" aria-hidden="true">
+              {stageGlyph(s, 6, 6)}
+            </svg>
+            {s === 'da' ? 'DA' : STAGE_LABEL[s]}
+          </span>
+        ))}
+        {(['tl-bar-s', 'tl-bar-e', 'tl-bar-ew'] as const).map((cls) => (
+          <span key={cls}>
+            <svg width="10" height="6" aria-hidden="true">
+              {kindPill(cls, 0, 3)}
+            </svg>
+            {cls === 'tl-bar-s' ? 'Sensor' : cls === 'tl-bar-e' ? 'Effector' : 'EW'}
+          </span>
+        ))}
         <span className="tl-bead">
           <svg width="12" height="12" aria-hidden="true">
             <circle cx={6} cy={6} r={BEAD_R} />
@@ -832,23 +959,8 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
           </svg>
           Event
         </span>
-        <span className="tl-stage tl-da">
-          <svg width="12" height="12" aria-hidden="true">
-            {stageGlyph('da', 6, 6)}
-          </svg>
-          Defended asset
-        </span>
       </div>
       <div className="tl-bar" role="toolbar" aria-label="Play bar">
-        <label className="tl-check">
-          <input
-            type="checkbox"
-            checked={timeOn}
-            onChange={(e) => ui().setTimeOn(e.target.checked)}
-            className={focusRing}
-          />
-          Time
-        </label>
         <Tooltip content="Time to start" shortcut="Home">
           <button
             type="button"
@@ -938,6 +1050,17 @@ export default function Timeline({ mode }: { mode: 'build' | 'brief' }) {
           onBlur={() => setClockDraft(null)}
           data-testid="tl-clock"
         />
+        <Tooltip content="Time off">
+          <button
+            type="button"
+            className={mini}
+            aria-label="Time off"
+            disabled={!timeOn}
+            onClick={() => ui().setTimeOn(false)}
+          >
+            <TimerOff aria-hidden="true" />
+          </button>
+        </Tooltip>
       </div>
     </div>
   );
