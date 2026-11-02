@@ -779,8 +779,8 @@ removed from the tree on 2026-11-01 (`git show 70caf07` has them); the findings 
 State on 2026-11-02, end of the fourteenth session. Phase 14 (the site from a KML or KMZ file:
 lanes 14.1, 14.2, 14.R and 14.F) is done on `main` at 8f44be6 with the gate green: 61 unit
 files, 584 tests, 12 Playwright specs on `vite preview`, build; entry 248.74 kB gzip (budget
-300); 100 kB of Geist woff2 outside the entry. Not pushed since 6ea78c8's parent (the last push
-was 251422f); the push waits for the user's word. `main` is the only branch: the user chose it
+300); 100 kB of Geist woff2 outside the entry. Pushed to `origin/main` at 3b8f03a on
+2026-11-02 on the user's "push". `main` is the only branch: the user chose it
 as the single lane by poll on 2026-11-02 and `rebuild/mvp` was deleted, local and remote. Rows
 13.1 to 14.F in section 7 say what landed. The six readings of phase 14 stand as amended by
 review 14.R (readings 3 and 4) and the user's poll on F-01 (section 1, "Site origin"). Tag
