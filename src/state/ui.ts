@@ -106,9 +106,10 @@ export type UiState = {
   playing: boolean;
   loop: LoopRange | null;
   rate: number;
-  /** The timeline zoom, shared by Build and Brief (one strip, two hosts). */
+  /** The timeline zoom, shared by Build and Brief (one strip, two hosts). tS, timeOn, loop,
+   * rate, tview and tlH are kept per profile id in localStorage (src/state/timePersist.ts). */
   tview: TimeView | null;
-  /** The timeline's lane area height, shared by Build and Brief; not persisted. */
+  /** The timeline's lane area height, shared by Build and Brief; kept per profile (timePersist.ts). */
   tlH: number;
   view: View;
   units: Units;

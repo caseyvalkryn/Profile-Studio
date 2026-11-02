@@ -10,6 +10,7 @@ import { bindTheme } from './features/shell/theme';
 import { WORKSPACES } from './features/shell/TopBar';
 import { useDocument } from './state/document';
 import { listVignettes, loadVignette, startAutosave } from './state/persist';
+import { bindTimePersist } from './state/timePersist';
 import { useUi, type Workspace as WorkspaceId } from './state/ui';
 import { focusRing } from './ui/focus';
 import { TooltipProvider } from './ui/Tooltip';
@@ -73,6 +74,7 @@ function useRootEffects(): { status: string | null; ready: boolean } {
   const [ready, setReady] = useState(false);
   useEffect(() => bindKeys(window), []);
   useEffect(() => bindTheme(), []);
+  useEffect(() => bindTimePersist(), []);
   useEffect(
     () =>
       startAutosave(undefined, () =>
