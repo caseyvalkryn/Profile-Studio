@@ -14,7 +14,9 @@
 // what to write; the aids name the step of the threat in focus and the next card's time.
 // The frame (2026-11-02, user request): the wheel zooms the card about the cursor and a drag
 // pans it (in 3D a drag orbits), each burst one undo step (./stageFrame, cards.ts beginFrame); the
-// head prints the zoom. The Readout display is the frame panel floating at the stage's top
+// head prints the zoom. The camera segment in the head (Plan, Elevation, 3D; keys 1, 2, 3) sets
+// the card's camera as the Build bar's segment sets the view, one undo step (cards.ts
+// setCamera). The Readout display is the frame panel floating at the stage's top
 // right: "Frame at t+2:06", then each threat in focus as the notes' Frame block (at most three).
 import { Camera, ChartNoAxesGantt, Gauge, ImageIcon, Scissors } from 'lucide-react';
 import {
@@ -27,6 +29,7 @@ import {
   type RefObject,
 } from 'react';
 import type { Card, Vignette } from '../../domain/types';
+import type { View } from '../../state/ui';
 import { render, type CardRec } from '../../board';
 import { useUi } from '../../state/ui';
 import { Tooltip } from '../../ui/Tooltip';
@@ -41,6 +44,7 @@ import {
   beginFrame,
   cardFromBuild,
   endFrame,
+  setCamera,
   sliceFromLoop,
   snapshotBuild,
   snapshotCard,
@@ -101,6 +105,40 @@ function FrameFloat({ v, rec, t }: { v: Vignette; rec: CardRec; t: number | null
       )}
       {more ? <p className="ps-hint m-0 mt-2">and {more} more</p> : null}
     </aside>
+  );
+}
+
+const CAMERAS: { view: View; label: string; key: string }[] = [
+  { view: 'plan', label: 'Plan', key: '1' },
+  { view: 'elevation', label: 'Elevation', key: '2' },
+  { view: '3d', label: '3D', key: '3' },
+];
+
+/** The camera segment, as the Build bar's view segment: the card's camera, or the Build view with no card. */
+function CameraSegment({ view }: { view: View }) {
+  return (
+    <div
+      role="group"
+      aria-label="Camera"
+      className="flex shrink-0 overflow-hidden rounded border border-surface-3"
+      data-testid="brief-camera"
+    >
+      {CAMERAS.map((c) => {
+        const on = view === c.view;
+        return (
+          <Tooltip key={c.view} content={`${c.label} camera`} shortcut={c.key}>
+            <button
+              type="button"
+              aria-pressed={on}
+              className={`inline-flex h-[26px] shrink-0 items-center px-2.5 text-data select-none ${on ? 'bg-text text-surface-0' : 'text-muted hover:bg-surface-3 hover:text-text'} ${focusRing}`}
+              onClick={() => setCamera(c.view)}
+            >
+              {c.label}
+            </button>
+          </Tooltip>
+        );
+      })}
+    </div>
   );
 }
 
@@ -330,6 +368,7 @@ export default function Stage({
           </span>
         ) : null}
         <span className="flex items-center gap-1">
+          {shown ? <CameraSegment view={shown.view.kind} /> : null}
           {card ? (
             <>
               <HeadButton

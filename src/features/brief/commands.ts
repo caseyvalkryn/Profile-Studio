@@ -1,7 +1,7 @@
 // The Brief commands (spec section 8, Brief keys): Right or Space next card, Left previous,
 // Home and End, Up and Down move the current card, Delete removes it with undo; P plays or
 // pauses the time, C saves a frame as a card, L shows or hides the card's timeline, = and -
-// zoom the card about the stage middle. Plus the
+// zoom the card about the stage middle, 1, 2 and 3 set the card's camera. Plus the
 // palette commands: the readout toggle, Add card from current scene and Print brief. All are active in Brief only;
 // the registry scopes the shortcuts, so the Build keys they share (Space, the arrows, Home, End,
 // Delete) stay off here. The mockup's keydown handler is at `legacy/mockup-v3.html` line 509.
@@ -156,6 +156,33 @@ export const briefCommands: Command[] = [
     workspaces: BRIEF,
     when: needCards,
     run: run((m) => m.toggleDisplay('timeline')),
+  },
+  {
+    id: 'brief.plan',
+    label: 'Plan camera',
+    group: 'view',
+    shortcut: '1',
+    workspaces: BRIEF,
+    when: needDoc,
+    run: run((m) => m.setCamera('plan')),
+  },
+  {
+    id: 'brief.elevation',
+    label: 'Elevation camera',
+    group: 'view',
+    shortcut: '2',
+    workspaces: BRIEF,
+    when: needDoc,
+    run: run((m) => m.setCamera('elevation')),
+  },
+  {
+    id: 'brief.3d',
+    label: '3D camera',
+    group: 'view',
+    shortcut: '3',
+    workspaces: BRIEF,
+    when: needDoc,
+    run: run((m) => m.setCamera('3d')),
   },
   {
     id: 'brief.zoomIn',

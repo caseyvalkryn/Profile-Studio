@@ -25,10 +25,9 @@ beforeEach(() => {
 });
 
 describe('workspace scoping', () => {
-  it('1 is the Plan view in Build and nothing in Brief or the Library', () => {
+  it('1 is the Plan view in Build, the Plan camera in Brief and nothing in the Library', () => {
     expect(byShortcut('1', 'build')?.id).toBe('view.plan');
-    // The card jumps (1 to 9) left with the Brief stubs (plan, Deferred from phase 10).
-    expect(byShortcut('1', 'brief')).toBeUndefined();
+    expect(byShortcut('1', 'brief')?.id).toBe('brief.plan');
     expect(byShortcut('1', 'library')).toBeUndefined();
   });
 

@@ -256,6 +256,11 @@ the notes panel on the right.
   leaving Brief restores the Build view.
 - The notes panel: name, camera, yaw and pitch, zoom with Fit, time, focus ids, layers, caption,
   presenter notes.
+- The camera segment in the stage head (2026-11-02, user request): Plan, Elevation, 3D, as the
+  Build bar's view segment; keys 1, 2, 3. It sets the current card's camera as one undo step
+  (the notes Camera select writes the same field) and starts the new camera from the fitted
+  frame, since the centre is metres of the old one; with no card it sets the Build view the
+  stage draws.
 - The frame on the stage (2026-11-02, user request): the wheel zooms a Plan or Elevation card
   about the cursor (0.5 to 8) and a drag pans it; in 3D a drag orbits at the board's rates. One
   wheel burst or one drag is one undo step ("zoom card c2", "pan card c2", "orbit card c2"). The
@@ -399,8 +404,8 @@ bypasses every snap.
 | \ | Both side panels open or closed |
 
 Brief keys (only in Brief): Right or Space next card; Left previous card; Home, End; Up and
-Down move the current card in the strip; Delete removes it with undo. Build keys that edit are
-off in Brief. The registry scopes a shortcut by workspace.
+Down move the current card in the strip; Delete removes it with undo; 1, 2, 3 set the card's
+camera; =, - zoom the card. Build keys that edit are off in Brief. The registry scopes a shortcut by workspace.
 
 **Commands.** One registry (`src/commands/`) defines each action once: ID, label, shortcut,
 enable rule with a reason, the kinds it applies to, and the workspaces it is active in. The

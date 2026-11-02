@@ -281,6 +281,42 @@ describe('Brief timeline, readout, frames and key points', () => {
     }
   });
 
+  it('the camera segment sets the card camera as one undo step; with no card it sets the Build view', () => {
+    render(<BriefWorkspace />);
+    const seg = () => within(screen.getByTestId('brief-camera'));
+    expect(seg().getByRole('button', { name: 'Plan' })).toHaveAttribute('aria-pressed', 'true');
+    useDocument.getState().edit('zoom', (d) => {
+      d.cards[0]!.view = { ...d.cards[0]!.view, zoom: 3, centre: { x: 400, y: -200 } };
+    });
+    fireEvent.click(seg().getByRole('button', { name: 'Elevation' }));
+    // another camera starts from the fitted frame: the centre was metres of the plan
+    expect(useDocument.getState().doc!.cards[0]!.view).toMatchObject({
+      kind: 'elevation',
+      zoom: 1,
+      centre: { x: 0, y: 0 },
+    });
+    expect(useDocument.getState().past.map((e) => e.label)).toEqual(['zoom', 'set card c1 camera']);
+    expect(stageProj()).toBe('elev');
+    expect(useUi.getState().view).toBe('elevation');
+    expect(seg().getByRole('button', { name: 'Elevation' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('combobox', { name: 'Camera' })).toHaveValue('elev');
+    // the same camera again records nothing
+    fireEvent.click(seg().getByRole('button', { name: 'Elevation' }));
+    expect(useDocument.getState().past).toHaveLength(2);
+  });
+
+  it('with no card the camera segment sets the stashed Build view the stage draws', () => {
+    useDocument.getState().open({ ...testDeck(), cards: [] });
+    render(<BriefWorkspace />);
+    fireEvent.click(within(screen.getByTestId('brief-camera')).getByRole('button', { name: '3D' }));
+    expect(stageProj()).toBe('axon');
+    expect(useUi.getState().buildStash?.view).toBe('3d');
+    expect(useDocument.getState().past).toHaveLength(0);
+  });
+
   it('a drag pans a Plan card and orbits a 3D card, one undo step each; a click records nothing', () => {
     render(<BriefWorkspace />);
     const stage = screen.getByTestId('brief-stage');

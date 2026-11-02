@@ -281,8 +281,16 @@ export function setField(key: string, field: CardField, value: unknown): Recipe 
     else if (field === 'tS') c.tS = value == null ? null : Math.max(0, Number(value));
     else if (field === 'yawDeg') c.view.yawDeg = Number(value);
     else if (field === 'pitchDeg') c.view.pitchDeg = Math.min(86, Math.max(8, Number(value)));
-    else if (field === 'kind') c.view.kind = camToView(value);
-    else if (field === 'zoom') c.view.zoom = clampZoom(Number(value));
+    else if (field === 'kind') {
+      // the centre is metres in the camera's own frame (plan x, y; elevation r, z), so another
+      // camera starts from the fitted frame
+      const kind = camToView(value);
+      if (kind !== c.view.kind) {
+        c.view.kind = kind;
+        c.view.zoom = 1;
+        c.view.centre = { x: 0, y: 0 };
+      }
+    } else if (field === 'zoom') c.view.zoom = clampZoom(Number(value));
   };
 }
 
@@ -328,6 +336,24 @@ export function zoomCard(factor: number): void {
   const z = clampZoom(card.view.zoom * factor);
   if (z === card.view.zoom) return;
   edit(`zoom card ${card.id}`, setField(card.key, 'zoom', z));
+}
+
+/**
+ * The stage's camera segment and the 1, 2, 3 keys: the current card's camera, one undo step
+ * (the notes Camera select writes the same field). With no card, the Build view the stage draws
+ * (the stash), so Save a frame keeps it.
+ */
+export function setCamera(kind: View): void {
+  const v = doc();
+  if (!v) return;
+  const ui = useUi.getState();
+  const card = currentCard(v, ui.cardKey);
+  if (card) {
+    if (card.view.kind !== kind)
+      edit(fieldLabel('kind', card.id), setField(card.key, 'kind', kind));
+    return;
+  }
+  ui.setBuildStash({ ...(ui.buildStash ?? snapshotBuild()), view: kind });
 }
 
 /** Fit: the card back to the fitted frame (zoom 1, centre 0, 0); one undo step. */

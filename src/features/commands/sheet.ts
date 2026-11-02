@@ -55,6 +55,8 @@ const ORDER: readonly RowSpec[] = [
   row(['brief.first', 'brief.last'], 'First card or last card'),
   row('brief.play'),
   row('brief.snapshot'),
+  row(['brief.plan', 'brief.elevation', 'brief.3d'], 'Plan, Elevation, 3D camera'),
+  row(['brief.zoomIn', 'brief.zoomOut'], 'Zoom the card'),
   row('brief.timeline'),
 ];
 
