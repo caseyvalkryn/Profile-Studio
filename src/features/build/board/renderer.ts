@@ -197,6 +197,12 @@ export class BoardRenderer {
     if (this.sig) {
       for (const k of Object.keys(sig) as CtxField[]) if (sig[k] !== this.sig[k]) changed.add(k);
     }
+    // lane 13.3: the cursor time as `--t` on the root for the key point marks' CSS state
+    // (board.css .kp); set before the early returns so a tick never skips it
+    if (!this.sig || changed.has('t')) {
+      if (sig.t == null) this.svg.style.removeProperty('--t');
+      else this.svg.style.setProperty('--t', String(sig.t));
+    }
     const tick =
       !!this.sig && this.last && changed.size > 0 && [...changed].every((k) => TICK_FIELDS.has(k));
     if (this.sig && this.last && changed.size === 0) return;
