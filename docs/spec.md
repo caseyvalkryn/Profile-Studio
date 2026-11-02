@@ -349,10 +349,12 @@ one-finger touch drag still pans; Escape drops a rectangle in progress.
 
 **Import a site file** (2026-11-02). The palette command "Import a site file" opens a file
 picker for a KML or KMZ file; a KML or KMZ file dropped on the board does the same. Each polygon
-becomes a range area at true scale about the profile's site (the file sets the site when it is
-unset), as one undo step "import <file name>". The new areas are the selection, the board
-refits, and a toast says "2 areas from <file name>." A bad file changes nothing; the toast says
-why in one sentence.
+becomes a range area at true scale about the profile's site, as one undo step "import <file
+name>". When the site is unset or lies more than 50 km (great-circle) from the centre of the
+file's polygons, the same step sets the site to that centre. The new areas are the selection,
+the board refits, and a toast says "2 areas from <file name>.", followed by "Site set from <file
+name>." when the site moved. A bad file changes nothing; the toast says why in one sentence. A
+dropped file that is not KML or KMZ toasts "Drop a KML or KMZ file to import a site."
 
 **Snap** (upgrade). The placement ghost and a dragged waypoint snap to sensor rings, area
 vertices and edges within 8 px, to 15 degree bearings with Shift, else to the grid. The label

@@ -310,7 +310,8 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
   // The one import path: it refreshes this list and toasts the count; a problem shows here.
   // A KML or KMZ file (lane 14.2) becomes a new profile named after the file: the Blank
   // template with no defended asset and the site unset, so the file sets it. A bad file stays
-  // here as one sentence and creates nothing.
+  // here as one sentence and creates nothing. The site reset stays (review 14 F-01): the file
+  // always sets the site and names it, even a file within 50 km of Blank's stand-in.
   const importFile = async (file: File | undefined) => {
     if (!file) return;
     if (!isSiteFile(file)) {
@@ -330,10 +331,9 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
     v.areas = v.areas.filter((a) => a.kind !== 'asset');
     v.site = { name: stem, lat: 0, lon: 0, elevM: 0 };
     openProfile(v, go);
+    // the app is on Build now: the toast carries the count, so no Library line on success
     try {
       await importSiteFile(file);
-      const n = useDocument.getState().doc?.areas.length ?? 0;
-      setMessage(`${n} area${n === 1 ? '' : 's'} from ${file.name}.`);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : String(err));
     }
@@ -439,7 +439,7 @@ export default function LibraryScreen({ templates = [] }: { templates?: Template
         />
         <Button
           variant="default"
-          tooltip="Import a Profile Studio or legacy JSON file, or a KML or KMZ site file as a new profile. You can also drop it here."
+          tooltip="Import a Profile Studio or legacy JSON file, or a KML or KMZ site file as a new profile. You can also drop it here. To add a site file to the open profile, use Import a site file in Build."
           onClick={() => fileRef.current?.click()}
         >
           Import

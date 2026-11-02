@@ -6,7 +6,8 @@
 //   hideToast()           Hide it now.
 //   useToast              The zustand store; `<Toast />` in the shell renders `text` while
 //                         `visible`. Tests read `useToast.getState().text`.
-// Text is one sentence ending with a full stop: "Undid: Delete.", "Copied.".
+// Text is one short sentence ending with a full stop: "Undid: Delete.", "Copied."; a second
+// sentence only when the action had a side effect the user must know ("Site set from x.kmz.").
 import { create } from 'zustand';
 
 /** Legacy toast duration. */

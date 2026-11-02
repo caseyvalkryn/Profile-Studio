@@ -21,9 +21,10 @@ const SIG_LOCAL = 0x04034b50;
 const SIG_CENTRAL = 0x02014b50;
 const SIG_END = 0x06054b50;
 
-/** Metres per degree: east at the equator (scaled by cos lat) and north. */
-const M_PER_DEG_LON = 111320;
-const M_PER_DEG_LAT = 110574;
+/** The mean earth radius in metres (IUGG), for the great-circle distance. */
+const EARTH_R = 6371008.8;
+/** A file whose centre lies farther than this from the site moves the site (review 14 F-01). */
+export const SITE_MOVE_M = 50000;
 
 /**
  * The KML text of a KMZ. The zip's central directory gives each entry's method, compressed size
@@ -135,10 +136,16 @@ export function parseKml(text: string): SitePolygon[] {
       const coords = outer ? descendants(outer, 'coordinates')[0] : undefined;
       if (!coords) continue;
       const ring: [number, number][] = [];
-      for (const tok of (coords.textContent ?? '').split(/\s+/)) {
+      // "lon, lat, alt" with spaces after the commas is not KML, but some exporters write it
+      const text = (coords.textContent ?? '').replace(/\s*,\s*/g, ',');
+      for (const tok of text.split(/\s+/)) {
         if (!tok) continue;
-        const [lon, lat] = tok.split(',').map(Number);
-        if (Number.isFinite(lon) && Number.isFinite(lat)) ring.push([lon!, lat!]);
+        const [lonText = '', latText = ''] = tok.split(',');
+        const lon = Number(lonText);
+        const lat = Number(latText);
+        // an empty field is a broken tuple, not 0
+        if (lonText && latText && Number.isFinite(lon) && Number.isFinite(lat))
+          ring.push([lon, lat]);
       }
       const first = ring[0];
       const last = ring[ring.length - 1];
@@ -150,10 +157,25 @@ export function parseKml(text: string): SitePolygon[] {
   return out;
 }
 
-/** [x, y] metres of a [lon, lat] about the origin: east is x, north is y (plan reading 3). */
+/**
+ * [x, y] metres of a [lon, lat] about the origin: east is x, north is y (plan reading 3). The
+ * metres per degree are WGS84's at the origin's latitude (review 14 F-02).
+ */
 export function localFrom(origin: LatLon, p: [number, number]): [number, number] {
-  const k = Math.cos((origin.lat * Math.PI) / 180) * M_PER_DEG_LON;
-  return [(p[0] - origin.lon) * k, (p[1] - origin.lat) * M_PER_DEG_LAT];
+  const phi = (origin.lat * Math.PI) / 180;
+  const mN = 111132.92 - 559.82 * Math.cos(2 * phi) + 1.175 * Math.cos(4 * phi);
+  const mE = 111412.84 * Math.cos(phi) - 93.5 * Math.cos(3 * phi);
+  return [(p[0] - origin.lon) * mE, (p[1] - origin.lat) * mN];
+}
+
+/** The great-circle distance in metres between two points (haversine, mean earth radius). */
+export function distanceM(a: LatLon, b: LatLon): number {
+  const r = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * r;
+  const dLon = (b.lon - a.lon) * r;
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLon / 2) ** 2;
+  return 2 * EARTH_R * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
 /** The centre of the bounding box of every vertex. */
@@ -175,8 +197,9 @@ export function centreOf(polygons: readonly SitePolygon[]): LatLon {
 
 /**
  * One `range` area per polygon, projected about the profile's site. When the site is unset
- * (latitude and longitude both 0) the origin is the centre of the polygons and `site` returns
- * it for the caller to set. Labels are the Placemark names, `stem` when a name is empty. Does not
+ * (latitude and longitude both 0), or the centre of the polygons lies more than SITE_MOVE_M from
+ * the site by great-circle distance (the user's decision of 2026-11-02, review 14 F-01), the
+ * origin is that centre and `site` returns it for the caller to set. Labels are the Placemark names, `stem` when a name is empty. Does not
  * change `doc`.
  */
 export function siteAreas(
@@ -184,8 +207,10 @@ export function siteAreas(
   polygons: readonly SitePolygon[],
   stem: string,
 ): { areas: Area[]; site?: LatLon } {
-  const unset = doc.site.lat === 0 && doc.site.lon === 0;
-  const origin = unset ? centreOf(polygons) : { lat: doc.site.lat, lon: doc.site.lon };
+  const centre = centreOf(polygons);
+  const stored = { lat: doc.site.lat, lon: doc.site.lon };
+  const move = (stored.lat === 0 && stored.lon === 0) || distanceM(stored, centre) > SITE_MOVE_M;
+  const origin = move ? centre : stored;
   const used = [
     ...doc.threats.map((x) => x.id),
     ...doc.sensors.map((x) => x.id),
@@ -206,5 +231,5 @@ export function siteAreas(
       zMaxM: 0,
     };
   });
-  return unset ? { areas, site: origin } : { areas };
+  return move ? { areas, site: origin } : { areas };
 }

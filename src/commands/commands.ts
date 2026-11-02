@@ -487,15 +487,19 @@ export async function readSitePolygons(file: File): Promise<SitePolygon[]> {
 
 /**
  * Import a KML or KMZ file into the open profile: each polygon becomes a range area, as one undo
- * step "import <file name>"; the areas become the selection and the board refits. A bad file
+ * step "import <file name>"; the areas become the selection and the board refits. When the site
+ * is unset or more than 50 km from the file, the same step moves the site to the file's centre
+ * and the toast says so. A bad file
  * changes nothing: its sentence goes to the toast and the promise rejects with it, so a caller
  * with its own message line (the Library) can show it there too.
  */
 export async function importSiteFile(file: File): Promise<void> {
   try {
+    if (!useDocument.getState().doc) throw new Error('Open a profile first.');
+    const polygons = await readSitePolygons(file);
+    // read the profile after the file read: a switch during the read must not get stale ids (N-09)
     const doc = useDocument.getState().doc;
     if (!doc) throw new Error('Open a profile first.');
-    const polygons = await readSitePolygons(file);
     const stem = file.name.replace(/\.[^.]*$/, '');
     const { areas, site } = siteAreas(doc, polygons, stem);
     useDocument.getState().edit('import ' + file.name, (d) => {
@@ -508,7 +512,8 @@ export async function importSiteFile(file: File): Promise<void> {
     useUi.getState().setSelection(areas.map((a) => a.key));
     fit();
     const n = areas.length;
-    showToast(`${n} area${n === 1 ? '' : 's'} from ${file.name}.`);
+    const moved = site ? ` Site set from ${file.name}.` : '';
+    showToast(`${n} area${n === 1 ? '' : 's'} from ${file.name}.${moved}`);
   } catch (err) {
     showToast(err instanceof Error ? err.message : String(err));
     throw err;
