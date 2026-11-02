@@ -126,7 +126,7 @@ type AuthoredEvent = { id: string; tS: number
   label: string; threatKey: string; sensorKey: string | null }
 type Card = { id: string; name: string; view: CardView
   layers: Partial<Record<LayerId, boolean>>
-  displays: { timeline: boolean; chart: boolean; readout: boolean }   // deferred
+  displays: { timeline: boolean; chart: boolean; readout: boolean }   // chart deferred
   clip: Clip | null /* deferred */; focus: string[] /* keys */; tS: number | null /* null: time off */
   caption: string; notes: string }
 type CardView = { kind: 'plan'|'elevation'|'3d'; centre: { x: number; y: number }; zoom: number
@@ -217,9 +217,10 @@ with its bar and strip in the centre, the inspector on the right, and the top ba
 - Bar (lane 10.3): the view segment (Plan, Elevation, 3D), Add waypoints as a pressed toggle,
   the five layer toggles (Reach, Events, Envelopes, Telemetry, Labels), Save as card (C) and the
   one-line readout. Fit, Ref and the units toggle live in the palette.
-- Under the board (lane 10.3): the time checkbox, the scrub and "full run" (time off by
-  default); the authored events draw as beads on the scrub. Then the two thumbnails of the other
-  cameras, click to switch.
+- Under the board: the shared timeline strip (see Brief below; lanes 12.1 and 12.2), time off
+  by default. A grip on the strip's top edge resizes it (96 to 720 px; arrows, Home and a
+  double click reset); the stage takes the rest. The thumbnails of the other cameras left on
+  2026-11-01 (lane 12.2); the bar's view segment switches the view.
 - Inspector (lane 10.2): the whole scene, every object under its section (Purpose, Aircraft,
   Paths, Systems, Volumes, Reference planes, Events, Telemetry, Data products, Measures of
   performance, Site), the selected object's row expanded. A row click selects it on the board.
@@ -249,10 +250,35 @@ the notes panel on the right.
 - The notes panel: name, camera, yaw and pitch, time, focus ids, layers, caption, presenter
   notes.
 - "Add card from current scene" when the deck is empty.
+- The shared timeline (2026-11-01, from the reference artifact): one strip,
+  `src/features/timeline`, hosted under the Build board and under the Brief stage, over the one
+  time state. The axis scrubs; Shift and drag set the loop range; Ctrl or Cmd and the wheel zoom.
+  One lane per threat: coverage bars per sensor and effector (with room, one labelled row per
+  system with its id and a swatch; else a compact band), the F2T2EA key points as glyphs (Find
+  open circle, Fix circle with a dot, Track diamond, Target circle with a cross, Engage filled
+  triangle, Assess square with a tick, DA bar) with the step name and a definition on hover, the
+  authored events as beads with the board's letter and their label (a drag moves one in Build),
+  the defended asset entry, the group splits. A legend line names the inks and marks. The
+  cursor carries its time. The play bar: first, previous and next key point ([ and ]), play,
+  last, rate, loop, the clock, the Time checkbox. In Brief the strip always shows under the
+  stage (lane 12.3); a card whose Timeline display is off (the stage's Timeline button, L, or
+  the notes checkbox) collapses it to the play bar; new cards open with it on. The Readout
+  display adds the live line of the threat in focus under the caption.
+- With no card (lane 12.3) the stage draws the build: the live scene at the Build view that
+  was open, the head "Build view · id" and the live time, the question as caption, the readout
+  line. Save a screenshot downloads the stage as a PNG at twice its size; Save a frame as a
+  card (C) keeps the view as card 1.
+- The stage renders at the live time: the card's time on open, then the strip and the keys move
+  it; P plays or pauses in Brief. C saves a frame: a new card after the current one with the same
+  view, layers and focus at the current time, caption empty.
+- The notes panel lists the key points of the threats in focus (every threat when the focus
+  names none) with the system that gives each; a press moves the time there. "Definitions" under
+  the list says what each step means. The presenter aids under the stage: the next card and the
+  elapsed clock.
 - Export: the deck as PDF through the print stylesheet, one page per card with its render,
   caption and notes.
-- Deferred (plan, phase 10): clips and beats, caption tokens, presenter aids, capture and
-  attachments, the phone stage. Each returns only when the user asks.
+- Deferred (plan, phase 10): clips and beats, caption tokens, the chart display, attachments,
+  the phone stage. Each returns only when the user asks.
 
 **Theme.** One control cycles auto, light and dark. Auto follows the system. The choice persists.
 
@@ -275,7 +301,7 @@ item without dragging arms it for one click on the map.
 | Height plane | Set height, Delete |
 | Authored event | Change type, Move to geometry (when it carries a warning), Delete |
 | Threat (upgrade) | also: Add event here, Formation, Split here (with a time cursor), Merge (with two or more groups) |
-| Scrub | Set time here, Add event here |
+| Timeline | Set time here, Loop from here, Clear loop |
 | Card | Open, Open in Brief, Duplicate, Move up, Move down, Delete |
 | Empty map (upgrade) | also: Save card, Add height plane |
 

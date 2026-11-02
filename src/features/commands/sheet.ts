@@ -30,7 +30,7 @@ const ORDER: readonly RowSpec[] = [
   row(['time.back10', 'time.forward10'], 'Step 10 s'),
   row(['time.start', 'time.end'], 'Time to start or end'),
   row('time.cursor'),
-  row(['time.prevEvent', 'time.nextEvent'], 'Previous or next event or derived time'),
+  row(['time.prevEvent', 'time.nextEvent'], 'Previous or next key point'),
   row('view.units', 'nm ft kt or km m m/s'),
   row('map.gridSnap'),
   row('map.measure'),
@@ -53,6 +53,9 @@ const ORDER: readonly RowSpec[] = [
   row('brief.back'),
   row('brief.space'),
   row(['brief.first', 'brief.last'], 'First card or last card'),
+  row('brief.play'),
+  row('brief.snapshot'),
+  row('brief.timeline'),
 ];
 
 export type SheetRow = { keys: string; label: string; ids: string[] };

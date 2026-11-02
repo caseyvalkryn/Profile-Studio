@@ -1,6 +1,7 @@
 // The Brief commands (spec section 8, Brief keys): Right or Space next card, Left previous,
-// Home and End, Up and Down move the current card, Delete removes it with undo. Plus the two
-// palette commands: Add card from current scene and Print brief. All are active in Brief only;
+// Home and End, Up and Down move the current card, Delete removes it with undo; P plays or
+// pauses the time, C saves a frame as a card, L shows or hides the card's timeline. Plus the
+// palette commands: the readout toggle, Add card from current scene and Print brief. All are active in Brief only;
 // the registry scopes the shortcuts, so the Build keys they share (Space, the arrows, Home, End,
 // Delete) stay off here. The mockup's keydown handler is at `legacy/mockup-v3.html` line 509.
 // The card logic (`./cards`) loads with the Brief chunk: each `run` imports it on demand, so the
@@ -110,6 +111,41 @@ export const briefCommands: Command[] = [
     workspaces: BRIEF,
     when: needCards,
     run: run((m) => m.deleteCard()),
+  },
+  {
+    id: 'brief.play',
+    label: 'Play or pause',
+    group: 'time',
+    shortcut: 'P',
+    workspaces: BRIEF,
+    when: needDoc,
+    run: (ctx) => ctx.ui.setPlaying(!ctx.ui.playing),
+  },
+  {
+    id: 'brief.snapshot',
+    label: 'Save a frame as a card',
+    group: 'edit',
+    shortcut: 'C',
+    workspaces: BRIEF,
+    when: needDoc,
+    run: run((m) => m.snapshotCard()),
+  },
+  {
+    id: 'brief.timeline',
+    label: 'Show or hide the timeline',
+    group: 'view',
+    shortcut: 'L',
+    workspaces: BRIEF,
+    when: needCards,
+    run: run((m) => m.toggleDisplay('timeline')),
+  },
+  {
+    id: 'brief.readout',
+    label: 'Show or hide the readout',
+    group: 'view',
+    workspaces: BRIEF,
+    when: needCards,
+    run: run((m) => m.toggleDisplay('readout')),
   },
   {
     id: 'brief.add',

@@ -1,15 +1,22 @@
 // The notes panel (`legacy/mockup-v3.html` drawNotes, lines 501 to 508): the Card section with
 // Up, Down and Delete; Name; Camera; Yaw and pitch; Time s (empty is the full run); Focus ids (a
-// comma list of display ids, stored as keys); the five layer toggles; Caption; Presenter notes;
-// then the question as a hint. A text field is one undo step per focus-to-blur (the document's
+// comma list of display ids, stored as keys); the five layer toggles; the Timeline and Readout
+// displays; then the Key points of the threats in focus with their definitions; Caption;
+// Presenter notes; then the question as a hint. A text field is one undo step per focus-to-blur (the document's
 // drag coalesces the keystrokes and the stage follows each one); a select or toggle is one step
-// per change. With no card, the Purpose section alone.
-import { useState, type ChangeEvent, type KeyboardEvent } from 'react';
+// per change. With no card, the key points of every threat and the question.
+import { Fragment, useState, type ChangeEvent, type KeyboardEvent } from 'react';
+import { focusRing } from '../../ui/focus';
 import type { Card, Vignette } from '../../domain/types';
 import { useDocument, type Recipe } from '../../state/document';
 import { CAM_TO_VIEW, VIEW_TO_CAM, type CamKind } from '../../board';
 import { boardScene } from '../build/board/derived';
-import { fieldLabel, setField, setFocusIds, setLayers, type CardField } from './cards';
+import { STAGES } from '../../engine';
+import { useUi } from '../../state/ui';
+import { boardDerived } from '../build/board/derived';
+import { fmtTime } from '../shared/units';
+import { DA_DEFINITION, STAGE_DEFINITION, STAGE_LABEL, keyPoints } from '../timeline/stages';
+import { fieldLabel, setDisplays, setField, setFocusIds, setLayers, type CardField } from './cards';
 import { LAYER_GROUPS, groupOn, withGroup } from './layers';
 import { idMaps } from './toCardRec';
 
@@ -188,6 +195,79 @@ function FocusField({ v, card }: { v: Vignette; card: Card }) {
   );
 }
 
+const DISPLAYS: readonly [keyof Card['displays'], string][] = [
+  ['timeline', 'Timeline'],
+  ['readout', 'Readout'],
+];
+
+/**
+ * The key points of the threats in focus (every threat when the focus names none): each F2T2EA
+ * step with its time and the system that gives it, and the defended asset entry. A press moves
+ * the time cursor there, so the briefer can show each point on the stage; the definitions
+ * under the list say what each step means.
+ */
+function KeyPoints({ v, focus }: { v: Vignette; focus: readonly string[] }) {
+  const d = boardDerived(v);
+  const paths = boardScene(v).scene.paths;
+  const inFocus = paths.filter((p) => focus.includes(p.key));
+  const list = inFocus.length ? inFocus : paths;
+  const jump = (t: number) => {
+    const u = useUi.getState();
+    u.setTime(t);
+    u.setTimeOn(true);
+  };
+  return (
+    <Section title="Key points">
+      {list.length ? (
+        list.map((p) => {
+          const points = keyPoints(d, p.id);
+          return (
+            <div key={p.key} data-testid="brief-keypoints">
+              <div className="font-mono text-xs font-medium text-text">{p.id}</div>
+              {points.length ? (
+                <ul className="m-0 list-none p-0">
+                  {points.map((k) => (
+                    <li key={k.stage}>
+                      <button
+                        type="button"
+                        className={`flex w-full items-baseline gap-2 rounded px-1 py-0.5 text-left text-xs hover:bg-surface-2 ${focusRing}`}
+                        title={k.definition}
+                        aria-label={`${p.id} ${k.label} at ${fmtTime(k.t)}`}
+                        onClick={() => jump(k.t)}
+                      >
+                        <span className="w-14 shrink-0 text-muted">{k.label}</span>
+                        <span className="font-mono text-text">{fmtTime(k.t)}</span>
+                        {k.system ? <span className="font-mono text-muted">{k.system}</span> : null}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="ps-hint">No key point yet: no sensor sees {p.id}.</p>
+              )}
+            </div>
+          );
+        })
+      ) : (
+        <p className="ps-hint">Add a threat to see its key points.</p>
+      )}
+      <details className="text-xs">
+        <summary className="cursor-pointer text-muted">Definitions</summary>
+        <dl className="m-0 mt-1 grid grid-cols-[56px_minmax(0,1fr)] gap-x-2 gap-y-1">
+          {STAGES.map((s) => (
+            <Fragment key={s}>
+              <dt className="text-muted">{STAGE_LABEL[s]}</dt>
+              <dd className="m-0 text-text">{STAGE_DEFINITION[s]}</dd>
+            </Fragment>
+          ))}
+          <dt className="text-muted">DA</dt>
+          <dd className="m-0 text-text">{DA_DEFINITION}</dd>
+        </dl>
+      </details>
+    </Section>
+  );
+}
+
 export default function Notes({
   v,
   card,
@@ -334,7 +414,27 @@ export default function Notes({
                 ))}
               </span>
             </div>
+            <div className="grid grid-cols-[72px_minmax(0,1fr)] items-start gap-2 text-xs">
+              <span className="pt-0.5 text-muted">Displays</span>
+              <span
+                className="flex flex-wrap gap-x-2 gap-y-1"
+                role="group"
+                aria-label="Card displays"
+              >
+                {DISPLAYS.map(([k, label]) => (
+                  <label key={k} className="flex items-center gap-1 text-text">
+                    <input
+                      type="checkbox"
+                      checked={card.displays[k]}
+                      onChange={(e) => setDisplays(card.key, { [k]: e.target.checked })}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </span>
+            </div>
           </Section>
+          <KeyPoints v={v} focus={card.focus} />
           <Section title="Caption">
             <TextArea card={card} field="caption" label="Caption" rows={4} value={card.caption} />
           </Section>
@@ -352,9 +452,12 @@ export default function Notes({
           </Section>
         </>
       ) : (
-        <Section title="Question">
-          <p className="m-0 text-text">{question}</p>
-        </Section>
+        <>
+          <Section title="Question">
+            <p className="m-0 text-text">{question}</p>
+          </Section>
+          <KeyPoints v={v} focus={[]} />
+        </>
       )}
     </aside>
   );

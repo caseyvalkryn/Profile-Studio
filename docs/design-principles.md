@@ -103,8 +103,11 @@ controls stay out of the way until you need them.
    caption and presenter notes.
 3. The presenter moves with one key: next card, previous card.
 4. The profile stores the card, never a picture.
-5. Clips and beats, caption tokens, presenter aids and captures are deferred. Each returns only
-   when the planner asks for it.
+5. The timeline is one strip for Build and Brief: the same lanes, key points and play bar under
+   the board and under the stage, so the briefer teaches from the plan the planner drew. A key
+   point carries its definition. A frame is a card saved at a time (2026-11-01, user request).
+6. Clips and beats, caption tokens and attachments are deferred. Each returns only when the
+   planner asks for it.
 
 ## Sources
 
