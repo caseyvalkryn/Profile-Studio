@@ -217,9 +217,10 @@ with its bar and strip in the centre, the inspector on the right, and the top ba
 - Bar (lane 10.3): the view segment (Plan, Elevation, 3D), Add waypoints as a pressed toggle,
   the five layer toggles (Reach, Events, Envelopes, Telemetry, Labels), Save as card (C) and the
   one-line readout. Fit, Ref and the units toggle live in the palette.
-- Under the board: the shared timeline strip (see Brief below; lanes 12.1 and 12.2), time off
-  by default. A grip on the strip's top edge resizes it (96 to 720 px; arrows, Home and a
-  double click reset); the stage takes the rest. The thumbnails of the other cameras left on
+- Under the board: the shared timeline strip (see Brief below; lanes 12.1, 12.2 and 12.4), time
+  off by default. The strip is as tall as its lanes; a grip on its top edge sets the most it
+  may take (96 to 720 px, default 200; arrows, Home and a double click reset) and the lanes
+  scroll past that; the stage takes the rest. The thumbnails of the other cameras left on
   2026-11-01 (lane 12.2); the bar's view segment switches the view.
 - Inspector (lane 10.2): the whole scene, every object under its section (Purpose, Aircraft,
   Paths, Systems, Volumes, Reference planes, Events, Telemetry, Data products, Measures of
@@ -253,14 +254,21 @@ the notes panel on the right.
 - The shared timeline (2026-11-01, from the reference artifact): one strip,
   `src/features/timeline`, hosted under the Build board and under the Brief stage, over the one
   time state. The axis scrubs; Shift and drag set the loop range; Ctrl or Cmd and the wheel zoom.
-  One lane per threat: coverage bars per sensor and effector (with room, one labelled row per
-  system with its id and a swatch; else a compact band), the F2T2EA key points as glyphs (Find
-  open circle, Fix circle with a dot, Track diamond, Target circle with a cross, Engage filled
-  triangle, Assess square with a tick, DA bar) with the step name and a definition on hover, the
-  authored events as beads with the board's letter and their label (a drag moves one in Build),
-  the defended asset entry, the group splits. A legend line names the inks and marks. The
-  cursor carries its time. The play bar: first, previous and next key point ([ and ]), play,
-  last, rate, loop, the clock, the Time checkbox. In Brief the strip always shows under the
+  The view opens on the action span (the first coverage window less a lead, to the run end)
+  when the run is more than three times it; "Fit run" and "Fit action" in the strip's menu; a
+  hand zoom holds (lane 12.4). A DA row above the lanes draws each threat's entry. One lane per
+  threat (lane 12.4, after the reference strip): a 14 px header with the threat id, the F2T2EA
+  key points as glyphs (Find open circle, Fix circle with a dot, Track diamond, Target circle
+  with a cross, Engage filled triangle, Assess square with a tick, DA bar; two within 10 px
+  stack) with the step, the time and a definition on hover, and the engage margin bracket from
+  Engage to the latest engage; then one row per sensor and effector at a shared pitch of 14 to
+  24 px with a pill in its fill and its id (a compact band when they do not fit); then the
+  authored events as circled letters (a drag moves one in Build). Sensor windows hatch in the
+  friend ink, effector windows are solid in the text ink, EW windows hatch the other way. The
+  group splits are a dashed rule with a circled S or M. A legend names the seven glyphs, the
+  three fills and the bead. Axis labels read "0:00"; the cursor carries "t+0:00". The play bar:
+  first, previous and next key point ([ and ]), play, last, rate, loop, the boxed clock and
+  Time off. In Brief the strip always shows under the
   stage (lane 12.3); a card whose Timeline display is off (the stage's Timeline button, L, or
   the notes checkbox) collapses it to the play bar; new cards open with it on. The Readout
   display adds the live line of the threat in focus under the caption.
