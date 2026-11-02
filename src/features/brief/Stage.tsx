@@ -307,7 +307,7 @@ export default function Stage({
   return (
     <section
       aria-label="Stage"
-      className="brief-show flex min-h-0 min-w-0 flex-col px-[18px] pt-3.5 pb-4"
+      className="brief-show flex min-h-0 min-w-0 flex-1 flex-col px-[18px] pt-3.5 pb-4"
     >
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2.5">
         <h2 className="m-0 text-[15px] leading-5 font-medium text-text">
