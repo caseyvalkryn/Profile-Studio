@@ -1,6 +1,7 @@
 // The Brief workspace (spec section 7, Brief; `legacy/mockup-v3.html` drawBrief, line 491):
-// the card strip (220 px), the stage with the shared timeline strip under it when the card
-// shows one (src/features/timeline), the notes panel (300 px). Mounting stashes the Build view
+// the card strip (220 px), the stage with the shared timeline strip under it (src/features/
+// timeline), the notes panel (300 px). The strip always shows (lane 12.3): a card whose Timeline
+// display is off collapses it to its play bar (`brief-tl-collapsed`, brief.css). Mounting stashes the Build view
 // and applies the current card; unmounting restores Build as it was (principle 8.1). The print
 // deck is a hidden list, one page per card, shown by the print stylesheet (brief.css).
 import '../../board/board.css';
@@ -94,11 +95,12 @@ export default function BriefWorkspace() {
         <CardStrip v={v} current={index} onPick={goTo} onAdd={addCard} />
         <div className="flex min-h-0 min-w-0 flex-col">
           <Stage v={v} card={card} index={index} onStep={step} startMs={startMs} />
-          {card?.displays.timeline ? (
-            <div className="shrink-0 px-[18px] pb-3">
-              <Timeline mode="brief" />
-            </div>
-          ) : null}
+          <div
+            className={`shrink-0 px-[18px] pb-3${card && !card.displays.timeline ? ' brief-tl-collapsed' : ''}`}
+            data-testid="brief-timeline"
+          >
+            <Timeline mode="brief" />
+          </div>
         </div>
         <Notes v={v} card={card} index={index} onMove={moveCard} onDelete={deleteCard} />
       </div>

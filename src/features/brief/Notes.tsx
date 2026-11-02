@@ -4,7 +4,7 @@
 // displays; then the Key points of the threats in focus with their definitions; Caption;
 // Presenter notes; then the question as a hint. A text field is one undo step per focus-to-blur (the document's
 // drag coalesces the keystrokes and the stage follows each one); a select or toggle is one step
-// per change. With no card, the Purpose section alone.
+// per change. With no card, the key points of every threat and the question.
 import { Fragment, useState, type ChangeEvent, type KeyboardEvent } from 'react';
 import { focusRing } from '../../ui/focus';
 import type { Card, Vignette } from '../../domain/types';
@@ -206,10 +206,10 @@ const DISPLAYS: readonly [keyof Card['displays'], string][] = [
  * the time cursor there, so the briefer can show each point on the stage; the definitions
  * under the list say what each step means.
  */
-function KeyPoints({ v, card }: { v: Vignette; card: Card }) {
+function KeyPoints({ v, focus }: { v: Vignette; focus: readonly string[] }) {
   const d = boardDerived(v);
   const paths = boardScene(v).scene.paths;
-  const inFocus = paths.filter((p) => card.focus.includes(p.key));
+  const inFocus = paths.filter((p) => focus.includes(p.key));
   const list = inFocus.length ? inFocus : paths;
   const jump = (t: number) => {
     const u = useUi.getState();
@@ -434,7 +434,7 @@ export default function Notes({
               </span>
             </div>
           </Section>
-          <KeyPoints v={v} card={card} />
+          <KeyPoints v={v} focus={card.focus} />
           <Section title="Caption">
             <TextArea card={card} field="caption" label="Caption" rows={4} value={card.caption} />
           </Section>
@@ -452,9 +452,12 @@ export default function Notes({
           </Section>
         </>
       ) : (
-        <Section title="Question">
-          <p className="m-0 text-text">{question}</p>
-        </Section>
+        <>
+          <Section title="Question">
+            <p className="m-0 text-text">{question}</p>
+          </Section>
+          <KeyPoints v={v} focus={[]} />
+        </>
       )}
     </aside>
   );

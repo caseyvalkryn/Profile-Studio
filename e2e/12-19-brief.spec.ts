@@ -40,6 +40,18 @@ test('12.19 Brief opens the imported deck at card 1; Right and Left move between
     page.getByRole('complementary', { name: 'Cards' }).getByRole('button', { name: /^Card \d/ }),
   ).toHaveCount(3);
 
+  // The strip always shows under the stage (lane 12.3). The fixture's cards have the Timeline
+  // display on, so card 1 opens it; L collapses it to its play bar.
+  const strip = page.getByTestId('brief-timeline');
+  await expect(page.getByTestId('timeline')).toBeVisible();
+  await expect(page.getByRole('toolbar', { name: 'Play bar' })).toBeVisible();
+  await expect(strip).not.toHaveClass(/brief-tl-collapsed/);
+  await page.keyboard.press('l');
+  await expect(strip).toHaveClass(/brief-tl-collapsed/);
+  await expect(page.getByRole('toolbar', { name: 'Play bar' })).toBeVisible();
+  await page.keyboard.press('l');
+  await expect(strip).not.toHaveClass(/brief-tl-collapsed/);
+
   // Right: card 2, "The loiter", 3D at t+200 s; its time is on the Build stores too.
   await page.keyboard.press('ArrowRight');
   await expect(head).toHaveText(`2 of 3 · ${legacy.id}`);
@@ -55,4 +67,18 @@ test('12.19 Brief opens the imported deck at card 1; Right and Left move between
 
   // Print: one page per card.
   await expect(page.getByTestId('brief-page')).toHaveCount(3);
+});
+
+test('12.19 A new profile opened in Brief shows the build on the stage and the timeline.', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'New profile' }).click();
+  await expect(page.getByRole('main', { name: 'Build' })).toBeVisible();
+  await goTo(page, 'Brief');
+  await expect(page.getByRole('main', { name: 'Brief' })).toBeVisible();
+  await expect(page.getByTestId('brief-stage').locator('svg.board')).toBeVisible();
+  await expect(page.getByTestId('brief-head')).toHaveText(/^Build view · /);
+  await expect(page.getByTestId('timeline')).toBeVisible();
+  await expect(page.getByTestId('brief-timeline')).not.toHaveClass(/brief-tl-collapsed/);
 });

@@ -119,7 +119,7 @@ export function cardFromBuild(v: Vignette, from: BuildStash = snapshotBuild()): 
     name: `Card ${v.cards.length + 1}`,
     view: cardViewOf(v, from),
     layers,
-    displays: { timeline: false, chart: false, readout: false },
+    displays: { timeline: true, chart: false, readout: false },
     clip: null,
     focus: useUi.getState().selectedKeys.slice(),
     tS: from.timeOn ? from.tS : null,

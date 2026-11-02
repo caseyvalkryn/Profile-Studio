@@ -5,7 +5,13 @@ import { BOARD_DEFAULTS, useBoard } from '../build/board/store';
 import { useDocument } from '../../state/document';
 import { UI_DEFAULTS, useUi } from '../../state/ui';
 import BriefWorkspace, { PrintDeck } from './BriefWorkspace';
+import { captureStage } from './screenshot';
 import { testDeck } from './testDeck';
+
+vi.mock('./screenshot', async (orig) => ({
+  ...(await orig<typeof import('./screenshot')>()),
+  captureStage: vi.fn(() => Promise.resolve(true)),
+}));
 
 beforeEach(() => {
   useUi.setState({ ...UI_DEFAULTS, workspace: 'brief' });
@@ -14,6 +20,7 @@ beforeEach(() => {
 });
 
 const head = () => screen.getByTestId('brief-head').textContent;
+const strip = () => screen.getByTestId('brief-timeline');
 const stageProj = () =>
   screen.getByTestId('brief-stage').querySelector('svg.board')?.getAttribute('data-proj');
 
@@ -127,12 +134,21 @@ describe('Brief workspace', () => {
     expect(head()).toBe('1 of 1 · V-test');
   });
 
-  it('with no cards: the profile name, the question and the add button', () => {
+  it('with no cards: the build on the stage, the strip, the question and the add button', () => {
     useDocument.getState().open({ ...testDeck(), cards: [] });
     render(<BriefWorkspace />);
     expect(screen.getByRole('heading', { name: 'test vignette' })).toBeInTheDocument();
+    expect(head()).toBe('Build view · V-test');
+    expect(stageProj()).toBe('plan');
+    expect(screen.getByTestId('brief-time')).toHaveTextContent('full run');
+    expect(screen.getByTestId('brief-readout')).toHaveTextContent('T-01 · time is off');
+    expect(screen.getByTestId('timeline')).toBeInTheDocument();
+    expect(strip()).not.toHaveClass('brief-tl-collapsed');
+    expect(screen.getAllByTestId('brief-keypoints')).toHaveLength(
+      useDocument.getState().doc!.threats.length,
+    );
     expect(screen.getAllByText('Does the radar hold the hover?').length).toBeGreaterThan(0);
-    expect(screen.getByText(/No cards yet/)).toBeInTheDocument();
+    expect(screen.getByText(/No cards yet. The stage shows the build./)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Add card from current scene' }));
     expect(head()).toBe('1 of 1 · V-test');
     expect(screen.getByRole('heading', { name: 'Card 1' })).toBeInTheDocument();
@@ -150,22 +166,70 @@ describe('Brief workspace', () => {
 });
 
 describe('Brief timeline, readout, frames and key points', () => {
-  it('the Timeline button shows the shared strip for the card; the stage follows the time cursor', () => {
+  it('the Timeline button collapses the strip to its play bar and opens it again', () => {
     render(<BriefWorkspace />);
-    expect(screen.queryByRole('group', { name: 'Timeline' })).toBeNull();
-    expect(screen.getByTestId('brief-time')).toHaveTextContent('full run');
-    fireEvent.click(screen.getByRole('button', { name: 'Timeline' }));
     expect(screen.getByRole('group', { name: 'Timeline' })).toBeInTheDocument();
-    expect(useDocument.getState().doc!.cards[0]!.displays.timeline).toBe(true);
+    expect(strip()).not.toHaveClass('brief-tl-collapsed');
+    fireEvent.click(screen.getByRole('button', { name: 'Timeline' }));
+    expect(useDocument.getState().doc!.cards[0]!.displays.timeline).toBe(false);
+    expect(strip()).toHaveClass('brief-tl-collapsed');
+    expect(screen.getByRole('toolbar', { name: 'Play bar' })).toBeInTheDocument();
     expect(useDocument.getState().history).toEqual(['set card c1 timeline']);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Timeline' }));
+    expect(strip()).not.toHaveClass('brief-tl-collapsed');
+  });
+
+  it('the strip moves the time cursor and the stage follows it', () => {
+    render(<BriefWorkspace />);
+    expect(screen.getByTestId('brief-time')).toHaveTextContent('full run');
     fireEvent.click(screen.getByRole('button', { name: 'Next key point' }));
     const { tS, timeOn } = useUi.getState();
     expect(timeOn).toBe(true);
     expect(tS).toBeGreaterThan(0);
     expect(screen.getByTestId('brief-time')).toHaveTextContent(`t+${Math.floor(tS / 60)}:`);
-    // the next card keeps its own displays
+  });
+
+  it('each card keeps its own Timeline display', () => {
+    const v = testDeck();
+    v.cards[1]!.displays.timeline = false;
+    useDocument.getState().open(v);
+    render(<BriefWorkspace />);
+    expect(strip()).not.toHaveClass('brief-tl-collapsed');
     fireEvent.click(screen.getByRole('button', { name: 'Next card' }));
-    expect(screen.queryByRole('group', { name: 'Timeline' })).toBeNull();
+    expect(strip()).toHaveClass('brief-tl-collapsed');
+    expect(screen.getByTestId('timeline')).toBeInTheDocument();
+  });
+
+  it('Save a screenshot captures the stage under the profile, card and time name', () => {
+    const capture = vi.mocked(captureStage);
+    capture.mockClear();
+    render(<BriefWorkspace />);
+    fireEvent.click(screen.getByRole('button', { name: 'Save a screenshot' }));
+    const svg = screen.getByTestId('brief-stage').querySelector('svg.board');
+    expect(capture).toHaveBeenLastCalledWith(svg, 320, 300, 'V-test-c1-full-run.png');
+    fireEvent.click(screen.getByRole('button', { name: 'Next card' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save a screenshot' }));
+    expect(capture).toHaveBeenLastCalledWith(expect.anything(), 320, 300, 'V-test-c2-t+3-20.png');
+  });
+
+  it('Save a screenshot with no cards names the build', () => {
+    const capture = vi.mocked(captureStage);
+    capture.mockClear();
+    useDocument.getState().open({ ...testDeck(), cards: [] });
+    render(<BriefWorkspace />);
+    fireEvent.click(screen.getByRole('button', { name: 'Save a screenshot' }));
+    expect(capture).toHaveBeenCalledWith(expect.anything(), 320, 300, 'V-test-build-full-run.png');
+  });
+
+  it('a frame with no cards saves the Build view as card 1 and keeps the strip open', () => {
+    useDocument.getState().open({ ...testDeck(), cards: [] });
+    render(<BriefWorkspace />);
+    fireEvent.click(screen.getByRole('button', { name: 'Save a frame as a card' }));
+    const cards = useDocument.getState().doc!.cards;
+    expect(cards).toHaveLength(1);
+    expect(cards[0]).toMatchObject({ id: 'c1', name: 'Card 1', displays: { timeline: true } });
+    expect(head()).toBe('1 of 1 · V-test');
+    expect(strip()).not.toHaveClass('brief-tl-collapsed');
   });
 
   it('the Readout button shows the live line of the threat in focus at the time cursor', () => {

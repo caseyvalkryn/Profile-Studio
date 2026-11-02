@@ -5,9 +5,12 @@
 // and the keys move it), and the caption. Under the caption, when the card shows them: the
 // readout line of the threat in focus at the time cursor (reference `#st-readout`) and the
 // presenter aids (the next card and the elapsed clock, reference `#st-next` and `#st-elapsed`).
-// With no cards: the profile name as head and the question as caption.
-import { Camera, ChartNoAxesGantt, Gauge } from 'lucide-react';
-import { useEffect, useState, type RefObject } from 'react';
+// With no current card (lane 12.3): the live scene at the stashed Build view, through the same
+// render with a transient card that is never saved; the head reads the profile name and "Build
+// view · id", the caption is the question and the readout line always shows. Save a screenshot
+// downloads the stage as a PNG (./screenshot); Save a frame as a card keeps the view.
+import { Camera, ChartNoAxesGantt, Gauge, ImageIcon } from 'lucide-react';
+import { useEffect, useMemo, useState, type RefObject } from 'react';
 import type { Card, Vignette } from '../../domain/types';
 import { render, type CardRec } from '../../board';
 import { useUi, type Units } from '../../state/ui';
@@ -17,7 +20,8 @@ import { useSize } from '../shared/useSize';
 import { fmtTime, formatAltitude, formatRange, formatSpeed } from '../shared/units';
 import { boardDerived, boardScene } from '../build/board/derived';
 import { CardThumb } from './CardStrip';
-import { snapshotCard, toggleDisplay } from './cards';
+import { cardFromBuild, snapshotBuild, snapshotCard, toggleDisplay } from './cards';
+import { captureStage, screenshotName } from './screenshot';
 import { toCardRec } from './toCardRec';
 
 /** The mockup's stage floor: at least 320 by 300 render units. */
@@ -117,12 +121,27 @@ export default function Stage({
   const timeOn = useUi((s) => s.timeOn);
   const units = useUi((s) => s.units);
   const selectedKeys = useUi((s) => s.selectedKeys);
+  const stash = useUi((s) => s.buildStash);
   const n = v.cards.length;
   const sz = stageSize(size.width, size.height);
-  const rec = card ? { ...toCardRec(v, card), t: timeOn ? tS : null } : null;
+  // No current card: a transient card of the Build view (the stash, else the stores now), its
+  // focus the selection. It is drawn, never saved.
+  const buildCard = useMemo(
+    () =>
+      card ? null : { ...cardFromBuild(v, stash ?? snapshotBuild()), focus: selectedKeys.slice() },
+    [card, v, stash, selectedKeys],
+  );
+  const shown = card ?? buildCard;
+  const t = timeOn ? tS : null;
+  const rec = shown ? { ...toCardRec(v, shown), t } : null;
   const svg = rec && sz.W > 0 ? render.card(boardScene(v), boardDerived(v), rec, sz, false) : '';
   const question = v.questions[0]?.text ?? '';
   const next = card && index + 1 < n ? v.cards[index + 1]! : null;
+  const showReadout = card ? card.displays.readout : true;
+  const screenshot = () => {
+    const live = ref.current?.querySelector<SVGSVGElement>('svg.board');
+    if (live) void captureStage(live, sz.W, sz.H, screenshotName(v.id, card?.id ?? null, t));
+  };
   return (
     <section
       aria-label="Stage"
@@ -133,13 +152,11 @@ export default function Stage({
           {card ? card.name : v.name}
         </h2>
         <span className="font-mono text-xs text-muted" data-testid="brief-head">
-          {card ? `${index + 1} of ${n} · ${v.id}` : ''}
+          {card ? `${index + 1} of ${n} · ${v.id}` : `Build view · ${v.id}`}
         </span>
-        {card ? (
-          <span className="font-mono text-xs text-muted" data-testid="brief-time">
-            {timeOn ? fmtTime(tS) : 'full run'}
-          </span>
-        ) : null}
+        <span className="font-mono text-xs text-muted" data-testid="brief-time">
+          {timeOn ? fmtTime(tS) : 'full run'}
+        </span>
         <span className="flex items-center gap-1">
           {card ? (
             <>
@@ -160,6 +177,9 @@ export default function Stage({
               </HeadButton>
             </>
           ) : null}
+          <HeadButton label="Save a screenshot" onClick={screenshot}>
+            <ImageIcon aria-hidden="true" />
+          </HeadButton>
           <HeadButton label="Save a frame as a card" shortcut="C" onClick={() => snapshotCard()}>
             <Camera aria-hidden="true" />
           </HeadButton>
@@ -192,7 +212,7 @@ export default function Stage({
       <p className="m-0 min-h-[30px] max-w-[72ch] shrink-0 px-0.5 pt-2.5 text-[15px] leading-[1.5] text-text">
         {card ? card.caption : question}
       </p>
-      {card && rec && card.displays.readout ? (
+      {rec && showReadout ? (
         <p
           className="m-0 mt-1.5 min-h-[18px] shrink-0 overflow-x-auto border-t border-surface-3 pt-1.5 font-mono text-xs whitespace-nowrap text-muted"
           aria-live="polite"
