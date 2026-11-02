@@ -119,7 +119,24 @@ export const briefCommands: Command[] = [
     shortcut: 'P',
     workspaces: BRIEF,
     when: needDoc,
-    run: (ctx) => ctx.ui.setPlaying(!ctx.ui.playing),
+    // A card with a slice plays the slice: from its start when the cursor is outside it (lane
+    // 13.2), with the slice as the loop at its rate.
+    run: (ctx) => {
+      const ui = ctx.ui;
+      if (!ui.playing) {
+        const list = ctx.document.doc?.cards ?? [];
+        const clip = list[currentIndex(list, ui.cardKey)]?.clip;
+        if (clip) {
+          ui.setLoop({ startS: clip.t0S, endS: clip.t1S });
+          ui.setRate(clip.rate);
+          if (!ui.timeOn || ui.tS < clip.t0S || ui.tS >= clip.t1S) {
+            ui.setTimeOn(true);
+            ui.setTime(clip.t0S);
+          }
+        }
+      }
+      ui.setPlaying(!ui.playing);
+    },
   },
   {
     id: 'brief.snapshot',

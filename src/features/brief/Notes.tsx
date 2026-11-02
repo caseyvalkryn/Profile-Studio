@@ -4,8 +4,12 @@
 // displays; then the Key points of the threats in focus with their definitions; Caption;
 // Presenter notes; then the question as a hint. A text field is one undo step per focus-to-blur (the document's
 // drag coalesces the keystrokes and the stage follows each one); a select or toggle is one step
-// per change. With no card, the key points of every threat and the question.
+// per change. With no card, the key points of every threat and the question. Lane 13.2: the
+// Frame panel first (./Frame), the Slice field in the Card section (from, to, rate, Clear; from
+// and to commit on blur or Enter as one undo step each, invalid text reverts), the key points
+// drawn with their glyphs in the state inks (reached, current with "now", future).
 import { Fragment, useState, type ChangeEvent, type KeyboardEvent } from 'react';
+import { RATES } from '../../domain/catalog';
 import { focusRing } from '../../ui/focus';
 import type { Card, Vignette } from '../../domain/types';
 import { useDocument, type Recipe } from '../../state/document';
@@ -16,7 +20,20 @@ import { useUi } from '../../state/ui';
 import { boardDerived } from '../build/board/derived';
 import { fmtTime } from '../shared/units';
 import { DA_DEFINITION, STAGE_DEFINITION, STAGE_LABEL, keyPoints } from '../timeline/stages';
-import { fieldLabel, setDisplays, setField, setFocusIds, setLayers, type CardField } from './cards';
+import {
+  fieldLabel,
+  parseTime,
+  setDisplays,
+  setField,
+  setFocusIds,
+  setLayers,
+  setSlice,
+  type CardField,
+} from './cards';
+import Frame, { Glyph } from './Frame';
+import { captionPlaceholder, mmss, rateText } from './frameData';
+import { Section } from './Section';
+
 import { LAYER_GROUPS, groupOn, withGroup } from './layers';
 import { idMaps } from './toCardRec';
 
@@ -25,26 +42,6 @@ const PROJ: readonly [CamKind, string][] = [
   ['elev', 'Elevation'],
   ['axon', '3D'],
 ];
-
-function Section({
-  title,
-  right,
-  children,
-}: {
-  title: string;
-  right?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="flex flex-col gap-2 border-t border-surface-3 py-3 first:border-t-0 first:pt-0">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="m-0 text-xs font-medium text-muted">{title}</h3>
-        {right}
-      </div>
-      {children}
-    </section>
-  );
-}
 
 function Field({ id, label, children }: { id: string; label: string; children: React.ReactNode }) {
   return (
@@ -138,12 +135,14 @@ function TextArea({
   label,
   rows,
   value,
+  placeholder,
 }: {
   card: Card;
   field: CardField;
   label: string;
   rows: number;
   value: string;
+  placeholder?: string;
 }) {
   const f = useCoalesced(card, field, str);
   return (
@@ -151,6 +150,7 @@ function TextArea({
       aria-label={label}
       className="ps-input w-full text-[13px]"
       rows={rows}
+      placeholder={placeholder}
       value={f.draft ?? value}
       onFocus={f.onFocus}
       onChange={f.onChange}
@@ -195,6 +195,96 @@ function FocusField({ v, card }: { v: Vignette; card: Card }) {
   );
 }
 
+/**
+ * One end of the slice: "m:ss" text in the mono face, parsed as the strip's clock. A commit on
+ * blur or Enter writes the slice in one undo step; text that is not a time, or that puts the start
+ * at or after the end, reverts. With no slice yet, a start makes a 30 s slice from it and an end
+ * makes one of 30 s up to it.
+ */
+function SliceEnd({ card, end }: { card: Card; end: 't0S' | 't1S' }) {
+  const clip = card.clip;
+  const shown = clip ? mmss(clip[end]) : '';
+  const [draft, setDraft] = useState<string | null>(null);
+  const commit = () => {
+    if (draft === null || draft.trim() === shown) return setDraft(null);
+    const t = parseTime(draft);
+    setDraft(null);
+    if (t == null) return;
+    const base = clip ?? {
+      t0S: end === 't0S' ? t : Math.max(0, t - 30),
+      t1S: end === 't0S' ? t + 30 : t,
+      rate: 1,
+      beatsS: [],
+    };
+    setSlice(card.key, { ...base, [end]: t });
+  };
+  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') e.currentTarget.blur();
+    else if (e.key === 'Escape') {
+      e.preventDefault();
+      setDraft(null);
+    }
+  };
+  const label = end === 't0S' ? 'Slice from' : 'Slice to';
+  return (
+    <input
+      id={end === 't0S' ? 'brief-slice-from' : undefined}
+      aria-label={label}
+      className="ps-input min-h-7 w-full font-mono"
+      type="text"
+      inputMode="decimal"
+      autoComplete="off"
+      spellCheck={false}
+      placeholder="m:ss"
+      data-testid={end === 't0S' ? 'brief-slice-from' : 'brief-slice-to'}
+      value={draft ?? shown}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={onKeyDown}
+    />
+  );
+}
+
+/** The Slice field: from, to, the rate (the strip's eight rates) and Clear. */
+function SliceField({ card }: { card: Card }) {
+  const clip = card.clip;
+  return (
+    <Field id="brief-slice-from" label="Slice">
+      <span className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-1.5 gap-y-1.5">
+        <SliceEnd card={card} end="t0S" />
+        <span className="text-muted">to</span>
+        <SliceEnd card={card} end="t1S" />
+        <select
+          aria-label="Slice rate"
+          className="ps-input min-h-7 w-full font-mono"
+          data-testid="brief-slice-rate"
+          disabled={!clip}
+          value={String(clip?.rate ?? 1)}
+          onChange={(e) => {
+            if (clip) setSlice(card.key, { ...clip, rate: Number(e.target.value) });
+          }}
+        >
+          {RATES.map((r) => (
+            <option key={r} value={String(r)}>
+              {rateText(r)}
+            </option>
+          ))}
+        </select>
+        <span />
+        <button
+          type="button"
+          className="ps-btn mini quiet justify-self-start"
+          aria-label="Clear the slice"
+          disabled={!clip}
+          onClick={() => setSlice(card.key, null)}
+        >
+          Clear
+        </button>
+      </span>
+    </Field>
+  );
+}
+
 const DISPLAYS: readonly [keyof Card['displays'], string][] = [
   ['timeline', 'Timeline'],
   ['readout', 'Readout'],
@@ -207,6 +297,8 @@ const DISPLAYS: readonly [keyof Card['displays'], string][] = [
  * under the list say what each step means.
  */
 function KeyPoints({ v, focus }: { v: Vignette; focus: readonly string[] }) {
+  const tS = useUi((s) => s.tS);
+  const timeOn = useUi((s) => s.timeOn);
   const d = boardDerived(v);
   const paths = boardScene(v).scene.paths;
   const inFocus = paths.filter((p) => focus.includes(p.key));
@@ -221,22 +313,40 @@ function KeyPoints({ v, focus }: { v: Vignette; focus: readonly string[] }) {
       {list.length ? (
         list.map((p) => {
           const points = keyPoints(d, p.id);
+          // the state inks of the strip (lane 13.1 item 4): at or before the cursor reached, the
+          // latest reached current, after it future; with time off, every glyph as the strip draws
+          let current = -1;
+          if (timeOn)
+            points.forEach((k, i) => {
+              if (k.t <= tS + 1e-6 && (current < 0 || k.t >= points[current]!.t)) current = i;
+            });
+          const state = (i: number) =>
+            !timeOn
+              ? undefined
+              : i === current
+                ? 'tl-current'
+                : points[i]!.t <= tS + 1e-6
+                  ? 'tl-reached'
+                  : 'tl-future';
           return (
             <div key={p.key} data-testid="brief-keypoints">
               <div className="font-mono text-xs font-medium text-text">{p.id}</div>
               {points.length ? (
                 <ul className="m-0 list-none p-0">
-                  {points.map((k) => (
+                  {points.map((k, i) => (
                     <li key={k.stage}>
                       <button
                         type="button"
-                        className={`flex w-full items-baseline gap-2 rounded px-1 py-0.5 text-left text-xs hover:bg-surface-2 ${focusRing}`}
+                        className={`flex w-full items-center gap-2 rounded px-1 py-0.5 text-left text-xs hover:bg-surface-2 ${focusRing}`}
                         title={k.definition}
                         aria-label={`${p.id} ${k.label} at ${fmtTime(k.t)}`}
+                        data-state={state(i)}
                         onClick={() => jump(k.t)}
                       >
-                        <span className="w-14 shrink-0 text-muted">{k.label}</span>
+                        <Glyph stage={k.stage} className={state(i)} />
+                        <span className="w-12 shrink-0 text-muted">{k.label}</span>
                         <span className="font-mono text-text">{fmtTime(k.t)}</span>
+                        {i === current ? <span className="text-accent">now</span> : null}
                         {k.system ? <span className="font-mono text-muted">{k.system}</span> : null}
                       </button>
                     </li>
@@ -287,6 +397,7 @@ export default function Notes({
     <aside aria-label="Notes" className="brief-notes overflow-auto px-3 pt-3 pb-8 text-sm">
       {card ? (
         <>
+          <Frame v={v} card={card} />
           <Section
             title="Card"
             right={
@@ -390,6 +501,7 @@ export default function Notes({
                 mono
               />
             </Field>
+            <SliceField card={card} />
             <Field id="brief-focus" label="Focus ids">
               <FocusField v={v} card={card} />
             </Field>
@@ -436,7 +548,14 @@ export default function Notes({
           </Section>
           <KeyPoints v={v} focus={card.focus} />
           <Section title="Caption">
-            <TextArea card={card} field="caption" label="Caption" rows={4} value={card.caption} />
+            <TextArea
+              card={card}
+              field="caption"
+              label="Caption"
+              rows={4}
+              value={card.caption}
+              placeholder={captionPlaceholder(card)}
+            />
           </Section>
           <Section title="Presenter notes">
             <TextArea
@@ -453,6 +572,7 @@ export default function Notes({
         </>
       ) : (
         <>
+          <Frame v={v} card={null} />
           <Section title="Question">
             <p className="m-0 text-text">{question}</p>
           </Section>

@@ -89,4 +89,21 @@ describe('Brief commands', () => {
     expect(get('brief.print')!.when(empty)).toBe('No cards yet');
     expect(get('brief.add')!.when(empty)).toBe(true);
   });
+
+  it('P on a slice card plays the slice from its start when the cursor is outside it', async () => {
+    const v = testDeck();
+    v.cards[0]!.clip = { t0S: 10, t1S: 40, rate: 4, beatsS: [] };
+    useDocument.getState().open(v);
+    useUi.setState({ tS: 100, timeOn: true });
+    expect(await press('p')).toBe('brief.play');
+    expect(useUi.getState()).toMatchObject({
+      playing: true,
+      tS: 10,
+      rate: 4,
+      loop: { startS: 10, endS: 40 },
+    });
+    useUi.setState({ playing: false, tS: 25 });
+    await press('p');
+    expect(useUi.getState()).toMatchObject({ playing: true, tS: 25 });
+  });
 });
