@@ -31,6 +31,7 @@ These are settled. Do not reopen them without the user.
 | Phase 11 | The merge of `rebuild/mvp` into `main` approved on 2026-11-01, to be run after 11.F lands with the gate green; the push is a separate approval | User, 2026-11-01 |
 | Phase 13 | The four readings of the user's request (section 6, phase 13: persisted time state per profile; one selection and hover across strip, board and inspector with a Cards row; a card is a frame or a slice with a Frame panel; one glyph vocabulary with state colour) confirmed by poll; the merge of `rebuild/mvp` into `main` approved, no push | User, 2026-11-01 |
 | Phase 14 | KML and KMZ import approved ("Write phase 14 and approved to begin. Keep it simple, clean, minimal, but fully capable and intuitive for the user"); a new `range` area kind; the sample files stay out of the repo; the six readings in section 6 stand until the user says otherwise | User, 2026-11-02 |
+| Site origin (14.R F-01) | A site file whose centre lies more than 50 km from the profile's site moves the site to the file's centre in the same undo step, and the toast says so ("Move the site to the file"; the alternatives were to refuse with one sentence, or to let the first file always set the site) | User, 2026-11-02 (poll) |
 | Scope hold | The bigger pieces wait for "product complete": the vos port (phase 8), the domain fields the UI dropped (`chainTime`, sensor `model`, `entered`), and the deferred list of phase 10 | User, 2026-11-01 |
 
 ## 2. Stack
@@ -562,7 +563,8 @@ capability to seamlessly ingest kmz files and create the range/area to scale?", 
 phase 14 and approved to begin. Keep it simple, clean, minimal, but fully capable and intuitive
 for the user." The two sample files (`TST Ranch.kmz`, `UAS Fly Area.kmz`, Google Earth Pro
 exports) each hold one Placemark with one Polygon of 19 and 22 vertices, about 690 by 500 m and
-340 by 430 m, centres 270 m apart. They stay out of the repo (real site coordinates); tests use
+340 by 430 m, the fly area inside the ranch with the bounding-box centres 108 m apart (review
+14.R N-01 corrected the first text's 270 m). They stay out of the repo (real site coordinates); tests use
 synthetic fixtures. Section 5 rules apply. Lanes branch from `main` as `lane/14.x`. The
 orchestrator's readings, each an assumption on record until the user says otherwise:
 
@@ -576,13 +578,19 @@ orchestrator's readings, each an assumption on record until the user says otherw
    top as for any area. The schema stamp moves to `profile-studio/8`; v7 migrates by stamp only
    (no field changes), and import accepts v8, v7, v6, v5 and legacy v4.
 3. To scale: the board is a flat local plane in metres, so one projection serves. East is
-   `(lon - lon0) * cos(lat0) * 111320` m and north is `(lat - lat0) * 110574` m, with north as
-   the board's positive y (the lane confirms the sign against the Plan grid labels). At a few
-   kilometres this is exact to well under a metre. No library, no UTM, no basemap.
+   `(lon - lon0) * mE` and north is `(lat - lat0) * mN`, with the metres per degree taken at
+   the origin's latitude on WGS84 (`mN = 111132.92 - 559.82 cos 2φ + 1.175 cos 4φ`,
+   `mE = 111412.84 cos φ - 93.5 cos 3φ`; review 14.R F-02 amended the equator constants of the
+   first text, which were 0.34 percent short in north at 35°) and north as the board's
+   positive y (confirmed against `cameras.ts`). At a few kilometres this is exact to well
+   under a metre. No library, no UTM, no basemap.
 4. The origin is the profile's site. When the site is unset (latitude and longitude both 0),
-   the first import sets it to the centre of the file's bounding box, so the site lands on the
-   board origin. When the site is set, the file projects against it, so a second file lands at
-   its true offset from the first. The user can still type the site on the Profile tab.
+   or when the file's centre lies more than 50 km from the site (every template carries a
+   stand-in site, Blank's is 35.05, -117.6; user decision of 2026-11-02 on review 14.R F-01,
+   "Move the site to the file"), the import sets the site to the centre of the file's
+   bounding box in the same undo step and the toast says so. Otherwise the file projects
+   against the site, so a second file of the same site lands at its true offset from the
+   first. The user can still type the site on the Profile tab.
 5. Two entries, one function. In Build: a palette command "Import a site file" (group map) that
    opens a file picker, and a KML or KMZ file dropped on the board. In the Library: the Import
    button and a drop accept `.kml` and `.kmz` beside JSON and create a new profile named after
