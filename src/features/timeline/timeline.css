@@ -12,7 +12,7 @@
   border-radius: 4px;
   color: var(--text);
 }
-/* the resize grip on the strip's top edge: a 6 px band, its rule shown on hover and focus */
+/* the resize grip on the strip's top edge: a 6 px band with a centred 24 by 3 px pill */
 .tl-resize {
   position: relative;
   flex: 0 0 auto;
@@ -20,20 +20,29 @@
   cursor: row-resize;
   touch-action: none;
 }
-.tl-resize-rule {
+.tl-resize-pill {
   position: absolute;
-  inset: 2px 0;
-  background: transparent;
-  border-radius: 2px;
+  top: 1.5px;
+  left: 50%;
+  width: 24px;
+  height: 3px;
+  margin-left: -12px;
+  background: var(--surface-3);
+  border-radius: 1.5px;
 }
-.tl-resize:hover .tl-resize-rule,
-.tl-resize:focus-visible .tl-resize-rule {
-  background: var(--rule-strong);
+.tl-resize:hover .tl-resize-pill,
+.tl-resize:focus-visible .tl-resize-pill {
+  background: var(--text-subtle);
+}
+.tl-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
 }
 .tl-ov {
   position: relative;
   height: 4px;
-  margin: 0 12px 0 72px;
+  margin: 0 12px 0 56px;
   background: var(--surface-3);
   border-radius: 2px;
   cursor: grab;
@@ -56,7 +65,7 @@
   flex: 0 0 auto;
   cursor: ew-resize;
 }
-/* the lane area takes ui.tlH (inline height); the lanes scroll when they do not fit */
+/* the lane area takes its lanes' height up to ui.tlH (inline max-height), then scrolls */
 .tl-lanes {
   flex: 0 0 auto;
   overflow-y: auto;
@@ -66,7 +75,7 @@
   display: block;
 }
 .tl-empty {
-  margin: 6px 0 8px 72px;
+  margin: 6px 0 8px 56px;
 }
 .tl-cursor {
   position: absolute;
@@ -165,15 +174,46 @@
 .tl-ink-unknown {
   fill: var(--neutral);
 }
+/* the coverage families by texture (lane 12.4, from the reference strip): sensor windows a
+   45 degree hatch in the friend ink, EW windows the opposite hatch in the ew ink (the pattern
+   defs in the strip, 3 px pitch, 1 px lines), effector windows a solid band in the text ink */
 .tl-bar-s {
-  fill: var(--friend);
+  fill: url(#tl-hatch-s);
 }
 .tl-bar-e {
   fill: var(--text);
-  opacity: 0.7;
+  opacity: 0.35;
 }
 .tl-bar-ew {
-  fill: var(--ew);
+  fill: url(#tl-hatch-ew);
+}
+.tl-hatch-s {
+  stroke: var(--friend);
+  stroke-width: 1;
+}
+.tl-hatch-ew {
+  stroke: var(--ew);
+  stroke-width: 1;
+}
+/* the DA row: a threat's defended asset entry to the run end, in the hostile ink */
+.tl-da-bar {
+  fill: var(--hostile);
+  opacity: 0.8;
+}
+.tl-da-lab {
+  font: var(--fw) var(--fs-1) var(--mono);
+  fill: var(--hostile);
+}
+/* the engage margin bracket along the header's foot */
+.tl-margin polyline {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 1;
+}
+.tl-margin text {
+  font: var(--fw) var(--fs-1) var(--mono);
+  font-variant-numeric: tabular-nums;
+  fill: var(--text-muted);
 }
 .tl-bar-hit {
   fill: transparent;
@@ -184,7 +224,7 @@
 .tl-rowlab {
   font: var(--fw) var(--fs-1) var(--mono);
   font-variant-numeric: tabular-nums;
-  fill: var(--text-muted);
+  fill: var(--text);
   dominant-baseline: central;
 }
 .tl-row-sep {
@@ -197,15 +237,8 @@
   stroke-width: 1;
   stroke-dasharray: 2 2;
 }
-.tl-stage text {
-  fill: var(--text-muted);
-  font: var(--fw-med) var(--fs-1) var(--mono);
-}
 .tl-stage.tl-da line {
   stroke: var(--hostile);
-}
-.tl-stage.tl-da text {
-  fill: var(--hostile);
 }
 /* the step glyphs (glyphs.tsx): open shapes stroked, filled shapes in the muted ink */
 .tl-gl {
@@ -234,7 +267,7 @@
 .tl-bead circle {
   fill: var(--surface-0);
   stroke: var(--text);
-  stroke-width: 1.25px;
+  stroke-width: 1px;
 }
 .tl-bead text {
   fill: var(--text);
@@ -259,14 +292,14 @@
   fill: var(--text-muted);
 }
 
-/* legend */
+/* legend: the seven glyphs, the three bar fills and the event bead; 18 px a line, two at most */
 .tl-legend {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0 14px;
-  height: 18px;
-  padding: 0 8px 0 72px;
+  gap: 0 12px;
+  max-height: 36px;
+  padding: 0 8px 0 56px;
   overflow: hidden;
   font: var(--fw) var(--fs-1) / 18px var(--mono);
   color: var(--text-muted);
@@ -285,9 +318,16 @@
   stroke-width: 1;
   stroke-dasharray: 3 3;
 }
+.tl-splab-ring {
+  fill: var(--surface-1);
+  stroke: var(--text-muted);
+  stroke-width: 1;
+}
 .tl-splab {
   fill: var(--text-muted);
-  font: var(--fw-med) var(--fs-1) var(--mono);
+  font: 500 8px var(--mono); /* mark, not text */
+  text-anchor: middle;
+  dominant-baseline: central;
 }
 
 /* play bar */
@@ -322,13 +362,4 @@
   min-height: var(--ctl-mini);
   padding: 0 4px;
   font-size: var(--fs-2);
-}
-.tl-check {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-right: 4px;
-  font: var(--fw) var(--fs-2) / var(--lh-2) var(--ui);
-  color: var(--text-muted);
-  cursor: pointer;
 }

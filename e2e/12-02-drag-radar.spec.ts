@@ -25,13 +25,16 @@ test('12.2 Dragging a radar from the library places it at the drop point. One un
   await stage.dispatchEvent('drop', ev);
 
   // The new radar's frame is centred on the drop point. The camera keeps its bounds on an add,
-  // so the point is read in the geometry from before the drop.
+  // but the timeline strip grows a row for the radar (lane 12.4) and the board reflows, so the
+  // drop point is projected again in the geometry after the drop.
   await expect.poll(async () => (await assetCentres(page)).size).toBe(before.size + 1);
   const after = await assetCentres(page);
   const [newId, at] = [...after].find(([id]) => !before.has(id))!;
   expect(newId).toMatch(/^RDR-\d+$/);
-  expect(Math.abs(g.box.x + at.x - drop.x)).toBeLessThanOrEqual(3);
-  expect(Math.abs(g.box.y + at.y - drop.y)).toBeLessThanOrEqual(3);
+  const g2 = await mapGeom(page);
+  const drop2 = { x: g2.origin.x + dropM.x * g2.pxPerM, y: g2.origin.y - dropM.y * g2.pxPerM };
+  expect(Math.abs(g2.box.x + at.x - drop2.x)).toBeLessThanOrEqual(3);
+  expect(Math.abs(g2.box.y + at.y - drop2.y)).toBeLessThanOrEqual(3);
 
   // The inspector reads the same point in nm.
   const inspector = page.getByRole('complementary', { name: 'Inspector' });

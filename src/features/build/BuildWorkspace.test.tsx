@@ -281,24 +281,23 @@ describe('Build bar, scrub, thumbnails and cards (lane 10.3)', () => {
     expect(line).toHaveTextContent(/ km · \d+ m\/s · /);
   });
 
-  it('the timeline: Time turns time on, the clock sets ui.tS, an axis press scrubs', () => {
+  it('the timeline: the clock turns time on and sets ui.tS, an axis press scrubs, Time off', () => {
     const doc = testVignette();
     act(() => useDocument.getState().open(doc));
     render(<BuildWorkspace />);
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Time' }));
-    expect(useUi.getState().timeOn).toBe(true);
     const clock = screen.getByTestId('tl-clock');
     fireEvent.focus(clock);
     fireEvent.change(clock, { target: { value: '42' } });
     fireEvent.keyDown(clock, { key: 'Enter' });
+    expect(useUi.getState().timeOn).toBe(true);
     expect(useUi.getState().tS).toBe(42);
     expect(clock).toHaveValue('t+0:42');
-    // jsdom lays nothing out: the strip takes its 800 px fallback, 716 px of axis after the gutter.
+    // jsdom lays nothing out: the strip takes its 800 px fallback, the axis after the gutters.
     const end = Math.max(60, previewOf(doc).tmaxS);
     const axis = screen.getByRole('group', { name: 'Timeline' }).querySelector('.tl-axis')!;
-    fireEvent.pointerDown(axis, { button: 0, clientX: GUT_L + 358 });
+    fireEvent.pointerDown(axis, { button: 0, clientX: GUT_L + (800 - GUT_L - 12) / 2 });
     expect(useUi.getState().tS).toBeCloseTo(end / 2, 0);
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Time' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Time off' }));
     expect(useUi.getState().timeOn).toBe(false);
   });
 

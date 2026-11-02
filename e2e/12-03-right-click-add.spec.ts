@@ -20,7 +20,10 @@ test('12.3 Right-click on empty map, Add 3D radar here places a radar at the cli
   const after = await assetCentres(page);
   const [newId, label] = [...after].find(([id]) => !before.has(id))!;
   expect(newId).toMatch(/^RDR-\d+$/);
-  // The camera keeps its bounds on an add, so the point is read in the original geometry.
-  expect(Math.abs(g.box.x + label.x - at.x)).toBeLessThanOrEqual(3);
-  expect(Math.abs(g.box.y + label.y - at.y)).toBeLessThanOrEqual(3);
+  // The camera keeps its bounds on an add, but the timeline strip grows a row for the radar
+  // (lane 12.4) and the board reflows, so the point is projected again in the new geometry.
+  const g2 = await mapGeom(page);
+  const at2 = { x: g2.origin.x + atM.x * g2.pxPerM, y: g2.origin.y - atM.y * g2.pxPerM };
+  expect(Math.abs(g2.box.x + label.x - at2.x)).toBeLessThanOrEqual(3);
+  expect(Math.abs(g2.box.y + label.y - at2.y)).toBeLessThanOrEqual(3);
 });

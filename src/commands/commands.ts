@@ -35,6 +35,7 @@ import type {
 import { nextStop, prevStop, stops } from '../engine';
 import { previewOf } from '../state/document';
 import { boardDerived } from '../features/build/board/derived';
+import { actionSpan } from '../features/timeline/fit';
 import type { Clip, MapPoint, Theme, Workspace } from '../state/ui';
 import { libraryCommands } from '../features/library/commands';
 import { boardCommands } from '../features/build/board/commands';
@@ -982,6 +983,30 @@ const COMMANDS: Command[] = [
     when: (ctx) => (ctx.ui.loop ? true : 'No loop is set'),
     run: (ctx) => ctx.ui.setLoop(null),
   },
+  // The timeline's span (lane 12.4): the whole run, or the action span (fit.ts).
+  {
+    id: 'timeline.fitRun',
+    label: 'Fit run',
+    group: 'time',
+    kinds: ['timeline'],
+    when: needDoc,
+    run: (ctx) => ctx.ui.setTview(null),
+  },
+  {
+    id: 'timeline.fitAction',
+    label: 'Fit action',
+    group: 'time',
+    kinds: ['timeline'],
+    when: every(needDoc, (ctx) => {
+      const doc = docOf(ctx);
+      return doc && actionSpan(boardDerived(doc)) ? true : 'No coverage window yet';
+    }),
+    run: (ctx) => {
+      const doc = docOf(ctx);
+      const span = doc ? actionSpan(boardDerived(doc)) : null;
+      if (span) ctx.ui.setTview(span);
+    },
+  },
 
   // threat or path
   {
@@ -1255,7 +1280,13 @@ export const MENU_ORDER: Readonly<Partial<Record<AssetKind, readonly string[]>>>
   // The spec table has no row for C2 and TSPI nodes. Duplicate and Delete give a right-click on
   // one a menu, in the order the other asset rows use.
   node: ['edit.duplicate', 'edit.delete'],
-  timeline: ['time.setHere', 'time.loopFrom', 'time.clearLoop'],
+  timeline: [
+    'time.setHere',
+    'time.loopFrom',
+    'time.clearLoop',
+    'timeline.fitRun',
+    'timeline.fitAction',
+  ],
 };
 
 /** Register every command once. Safe to call again. */
