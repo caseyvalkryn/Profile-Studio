@@ -81,8 +81,10 @@ on `vite preview`). `npm run legacy:smoke` keeps the legacy app green.
 3. Every brief states: working directory, owned files, gate command, report shape, time budget.
 4. A worker report is a claim. The orchestrator runs the gate and reads `git diff --stat`
    before it marks a lane done.
-5. Each lane works on branch `lane/<id>` from `rebuild/mvp`. The orchestrator merges in plan
-   order, then runs the gate once on `rebuild/mvp`.
+5. Each lane works on branch `lane/<id>` from `main`. The orchestrator merges in plan order,
+   then runs the gate once on `main`. (`rebuild/mvp` was the work branch through row 14.M; the
+   user collapsed the repo to `main` alone on 2026-11-02 and the branch was deleted, local and
+   remote.)
 6. After each phase, one review lane (`opus-high`) reviews the phase diff against the spec and
    the principles. Findings go to `reviews/<phase>.md`. Fixes are a new lane.
 7. Screenshots and browser checks go to a worker. The orchestrator reads the report.
@@ -555,7 +557,7 @@ user's approval and the merge into `main`.
 ## 7. Status
 
 The orchestrator updates this table at each merge. `Head` is the `rebuild/mvp` commit after the
-merge. Open items live in section 8, not here. The review screenshots of phases 4 to 9.2 were
+merge through row 14.M, and the `main` commit after that. Open items live in section 8, not here. The review screenshots of phases 4 to 9.2 were
 removed from the tree on 2026-11-01 (`git show 70caf07` has them); the findings stay in
 `reviews/*.md`.
 
@@ -647,8 +649,9 @@ removed from the tree on 2026-11-01 (`git show 70caf07` has them); the findings 
 
 State on 2026-11-02, end of the fourteenth session. Phase 13 (the timeline as the plan's clock,
 the Brief as the teaching space) and row 14.1 (drag and select on the board, a user request of
-2026-11-02, outside a phase) are done and merged into `main`; `rebuild/mvp` is at 0ad42af and
-`main` at its merge ac91730; both are pushed. The gate is green: 60 unit files, 563 tests, 11
+2026-11-02, outside a phase) are done on `main` (42b7137, pushed). `main` is the only branch:
+the user chose it as the single lane by poll on 2026-11-02 and `rebuild/mvp` (last 6b239aa, the
+same tree) was deleted, local and remote. The gate is green: 60 unit files, 563 tests, 11
 Playwright specs on `vite preview`, build; entry 246.70 kB gzip (budget 300); 100 kB of Geist
 woff2 outside the entry. Rows 13.1 to 14.M in section 7 say what landed. Phase 14 in section 6
 is still to be written. The four readings of the user's request (section 6, phase 13) are
@@ -688,7 +691,7 @@ list). Write the phase into section 6 before any lane.
 
 ```text
 You are the orchestrator for Profile Studio at /Users/caseytalbot/Projects/profile-studio,
-branch rebuild/mvp. Read CLAUDE.md, docs/design-principles.md, docs/spec.md, then docs/plan.md
+branch main (the only branch). Read CLAUDE.md, docs/design-principles.md, docs/spec.md, then docs/plan.md
 sections 1 to 5, phases 10, 11 and 13 in section 6, then 7 and 8. Start the dev server from
 .claude/launch.json ("dev", port 5174) and use the product at / beside the mockup at
 /legacy/mockup-v3.html for ten minutes. Run `npm run gate` to confirm the baseline: 60 unit
@@ -698,10 +701,10 @@ Phase 13 and row 14.1 are done, merged into main and pushed. Ask me, with a poll
 section 8 "Next" items opens phase 14, then write the phase into section 6
 with lanes, owned files and budgets before any lane starts. Plan section 5 rules apply: one
 worker per lane in a worktree under .worktrees/<id>, workers do not commit, gate and git diff
---stat before each --no-ff merge, gate on rebuild/mvp after, worktree removed, sections 7 and 8
-updated. Put every decision to me with the poll tool as soon as it is known.
+--stat before each --no-ff merge into main, gate on main after, worktree removed, sections 7
+and 8 updated. Put every decision to me with the poll tool as soon as it is known.
 
-Ask me before any download (npm install included), any push, and any merge to main.
+Ask me before any download (npm install included) and any push.
 ```
 
 **Brief shape for lanes.** Working directory (`.worktrees/<id>`); the lane text from section 6
@@ -759,12 +762,12 @@ word choices ("C2 and TSPI" kept, "Max range"), the download of `@fontsource/gei
 `@fontsource/geist-mono` (the user's pick of Geist from the specimen page
 `reviews/phase-11/type-choices.html`), the merge of phase 11 into `main`, the push of both branches.
 
-**How to run a lane.** `git worktree add .worktrees/<id> -b lane/<id> rebuild/mvp`, then
+**How to run a lane.** `git worktree add .worktrees/<id> -b lane/<id> main`, then
 `npm ci --offline` there (stop and ask if it tries to fetch). Parallel lanes each run the full
 gate with their own preview port: `E2E_PORT=<port> npm run gate` (5181 to 5186 were used; dev
 servers for pairs on 5191 to 5197). The worker does not commit. The orchestrator runs
 `npm run gate` in the worktree, commits on the lane branch, merges with `--no-ff` into
-`rebuild/mvp`, runs the gate there, removes the worktree and deletes the branch, then updates
+`main`, runs the gate there, removes the worktree and deletes the branch, then updates
 section 7. Workers are picked by `~/.claude/rules/delegation.md`.
 
 **Open items.** Each came from a worker report or a review. The lane 11.1 items are closed
