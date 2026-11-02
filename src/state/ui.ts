@@ -46,6 +46,10 @@ export const PANEL_DEFAULTS: Panels = {
   topbar: true,
 };
 export type LoopRange = { startS: number; endS: number };
+/** The timeline strip's lane area height in px (the grip on its top edge sets it). */
+export const TL_H_DEFAULT = 200;
+export const TL_H_MIN = 96;
+export const TL_H_MAX = 720;
 /** The timeline's zoomed span in seconds; null shows the whole run. */
 export type TimeView = { t0S: number; t1S: number };
 export type MapPoint = { x: number; y: number };
@@ -104,6 +108,8 @@ export type UiState = {
   rate: number;
   /** The timeline zoom, shared by Build and Brief (one strip, two hosts). */
   tview: TimeView | null;
+  /** The timeline's lane area height, shared by Build and Brief; not persisted. */
+  tlH: number;
   view: View;
   units: Units;
   theme: Theme;
@@ -136,6 +142,8 @@ export type UiState = {
   setLoop: (loop: LoopRange | null) => void;
   setRate: (rate: number) => void;
   setTview: (tview: TimeView | null) => void;
+  /** Clamped to TL_H_MIN..TL_H_MAX. */
+  setTlH: (h: number) => void;
   setView: (view: View) => void;
   setUnits: (units: Units) => void;
   setTheme: (theme: Theme) => void;
@@ -168,6 +176,7 @@ export const UI_DEFAULTS = {
   loop: null,
   rate: 1,
   tview: null as TimeView | null,
+  tlH: TL_H_DEFAULT,
   view: 'plan',
   units: 'nav',
   theme: 'auto',
@@ -206,6 +215,7 @@ export const useUi = create<UiState>()((set) => ({
   setLoop: (loop) => set({ loop }),
   setRate: (rate) => set({ rate }),
   setTview: (tview) => set({ tview }),
+  setTlH: (h) => set({ tlH: Math.round(Math.max(TL_H_MIN, Math.min(TL_H_MAX, h))) }),
   setView: (view) => set({ view }),
   setUnits: (units) => set({ units }),
   setTheme: (theme) => set({ theme }),

@@ -1,15 +1,15 @@
 // The Build workspace (spec section 7, Build; mockup `.board`, lines 378 to 393). The scene rail
-// on the left; in the centre the Build bar, the board stage, the timeline strip (shared with
-// Brief, src/features/timeline) and the thumbnails of the two other cameras; the inspector on
-// the right. The stage takes all the height the bar, the strip and the thumbnails leave
-// (principle 5.1). One board renders Plan, Elevation and 3D.
+// on the left; in the centre the Build bar, the board stage and the timeline strip (shared with
+// Brief, src/features/timeline); the inspector on the right. The stage takes all the height the
+// bar and the strip leave (principle 5.1); the strip's grip resizes it (user request of
+// 2026-11-01, lane 12.2: the thumbnails of the other cameras left, the bar's view segment
+// switches the view). One board renders Plan, Elevation and 3D.
 import '../../board/board.css';
 import { useState } from 'react';
 import { setBoardCancel } from '../../commands/commands';
 import { useUi } from '../../state/ui';
 import Timeline from '../timeline/Timeline';
 import BuildBar from './bar/BuildBar';
-import Thumbnails from './bar/Thumbnails';
 import Board, { cancel, mounted } from './board/Board';
 import { setBoardCam } from './cards/cards';
 import Inspector from './inspector/Inspector';
@@ -46,12 +46,11 @@ export default function BuildWorkspace() {
           <BuildBar />
           <section
             aria-label="Map"
-            className="relative min-h-80 min-w-0 flex-1 overflow-hidden bg-surface-0"
+            className="relative min-h-56 min-w-0 flex-1 overflow-hidden bg-surface-0"
           >
             <Board />
           </section>
           <Timeline mode="build" />
-          <Thumbnails />
         </div>
         {showInspector ? (
           <div className="flex h-full min-h-0 w-col-right shrink-0 flex-col">

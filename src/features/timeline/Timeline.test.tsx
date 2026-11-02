@@ -6,11 +6,11 @@ import { previewOf, useDocument } from '../../state/document';
 import { UI_DEFAULTS, useUi } from '../../state/ui';
 import { boardDerived } from '../build/board/derived';
 import { STAGE_DEFINITION, keyPoints } from './stages';
-import Timeline, { parseTime, runEnd, tickSteps } from './Timeline';
+import Timeline, { GUT_L, buildLanes, parseTime, runEnd, tickSteps } from './Timeline';
+import { boardScene } from '../build/board/derived';
 
-const GUT_L = 48;
-/** jsdom lays nothing out: the strip takes its 800 px fallback, 740 px of axis after the gutter. */
-const PLOT_W = 740;
+/** jsdom lays nothing out: the strip takes its 800 px fallback, 716 px of axis after the gutter. */
+const PLOT_W = 800 - GUT_L - 12;
 const xAt = (f: number) => GUT_L + f * PLOT_W;
 
 function withEvent(): Vignette {
@@ -181,5 +181,79 @@ describe('timeline strip', () => {
     ).toBeInTheDocument();
     fireEvent.pointerDown(axis(), { button: 0, clientX: xAt(1) });
     expect(useUi.getState().tS).toBe(60);
+  });
+
+  it('the grip sets the lane area height: a drag, the arrow keys, a double click to reset', () => {
+    render(<Timeline mode="build" />);
+    const grip = screen.getByRole('separator', { name: 'Resize timeline' });
+    expect(grip).toHaveAttribute('aria-valuenow', '200');
+    fireEvent.pointerDown(grip, { button: 0, clientY: 500 });
+    fireEvent.pointerMove(grip, { clientY: 300 });
+    fireEvent.pointerUp(grip, { clientY: 300 });
+    expect(useUi.getState().tlH).toBe(400);
+    expect(grip).toHaveAttribute('aria-valuenow', '400');
+    fireEvent.keyDown(grip, { key: 'ArrowUp' });
+    expect(useUi.getState().tlH).toBe(416);
+    fireEvent.keyDown(grip, { key: 'ArrowDown' });
+    fireEvent.keyDown(grip, { key: 'ArrowDown' });
+    expect(useUi.getState().tlH).toBe(384);
+    fireEvent.doubleClick(grip);
+    expect(useUi.getState().tlH).toBe(UI_DEFAULTS.tlH);
+    act(() => useUi.getState().setTlH(2000));
+    expect(useUi.getState().tlH).toBe(720);
+    act(() => useUi.getState().setTlH(10));
+    expect(useUi.getState().tlH).toBe(96);
+  });
+
+  it('the lanes share the area height; a tall lane gives each system its own labelled row', () => {
+    const v = doc();
+    const scene = boardScene(v);
+    const d = boardDerived(v);
+    const n = v.threats.length;
+    const small = buildLanes(scene, d, 0);
+    expect(small.lanes.every((L) => L.layout === 'band' && L.h === small.lanes[0]!.h)).toBe(true);
+    const tall = buildLanes(scene, d, 400);
+    expect(tall.lanes[0]!.h).toBeGreaterThan(small.lanes[0]!.h);
+    expect(tall.lanes.every((L) => L.h === tall.lanes[0]!.h)).toBe(true);
+    expect(tall.height).toBeLessThanOrEqual(400);
+    expect(tall.height).toBeGreaterThan(400 - n - 2 * tall.lanes.length);
+    const withRows = tall.lanes.find((L) => L.rows.length);
+    expect(withRows!.layout).toBe('rows');
+    expect(withRows!.pitch).toBeGreaterThanOrEqual(12);
+
+    render(<Timeline mode="build" />);
+    expect(screen.getAllByTestId('tl-row').length).toBeGreaterThan(0);
+    expect(screen.getByRole('img', { name: 'Coverage and key points by threat' })).toHaveAttribute(
+      'height',
+      String(buildLanes(scene, d, 200).height),
+    );
+    const sys = scene.scene.systems.find((s) => d.windows[s.id]?.[v.threats[0]!.id]?.length)!;
+    expect(screen.getAllByText(sys.id).length).toBeGreaterThan(0);
+    act(() => useUi.getState().setTlH(96));
+    expect(screen.queryAllByTestId('tl-row')).toHaveLength(0);
+  });
+
+  it('the stage glyphs, the legend and the cursor readout', () => {
+    render(<Timeline mode="build" />);
+    const stages = screen.getAllByTestId('tl-stage');
+    const find = stages.find((s) => s.getAttribute('data-stage') === 'find')!;
+    expect(find.querySelector('circle.tl-gl-open')).not.toBeNull();
+    const da = stages.find((s) => s.getAttribute('data-stage') === 'da');
+    if (da) expect(da.querySelector('rect.tl-gl-da')).not.toBeNull();
+    const legend = screen.getByTestId('tl-legend');
+    expect(legend.textContent).toContain('Sensor');
+    expect(legend.textContent).toContain('F2T2EA step');
+    expect(legend.textContent).toContain('Defended asset');
+    act(() => {
+      useUi.getState().setTimeOn(true);
+      useUi.getState().setTime(75);
+    });
+    expect(screen.getByTestId('tl-cursor-time')).toHaveTextContent('t+1:15');
+  });
+
+  it('an event draws its label beside the bead when there is room', () => {
+    open(withEvent());
+    render(<Timeline mode="build" />);
+    expect(within(screen.getByTestId('tl-bead')).getByText('First detection')).toBeInTheDocument();
   });
 });
