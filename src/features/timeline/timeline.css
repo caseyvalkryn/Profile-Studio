@@ -1,0 +1,242 @@
+/* The timeline strip (src/features/timeline/Timeline.tsx): one strip for Build and Brief, on the
+   design tokens (src/styles/tokens.css). The accent marks the current time and the selection
+   only (principle 5.2); the lane inks are the board's affiliation inks. */
+
+.tl {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  user-select: none;
+  background: var(--surface-1);
+  border: 1px solid var(--surface-3);
+  border-radius: 4px;
+  color: var(--text);
+}
+.tl-ov {
+  position: relative;
+  height: 4px;
+  margin: 3px 12px 0 48px;
+  background: var(--surface-3);
+  border-radius: 2px;
+  cursor: grab;
+}
+.tl-ov-span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--text-subtle);
+  border-radius: 2px;
+}
+.tl-plot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.tl-axis {
+  display: block;
+  flex: 0 0 auto;
+  cursor: ew-resize;
+}
+.tl-lanes {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.tl-lanes svg {
+  display: block;
+}
+.tl-build .tl-lanes {
+  max-height: 150px;
+}
+.tl-brief .tl-lanes {
+  max-height: 28vh;
+}
+.tl-empty {
+  margin: 6px 0 8px 48px;
+}
+.tl-cursor {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  pointer-events: none;
+}
+.tl-cursor-l {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -0.5px;
+  width: 1px;
+  background: var(--accent);
+}
+.tl-grip {
+  position: absolute;
+  top: 0;
+  left: -6px;
+  width: 12px;
+  height: 9px;
+  pointer-events: auto;
+  cursor: ew-resize;
+}
+.tl-grip polygon {
+  fill: var(--accent);
+}
+
+/* axis */
+.tl-tick {
+  stroke: var(--surface-3);
+  stroke-width: 1;
+}
+.tl-tick-maj {
+  stroke: var(--rule-strong);
+}
+.tl-tlab {
+  fill: var(--text-muted);
+  font: var(--fw) var(--fs-1) var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.tl-axbase {
+  stroke: var(--rule-strong);
+}
+.tl-range {
+  fill: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.tl-rangeedge {
+  stroke: var(--accent);
+  stroke-width: 1;
+}
+
+/* lanes */
+.tl-lane {
+  fill: transparent;
+}
+.tl-lane.tl-sel {
+  fill: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.tl-lane.tl-hov {
+  fill: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+.tl-lane-sep {
+  stroke: var(--surface-3);
+  stroke-width: 1;
+}
+.tl-lab {
+  font: var(--fw-med) var(--fs-2) var(--mono);
+  font-variant-numeric: tabular-nums;
+  fill: var(--text);
+}
+.tl-ink-hostile {
+  fill: var(--hostile);
+}
+.tl-ink-friend {
+  fill: var(--friend);
+}
+.tl-ink-unknown {
+  fill: var(--neutral);
+}
+.tl-bar-s {
+  fill: var(--friend);
+}
+.tl-bar-e {
+  fill: var(--text);
+  opacity: 0.7;
+}
+.tl-bar-ew {
+  fill: var(--ew);
+}
+.tl-bar-hit {
+  fill: transparent;
+}
+.tl-stage line {
+  stroke: var(--text-subtle);
+  stroke-width: 1;
+}
+.tl-stage text {
+  fill: var(--text-muted);
+  font: var(--fw-med) var(--fs-1) var(--mono);
+}
+.tl-stage.tl-da line {
+  stroke: var(--hostile);
+}
+.tl-stage.tl-da text {
+  fill: var(--hostile);
+}
+.tl-bead {
+  cursor: pointer;
+}
+.tl-build .tl-bead {
+  cursor: grab;
+}
+.tl-bead circle {
+  fill: var(--surface-0);
+  stroke: var(--text);
+  stroke-width: 1.25px;
+}
+.tl-bead text {
+  fill: var(--text);
+  font: 500 8px var(--mono); /* mark, not text */
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+.tl-bead.tl-sel circle {
+  stroke: var(--accent);
+  stroke-width: 2.25px;
+}
+.tl-bead.tl-warn circle {
+  stroke: var(--warn);
+}
+.tl-split {
+  stroke: var(--text-muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+.tl-splab {
+  fill: var(--text-muted);
+  font: var(--fw-med) var(--fs-1) var(--mono);
+}
+
+/* play bar */
+.tl-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 3px 8px;
+  border-top: 1px solid var(--surface-3);
+}
+.tl-bar .ps-btn.mini {
+  padding: 0 6px;
+}
+.tl-bar .ps-btn.mini svg {
+  width: 14px;
+  height: 14px;
+}
+.tl-sp {
+  flex: 1 1 auto;
+}
+.tl-clock {
+  width: 8ch;
+  min-height: var(--ctl-mini);
+  padding: 0 6px;
+  font: var(--fw) var(--fs-2) var(--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.tl-select {
+  min-height: var(--ctl-mini);
+  padding: 0 4px;
+  font-size: var(--fs-2);
+}
+.tl-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 4px;
+  font: var(--fw) var(--fs-2) / var(--lh-2) var(--ui);
+  color: var(--text-muted);
+  cursor: pointer;
+}

@@ -46,6 +46,8 @@ export const PANEL_DEFAULTS: Panels = {
   topbar: true,
 };
 export type LoopRange = { startS: number; endS: number };
+/** The timeline's zoomed span in seconds; null shows the whole run. */
+export type TimeView = { t0S: number; t1S: number };
 export type MapPoint = { x: number; y: number };
 /** A request to the map's path drawing, numbered so the same action can repeat. */
 export type PathSignal = { seq: number; action: 'cancel' | 'finish' };
@@ -100,6 +102,8 @@ export type UiState = {
   playing: boolean;
   loop: LoopRange | null;
   rate: number;
+  /** The timeline zoom, shared by Build and Brief (one strip, two hosts). */
+  tview: TimeView | null;
   view: View;
   units: Units;
   theme: Theme;
@@ -131,6 +135,7 @@ export type UiState = {
   setPlaying: (playing: boolean) => void;
   setLoop: (loop: LoopRange | null) => void;
   setRate: (rate: number) => void;
+  setTview: (tview: TimeView | null) => void;
   setView: (view: View) => void;
   setUnits: (units: Units) => void;
   setTheme: (theme: Theme) => void;
@@ -162,6 +167,7 @@ export const UI_DEFAULTS = {
   playing: false,
   loop: null,
   rate: 1,
+  tview: null as TimeView | null,
   view: 'plan',
   units: 'nav',
   theme: 'auto',
@@ -199,6 +205,7 @@ export const useUi = create<UiState>()((set) => ({
   setPlaying: (playing) => set(playing ? { playing, timeOn: true } : { playing }),
   setLoop: (loop) => set({ loop }),
   setRate: (rate) => set({ rate }),
+  setTview: (tview) => set({ tview }),
   setView: (view) => set({ view }),
   setUnits: (units) => set({ units }),
   setTheme: (theme) => set({ theme }),

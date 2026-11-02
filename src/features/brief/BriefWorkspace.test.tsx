@@ -1,5 +1,6 @@
 import '../../ui/test-utils';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { boardDerived } from '../build/board/derived';
 import { BOARD_DEFAULTS, useBoard } from '../build/board/store';
 import { useDocument } from '../../state/document';
 import { UI_DEFAULTS, useUi } from '../../state/ui';
@@ -29,7 +30,9 @@ describe('Brief workspace', () => {
     expect(cards[0]).toHaveAttribute('aria-current', 'true');
     expect(cards[1]).not.toHaveAttribute('aria-current');
     expect(cards[1]!.querySelector('svg.board.thumb')?.getAttribute('data-proj')).toBe('axon');
-    expect(within(cards[1]!).getByText('3D · t+200 s · default 3D view · T-01')).toBeInTheDocument();
+    expect(
+      within(cards[1]!).getByText('3D · t+200 s · default 3D view · T-01'),
+    ).toBeInTheDocument();
     expect(stageProj()).toBe('plan');
     expect(useUi.getState().view).toBe('plan');
   });
@@ -143,5 +146,68 @@ describe('Brief workspace', () => {
     expect(pages[1]!.querySelector('svg.board')?.getAttribute('data-proj')).toBe('axon');
     expect(pages[1]!.textContent).toContain('At t+200 s the aircraft hovers.');
     expect(pages[1]!.textContent).toContain('Pause here.');
+  });
+});
+
+describe('Brief timeline, readout, frames and key points', () => {
+  it('the Timeline button shows the shared strip for the card; the stage follows the time cursor', () => {
+    render(<BriefWorkspace />);
+    expect(screen.queryByRole('group', { name: 'Timeline' })).toBeNull();
+    expect(screen.getByTestId('brief-time')).toHaveTextContent('full run');
+    fireEvent.click(screen.getByRole('button', { name: 'Timeline' }));
+    expect(screen.getByRole('group', { name: 'Timeline' })).toBeInTheDocument();
+    expect(useDocument.getState().doc!.cards[0]!.displays.timeline).toBe(true);
+    expect(useDocument.getState().history).toEqual(['set card c1 timeline']);
+    fireEvent.click(screen.getByRole('button', { name: 'Next key point' }));
+    const { tS, timeOn } = useUi.getState();
+    expect(timeOn).toBe(true);
+    expect(tS).toBeGreaterThan(0);
+    expect(screen.getByTestId('brief-time')).toHaveTextContent(`t+${Math.floor(tS / 60)}:`);
+    // the next card keeps its own displays
+    fireEvent.click(screen.getByRole('button', { name: 'Next card' }));
+    expect(screen.queryByRole('group', { name: 'Timeline' })).toBeNull();
+  });
+
+  it('the Readout button shows the live line of the threat in focus at the time cursor', () => {
+    render(<BriefWorkspace />);
+    expect(screen.queryByTestId('brief-readout')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Readout' }));
+    expect(screen.getByTestId('brief-readout')).toHaveTextContent('T-01 · time is off');
+    act(() => {
+      useUi.getState().setTime(20);
+      useUi.getState().setTimeOn(true);
+    });
+    expect(screen.getByTestId('brief-readout')).toHaveTextContent(
+      /^T-01 · [\d.]+ nm · \d+ ft AGL · \d+ kt · closing -?\d+ kt · /,
+    );
+    expect(screen.getByRole('checkbox', { name: 'Readout' })).toBeChecked();
+  });
+
+  it('C saves a frame after the current card at the current time and opens it', () => {
+    render(<BriefWorkspace />);
+    act(() => {
+      useUi.getState().setTime(42);
+      useUi.getState().setTimeOn(true);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save a frame as a card' }));
+    const v = useDocument.getState().doc!;
+    expect(v.cards.map((c) => c.name)).toEqual(['Overview', 'Overview at t+0:42', 'The loiter']);
+    expect(v.cards[1]).toMatchObject({ id: 'c3', tS: 42, caption: '', view: { kind: 'plan' } });
+    expect(useDocument.getState().history).toEqual(['save frame c3']);
+    expect(head()).toBe('2 of 3 · V-test');
+    expect(screen.getByTestId('brief-aids')).toHaveTextContent('Next: 3 The loiter');
+  });
+
+  it('the key points list each F2T2EA step of the threat; a press moves the time there', () => {
+    render(<BriefWorkspace />);
+    const list = screen.getAllByTestId('brief-keypoints');
+    expect(list).toHaveLength(useDocument.getState().doc!.threats.length);
+    const first = within(list[0]!).getAllByRole('button')[0]!;
+    expect(first).toHaveAccessibleName(/^T-01 Find at t\+\d+:\d\d$/);
+    expect(first).toHaveAttribute('title', expect.stringContaining('first sensor window'));
+    fireEvent.click(first);
+    const d = boardDerived(useDocument.getState().doc!);
+    expect(useUi.getState()).toMatchObject({ timeOn: true, tS: d.stages['T-01']!.find!.t });
+    expect(screen.getByText('Definitions')).toBeInTheDocument();
   });
 });

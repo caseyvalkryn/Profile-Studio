@@ -13,6 +13,7 @@ import { applyCard as applyToBuild, cardViewOf, nextCardId } from '../build/card
 import { showToast } from '../shell/toastStore';
 import { useDocument, type Recipe } from '../../state/document';
 import { useUi, type BuildStash, type View } from '../../state/ui';
+import { fmtTime } from '../shared/units';
 import { idMaps } from './toCardRec';
 
 export { nextCardId };
@@ -142,7 +143,60 @@ export function addCard(): void {
 }
 
 /** 3D has no inverse camera, so a card added from a 3D view keeps the default 3D view. */
-export const ADDED_TOAST_3D = 'Card added. 3D cards keep the default 3D view, not the pan and zoom.';
+export const ADDED_TOAST_3D =
+  'Card added. 3D cards keep the default 3D view, not the pan and zoom.';
+
+/** "Card 3 at t+2:08" without its time, so a frame of a frame does not stack the suffix. */
+const baseName = (name: string) => name.replace(/ at (t\+\d+:\d{2}|full run)$/, '');
+
+/**
+ * Save a frame: the stage now as a new card after the current one. The frame keeps the card's
+ * view, layers, displays and focus and takes the current time (null while time is off); its
+ * caption and notes start empty. With no card, the stashed Build view is the frame. One undo
+ * step; the frame becomes the current card.
+ */
+export function snapshotCard(): string | null {
+  const v = doc();
+  if (!v) return null;
+  const ui = useUi.getState();
+  const i = currentIndex(v.cards, ui.cardKey);
+  const base = i >= 0 ? v.cards[i]! : null;
+  const t = ui.timeOn ? Math.round(ui.tS * 10) / 10 : null;
+  const card: Card = base
+    ? {
+        ...structuredClone(base),
+        key: newKey(),
+        id: nextCardId(v.cards),
+        name: `${baseName(base.name)} at ${t == null ? 'full run' : fmtTime(t)}`,
+        tS: t,
+        caption: '',
+        notes: '',
+      }
+    : cardFromBuild(v, ui.buildStash ?? snapshotBuild());
+  edit(`save frame ${card.id}`, (d) => {
+    d.cards.splice(i + 1, 0, card);
+  });
+  ui.setCardKey(card.key);
+  showToast(`Frame saved as card ${i + 2}. Write its caption.`);
+  const next = doc();
+  if (next) applyCard(next, card);
+  return card.key;
+}
+
+/** Set the card's displays (timeline, chart, readout); one undo step. */
+export function setDisplays(key: string, patch: Partial<Card['displays']>): void {
+  const id = doc()?.cards.find((c) => c.key === key)?.id ?? '';
+  edit(`set card ${id} ${Object.keys(patch).join(', ')}`, (d) => {
+    const c = d.cards.find((x) => x.key === key);
+    if (c) c.displays = { ...c.displays, ...patch };
+  });
+}
+
+/** Flip one display of the current card. */
+export function toggleDisplay(field: keyof Card['displays']): void {
+  const c = currentCard(doc(), useUi.getState().cardKey);
+  if (c) setDisplays(c.key, { [field]: !c.displays[field] });
+}
 
 /** Move the current card up (-1) or down (+1) in the deck; one undo step. */
 export function moveCard(d: -1 | 1): void {

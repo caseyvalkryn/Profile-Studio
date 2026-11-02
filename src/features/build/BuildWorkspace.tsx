@@ -1,13 +1,14 @@
 // The Build workspace (spec section 7, Build; mockup `.board`, lines 378 to 393). The scene rail
-// on the left; in the centre the Build bar, the board stage, the scrub and the thumbnails of the
-// two other cameras; the inspector on the right. The stage takes all the height the bar, the
-// scrub and the thumbnails leave (principle 5.1). One board renders Plan, Elevation and 3D.
+// on the left; in the centre the Build bar, the board stage, the timeline strip (shared with
+// Brief, src/features/timeline) and the thumbnails of the two other cameras; the inspector on
+// the right. The stage takes all the height the bar, the strip and the thumbnails leave
+// (principle 5.1). One board renders Plan, Elevation and 3D.
 import '../../board/board.css';
 import { useState } from 'react';
 import { setBoardCancel } from '../../commands/commands';
 import { useUi } from '../../state/ui';
+import Timeline from '../timeline/Timeline';
 import BuildBar from './bar/BuildBar';
-import Scrub from './bar/Scrub';
 import Thumbnails from './bar/Thumbnails';
 import Board, { cancel, mounted } from './board/Board';
 import { setBoardCam } from './cards/cards';
@@ -49,7 +50,7 @@ export default function BuildWorkspace() {
           >
             <Board />
           </section>
-          <Scrub />
+          <Timeline mode="build" />
           <Thumbnails />
         </div>
         {showInspector ? (

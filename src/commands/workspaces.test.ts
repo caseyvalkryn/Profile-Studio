@@ -95,9 +95,22 @@ describe('workspace scoping', () => {
   });
 
   it('a disabled key toasts its reason in user words', () => {
+    useDocument.getState().close();
     inWs('build');
     expect(dispatchKey(key('['), undefined, true)).toBeNull();
-    expect(useToast.getState()).toMatchObject({ text: 'Not in this version.', visible: true });
+    expect(useToast.getState()).toMatchObject({ text: 'Open a profile first.', visible: true });
+  });
+
+  it('[ and ] move the time cursor between key points in Build and Brief', () => {
+    for (const w of ['build', 'brief'] as const) {
+      useUi.setState({ ...UI_DEFAULTS, workspace: w });
+      expect(dispatchKey(key(']'), undefined, true)).toBe('time.nextEvent');
+      const s = useUi.getState();
+      expect(s.timeOn).toBe(true);
+      expect(s.tS).toBeGreaterThan(0);
+      expect(dispatchKey(key('['), undefined, true)).toBe('time.prevEvent');
+      expect(useUi.getState().tS).toBe(0);
+    }
   });
 
   it('/ focuses the Library search in the Library only', () => {

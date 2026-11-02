@@ -441,6 +441,7 @@ removed from the tree on 2026-11-01 (`git show 70caf07` has them); the findings 
 | 11.R | done | 4d340b5 | `reviews/phase-11.md`: 0 blockers, 2 majors (every reach element carries the range role, so a press on a sector edge, the min range ring or a limit ray sets max range to the press distance; `render.card` drops the card's zoom and centre, so the Brief stage, thumbnails and print draw every card at the fitted frame), 5 minors (the append hint, the leg readout left by Escape, the 3D note in a toast only, the `offGlyph` tolerance, "fitted 3D frame" wording), 10 notes; the Geist lane clean in light, dark and print; ring drag, selected row, append, Library thumbnails and the entry budget pass; 28 screenshots `R-*.jpg` |
 | 11.F | done | 23d7e2b | all 7 findings and N-05 fixed: the range role only on the max range ring (`data-role="range"` in `reach.ts`, `Hit.part` in `hitAt`, the arc test in `beginDrag`; a press on a sector edge, the min range ring or a limit ray selects and starts nothing); the card's zoom and centre in `CardRec.cam`, drawn by `render.card` on the Brief stage, the strip thumbnails and print, 3D cards keep the default view; the append hint names the path and the leg readout shows after the first point; Escape ends an append and clears the readout; the 3D note in the strip line, the toasts without "fitted"; `offGlyph` on the `hitAt` tolerance with the touch flag; `saveVignette` and `deleteVignette` keep the cached listing current; four parity patches; 54 unit files, 481 tests, 7 e2e; entry 233.04 kB gzip; seven `after-11F-*.jpg`; open: the Library thumbnail draws the first card at the fitted frame (`scene.ts` has no frame); the Elevation limit rays are covered by code only |
 | 11.M | done | main | phase 11 merge into `main` approved by the user on 2026-11-01; `rebuild/mvp` merged `--no-ff` into `main` with this handoff; the gate run on `main`; both branches pushed on 2026-11-01 |
+| 12.1 | done | working tree | the shared timeline (user request of 2026-11-01, from the reference artifact `js/51-panel-timeline.js`): `src/features/timeline/` (the strip, its stylesheet, the F2T2EA key points with definitions) hosted under the Build board in place of the scrub (`Scrub.tsx` deleted) and under the Brief stage when the card's Timeline display is on; `ui.tview` for the zoom; `[` and `]` real in Build and Brief over `engine/stops`; the Brief stage at the live time with the Timeline, Readout and Frame buttons, the readout line and the presenter aids; `snapshotCard`, `setDisplays`, `toggleDisplay`; Brief keys P, C, L; the notes panel's Displays row and Key points section; spec section 7 and principle 8.5 amended; 55 unit files, 495 tests, 7 e2e; entry 237.9 kB gzip; lane height fixed per threat so an added system never moves the board (12-02 and 12-03 held at 3 px) |
 
 ## 8. Handoff
 
@@ -461,10 +462,12 @@ is a source of parts.
 **Decisions.** Section 1 has all of phase 10 and the three of 2026-11-01 that open phase 11:
 phase 10 approved and merged, the typeface direction, the scope hold.
 
-**Next.** No phase is open. The plan ends at phase 11; the held list (section 6, "Held for
-product complete": the vos port, the dropped domain fields, the phase 10 deferred list) and the
-review notes below return only when the user asks. The next session starts by asking the user
-which of them, if any, opens phase 12, and writes that phase into section 6 before any lane.
+**Next.** No phase is open. Row 12.1 (section 7) is the shared timeline, built on the user's
+direct request of 2026-11-01 outside a phase, on `rebuild/mvp` uncommitted: the user decides
+the commit, a review and the merge. The plan ends at phase 11; the held list (section 6, "Held
+for product complete": the vos port, the dropped domain fields, the phase 10 deferred list) and
+the review notes below return only when the user asks. The next session starts by asking the
+user which of them, if any, opens phase 12, and writes that phase into section 6 before any lane.
 
 **Orchestrator prompt.** Paste this to start the next session:
 

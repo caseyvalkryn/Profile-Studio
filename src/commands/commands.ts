@@ -32,7 +32,9 @@ import type {
   Vignette,
   Waypoint,
 } from '../domain/types';
+import { nextStop, prevStop, stops } from '../engine';
 import { previewOf } from '../state/document';
+import { boardDerived } from '../features/build/board/derived';
 import type { Clip, MapPoint, Theme, Workspace } from '../state/ui';
 import { libraryCommands } from '../features/library/commands';
 import { boardCommands } from '../features/build/board/commands';
@@ -59,7 +61,6 @@ const selOf = (ctx: CommandContext, kinds?: readonly FoundKind[]) =>
 
 const needDoc: Rule = (ctx) => (docOf(ctx) ? true : 'Open a profile first');
 /** The reason a deferred command shows (plan phase 10, deferred list). */
-const NOT_YET = 'Not in this version';
 const needPointer: Rule = (ctx) => (ctx.pointer ? true : 'Right-click the map first');
 const needSel =
   (kinds: readonly FoundKind[] | undefined, what: string): Rule =>
@@ -233,10 +234,13 @@ function endTime(ctx: CommandContext): number {
   return doc ? previewOf(doc).tmaxS : 0;
 }
 
-function stepTime(ctx: CommandContext, ds: number) {
-  const t = Math.min(Math.max(0, ctx.ui.tS + ds), Math.max(endTime(ctx), 0));
+function setTimeTo(ctx: CommandContext, t: number) {
   if (!ctx.ui.timeOn) ctx.ui.setTimeOn(true);
   ctx.ui.setTime(t);
+}
+
+function stepTime(ctx: CommandContext, ds: number) {
+  setTimeTo(ctx, Math.min(Math.max(0, ctx.ui.tS + ds), Math.max(endTime(ctx), 0)));
 }
 
 /** Apply `fn` to each selected record of the given kinds, inside one undo step. */
@@ -794,19 +798,28 @@ const COMMANDS: Command[] = [
   },
   {
     id: 'time.prevEvent',
-    label: 'Previous event or derived time',
+    label: 'Previous key point',
     group: 'time',
     shortcut: '[',
-    when: () => NOT_YET,
-    run: () => {},
+    workspaces: BUILD_BRIEF,
+    when: needDoc,
+    run: (ctx) => {
+      const doc = docOf(ctx)!;
+      setTimeTo(ctx, prevStop(stops(doc, boardDerived(doc)), ctx.ui.tS));
+    },
   },
   {
     id: 'time.nextEvent',
-    label: 'Next event or derived time',
+    label: 'Next key point',
     group: 'time',
     shortcut: ']',
-    when: () => NOT_YET,
-    run: () => {},
+    workspaces: BUILD_BRIEF,
+    when: needDoc,
+    run: (ctx) => {
+      const doc = docOf(ctx)!;
+      const d = boardDerived(doc);
+      setTimeTo(ctx, nextStop(stops(doc, d), ctx.ui.tS, d.tmax));
+    },
   },
   {
     id: 'edit.nextOfKind',

@@ -1,15 +1,18 @@
 // The Brief workspace (spec section 7, Brief; `legacy/mockup-v3.html` drawBrief, line 491):
-// the card strip (220 px), the stage, the notes panel (300 px). Mounting stashes the Build view
+// the card strip (220 px), the stage with the shared timeline strip under it when the card
+// shows one (src/features/timeline), the notes panel (300 px). Mounting stashes the Build view
 // and applies the current card; unmounting restores Build as it was (principle 8.1). The print
 // deck is a hidden list, one page per card, shown by the print stylesheet (brief.css).
 import '../../board/board.css';
 import './brief.css';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { Vignette } from '../../domain/types';
 import { render } from '../../board';
 import { useDocument } from '../../state/document';
 import { useUi } from '../../state/ui';
+import { usePlayback } from '../build/bar/usePlayback';
 import { boardDerived, boardScene } from '../build/board/derived';
+import Timeline from '../timeline/Timeline';
 import CardStrip from './CardStrip';
 import Notes from './Notes';
 import Stage from './Stage';
@@ -60,10 +63,17 @@ export function PrintDeck({ v }: { v: Vignette }) {
 }
 
 export default function BriefWorkspace() {
+  // The playback clock runs here too, so P plays while the card hides its timeline.
+  usePlayback();
   const v = useDocument((s) => s.doc);
   const cardKey = useUi((s) => s.cardKey);
   const index = v ? currentIndex(v.cards, cardKey) : -1;
   const card = v && index >= 0 ? (v.cards[index] ?? null) : null;
+  // The elapsed clock starts when Brief opens (the presenter aid under the stage).
+  const startMs = useRef(0);
+  useEffect(() => {
+    startMs.current = Date.now();
+  }, []);
 
   // Enter: stash the Build view once. Leave: restore it.
   useEffect(() => {
@@ -82,7 +92,14 @@ export default function BriefWorkspace() {
     <main aria-label="Brief" className="brief flex-1 min-h-0">
       <div className="brief-screen grid h-full min-h-0 grid-cols-[220px_minmax(0,1fr)_300px]">
         <CardStrip v={v} current={index} onPick={goTo} onAdd={addCard} />
-        <Stage v={v} card={card} index={index} onStep={step} />
+        <div className="flex min-h-0 min-w-0 flex-col">
+          <Stage v={v} card={card} index={index} onStep={step} startMs={startMs} />
+          {card?.displays.timeline ? (
+            <div className="shrink-0 px-[18px] pb-3">
+              <Timeline mode="brief" />
+            </div>
+          ) : null}
+        </div>
         <Notes v={v} card={card} index={index} onMove={moveCard} onDelete={deleteCard} />
       </div>
       <PrintDeck v={v} />

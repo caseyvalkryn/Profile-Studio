@@ -6,7 +6,7 @@ import { registerCommands, setBoardCancel } from '../../commands/commands';
 import { currentContext, execute, get } from '../../commands/registry';
 import { bindKeys } from '../../commands/keys';
 import { testVignette } from '../../engine/testVignette';
-import { useDocument } from '../../state/document';
+import { previewOf, useDocument } from '../../state/document';
 import { UI_DEFAULTS, useUi } from '../../state/ui';
 import { useLibraryRequests } from '../library/newProfile';
 import { useToast } from '../shell/toastStore';
@@ -32,18 +32,17 @@ const renderApp = () =>
 describe('Build workspace', () => {
   beforeEach(reset);
 
-  it('renders the rail, the bar, the map, the scrub, the thumbnails and the inspector', () => {
+  it('renders the rail, the bar, the map, the timeline, the thumbnails and the inspector', () => {
     act(() => useDocument.getState().open(testVignette()));
     render(<BuildWorkspace />);
     expect(screen.getByRole('navigation', { name: 'Scene' })).toBeInTheDocument();
     expect(screen.getByRole('toolbar', { name: 'Build bar' })).toBeInTheDocument();
     const map = screen.getByRole('region', { name: 'Map' });
     expect(within(map).getByTestId('board-stage')).toBeInTheDocument();
-    expect(screen.getByRole('group', { name: 'Time' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Timeline' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Other views' })).toBeInTheDocument();
     expect(screen.getByRole('complementary', { name: 'Inspector' })).toBeInTheDocument();
-    // Lane 10.3: no timeline, no readout panel, no Fit, Ref or units in the bar.
-    expect(screen.queryByRole('region', { name: 'Timeline' })).toBeNull();
+    // Lane 10.3: no readout panel, no Fit, Ref or units in the bar.
     expect(screen.queryByRole('region', { name: 'Readout' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Fit' })).toBeNull();
     expect(screen.queryByRole('combobox', { name: 'Ref' })).toBeNull();
@@ -91,12 +90,13 @@ describe('Build workspace', () => {
     act(() => useDocument.getState().open(testVignette()));
     const unbind = bindKeys(window);
     render(<BuildWorkspace />);
-    const value = screen.getByTestId('scrub-value');
+    const clock = screen.getByTestId('tl-clock');
     expect(useUi.getState().timeOn).toBe(false);
-    expect(value).toHaveTextContent('full run');
+    expect(clock).toHaveValue('');
+    expect(clock).toHaveAttribute('placeholder', 'full run');
     act(() => void fireEvent.keyDown(window, { key: 't' }));
     expect(useUi.getState().timeOn).toBe(true);
-    expect(value).toHaveTextContent(/^\d+ s$/);
+    expect(clock).toHaveValue('t+0:00');
     act(() => void fireEvent.keyDown(window, { key: 't' }));
     expect(useUi.getState().timeOn).toBe(false);
     unbind();
@@ -279,26 +279,35 @@ describe('Build bar, scrub, thumbnails and cards (lane 10.3)', () => {
     expect(line).toHaveTextContent(/ km · \d+ m\/s · /);
   });
 
-  it('the scrub: Time turns time on, the range sets ui.tS and is off while time is off', () => {
-    act(() => useDocument.getState().open(testVignette()));
+  it('the timeline: Time turns time on, the clock sets ui.tS, an axis press scrubs', () => {
+    const doc = testVignette();
+    act(() => useDocument.getState().open(doc));
     render(<BuildWorkspace />);
-    const range = screen.getByRole('slider', { name: 'Scene time' });
-    expect(range).toBeDisabled();
-    expect(Number(range.getAttribute('max'))).toBeGreaterThanOrEqual(60);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Time' }));
     expect(useUi.getState().timeOn).toBe(true);
-    expect(range).toBeEnabled();
-    fireEvent.change(range, { target: { value: '42' } });
+    const clock = screen.getByTestId('tl-clock');
+    fireEvent.focus(clock);
+    fireEvent.change(clock, { target: { value: '42' } });
+    fireEvent.keyDown(clock, { key: 'Enter' });
     expect(useUi.getState().tS).toBe(42);
-    expect(screen.getByTestId('scrub-value')).toHaveTextContent('42 s');
+    expect(clock).toHaveValue('t+0:42');
+    // jsdom lays nothing out: the strip takes its 800 px fallback, 740 px of axis after the gutter.
+    const end = Math.max(60, previewOf(doc).tmaxS);
+    const axis = screen.getByRole('group', { name: 'Timeline' }).querySelector('.tl-axis')!;
+    fireEvent.pointerDown(axis, { button: 0, clientX: 48 + 370 });
+    expect(useUi.getState().tS).toBeCloseTo(end / 2, 0);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Time' }));
+    expect(useUi.getState().timeOn).toBe(false);
   });
 
-  it('a bead sits at its event time; a click sets the time there and selects the event', () => {
+  it('a bead sits at its event time; a press sets the time there and selects the event', () => {
     act(() => useDocument.getState().open(withEvent()));
     render(<BuildWorkspace />);
-    const bead = screen.getByTestId('scrub-bead');
-    expect(bead).toHaveAttribute('title', 'First detection');
-    fireEvent.click(bead);
+    const bead = screen.getByTestId('tl-bead');
+    expect(bead.querySelector('title')?.textContent).toBe('e1 First detection · t+0:40');
+    expect(bead).toHaveAttribute('data-t', '40');
+    fireEvent.pointerDown(bead, { button: 0, clientX: 100 });
+    fireEvent.pointerUp(bead, { clientX: 100 });
     expect(useUi.getState().timeOn).toBe(true);
     expect(useUi.getState().tS).toBe(40);
     expect(useUi.getState().selectedKeys).toEqual(['k-e1']);
