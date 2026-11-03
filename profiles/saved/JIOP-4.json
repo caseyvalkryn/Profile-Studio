@@ -1,0 +1,585 @@
+{
+  "schema": "profile-studio/8",
+  "id": "JIOP-4",
+  "name": "Controlled repeat, optical zoom 1x against 5x",
+  "updated": "2026-11-03T02:09:51.246Z",
+  "collection": "JIOPs four-camera test, TST Ranch, 12 to 13 Nov 2026",
+  "class": "Counter-UAS",
+  "version": 65,
+  "site": {
+    "name": "TST Ranch, Carthage NC",
+    "lat": 35.28997178998492,
+    "lon": -79.38559930752317,
+    "elevM": 150
+  },
+  "questions": [
+    {
+      "key": "fa911c21-ddcf-4404-a81a-08edaf716778",
+      "id": "Q-01",
+      "text": "Does optical zoom (1x against 5x) on the varifocal cameras change the first-cue, confirmed and identified ranges for the same Mavic 3 approach, and by how much against the run-to-run variation?",
+      "note": "Response: first possible, confirmed and identified range per camera per run; the difference between levels and the spread within a level. Vary: optical zoom on CAM-3 and CAM-4 (1x, 5x). Hold: CAM-1 and CAM-2 at 80 deg, 40 m AGL, 8 m/s, head-on, same path. Record: sun, sky background, wind. Replicates: 3 runs per level, levels alternated. Target-absent interval: 120 s before launch. A second factor, defined background condition, can replace zoom with the same profile."
+    }
+  ],
+  "threats": [
+    {
+      "key": "a36b3a74-1ec3-4866-9cea-2b28e4de1c0c",
+      "id": "T1",
+      "type": "g1-quad-isr",
+      "path": [
+        {
+          "key": "702d4613-fbce-4657-914a-b85cebc2f0eb",
+          "x": -155.1,
+          "y": 160.4,
+          "z": 0,
+          "holdS": 120
+        },
+        {
+          "key": "b114edea-1567-428e-b725-7521d997e444",
+          "x": -155.1,
+          "y": 160.4,
+          "z": 40,
+          "holdS": 0
+        },
+        {
+          "key": "8f375525-004d-4691-ba0f-a81a207aac6d",
+          "x": 102.4,
+          "y": -171.4,
+          "z": 40,
+          "holdS": 10
+        }
+      ],
+      "speedMs": 8,
+      "group": ""
+    }
+  ],
+  "sensors": [
+    {
+      "key": "65bd6596-bd14-4693-8da4-590f550e2b91",
+      "id": "CAM-1",
+      "kind": "eoir",
+      "x": 144.9,
+      "y": -201.7,
+      "z": 2.5,
+      "rangeM": 250,
+      "minRangeM": 0,
+      "fovDeg": 80,
+      "bearingDeg": 322.2,
+      "elMinDeg": -24,
+      "elMaxDeg": 40,
+      "model": {
+        "pd": {
+          "kind": "logistic",
+          "r50M": 200,
+          "widthM": 25
+        },
+        "scanS": 1,
+        "trackM": 3,
+        "trackN": 5,
+        "coastS": 10,
+        "idDwellS": 5,
+        "pCorrectId": 0.9,
+        "trackErrorM": 5
+      },
+      "entered": {
+        "1.3": {
+          "value": 80,
+          "source": "Appendix B example value (80 deg horizontal, 2560 x 1920, 25 fps); confirm against the purchased model"
+        }
+      }
+    },
+    {
+      "key": "0ea24dbc-2779-49da-899d-c96d8927fb7c",
+      "id": "CAM-2",
+      "kind": "eoir",
+      "x": 137,
+      "y": -207.8,
+      "z": 2.5,
+      "rangeM": 250,
+      "minRangeM": 0,
+      "fovDeg": 80,
+      "bearingDeg": 322.2,
+      "elMinDeg": -24,
+      "elMaxDeg": 40,
+      "model": {
+        "pd": {
+          "kind": "logistic",
+          "r50M": 200,
+          "widthM": 25
+        },
+        "scanS": 1,
+        "trackM": 3,
+        "trackN": 5,
+        "coastS": 10,
+        "idDwellS": 5,
+        "pCorrectId": 0.9,
+        "trackErrorM": 5
+      },
+      "entered": {
+        "1.3": {
+          "value": 80,
+          "source": "Appendix B example value (80 deg horizontal, 2560 x 1920, 25 fps); confirm against the purchased model"
+        }
+      }
+    },
+    {
+      "key": "ac1f1b04-3fd2-4671-821d-fad2023d8c99",
+      "id": "CAM-3 1x",
+      "kind": "eoir",
+      "x": 129.1,
+      "y": -213.9,
+      "z": 2.5,
+      "rangeM": 250,
+      "minRangeM": 0,
+      "fovDeg": 80,
+      "bearingDeg": 322.2,
+      "elMinDeg": -24,
+      "elMaxDeg": 40,
+      "model": {
+        "pd": {
+          "kind": "logistic",
+          "r50M": 200,
+          "widthM": 25
+        },
+        "scanS": 1,
+        "trackM": 3,
+        "trackN": 5,
+        "coastS": 10,
+        "idDwellS": 5,
+        "pCorrectId": 0.9,
+        "trackErrorM": 5
+      },
+      "entered": {
+        "1.3": {
+          "value": 80,
+          "source": "Baseline level: varifocal at 1x, about 80 deg horizontal"
+        }
+      }
+    },
+    {
+      "key": "3a3f8b5e-8017-4b9d-8396-ff05e5d6ac86",
+      "id": "CAM-4 1x",
+      "kind": "eoir",
+      "x": 121.2,
+      "y": -220.1,
+      "z": 2.5,
+      "rangeM": 250,
+      "minRangeM": 0,
+      "fovDeg": 80,
+      "bearingDeg": 322.2,
+      "elMinDeg": -24,
+      "elMaxDeg": 40,
+      "model": {
+        "pd": {
+          "kind": "logistic",
+          "r50M": 200,
+          "widthM": 25
+        },
+        "scanS": 1,
+        "trackM": 3,
+        "trackN": 5,
+        "coastS": 10,
+        "idDwellS": 5,
+        "pCorrectId": 0.9,
+        "trackErrorM": 5
+      },
+      "entered": {
+        "1.3": {
+          "value": 80,
+          "source": "Baseline level: varifocal at 1x, about 80 deg horizontal"
+        }
+      }
+    },
+    {
+      "key": "9d754d18-671d-45d7-bea9-0f091256b6ea",
+      "id": "CAM-3 5x",
+      "kind": "eoir",
+      "x": 129.1,
+      "y": -213.9,
+      "z": 2.5,
+      "rangeM": 450,
+      "minRangeM": 0,
+      "fovDeg": 17.6,
+      "bearingDeg": 322.2,
+      "elMinDeg": -2.6,
+      "elMaxDeg": 10.6,
+      "model": {
+        "pd": {
+          "kind": "logistic",
+          "r50M": 360,
+          "widthM": 45
+        },
+        "scanS": 1,
+        "trackM": 3,
+        "trackN": 5,
+        "coastS": 10,
+        "idDwellS": 5,
+        "pCorrectId": 0.9,
+        "trackErrorM": 5
+      },
+      "entered": {
+        "1.3": {
+          "value": 17.6,
+          "source": "Factor level: varifocal at 5x, about 17.6 deg horizontal"
+        }
+      }
+    },
+    {
+      "key": "1276291d-bc67-4181-9415-741ecb99c29b",
+      "id": "CAM-4 5x",
+      "kind": "eoir",
+      "x": 121.2,
+      "y": -220.1,
+      "z": 2.5,
+      "rangeM": 450,
+      "minRangeM": 0,
+      "fovDeg": 17.6,
+      "bearingDeg": 322.2,
+      "elMinDeg": -2.6,
+      "elMaxDeg": 10.6,
+      "model": {
+        "pd": {
+          "kind": "logistic",
+          "r50M": 360,
+          "widthM": 45
+        },
+        "scanS": 1,
+        "trackM": 3,
+        "trackN": 5,
+        "coastS": 10,
+        "idDwellS": 5,
+        "pCorrectId": 0.9,
+        "trackErrorM": 5
+      },
+      "entered": {
+        "1.3": {
+          "value": 17.6,
+          "source": "Factor level: varifocal at 5x, about 17.6 deg horizontal"
+        }
+      }
+    }
+  ],
+  "effectors": [],
+  "nodes": [
+    {
+      "key": "112519e3-6a77-4256-947d-230d93a89ebd",
+      "id": "GCS-1",
+      "kind": "c2",
+      "x": -156.4,
+      "y": 178.4,
+      "z": 0,
+      "rangeM": 0,
+      "fovDeg": 0,
+      "bearingDeg": 0
+    },
+    {
+      "key": "3dc36296-1613-4ef9-9006-e34359e61532",
+      "id": "REC-1",
+      "kind": "c2",
+      "x": 142.2,
+      "y": -222.7,
+      "z": 0,
+      "rangeM": 0,
+      "fovDeg": 0,
+      "bearingDeg": 0
+    },
+    {
+      "key": "604584ac-764f-4978-ab58-30ca886e2a90",
+      "id": "TM-1",
+      "kind": "tspi",
+      "x": -156.4,
+      "y": 178.4,
+      "z": 0,
+      "rangeM": 0,
+      "fovDeg": 0,
+      "bearingDeg": 0
+    },
+    {
+      "key": "28afa34b-13bf-43f3-8186-adb722b7a1f7",
+      "id": "TM-2",
+      "kind": "tspi",
+      "x": 142.2,
+      "y": -222.7,
+      "z": 0,
+      "rangeM": 0,
+      "fovDeg": 0,
+      "bearingDeg": 0
+    }
+  ],
+  "areas": [
+    {
+      "key": "84d889d3-5d38-4b89-85aa-fe9c769087f1",
+      "id": "RNG-1",
+      "kind": "range",
+      "label": "UAS Fly Area",
+      "pts": [
+        [-123.36462163145045, 215.29097330151683],
+        [-171.59484321367324, 179.77648788644828],
+        [-165.90799387592784, 88.02552500681175],
+        [-169.52974947038118, 45.0796879849593],
+        [-102.00133989190732, -35.15004811132006],
+        [-42.99043164499163, -95.5947242043527],
+        [22.249219368175574, -163.2879702901044],
+        [60.570383247038656, -188.0051764791058],
+        [79.65914686422202, -188.2705285185771],
+        [89.62404236394386, -196.88048125743254],
+        [111.17259124987362, -197.01068730756657],
+        [129.40764642662523, -215.29097330230516],
+        [153.32475288453577, -215.21841943542483],
+        [171.59484321496595, -185.0357851343788],
+        [94.34946604088219, -116.50395310833412],
+        [71.47525118065525, -68.37570844711571],
+        [76.07892022173287, -37.36415681106672],
+        [84.43885464963621, -28.746114401288995],
+        [22.85600213040531, 17.997990434686123],
+        [-17.512764843602923, 21.97333128620821],
+        [-56.64155541790132, 66.84106320507355],
+        [-88.04594082810108, 132.63662670997346]
+      ],
+      "zMinM": 0,
+      "zMaxM": 0
+    },
+    {
+      "key": "493499f9-06a9-4e00-acc5-1b5269bf89d6",
+      "id": "RNG-2",
+      "kind": "range",
+      "label": "TST Ranch",
+      "pts": [
+        [230, -233],
+        [241, 200],
+        [-438, 269],
+        [-446, 143],
+        [-362, 164],
+        [-237, 84],
+        [-215, 34],
+        [-243, -1],
+        [-383, 71],
+        [-452, 67],
+        [-454, -68],
+        [-433, -98],
+        [-383, -81],
+        [-346, -20],
+        [-269, -59],
+        [-265, -101],
+        [-302, -175],
+        [-383, -179],
+        [-354, -235]
+      ],
+      "zMinM": 0,
+      "zMaxM": 0
+    },
+    {
+      "key": "8b2378c1-7ac7-47a5-83b9-2f41d7e7e129",
+      "id": "DA",
+      "kind": "asset",
+      "label": "Camera site",
+      "pts": [
+        [121, -222.9],
+        [145, -222.9],
+        [145, -198.9],
+        [121, -198.9]
+      ],
+      "zMinM": 0,
+      "zMaxM": 0
+    }
+  ],
+  "planes": [
+    {
+      "key": "396201c6-e0a7-43cb-b47c-f0304bb2fb0a",
+      "id": "HP-1",
+      "label": "Run altitude 40 m AGL",
+      "zM": 40
+    },
+    {
+      "key": "7aa8c3d6-a769-4a90-9862-9168e0e999c8",
+      "id": "HP-2",
+      "label": "400 ft AGL ceiling (Part 107)",
+      "zM": 121.9
+    }
+  ],
+  "events": [
+    {
+      "key": "451286b0-c6db-4f3d-9d12-f24176558802",
+      "id": "e1",
+      "tS": 0,
+      "type": "checkpoint",
+      "label": "Recording on; target-absent interval (120 s)",
+      "threatKey": "a36b3a74-1ec3-4866-9cea-2b28e4de1c0c",
+      "sensorKey": null
+    },
+    {
+      "key": "96afed68-f65b-434a-bd92-fb65549a4ccb",
+      "id": "e2",
+      "tS": 129,
+      "type": "detect",
+      "label": "First cue, factor level (CAM-3 at 5x)",
+      "threatKey": "a36b3a74-1ec3-4866-9cea-2b28e4de1c0c",
+      "sensorKey": "9d754d18-671d-45d7-bea9-0f091256b6ea"
+    },
+    {
+      "key": "f7113394-7429-40de-82f5-862693c01e12",
+      "id": "e3",
+      "tS": 154,
+      "type": "checkpoint",
+      "label": "First cue, baseline level (CAM-3 at 1x) expected here",
+      "threatKey": "a36b3a74-1ec3-4866-9cea-2b28e4de1c0c",
+      "sensorKey": null
+    },
+    {
+      "key": "928f3c07-5a29-460b-9397-0e082e13ebc1",
+      "id": "e4",
+      "tS": 158,
+      "type": "identify",
+      "label": "Identified, fixed cameras (CAM-1)",
+      "threatKey": "a36b3a74-1ec3-4866-9cea-2b28e4de1c0c",
+      "sensorKey": "65bd6596-bd14-4693-8da4-590f550e2b91"
+    }
+  ],
+  "snapshots": [],
+  "cards": [
+    {
+      "key": "c2d5a967-4d9d-4da1-aa35-2f727dadbf47",
+      "id": "c1",
+      "name": "Card 1",
+      "view": {
+        "kind": "plan",
+        "yawDeg": -1.8,
+        "pitchDeg": 20.6,
+        "ref": "asset",
+        "elevationMode": "fromAsset",
+        "centre": {
+          "x": -80,
+          "y": 151
+        },
+        "zoom": 2.564
+      },
+      "layers": {},
+      "displays": {
+        "timeline": true,
+        "chart": false,
+        "readout": false,
+        "emphasis": false,
+        "hidden": false
+      },
+      "clip": null,
+      "focus": [],
+      "tS": 119.5,
+      "caption": "",
+      "notes": ""
+    },
+    {
+      "key": "2858906a-9b58-48e9-b6c1-245954d6c852",
+      "id": "c2",
+      "name": "Card 1 at t+2:09",
+      "view": {
+        "kind": "3d",
+        "yawDeg": 12.6,
+        "pitchDeg": 13.2,
+        "ref": "asset",
+        "elevationMode": "fromAsset",
+        "centre": {
+          "x": -32,
+          "y": 322
+        },
+        "zoom": 2.385
+      },
+      "layers": {},
+      "displays": {
+        "timeline": true,
+        "chart": false,
+        "readout": false,
+        "emphasis": false,
+        "hidden": false
+      },
+      "clip": null,
+      "focus": [],
+      "tS": 129.2,
+      "caption": "",
+      "notes": ""
+    },
+    {
+      "key": "977d1166-bfd2-4273-bcb5-a05371fbe377",
+      "id": "c3",
+      "name": "Card 1 at t+2:33",
+      "view": {
+        "kind": "3d",
+        "yawDeg": -1.8,
+        "pitchDeg": 20.6,
+        "ref": "asset",
+        "elevationMode": "fromAsset",
+        "centre": {
+          "x": -78,
+          "y": 144
+        },
+        "zoom": 2.28
+      },
+      "layers": {},
+      "displays": {
+        "timeline": true,
+        "chart": false,
+        "readout": false,
+        "emphasis": false,
+        "hidden": false
+      },
+      "clip": null,
+      "focus": [],
+      "tS": 153,
+      "caption": "",
+      "notes": ""
+    }
+  ],
+  "debrief": null,
+  "chainTime": {
+    "decisionS": 5,
+    "assignS": 3
+  },
+  "measures": [
+    {
+      "id": "1.1.1",
+      "op": ">=",
+      "threshold": 90,
+      "unit": "%"
+    },
+    {
+      "id": "1.1.2",
+      "op": ">=",
+      "threshold": 250,
+      "unit": "m"
+    },
+    {
+      "id": "1.1.3",
+      "op": ">=",
+      "threshold": 250,
+      "unit": "m"
+    },
+    {
+      "id": "2.1.3",
+      "op": ">=",
+      "threshold": 120,
+      "unit": "m"
+    }
+  ],
+  "report": {
+    "notes": "Third in the order, after the One-way attack. Six runs: three at 1x, three at 5x, alternating levels (1x, 5x, 1x, 5x, 1x, 5x). Same path on every run: launch at the NW end, climb to 40 m AGL, direct approach at 8 m/s to 50 m short of the camera line, hold 10 s. Use true optical zoom, not digital crop (plan section 7, step 2); lock focus after the preflight; record the configuration snapshot before each run. Report per camera: median and percentile first-confirmed range per level, the difference between levels, and the within-level spread (Appendix C.2). Before the first run: synchronize the PC, camera and telemetry clocks, record the offset with a visible time-marked event, and keep the correction (plan section 7, step 3). Safety: every path stays inside the UAS Fly Area; no path points at the camera site or at GCS-1. The One-way attack aim point sits 60 m short of the cameras. Site datum: the profile origin is the centre of the UAS Fly Area file (lat 35.289972, lon -79.385599, WGS84). Ground elevation 150 m is a planning value; survey it.",
+    "dataSources": [
+      "Four camera recordings, RTSP main stream, continuous, native resolution, 25 fps, MP4 segments with timestamps",
+      "Camera configuration snapshot per run per camera (Appendix B.1 JSON): resolution, fps, FOV, zoom, focus, exposure, time offset",
+      "Camera survey record: WGS84 position, lens height, azimuth, tilt, roll, installation photo",
+      "Aircraft GCS telemetry log at the maximum rate: GPS time, latitude, longitude, altitude, accuracy",
+      "ATOS tag track for the same aircraft (VAL fused), for comparison with the GCS log",
+      "Clock synchronization record: PC, camera, video and telemetry offsets with the measured uncertainty",
+      "Detection event table per camera: first possible, first confirmed, first identified; frame index, UTC, still image, reviewer",
+      "Computed ranges per event: aircraft and camera ENU positions, ground range, slant range, uncertainty, FOV-limited and occluded flags",
+      "Environmental record per run: sun position, sky background, cloud, visibility, wind, obstructions",
+      "Target-absent recording interval per run (120 s before launch) for the false-detection count",
+      "Comparison table: level, run, camera, first possible, confirmed and identified range; level difference with the within-level spread"
+    ],
+    "truth": {
+      "source": "Aircraft GCS telemetry log (GPS time, lat, lon, alt); ATOS tag track as the second source",
+      "intervalS": 0.2,
+      "stationKeys": [
+        "604584ac-764f-4978-ab58-30ca886e2a90",
+        "28afa34b-13bf-43f3-8186-adb722b7a1f7"
+      ]
+    }
+  }
+}

@@ -1,0 +1,987 @@
+{
+  "schema": "profile-studio/8",
+  "id": "JIOP-3",
+  "name": "Swarm, seven aircraft with crossings",
+  "updated": "2026-11-03T02:17:21.856Z",
+  "collection": "JIOPs four-camera test, TST Ranch, 12 to 13 Nov 2026",
+  "class": "Multi-aircraft",
+  "version": 160,
+  "site": {
+    "name": "TST Ranch, Carthage NC",
+    "lat": 35.28997178998492,
+    "lon": -79.38559930752317,
+    "elevM": 150
+  },
+  "questions": [
+    {
+      "key": "1d2d5f1c-226f-4574-a859-d96eeb8ead0f",
+      "id": "Q-01",
+      "text": "With seven aircraft in the fly area at once, which aircraft does each camera detect, when and where, which observations are missed or false, and how often is an observation associated with the wrong aircraft?",
+      "note": "Response per camera per aircraft: detection events with ground and slant range; missed observations; false detections; wrong associations. Vary: spacing (crossing pair at 5 m vertical, close pair at 16 m), speed (6 to 16 m/s), altitude (20 to 60 m AGL). Hold: camera settings as the ladder baseline. Record: sun, background, wind. Replicates: 2 runs minimum. Target-absent interval: 120 s before launch. Multi-aircraft association extends the single-aircraft method of the plan."
+    }
+  ],
+  "threats": [
+    {
+      "key": "0a0aeb7d-4f3f-45c2-be2f-b4e520a6c888",
+      "id": "T1",
+      "type": "g1-quad-isr",
+      "path": [
+        {
+          "key": "50b30fce-cb5f-4085-a8a1-14bb12508e02",
+          "x": -143.2,
+          "y": 164.6,
+          "z": 0,
+          "holdS": 120
+        },
+        {
+          "key": "3360129f-58ca-46f4-a0e6-4322e882d02b",
+          "x": -143.2,
+          "y": 164.6,
+          "z": 50,
+          "holdS": 0
+        },
+        {
+          "key": "a08c149c-b604-4dc0-99b6-20bb513b4fa3",
+          "x": 98.2,
+          "y": -136.6,
+          "z": 50,
+          "holdS": 15
+        }
+      ],
+      "speedMs": 6,
+      "group": "A"
+    },
+    {
+      "key": "8e3ea59f-f696-47e3-b8ee-223a9ae9052d",
+      "id": "T2",
+      "type": "g1-quad-isr",
+      "path": [
+        {
+          "key": "f9bf703c-d2f8-4f3b-aa3d-d54e09e08166",
+          "x": -162.2,
+          "y": 149.9,
+          "z": 0,
+          "holdS": 120
+        },
+        {
+          "key": "4f508cdd-eacb-44a8-90bb-fac2504804f3",
+          "x": -162.2,
+          "y": 149.9,
+          "z": 60,
+          "holdS": 0
+        },
+        {
+          "key": "a2d7872f-da3f-4a37-885a-cda0a4f06003",
+          "x": 69.8,
+          "y": -158.7,
+          "z": 60,
+          "holdS": 15
+        }
+      ],
+      "speedMs": 6,
+      "group": "A"
+    },
+    {
+      "key": "77c9db5b-f3aa-4a6e-896a-01ceef40ce98",
+      "id": "T3",
+      "type": "g1-fpv-rf",
+      "path": [
+        {
+          "key": "3592b5eb-82b2-4ece-914f-1b57f6faca59",
+          "x": -139.4,
+          "y": 166.3,
+          "z": 0,
+          "holdS": 120
+        },
+        {
+          "key": "d94e6acb-a6e5-4b5d-9a0f-4f0306a3facb",
+          "x": -139.4,
+          "y": 166.3,
+          "z": 25,
+          "holdS": 0
+        },
+        {
+          "key": "9d336b13-4b67-4ebb-8255-785d87c87423",
+          "x": -95.8,
+          "y": 54.6,
+          "z": 25,
+          "holdS": 0
+        },
+        {
+          "key": "adec8fe3-de28-47c0-b111-98e1fd69c452",
+          "x": 6.2,
+          "y": -18.1,
+          "z": 25,
+          "holdS": 0
+        },
+        {
+          "key": "21a12b51-6861-42e7-a10a-3d4adddb4559",
+          "x": 51.4,
+          "y": -135,
+          "z": 25,
+          "holdS": 0
+        },
+        {
+          "key": "771e99aa-7725-4cfc-a948-f8c8e71e0764",
+          "x": 99.5,
+          "y": -154.6,
+          "z": 25,
+          "holdS": 10
+        }
+      ],
+      "speedMs": 12,
+      "group": "B"
+    },
+    {
+      "key": "895e3fdb-00fd-4e6b-9f4b-3f0011c14577",
+      "id": "T4",
+      "type": "g1-fpv-rf",
+      "path": [
+        {
+          "key": "19deb880-3a7b-4b55-bb83-b8fefec3be42",
+          "x": -164.7,
+          "y": 146.7,
+          "z": 0,
+          "holdS": 120
+        },
+        {
+          "key": "c2756ebf-6b67-4544-b461-04b4addc45da",
+          "x": -164.7,
+          "y": 146.7,
+          "z": 30,
+          "holdS": 0
+        },
+        {
+          "key": "4c02f8c5-0b69-4637-8c76-25c84974880f",
+          "x": -67.3,
+          "y": 76.7,
+          "z": 30,
+          "holdS": 0
+        },
+        {
+          "key": "bb09061e-4532-42fa-a5d8-d27bf8c4779f",
+          "x": -22.2,
+          "y": -40.2,
+          "z": 30,
+          "holdS": 0
+        },
+        {
+          "key": "91bca57c-285b-4909-b43d-ba865f206116",
+          "x": 79.8,
+          "y": -112.9,
+          "z": 30,
+          "holdS": 0
+        },
+        {
+          "key": "582de505-0c6c-4e60-a261-f25aaab6f315",
+          "x": 86.9,
+          "y": -164.4,
+          "z": 30,
+          "holdS": 10
+        }
+      ],
+      "speedMs": 12,
+      "group": "B"
+    },
+    {
+      "key": "31cfbcba-febd-4bfa-93e2-523a7f1483c0",
+      "id": "T5",
+      "type": "g1-fpv-rf",
+      "path": [
+        {
+          "key": "e3689d89-b21c-4e1d-86dd-8323c0a1b0a3",
+          "x": -152.1,
+          "y": 156.5,
+          "z": 0,
+          "holdS": 140
+        },
+        {
+          "key": "3b8ad1f8-7479-476b-b1ae-f247b33a83d4",
+          "x": -152.1,
+          "y": 156.5,
+          "z": 20,
+          "holdS": 0
+        },
+        {
+          "key": "22f85a64-c12f-414b-b382-61866af3a2a3",
+          "x": 102.4,
+          "y": -171.4,
+          "z": 20,
+          "holdS": 10
+        }
+      ],
+      "speedMs": 16,
+      "group": "B"
+    },
+    {
+      "key": "18a44c64-e629-4a08-9c8f-71dcfc6f3446",
+      "id": "T6",
+      "type": "g1-fpv-rf",
+      "path": [
+        {
+          "key": "b940fb00-3f38-471e-9362-a61f0e9a9042",
+          "x": -145.7,
+          "y": 161.4,
+          "z": 0,
+          "holdS": 120
+        },
+        {
+          "key": "25dc308f-8f4b-42ac-bedc-4e965b06bf18",
+          "x": -145.7,
+          "y": 161.4,
+          "z": 35,
+          "holdS": 0
+        },
+        {
+          "key": "c22eb255-e807-4d6e-8c41-bbcee1868ef4",
+          "x": 84.2,
+          "y": -134.9,
+          "z": 35,
+          "holdS": 10
+        }
+      ],
+      "speedMs": 10,
+      "group": "B"
+    },
+    {
+      "key": "f711dd36-fbc6-4328-864f-7ab3887ed491",
+      "id": "T7",
+      "type": "g1-fpv-rf",
+      "path": [
+        {
+          "key": "1f696251-7b42-428c-a7df-620a9eea61a8",
+          "x": -158.4,
+          "y": 151.6,
+          "z": 0,
+          "holdS": 120
+        },
+        {
+          "key": "615dd860-170d-41c9-b871-c7772328d5d8",
+          "x": -158.4,
+          "y": 151.6,
+          "z": 35,
+          "holdS": 0
+        },
+        {
+          "key": "9eed2774-c9d4-485d-ae70-559742fe6134",
+          "x": 71.5,
+          "y": -144.7,
+          "z": 35,
+          "holdS": 10
+        }
+      ],
+      "speedMs": 10,
+      "group": "B"
+    }
+  ],
+  "sensors": [
+    {
+      "key": "be4363f3-6af4-432f-a5b5-a0230b4dbbcf",
+      "id": "CAM-1",
+      "kind": "eoir",
+      "x": 144.9,
+      "y": -201.7,
+      "z": 2.5,
+      "rangeM": 250,
+      "minRangeM": 0,
+      "fovDeg": 80,
+      "bearingDeg": 322.2,
+      "elMinDeg": -24,
+      "elMaxDeg": 40,
+      "model": {
+        "pd": {
+          "kind": "logistic",
+          "r50M": 200,
+          "widthM": 25
+        },
+        "scanS": 1,
+        "trackM": 3,
+        "trackN": 5,
+        "coastS": 10,
+        "idDwellS": 5,
+        "pCorrectId": 0.9,
+        "trackErrorM": 5
+      },
+      "entered": {
+        "1.3": {
+          "value": 80,
+          "source": "Appendix B example value (80 deg horizontal, 2560 x 1920, 25 fps); confirm against the purchased model"
+        }
+      }
+    },
+    {
+      "key": "3fcd7767-669c-4d49-a68e-c9f081dc1f07",
+      "id": "CAM-2",
+      "kind": "eoir",
+      "x": 137,
+      "y": -207.8,
+      "z": 2.5,
+      "rangeM": 250,
+      "minRangeM": 0,
+      "fovDeg": 80,
+      "bearingDeg": 322.2,
+      "elMinDeg": -24,
+      "elMaxDeg": 40,
+      "model": {
+        "pd": {
+          "kind": "logistic",
+          "r50M": 200,
+          "widthM": 25
+        },
+        "scanS": 1,
+        "trackM": 3,
+        "trackN": 5,
+        "coastS": 10,
+        "idDwellS": 5,
+        "pCorrectId": 0.9,
+        "trackErrorM": 5
+      },
+      "entered": {
+        "1.3": {
+          "value": 80,
+          "source": "Appendix B example value (80 deg horizontal, 2560 x 1920, 25 fps); confirm against the purchased model"
+        }
+      }
+    },
+    {
+      "key": "ed89c172-9bcc-4010-a429-60fb88ff06f3",
+      "id": "CAM-3",
+      "kind": "eoir",
+      "x": 129.1,
+      "y": -213.9,
+      "z": 2.5,
+      "rangeM": 400,
+      "minRangeM": 0,
+      "fovDeg": 40,
+      "bearingDeg": 322.2,
+      "elMinDeg": -10,
+      "elMaxDeg": 20,
+      "model": {
+        "pd": {
+          "kind": "logistic",
+          "r50M": 320,
+          "widthM": 40
+        },
+        "scanS": 1,
+        "trackM": 3,
+        "trackN": 5,
+        "coastS": 10,
+        "idDwellS": 5,
+        "pCorrectId": 0.9,
+        "trackErrorM": 5
+      },
+      "entered": {
+        "1.3": {
+          "value": 40,
+          "source": "Varifocal at 2x: about 40 deg horizontal; derive from the calibrated focal length"
+        }
+      }
+    },
+    {
+      "key": "6f67fb79-ec78-4660-bf06-64619cf79a57",
+      "id": "CAM-4",
+      "kind": "eoir",
+      "x": 121.2,
+      "y": -220.1,
+      "z": 2.5,
+      "rangeM": 450,
+      "minRangeM": 0,
+      "fovDeg": 17.6,
+      "bearingDeg": 322.2,
+      "elMinDeg": -2.6,
+      "elMaxDeg": 10.6,
+      "model": {
+        "pd": {
+          "kind": "logistic",
+          "r50M": 360,
+          "widthM": 45
+        },
+        "scanS": 1,
+        "trackM": 3,
+        "trackN": 5,
+        "coastS": 10,
+        "idDwellS": 5,
+        "pCorrectId": 0.9,
+        "trackErrorM": 5
+      },
+      "entered": {
+        "1.3": {
+          "value": 17.6,
+          "source": "Varifocal at 5x: about 17.6 deg horizontal; derive from the calibrated focal length"
+        }
+      }
+    }
+  ],
+  "effectors": [],
+  "nodes": [
+    {
+      "key": "9036dc7c-5867-4800-95b6-da1536bdca2a",
+      "id": "GCS-1",
+      "kind": "c2",
+      "x": -156.4,
+      "y": 178.4,
+      "z": 0,
+      "rangeM": 0,
+      "fovDeg": 0,
+      "bearingDeg": 0
+    },
+    {
+      "key": "48c869cb-2684-48e1-9eeb-62b50b5c6c80",
+      "id": "REC-1",
+      "kind": "c2",
+      "x": 142.2,
+      "y": -222.7,
+      "z": 0,
+      "rangeM": 0,
+      "fovDeg": 0,
+      "bearingDeg": 0
+    },
+    {
+      "key": "69b7df67-a239-4b03-b05f-46d0cc9a9787",
+      "id": "TM-1",
+      "kind": "tspi",
+      "x": -156.4,
+      "y": 178.4,
+      "z": 0,
+      "rangeM": 0,
+      "fovDeg": 0,
+      "bearingDeg": 0
+    },
+    {
+      "key": "4be69c3a-2420-4408-ab8b-5060e84a8903",
+      "id": "TM-2",
+      "kind": "tspi",
+      "x": 142.2,
+      "y": -222.7,
+      "z": 0,
+      "rangeM": 0,
+      "fovDeg": 0,
+      "bearingDeg": 0
+    }
+  ],
+  "areas": [
+    {
+      "key": "02647a91-1718-4623-9f3a-f8a03172237c",
+      "id": "RNG-1",
+      "kind": "range",
+      "label": "UAS Fly Area",
+      "pts": [
+        [-123.36462163145045, 215.29097330151683],
+        [-171.59484321367324, 179.77648788644828],
+        [-165.90799387592784, 88.02552500681175],
+        [-169.52974947038118, 45.0796879849593],
+        [-102.00133989190732, -35.15004811132006],
+        [-42.99043164499163, -95.5947242043527],
+        [22.249219368175574, -163.2879702901044],
+        [60.570383247038656, -188.0051764791058],
+        [79.65914686422202, -188.2705285185771],
+        [89.62404236394386, -196.88048125743254],
+        [111.17259124987362, -197.01068730756657],
+        [129.40764642662523, -215.29097330230516],
+        [153.32475288453577, -215.21841943542483],
+        [171.59484321496595, -185.0357851343788],
+        [94.34946604088219, -116.50395310833412],
+        [71.47525118065525, -68.37570844711571],
+        [76.07892022173287, -37.36415681106672],
+        [84.43885464963621, -28.746114401288995],
+        [22.85600213040531, 17.997990434686123],
+        [-17.512764843602923, 21.97333128620821],
+        [-56.64155541790132, 66.84106320507355],
+        [-88.04594082810108, 132.63662670997346]
+      ],
+      "zMinM": 0,
+      "zMaxM": 0
+    },
+    {
+      "key": "aef901e5-a385-4e71-9c01-5dc7e8647ee9",
+      "id": "RNG-2",
+      "kind": "range",
+      "label": "TST Ranch",
+      "pts": [
+        [230.30726095023843, -233.0881264514529],
+        [240.5570673539249, 199.59667499104535],
+        [-438.0289047764795, 268.75671172009766],
+        [-445.6379407367174, 143.31894767416395],
+        [-362.2528423000939, 164.28209565163462],
+        [-236.6236523151504, 83.72348090256772],
+        [-214.9205319581767, 34.0631755000569],
+        [-242.7626138373415, -1.2064380358015552],
+        [-382.8222279304318, 71.27997241563834],
+        [-452.12497677997885, 66.56195549427153],
+        [-453.5705356707926, -68.06082035835377],
+        [-433.105018098894, -98.18774449156881],
+        [-382.78895593616556, -80.56141836196542],
+        [-345.97870662916336, -20.247567905337874],
+        [-268.8811542813583, -58.70042777246993],
+        [-265.4589674541323, -100.81166640598222],
+        [-301.81935095174947, -174.79362548996758],
+        [-383.0472117522834, -179.30591729913036],
+        [-353.50872897782114, -234.75907896484424]
+      ],
+      "zMinM": 0,
+      "zMaxM": 0
+    },
+    {
+      "key": "846b3df5-7df0-431f-a4fa-b06ab7d2bb4c",
+      "id": "DA",
+      "kind": "asset",
+      "label": "Camera site",
+      "pts": [
+        [121, -222.9],
+        [145, -222.9],
+        [145, -198.9],
+        [121, -198.9]
+      ],
+      "zMinM": 0,
+      "zMaxM": 0
+    }
+  ],
+  "planes": [
+    {
+      "key": "8da83f47-e484-415b-860f-87bec5085d1e",
+      "id": "HP-1",
+      "label": "Runner 20 m AGL",
+      "zM": 20
+    },
+    {
+      "key": "e99e9645-b9b2-4a8d-8511-ca77a62efa66",
+      "id": "HP-2",
+      "label": "Mavic pair 50 to 60 m AGL",
+      "zM": 60
+    },
+    {
+      "key": "b4b18860-7f27-4ebe-8f25-3dc0fcaa5946",
+      "id": "HP-3",
+      "label": "400 ft AGL ceiling (Part 107)",
+      "zM": 121.9
+    }
+  ],
+  "events": [
+    {
+      "key": "40dd9d86-91bd-4db8-bb2f-6e8629388fc1",
+      "id": "e1",
+      "tS": 0,
+      "type": "checkpoint",
+      "label": "Recording on; target-absent interval (120 s)",
+      "threatKey": "0a0aeb7d-4f3f-45c2-be2f-b4e520a6c888",
+      "sensorKey": null
+    },
+    {
+      "key": "352ab1d8-3330-40fb-821d-54547bcedd24",
+      "id": "e2",
+      "tS": 137,
+      "type": "checkpoint",
+      "label": "T3 and T4 cross on the axis (first crossing)",
+      "threatKey": "77c9db5b-f3aa-4a6e-896a-01ceef40ce98",
+      "sensorKey": null
+    },
+    {
+      "key": "441c28e0-c17a-498f-bc83-a66a11920ba9",
+      "id": "e3",
+      "tS": 148,
+      "type": "checkpoint",
+      "label": "T3 and T4 cross on the axis (second crossing)",
+      "threatKey": "77c9db5b-f3aa-4a6e-896a-01ceef40ce98",
+      "sensorKey": null
+    },
+    {
+      "key": "916d4f56-ce40-4372-8784-2531455db9aa",
+      "id": "e4",
+      "tS": 144,
+      "type": "detect",
+      "label": "First cue on the runner expected (CAM-4, 5x)",
+      "threatKey": "31cfbcba-febd-4bfa-93e2-523a7f1483c0",
+      "sensorKey": "6f67fb79-ec78-4660-bf06-64619cf79a57"
+    },
+    {
+      "key": "efb7e1b2-70cc-4ffe-9d67-c60d778a20a9",
+      "id": "e5",
+      "tS": 171,
+      "type": "identify",
+      "label": "Mavic pair identified expected (CAM-1)",
+      "threatKey": "0a0aeb7d-4f3f-45c2-be2f-b4e520a6c888",
+      "sensorKey": "be4363f3-6af4-432f-a5b5-a0230b4dbbcf"
+    }
+  ],
+  "snapshots": [137, 148, 144],
+  "cards": [
+    {
+      "key": "1e849365-1fe1-4001-beb2-722f48535ad2",
+      "id": "c4",
+      "name": "Heights, side view",
+      "view": {
+        "kind": "elevation",
+        "centre": {
+          "x": -256,
+          "y": -14
+        },
+        "zoom": 1.289,
+        "yawDeg": -35,
+        "pitchDeg": 55,
+        "ref": "asset",
+        "elevationMode": "fromAsset"
+      },
+      "layers": {
+        "reach": true,
+        "events": false,
+        "envelopes": false,
+        "telemetry": false,
+        "labels": false,
+        "target": false,
+        "labelsRest": false
+      },
+      "displays": {
+        "timeline": true,
+        "chart": false,
+        "readout": false,
+        "emphasis": false,
+        "hidden": false
+      },
+      "clip": null,
+      "focus": [
+        "0a0aeb7d-4f3f-45c2-be2f-b4e520a6c888",
+        "8e3ea59f-f696-47e3-b8ee-223a9ae9052d",
+        "77c9db5b-f3aa-4a6e-896a-01ceef40ce98",
+        "895e3fdb-00fd-4e6b-9f4b-3f0011c14577",
+        "31cfbcba-febd-4bfa-93e2-523a7f1483c0",
+        "18a44c64-e629-4a08-9c8f-71dcfc6f3446",
+        "f711dd36-fbc6-4328-864f-7ab3887ed491"
+      ],
+      "tS": 148,
+      "caption": "Side view from the camera site at the second crossing: five heights from 20 to 60 m AGL across the group.",
+      "notes": "Set the view From asset to read every aircraft against the camera elevation limits."
+    },
+    {
+      "key": "327b5bd7-12e9-43a5-aba6-1099a5be5789",
+      "id": "c1",
+      "name": "Heights, side view at t+2:08",
+      "view": {
+        "kind": "elevation",
+        "centre": {
+          "x": -256,
+          "y": -14
+        },
+        "zoom": 1.289,
+        "yawDeg": -35,
+        "pitchDeg": 55,
+        "ref": "asset",
+        "elevationMode": "fromAsset"
+      },
+      "layers": {
+        "reach": true,
+        "events": false,
+        "envelopes": false,
+        "telemetry": false,
+        "labels": false,
+        "target": false,
+        "labelsRest": false
+      },
+      "displays": {
+        "timeline": true,
+        "chart": false,
+        "readout": false,
+        "emphasis": false,
+        "hidden": false
+      },
+      "clip": null,
+      "focus": [
+        "0a0aeb7d-4f3f-45c2-be2f-b4e520a6c888",
+        "8e3ea59f-f696-47e3-b8ee-223a9ae9052d",
+        "77c9db5b-f3aa-4a6e-896a-01ceef40ce98",
+        "895e3fdb-00fd-4e6b-9f4b-3f0011c14577",
+        "31cfbcba-febd-4bfa-93e2-523a7f1483c0",
+        "18a44c64-e629-4a08-9c8f-71dcfc6f3446",
+        "f711dd36-fbc6-4328-864f-7ab3887ed491"
+      ],
+      "tS": 128.4,
+      "caption": "",
+      "notes": ""
+    },
+    {
+      "key": "5ecbe18b-1f88-4309-80e0-b1afd47a4ff2",
+      "id": "c2",
+      "name": "Heights, side view at t+2:22",
+      "view": {
+        "kind": "elevation",
+        "centre": {
+          "x": -256,
+          "y": -14
+        },
+        "zoom": 1.289,
+        "yawDeg": -35,
+        "pitchDeg": 55,
+        "ref": "asset",
+        "elevationMode": "fromAsset"
+      },
+      "layers": {
+        "reach": true,
+        "events": false,
+        "envelopes": false,
+        "telemetry": false,
+        "labels": false,
+        "target": false,
+        "labelsRest": false
+      },
+      "displays": {
+        "timeline": true,
+        "chart": false,
+        "readout": false,
+        "emphasis": false,
+        "hidden": false
+      },
+      "clip": null,
+      "focus": [
+        "0a0aeb7d-4f3f-45c2-be2f-b4e520a6c888",
+        "8e3ea59f-f696-47e3-b8ee-223a9ae9052d",
+        "77c9db5b-f3aa-4a6e-896a-01ceef40ce98",
+        "895e3fdb-00fd-4e6b-9f4b-3f0011c14577",
+        "31cfbcba-febd-4bfa-93e2-523a7f1483c0",
+        "18a44c64-e629-4a08-9c8f-71dcfc6f3446",
+        "f711dd36-fbc6-4328-864f-7ab3887ed491"
+      ],
+      "tS": 141.5,
+      "caption": "",
+      "notes": ""
+    },
+    {
+      "key": "9752ca62-d38e-4831-bfc9-1ff87ec2430e",
+      "id": "c3",
+      "name": "Heights, side view at t+2:34",
+      "view": {
+        "kind": "elevation",
+        "centre": {
+          "x": -256,
+          "y": -14
+        },
+        "zoom": 1.289,
+        "yawDeg": -35,
+        "pitchDeg": 55,
+        "ref": "asset",
+        "elevationMode": "fromAsset"
+      },
+      "layers": {
+        "reach": true,
+        "events": false,
+        "envelopes": false,
+        "telemetry": false,
+        "labels": false,
+        "target": false,
+        "labelsRest": false
+      },
+      "displays": {
+        "timeline": true,
+        "chart": false,
+        "readout": false,
+        "emphasis": false,
+        "hidden": false
+      },
+      "clip": null,
+      "focus": [
+        "0a0aeb7d-4f3f-45c2-be2f-b4e520a6c888",
+        "8e3ea59f-f696-47e3-b8ee-223a9ae9052d",
+        "77c9db5b-f3aa-4a6e-896a-01ceef40ce98",
+        "895e3fdb-00fd-4e6b-9f4b-3f0011c14577",
+        "31cfbcba-febd-4bfa-93e2-523a7f1483c0",
+        "18a44c64-e629-4a08-9c8f-71dcfc6f3446",
+        "f711dd36-fbc6-4328-864f-7ab3887ed491"
+      ],
+      "tS": 153.6,
+      "caption": "",
+      "notes": ""
+    },
+    {
+      "key": "bbf6edd8-e2ec-4a57-af3f-dc8f9a91d509",
+      "id": "c5",
+      "name": "Swarm, 3D",
+      "view": {
+        "kind": "3d",
+        "centre": {
+          "x": -53,
+          "y": 242
+        },
+        "zoom": 3.432,
+        "yawDeg": 297,
+        "pitchDeg": 8.1,
+        "ref": "asset",
+        "elevationMode": "alongPath"
+      },
+      "layers": {
+        "reach": true,
+        "events": false,
+        "envelopes": true,
+        "telemetry": false,
+        "labels": false,
+        "labelsRest": false
+      },
+      "displays": {
+        "timeline": true,
+        "chart": false,
+        "readout": false,
+        "emphasis": true,
+        "hidden": false
+      },
+      "clip": null,
+      "focus": [
+        "0a0aeb7d-4f3f-45c2-be2f-b4e520a6c888",
+        "8e3ea59f-f696-47e3-b8ee-223a9ae9052d",
+        "77c9db5b-f3aa-4a6e-896a-01ceef40ce98",
+        "895e3fdb-00fd-4e6b-9f4b-3f0011c14577",
+        "31cfbcba-febd-4bfa-93e2-523a7f1483c0",
+        "18a44c64-e629-4a08-9c8f-71dcfc6f3446",
+        "f711dd36-fbc6-4328-864f-7ab3887ed491"
+      ],
+      "tS": 148,
+      "caption": "The seven paths in 3D at the second crossing, with the group hulls.",
+      "notes": "Orbit to show the vertical separation of the crossing pair."
+    },
+    {
+      "key": "be59a06e-1d0f-4e2b-966a-92b478d62dd2",
+      "id": "c7",
+      "name": "Swarm, 3D at t+2:28",
+      "view": {
+        "kind": "3d",
+        "centre": {
+          "x": -167,
+          "y": 190
+        },
+        "zoom": 2.881,
+        "yawDeg": 322.5,
+        "pitchDeg": 11.6,
+        "ref": "asset",
+        "elevationMode": "alongPath"
+      },
+      "layers": {
+        "reach": true,
+        "events": false,
+        "envelopes": true,
+        "telemetry": false,
+        "labels": false,
+        "labelsRest": false,
+        "target": false
+      },
+      "displays": {
+        "timeline": true,
+        "chart": false,
+        "readout": false,
+        "emphasis": true,
+        "hidden": false
+      },
+      "clip": null,
+      "focus": [
+        "0a0aeb7d-4f3f-45c2-be2f-b4e520a6c888",
+        "8e3ea59f-f696-47e3-b8ee-223a9ae9052d",
+        "77c9db5b-f3aa-4a6e-896a-01ceef40ce98",
+        "895e3fdb-00fd-4e6b-9f4b-3f0011c14577",
+        "31cfbcba-febd-4bfa-93e2-523a7f1483c0",
+        "18a44c64-e629-4a08-9c8f-71dcfc6f3446",
+        "f711dd36-fbc6-4328-864f-7ab3887ed491"
+      ],
+      "tS": 148,
+      "caption": "",
+      "notes": ""
+    },
+    {
+      "key": "fed113b7-2639-4c0d-86c1-e88159d2a051",
+      "id": "c6",
+      "name": "Swarm slice",
+      "view": {
+        "kind": "plan",
+        "centre": {
+          "x": 0,
+          "y": 0
+        },
+        "zoom": 1,
+        "yawDeg": -35,
+        "pitchDeg": 55,
+        "ref": "asset",
+        "elevationMode": "alongPath"
+      },
+      "layers": {
+        "reach": true,
+        "events": true,
+        "envelopes": true,
+        "telemetry": false,
+        "labels": true
+      },
+      "displays": {
+        "timeline": true,
+        "chart": false,
+        "readout": true,
+        "emphasis": false,
+        "hidden": false
+      },
+      "clip": {
+        "t0S": 122,
+        "t1S": 209,
+        "rate": 4,
+        "beatsS": []
+      },
+      "focus": [],
+      "tS": 141.25,
+      "caption": "Launch to the last arrival at x4, hulls on.",
+      "notes": "Play in the brief; the timeline shows one lane per aircraft against the four cameras."
+    }
+  ],
+  "debrief": null,
+  "chainTime": {
+    "decisionS": 5,
+    "assignS": 3
+  },
+  "measures": [
+    {
+      "id": "1.1.1",
+      "op": ">=",
+      "threshold": 90,
+      "unit": "%"
+    },
+    {
+      "id": "1.6",
+      "op": ">=",
+      "threshold": 7,
+      "unit": "targets"
+    },
+    {
+      "id": "1.8",
+      "op": "<=",
+      "threshold": 20,
+      "unit": "m"
+    },
+    {
+      "id": "2.1.4",
+      "op": "<=",
+      "threshold": 10,
+      "unit": "%"
+    },
+    {
+      "id": "1.1.4",
+      "op": "<=",
+      "threshold": 2,
+      "unit": "per hour"
+    }
+  ],
+  "report": {
+    "notes": "Last in the order. Two replicate runs. Aircraft from the inventory: 2 DJI Mavic 3 (T1, T2) and 5 Rotor Riot Tanq 5 inch (T3 to T7). Launch all from the NW end; T5 launches 20 s after the others. T3 and T4 cross the axis twice with 5 m of height separation; T6 and T7 fly 16 m apart; T1 and T2 line abreast 36 m apart. Every aircraft holds its own altitude. Review rule: an observation counts for an aircraft only when its bearing and time agree with that aircraft GCS log within the stated uncertainty; otherwise log it as a wrong association. Before the first run: synchronize the PC, camera and telemetry clocks, record the offset with a visible time-marked event, and keep the correction (plan section 7, step 3). Safety: every path stays inside the UAS Fly Area; no path points at the camera site or at GCS-1. The One-way attack aim point sits 60 m short of the cameras. Site datum: the profile origin is the centre of the UAS Fly Area file (lat 35.289972, lon -79.385599, WGS84). Ground elevation 150 m is a planning value; survey it.",
+    "dataSources": [
+      "Four camera recordings, RTSP main stream, continuous, native resolution, 25 fps, MP4 segments with timestamps",
+      "Camera configuration snapshot per run per camera (Appendix B.1 JSON): resolution, fps, FOV, zoom, focus, exposure, time offset",
+      "Camera survey record: WGS84 position, lens height, azimuth, tilt, roll, installation photo",
+      "Aircraft GCS telemetry log at the maximum rate: GPS time, latitude, longitude, altitude, accuracy",
+      "ATOS tag track for the same aircraft (VAL fused), for comparison with the GCS log",
+      "Clock synchronization record: PC, camera, video and telemetry offsets with the measured uncertainty",
+      "Detection event table per camera: first possible, first confirmed, first identified; frame index, UTC, still image, reviewer",
+      "Computed ranges per event: aircraft and camera ENU positions, ground range, slant range, uncertainty, FOV-limited and occluded flags",
+      "Environmental record per run: sun position, sky background, cloud, visibility, wind, obstructions",
+      "Target-absent recording interval per run (120 s before launch) for the false-detection count",
+      "Association table per camera: observation, aircraft assigned, bearing and time residual against the GCS log, wrong-association flag",
+      "Missed-observation list per aircraft per camera"
+    ],
+    "truth": {
+      "source": "Aircraft GCS telemetry log (GPS time, lat, lon, alt); ATOS tag track as the second source",
+      "intervalS": 0.2,
+      "stationKeys": [
+        "69b7df67-a239-4b03-b05f-46d0cc9a9787",
+        "4be69c3a-2420-4408-ab8b-5060e84a8903"
+      ]
+    }
+  }
+}

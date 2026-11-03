@@ -1,0 +1,367 @@
+{
+  "schema": "profile-studio/7",
+  "id": "PROF-1",
+  "name": "Swarm of six, split",
+  "updated": "2026-11-02T11:51:33.791Z",
+  "collection": "",
+  "class": "Multi-aircraft",
+  "version": 6,
+  "site": {
+    "name": "High desert test site",
+    "lat": 35.05,
+    "lon": -117.6,
+    "elevM": 700
+  },
+  "questions": [
+    {
+      "key": "86e225f8-1ead-437b-a84c-282cabefc573",
+      "id": "Q-01",
+      "text": "Does the system track all six elements and engage both elements of the group after the split?",
+      "note": "2.3 Track Quantity is entered from the vendor sheet (planning value 6). The group splits about a third of the way along the approach."
+    }
+  ],
+  "threats": [
+    {
+      "key": "6a62ae4d-d3ff-4878-a92c-8039d2cccdfc",
+      "id": "A1",
+      "type": "g1-swarm-quad",
+      "path": [
+        {
+          "key": "0b1cbe17-7c8c-443e-a22b-faf661d70c98",
+          "x": 3678.6696632959406,
+          "y": 1265.4544668984015,
+          "z": 100,
+          "holdS": 0
+        },
+        {
+          "key": "749db279-b432-418a-ba61-d6ec1940d5ea",
+          "x": 2243.6696632959406,
+          "y": 530.4544668984015,
+          "z": 100,
+          "holdS": 0
+        },
+        {
+          "key": "728b7bd5-a58a-4ab7-8c4b-3e0ab484552f",
+          "x": -512.505510665191,
+          "y": -656.5368601298654,
+          "z": 100,
+          "holdS": 0
+        }
+      ],
+      "group": ""
+    },
+    {
+      "key": "7959a511-3194-4bb7-a139-1f418800c3ec",
+      "id": "A2",
+      "type": "g1-swarm-quad",
+      "path": [
+        {
+          "key": "fe24cdb1-4fe5-4dde-b940-e07069f05493",
+          "x": 3487.2017979775646,
+          "y": 1639.2726801390409,
+          "z": 100,
+          "holdS": 0
+        },
+        {
+          "key": "e278bc96-80f3-4b57-8fcb-3e9318301db1",
+          "x": 2052.2017979775646,
+          "y": 904.272680139041,
+          "z": 100,
+          "holdS": 0
+        },
+        {
+          "key": "0817d31a-ca2b-4d02-b51c-65876e2a6cce",
+          "x": -580.8868911360396,
+          "y": -523.0303554010657,
+          "z": 100,
+          "holdS": 0
+        }
+      ],
+      "group": ""
+    },
+    {
+      "key": "e6431634-0e0f-4e0d-a46f-9d16cf9bed38",
+      "id": "A3",
+      "type": "g1-swarm-quad",
+      "path": [
+        {
+          "key": "f69506e4-6bdc-41e3-a2a3-ea881ef11d5b",
+          "x": 3295.733932659188,
+          "y": 2013.0908933796802,
+          "z": 100,
+          "holdS": 0
+        },
+        {
+          "key": "3481ccaf-4e8d-45ee-93d1-75227ed84b14",
+          "x": 1860.7339326591882,
+          "y": 1278.0908933796802,
+          "z": 100,
+          "holdS": 0
+        },
+        {
+          "key": "71e815a3-a6e8-4092-9185-515737534f1d",
+          "x": -649.2682716068882,
+          "y": -389.5238506722659,
+          "z": 100,
+          "holdS": 0
+        }
+      ],
+      "group": ""
+    },
+    {
+      "key": "1696c098-c469-46ee-9af2-4321a7edddfe",
+      "id": "B1",
+      "type": "g1-swarm-quad",
+      "path": [
+        {
+          "key": "cad23bd4-b242-49a7-ae29-017303dfa956",
+          "x": 3104.266067340812,
+          "y": 2386.9091066203196,
+          "z": 100,
+          "holdS": 0
+        },
+        {
+          "key": "bd09ae2b-2960-4129-95a6-a1973d19ef87",
+          "x": 1669.2660673408118,
+          "y": 1651.9091066203198,
+          "z": 100,
+          "holdS": 0
+        },
+        {
+          "key": "e9337ef7-3db9-4cb8-8789-07905ca97387",
+          "x": -1150.7317283931118,
+          "y": 589.5238506722659,
+          "z": 100,
+          "holdS": 0
+        }
+      ],
+      "group": ""
+    },
+    {
+      "key": "ff29e659-59aa-4a82-a3e5-cce4d62450b7",
+      "id": "B2",
+      "type": "g1-swarm-quad",
+      "path": [
+        {
+          "key": "384add7a-9ab4-4590-9c37-6f10e6c7cdc0",
+          "x": 2912.7982020224354,
+          "y": 2760.727319860959,
+          "z": 100,
+          "holdS": 0
+        },
+        {
+          "key": "1fa5682c-d4e0-43e7-9789-53304ff332c5",
+          "x": 1477.7982020224356,
+          "y": 2025.7273198609591,
+          "z": 100,
+          "holdS": 0
+        },
+        {
+          "key": "ada11f7a-8ce0-4a41-8da5-48ce3530b870",
+          "x": -1219.1131088639604,
+          "y": 723.0303554010657,
+          "z": 100,
+          "holdS": 0
+        }
+      ],
+      "group": ""
+    },
+    {
+      "key": "14487d82-fc16-491b-8b8e-1f0a935d1a24",
+      "id": "B3",
+      "type": "g1-swarm-quad",
+      "path": [
+        {
+          "key": "cb6fd106-fefd-45a6-94d1-c9df60513500",
+          "x": 2721.3303367040594,
+          "y": 3134.5455331015983,
+          "z": 100,
+          "holdS": 0
+        },
+        {
+          "key": "bdc473df-b966-4d67-8bb1-57a2d6b48fe6",
+          "x": 1286.3303367040594,
+          "y": 2399.5455331015983,
+          "z": 100,
+          "holdS": 0
+        },
+        {
+          "key": "820e2290-472f-43c7-bb30-5396df8f63c0",
+          "x": -1287.494489334809,
+          "y": 856.5368601298654,
+          "z": 100,
+          "holdS": 0
+        }
+      ],
+      "group": ""
+    }
+  ],
+  "sensors": [
+    {
+      "key": "3efe2376-d9e5-40f7-9f1e-72b7df387068",
+      "id": "RDR-1",
+      "kind": "radar",
+      "x": 0,
+      "y": 0,
+      "z": 3,
+      "rangeM": 4000,
+      "minRangeM": 0,
+      "fovDeg": 360,
+      "bearingDeg": 0,
+      "elMinDeg": -5,
+      "elMaxDeg": 85,
+      "model": {
+        "scanS": 1,
+        "trackM": 3,
+        "trackN": 5,
+        "coastS": 10,
+        "idDwellS": 5,
+        "pCorrectId": 0.9,
+        "pd": {
+          "kind": "swerling",
+          "swerling": 1,
+          "refRangeM": 4000,
+          "refRcsM2": 0.01,
+          "refSnrDb": 13,
+          "pfa": 1e-6
+        },
+        "trackErrorM": 10
+      },
+      "entered": {
+        "2.3": {
+          "value": 6,
+          "source": "Planning value; vendor sheet to confirm"
+        }
+      }
+    },
+    {
+      "key": "57ce734b-abfd-43e3-a251-eb992d742076",
+      "id": "RF-1",
+      "kind": "rf",
+      "x": 750,
+      "y": 250,
+      "z": 3,
+      "rangeM": 3000,
+      "minRangeM": 0,
+      "fovDeg": 360,
+      "bearingDeg": 0,
+      "elMinDeg": -5,
+      "elMaxDeg": 85,
+      "model": {
+        "scanS": 1,
+        "trackM": 3,
+        "trackN": 5,
+        "coastS": 10,
+        "idDwellS": 5,
+        "pCorrectId": 0.9,
+        "pd": {
+          "kind": "logistic",
+          "r50M": 2400,
+          "widthM": 300
+        },
+        "trackErrorM": 50
+      },
+      "entered": {}
+    },
+    {
+      "key": "030c1344-d953-4893-9207-afc9b3ea2ceb",
+      "id": "EO-1",
+      "kind": "eoir",
+      "x": 200,
+      "y": -800,
+      "z": 3,
+      "rangeM": 2500,
+      "minRangeM": 0,
+      "fovDeg": 360,
+      "bearingDeg": 0,
+      "elMinDeg": -5,
+      "elMaxDeg": 85,
+      "model": {
+        "scanS": 1,
+        "trackM": 3,
+        "trackN": 5,
+        "coastS": 10,
+        "idDwellS": 5,
+        "pCorrectId": 0.9,
+        "pd": {
+          "kind": "logistic",
+          "r50M": 2000,
+          "widthM": 250
+        },
+        "trackErrorM": 5
+      },
+      "entered": {}
+    }
+  ],
+  "effectors": [
+    {
+      "key": "3b92dc66-9825-4d15-9981-591e75cb6f80",
+      "id": "EW-1",
+      "kind": "ew",
+      "x": -1370,
+      "y": 140,
+      "z": 2,
+      "rangeM": 1500,
+      "fovDeg": 360,
+      "bearingDeg": 0,
+      "timeToEffectS": 10,
+      "pk": 0.8,
+      "entered": {}
+    }
+  ],
+  "nodes": [],
+  "areas": [
+    {
+      "key": "87f2312f-c483-484b-9a0f-2e386e286eb7",
+      "id": "DA",
+      "kind": "asset",
+      "label": "Defended asset",
+      "pts": [
+        [-1025, -25],
+        [-775, -25],
+        [-775, 225],
+        [-1025, 225]
+      ],
+      "zMinM": 0,
+      "zMaxM": 0
+    }
+  ],
+  "planes": [],
+  "events": [],
+  "snapshots": [],
+  "cards": [],
+  "debrief": null,
+  "chainTime": {
+    "decisionS": 5,
+    "assignS": 3
+  },
+  "measures": [
+    {
+      "id": "1.2.1",
+      "op": ">=",
+      "threshold": 90,
+      "unit": "%"
+    },
+    {
+      "id": "2.3",
+      "op": ">=",
+      "threshold": 6,
+      "unit": "targets"
+    },
+    {
+      "id": "3.1.1",
+      "op": ">=",
+      "threshold": 90,
+      "unit": "%"
+    }
+  ],
+  "report": {
+    "notes": "",
+    "dataSources": [],
+    "truth": {
+      "source": "",
+      "intervalS": 1,
+      "stationKeys": []
+    }
+  }
+}
