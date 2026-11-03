@@ -29,8 +29,8 @@ run or score them. React, TypeScript and Vite in `src/`. The design direction is
   `docs/design-principles.md`; `docs/decisions.md` the user's settled choices;
   `docs/reference/` the DroneScore measures, JIATF-401 conventions and the local source list.
 - `profiles/jiop/` the JIOPs four-camera test profiles (JSON) and their Python generator.
-- `profiles/saved/` the browser library as of 2026-11-02, one JSON per profile and
-  `library.json`. It is not generated. It holds the card edits made in the app.
+- `profiles/saved/` the profiles to import, one JSON per profile and `library.json`. Not
+  generated: its JIOP records merge the card edits made in the app with the camera review.
 
 ## The standard
 

@@ -38,6 +38,6 @@ Mavic 3. Change a constant, then run `python3 profiles.py` and `python3 page.py`
 Import through the app: Library, Import, paste or pick a file. A record with the same id
 replaces the stored one.
 
-The app library as of 2026-11-02 is in `../saved/`. Its JIOP records hold the card edits made in
-the app, but they predate the camera planning model: their camera reach is still 250 m and their
-event times differ from the files here. `profiles.py` does not write to `../saved/`.
+`../saved/` holds the profiles to import. Its JIOP records are these files' camera values and
+event times merged with the card edits made in the app. `profiles.py` does not write to
+`../saved/`, so a change of a constant here must be carried there by hand.

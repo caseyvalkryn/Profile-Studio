@@ -3,10 +3,10 @@
     "schema": "profile-studio/8",
     "id": "JIOP-1",
     "name": "Range ladder, Mavic 3 by distance band",
-    "updated": "2026-11-02T17:23:09.351Z",
+    "updated": "2026-11-03T02:48:42.000Z",
     "collection": "JIOPs four-camera test, TST Ranch, 12 to 13 Nov 2026",
     "class": "Counter-UAS",
-    "version": 159,
+    "version": 160,
     "site": {
       "name": "TST Ranch, Carthage NC",
       "lat": 35.28997178998492,
@@ -89,17 +89,17 @@
         "x": 144.9,
         "y": -201.7,
         "z": 2.5,
-        "rangeM": 250,
+        "rangeM": 203,
         "minRangeM": 0,
-        "fovDeg": 80,
-        "bearingDeg": 322.2,
-        "elMinDeg": -24,
-        "elMaxDeg": 40,
+        "fovDeg": 80.0,
+        "bearingDeg": 313.6,
+        "elMinDeg": -22.2,
+        "elMaxDeg": 42.2,
         "model": {
           "pd": {
             "kind": "logistic",
-            "r50M": 200,
-            "widthM": 25
+            "r50M": 162.4,
+            "widthM": 20.3
           },
           "scanS": 1,
           "trackM": 3,
@@ -111,8 +111,8 @@
         },
         "entered": {
           "1.3": {
-            "value": 80,
-            "source": "Appendix B example value (80 deg horizontal, 2560 x 1920, 25 fps); confirm against the purchased model"
+            "value": 80.0,
+            "source": "Appendix B example value, 80 deg horizontal; confirm against the purchased model; tilt 10 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 64.4 deg; reach 203 m at 3 px on a 0.4 m target"
           }
         }
       },
@@ -120,20 +120,20 @@
         "key": "2b6c825b-4cc4-409e-9257-48c816e94043",
         "id": "CAM-2",
         "kind": "eoir",
-        "x": 137,
+        "x": 137.0,
         "y": -207.8,
         "z": 2.5,
-        "rangeM": 250,
+        "rangeM": 203,
         "minRangeM": 0,
-        "fovDeg": 80,
-        "bearingDeg": 322.2,
-        "elMinDeg": -24,
-        "elMaxDeg": 40,
+        "fovDeg": 80.0,
+        "bearingDeg": 319.3,
+        "elMinDeg": -22.2,
+        "elMaxDeg": 42.2,
         "model": {
           "pd": {
             "kind": "logistic",
-            "r50M": 200,
-            "widthM": 25
+            "r50M": 162.4,
+            "widthM": 20.3
           },
           "scanS": 1,
           "trackM": 3,
@@ -145,8 +145,8 @@
         },
         "entered": {
           "1.3": {
-            "value": 80,
-            "source": "Appendix B example value (80 deg horizontal, 2560 x 1920, 25 fps); confirm against the purchased model"
+            "value": 80.0,
+            "source": "Appendix B example value, 80 deg horizontal; confirm against the purchased model; tilt 10 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 64.4 deg; reach 203 m at 3 px on a 0.4 m target"
           }
         }
       },
@@ -157,17 +157,17 @@
         "x": 129.1,
         "y": -213.9,
         "z": 2.5,
-        "rangeM": 400,
+        "rangeM": 407,
         "minRangeM": 0,
-        "fovDeg": 40,
-        "bearingDeg": 322.2,
-        "elMinDeg": -10,
-        "elMaxDeg": 20,
+        "fovDeg": 45.5,
+        "bearingDeg": 325.0,
+        "elMinDeg": -9.5,
+        "elMaxDeg": 25.5,
         "model": {
           "pd": {
             "kind": "logistic",
-            "r50M": 320,
-            "widthM": 40
+            "r50M": 325.6,
+            "widthM": 40.7
           },
           "scanS": 1,
           "trackM": 3,
@@ -179,8 +179,8 @@
         },
         "entered": {
           "1.3": {
-            "value": 40,
-            "source": "Varifocal at 2x: about 40 deg horizontal; derive from the calibrated focal length"
+            "value": 45.5,
+            "source": "Derived: 2x optical zoom of the 80 deg lens, 2 atan(tan 40 deg / 2); replace with the lens spec at the zoom step set; tilt 8 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 34.9 deg; reach 407 m at 3 px on a 0.4 m target"
           }
         }
       },
@@ -191,17 +191,17 @@
         "x": 121.2,
         "y": -220.1,
         "z": 2.5,
-        "rangeM": 450,
+        "rangeM": 500,
         "minRangeM": 0,
         "fovDeg": 17.6,
-        "bearingDeg": 322.2,
-        "elMinDeg": -2.6,
-        "elMaxDeg": 10.6,
+        "bearingDeg": 330.7,
+        "elMinDeg": -0.6,
+        "elMaxDeg": 12.6,
         "model": {
           "pd": {
             "kind": "logistic",
-            "r50M": 360,
-            "widthM": 45
+            "r50M": 400.0,
+            "widthM": 50.0
           },
           "scanS": 1,
           "trackM": 3,
@@ -214,7 +214,7 @@
         "entered": {
           "1.3": {
             "value": 17.6,
-            "source": "Varifocal at 5x: about 17.6 deg horizontal; derive from the calibrated focal length"
+            "source": "Spec value at 5x (a true 5x of the 80 deg lens gives 19.0 deg); replace with the lens spec at the zoom step set; tilt 6 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 13.2 deg; reach 500 m at 3 px on a 0.4 m target"
           }
         }
       }
@@ -334,10 +334,10 @@
         "kind": "asset",
         "label": "Camera site",
         "pts": [
-          [121, -222.9],
-          [145, -222.9],
-          [145, -198.9],
-          [121, -198.9]
+          [121.0, -222.9],
+          [145.0, -222.9],
+          [145.0, -198.9],
+          [121.0, -198.9]
         ],
         "zMinM": 0,
         "zMaxM": 0
@@ -349,10 +349,10 @@
         "label": "Band 400 to 470 m",
         "pts": [
           [-169.7, 149.1],
-          [-165.9, 88],
+          [-165.9, 88.0],
           [-168.1, 61.7],
-          [-85, 126.2],
-          [-88, 132.6],
+          [-85.0, 126.2],
+          [-88.0, 132.6],
           [-113.7, 192.6]
         ],
         "zMinM": 0,
@@ -366,10 +366,10 @@
         "pts": [
           [-168.1, 61.7],
           [-169.5, 45.1],
-          [-113, -22.1],
+          [-113.0, -22.1],
           [-33.1, 39.9],
           [-56.6, 66.8],
-          [-85, 126.2]
+          [-85.0, 126.2]
         ],
         "zMinM": 0,
         "zMaxM": 0
@@ -380,12 +380,12 @@
         "kind": "ref",
         "label": "Band 200 to 300 m",
         "pts": [
-          [-113, -22.1],
-          [-102, -35.2],
+          [-113.0, -22.1],
+          [-102.0, -35.2],
           [-43.7, -94.9],
           [62.7, -12.3],
-          [22.9, 18],
-          [-17.5, 22],
+          [22.9, 18.0],
+          [-17.5, 22.0],
           [-33.1, 39.9]
         ],
         "zMinM": 0,
@@ -398,7 +398,7 @@
         "label": "Band 100 to 200 m",
         "pts": [
           [-43.7, -94.9],
-          [-43, -95.6],
+          [-43.0, -95.6],
           [22.2, -163.3],
           [27.2, -166.5],
           [93.6, -114.9],
@@ -417,7 +417,7 @@
         "label": "Band 50 to 100 m",
         "pts": [
           [27.2, -166.5],
-          [60.6, -188],
+          [60.6, -188.0],
           [79.7, -188.3],
           [80.1, -188.7],
           [131.1, -149.1],
@@ -455,7 +455,7 @@
       {
         "key": "b14bf27f-ace9-4482-a20f-5c60f8f63087",
         "id": "e2",
-        "tS": 132,
+        "tS": 132.0,
         "type": "checkpoint",
         "label": "Band 450 m: hover 30 s",
         "threatKey": "c74e4e2b-23c7-4941-a907-086db233824a",
@@ -464,7 +464,7 @@
       {
         "key": "f10ea035-c158-444d-a0e8-06f97dcf40fc",
         "id": "e3",
-        "tS": 182,
+        "tS": 182.0,
         "type": "checkpoint",
         "label": "Band 350 m: hover 30 s",
         "threatKey": "c74e4e2b-23c7-4941-a907-086db233824a",
@@ -473,7 +473,7 @@
       {
         "key": "41e49cba-9cef-4360-bbd2-e93afdea8702",
         "id": "e4",
-        "tS": 232,
+        "tS": 232.0,
         "type": "checkpoint",
         "label": "Band 250 m: hover 30 s",
         "threatKey": "c74e4e2b-23c7-4941-a907-086db233824a",
@@ -482,7 +482,7 @@
       {
         "key": "4b200aff-e1a1-4063-b778-78cb9193ac0f",
         "id": "e5",
-        "tS": 282,
+        "tS": 282.0,
         "type": "checkpoint",
         "label": "Band 150 m: hover 30 s",
         "threatKey": "c74e4e2b-23c7-4941-a907-086db233824a",
@@ -491,7 +491,7 @@
       {
         "key": "9e4d21e0-b753-4675-9510-87334d064e7c",
         "id": "e6",
-        "tS": 327,
+        "tS": 327.0,
         "type": "checkpoint",
         "label": "Band 75 m: hover 30 s",
         "threatKey": "c74e4e2b-23c7-4941-a907-086db233824a",
@@ -500,23 +500,84 @@
       {
         "key": "1930f8ef-182c-4393-af5f-a31948fa97e2",
         "id": "e7",
-        "tS": 164,
+        "tS": 120,
         "type": "detect",
-        "label": "First possible cue expected (CAM-4, 5x)",
+        "label": "First possible cue expected (CAM-4, 5x, 3 px) at about 470 m",
         "threatKey": "c74e4e2b-23c7-4941-a907-086db233824a",
         "sensorKey": "a63ba4ae-b1b1-4c6a-b4cd-502f9c880a64"
       },
       {
         "key": "d6431547-33e8-4318-89af-d4f1f6ea0a0f",
         "id": "e8",
-        "tS": 268,
+        "tS": 170,
         "type": "identify",
-        "label": "Identified expected (CAM-1, 80 deg)",
+        "label": "Mavic 3 identified expected (CAM-4, 5x, 8 px) at about 410 m",
         "threatKey": "c74e4e2b-23c7-4941-a907-086db233824a",
-        "sensorKey": "cea57206-a9e4-40d0-924d-c464ad5f1e77"
+        "sensorKey": "a63ba4ae-b1b1-4c6a-b4cd-502f9c880a64"
       }
     ],
     "snapshots": [],
+    "debrief": null,
+    "chainTime": {
+      "decisionS": 5,
+      "assignS": 3
+    },
+    "measures": [
+      {
+        "id": "1.1.1",
+        "op": ">=",
+        "threshold": 90,
+        "unit": "%"
+      },
+      {
+        "id": "1.1.2",
+        "op": ">=",
+        "threshold": 300,
+        "unit": "m"
+      },
+      {
+        "id": "1.1.3",
+        "op": ">=",
+        "threshold": 300,
+        "unit": "m"
+      },
+      {
+        "id": "2.1.3",
+        "op": ">=",
+        "threshold": 150,
+        "unit": "m"
+      },
+      {
+        "id": "1.1.4",
+        "op": "<=",
+        "threshold": 2,
+        "unit": "per hour"
+      }
+    ],
+    "report": {
+      "notes": "Run order: ladder first; it establishes the distance bins for the other profiles. Three replicate runs under the same conditions; add a fourth if two bins disagree between runs. Hover 30 s at 450, 350, 250, 150 and 75 m from the camera line, 40 m AGL, 5 m/s between bands, head-on aspect. Each hover gives every camera one 30 s observation interval per bin. Review each camera independently (plan section 7, step 6) and mark possible, confirmed and identified per bin; compute ground and slant range from the GCS log at each event. Before the first run: synchronize the PC, camera and telemetry clocks, record the offset with a visible time-marked event, and keep the correction (plan section 7, step 3). Safety: every path stays inside the UAS Fly Area; no path points at the camera site or at GCS-1. The One-way attack aim point sits 60 m short of the cameras. Site datum: the profile origin is the centre of the UAS Fly Area file (lat 35.289972, lon -79.385599, WGS84). Ground elevation 150 m is a planning value; survey it.",
+      "dataSources": [
+        "Four camera recordings, RTSP main stream, continuous, native resolution, 25 fps, MP4 segments with timestamps",
+        "Camera configuration snapshot per run per camera (Appendix B.1 JSON): resolution, fps, FOV, zoom, focus, exposure, time offset",
+        "Camera survey record: WGS84 position, lens height, azimuth, tilt, roll, installation photo",
+        "Aircraft GCS telemetry log at the maximum rate: GPS time, latitude, longitude, altitude, accuracy",
+        "ATOS tag track for the same aircraft (VAL fused), for comparison with the GCS log",
+        "Clock synchronization record: PC, camera, video and telemetry offsets with the measured uncertainty",
+        "Detection event table per camera: first possible, first confirmed, first identified; frame index, UTC, still image, reviewer",
+        "Computed ranges per event: aircraft and camera ENU positions, ground range, slant range, uncertainty, FOV-limited and occluded flags",
+        "Environmental record per run: sun position, sky background, cloud, visibility, wind, obstructions",
+        "Target-absent recording interval per run (120 s before launch) for the false-detection count",
+        "Per-bin detection table: run, camera, bin, outcome (possible, confirmed, identified, none), FOV-limited flag"
+      ],
+      "truth": {
+        "source": "Aircraft GCS telemetry log (GPS time, lat, lon, alt); ATOS tag track as the second source",
+        "intervalS": 0.2,
+        "stationKeys": [
+          "b3a85ebd-621e-4609-9e0d-020557e8c997",
+          "3266a779-d3e3-4647-a8f4-e6923fdb61ff"
+        ]
+      }
+    },
     "cards": [
       {
         "key": "5e232be5-e858-47ee-897f-53b433a4ab74",
@@ -653,77 +714,16 @@
         "caption": "",
         "notes": "This \n"
       }
-    ],
-    "debrief": null,
-    "chainTime": {
-      "decisionS": 5,
-      "assignS": 3
-    },
-    "measures": [
-      {
-        "id": "1.1.1",
-        "op": ">=",
-        "threshold": 90,
-        "unit": "%"
-      },
-      {
-        "id": "1.1.2",
-        "op": ">=",
-        "threshold": 300,
-        "unit": "m"
-      },
-      {
-        "id": "1.1.3",
-        "op": ">=",
-        "threshold": 300,
-        "unit": "m"
-      },
-      {
-        "id": "2.1.3",
-        "op": ">=",
-        "threshold": 150,
-        "unit": "m"
-      },
-      {
-        "id": "1.1.4",
-        "op": "<=",
-        "threshold": 2,
-        "unit": "per hour"
-      }
-    ],
-    "report": {
-      "notes": "Run order: ladder first; it establishes the distance bins for the other profiles. Three replicate runs under the same conditions; add a fourth if two bins disagree between runs. Hover 30 s at 450, 350, 250, 150 and 75 m from the camera line, 40 m AGL, 5 m/s between bands, head-on aspect. Each hover gives every camera one 30 s observation interval per bin. Review each camera independently (plan section 7, step 6) and mark possible, confirmed and identified per bin; compute ground and slant range from the GCS log at each event. Before the first run: synchronize the PC, camera and telemetry clocks, record the offset with a visible time-marked event, and keep the correction (plan section 7, step 3). Safety: every path stays inside the UAS Fly Area; no path points at the camera site or at GCS-1. The One-way attack aim point sits 60 m short of the cameras. Site datum: the profile origin is the centre of the UAS Fly Area file (lat 35.289972, lon -79.385599, WGS84). Ground elevation 150 m is a planning value; survey it.",
-      "dataSources": [
-        "Four camera recordings, RTSP main stream, continuous, native resolution, 25 fps, MP4 segments with timestamps",
-        "Camera configuration snapshot per run per camera (Appendix B.1 JSON): resolution, fps, FOV, zoom, focus, exposure, time offset",
-        "Camera survey record: WGS84 position, lens height, azimuth, tilt, roll, installation photo",
-        "Aircraft GCS telemetry log at the maximum rate: GPS time, latitude, longitude, altitude, accuracy",
-        "ATOS tag track for the same aircraft (VAL fused), for comparison with the GCS log",
-        "Clock synchronization record: PC, camera, video and telemetry offsets with the measured uncertainty",
-        "Detection event table per camera: first possible, first confirmed, first identified; frame index, UTC, still image, reviewer",
-        "Computed ranges per event: aircraft and camera ENU positions, ground range, slant range, uncertainty, FOV-limited and occluded flags",
-        "Environmental record per run: sun position, sky background, cloud, visibility, wind, obstructions",
-        "Target-absent recording interval per run (120 s before launch) for the false-detection count",
-        "Per-bin detection table: run, camera, bin, outcome (possible, confirmed, identified, none), FOV-limited flag"
-      ],
-      "truth": {
-        "source": "Aircraft GCS telemetry log (GPS time, lat, lon, alt); ATOS tag track as the second source",
-        "intervalS": 0.2,
-        "stationKeys": [
-          "b3a85ebd-621e-4609-9e0d-020557e8c997",
-          "3266a779-d3e3-4647-a8f4-e6923fdb61ff"
-        ]
-      }
-    }
+    ]
   },
   {
     "schema": "profile-studio/8",
     "id": "JIOP-2",
     "name": "One-way attack, Tanq FPV direct run",
-    "updated": "2026-11-03T02:18:12.795Z",
+    "updated": "2026-11-03T02:48:42.000Z",
     "collection": "JIOPs four-camera test, TST Ranch, 12 to 13 Nov 2026",
     "class": "One-way attack",
-    "version": 13,
+    "version": 14,
     "site": {
       "name": "TST Ranch, Carthage NC",
       "lat": 35.28997178998492,
@@ -785,17 +785,17 @@
         "x": 144.9,
         "y": -201.7,
         "z": 2.5,
-        "rangeM": 250,
+        "rangeM": 127,
         "minRangeM": 0,
-        "fovDeg": 80,
-        "bearingDeg": 322.2,
-        "elMinDeg": -24,
-        "elMaxDeg": 40,
+        "fovDeg": 80.0,
+        "bearingDeg": 313.6,
+        "elMinDeg": -22.2,
+        "elMaxDeg": 42.2,
         "model": {
           "pd": {
             "kind": "logistic",
-            "r50M": 200,
-            "widthM": 25
+            "r50M": 101.60000000000001,
+            "widthM": 12.700000000000001
           },
           "scanS": 1,
           "trackM": 3,
@@ -807,8 +807,8 @@
         },
         "entered": {
           "1.3": {
-            "value": 80,
-            "source": "Appendix B example value (80 deg horizontal, 2560 x 1920, 25 fps); confirm against the purchased model"
+            "value": 80.0,
+            "source": "Appendix B example value, 80 deg horizontal; confirm against the purchased model; tilt 10 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 64.4 deg; reach 127 m at 3 px on a 0.25 m target"
           }
         }
       },
@@ -816,20 +816,20 @@
         "key": "42714091-d741-4d2f-9fe0-82c5d6530c9f",
         "id": "CAM-2",
         "kind": "eoir",
-        "x": 137,
+        "x": 137.0,
         "y": -207.8,
         "z": 2.5,
-        "rangeM": 250,
+        "rangeM": 127,
         "minRangeM": 0,
-        "fovDeg": 80,
-        "bearingDeg": 322.2,
-        "elMinDeg": -24,
-        "elMaxDeg": 40,
+        "fovDeg": 80.0,
+        "bearingDeg": 319.3,
+        "elMinDeg": -22.2,
+        "elMaxDeg": 42.2,
         "model": {
           "pd": {
             "kind": "logistic",
-            "r50M": 200,
-            "widthM": 25
+            "r50M": 101.60000000000001,
+            "widthM": 12.700000000000001
           },
           "scanS": 1,
           "trackM": 3,
@@ -841,8 +841,8 @@
         },
         "entered": {
           "1.3": {
-            "value": 80,
-            "source": "Appendix B example value (80 deg horizontal, 2560 x 1920, 25 fps); confirm against the purchased model"
+            "value": 80.0,
+            "source": "Appendix B example value, 80 deg horizontal; confirm against the purchased model; tilt 10 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 64.4 deg; reach 127 m at 3 px on a 0.25 m target"
           }
         }
       },
@@ -853,17 +853,17 @@
         "x": 129.1,
         "y": -213.9,
         "z": 2.5,
-        "rangeM": 400,
+        "rangeM": 254,
         "minRangeM": 0,
-        "fovDeg": 40,
-        "bearingDeg": 322.2,
-        "elMinDeg": -10,
-        "elMaxDeg": 20,
+        "fovDeg": 45.5,
+        "bearingDeg": 325.0,
+        "elMinDeg": -9.5,
+        "elMaxDeg": 25.5,
         "model": {
           "pd": {
             "kind": "logistic",
-            "r50M": 320,
-            "widthM": 40
+            "r50M": 203.20000000000002,
+            "widthM": 25.400000000000002
           },
           "scanS": 1,
           "trackM": 3,
@@ -875,8 +875,8 @@
         },
         "entered": {
           "1.3": {
-            "value": 40,
-            "source": "Varifocal at 2x: about 40 deg horizontal; derive from the calibrated focal length"
+            "value": 45.5,
+            "source": "Derived: 2x optical zoom of the 80 deg lens, 2 atan(tan 40 deg / 2); replace with the lens spec at the zoom step set; tilt 8 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 34.9 deg; reach 254 m at 3 px on a 0.25 m target"
           }
         }
       },
@@ -887,17 +887,17 @@
         "x": 121.2,
         "y": -220.1,
         "z": 2.5,
-        "rangeM": 450,
+        "rangeM": 500,
         "minRangeM": 0,
         "fovDeg": 17.6,
-        "bearingDeg": 322.2,
-        "elMinDeg": -2.6,
-        "elMaxDeg": 10.6,
+        "bearingDeg": 330.7,
+        "elMinDeg": -0.6,
+        "elMaxDeg": 12.6,
         "model": {
           "pd": {
             "kind": "logistic",
-            "r50M": 360,
-            "widthM": 45
+            "r50M": 400.0,
+            "widthM": 50.0
           },
           "scanS": 1,
           "trackM": 3,
@@ -910,7 +910,7 @@
         "entered": {
           "1.3": {
             "value": 17.6,
-            "source": "Varifocal at 5x: about 17.6 deg horizontal; derive from the calibrated focal length"
+            "source": "Spec value at 5x (a true 5x of the 80 deg lens gives 19.0 deg); replace with the lens spec at the zoom step set; tilt 6 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 13.2 deg; reach 500 m at 3 px on a 0.25 m target"
           }
         }
       }
@@ -1030,10 +1030,10 @@
         "kind": "asset",
         "label": "Camera site",
         "pts": [
-          [121, -222.9],
-          [145, -222.9],
-          [145, -198.9],
-          [121, -198.9]
+          [121.0, -222.9],
+          [145.0, -222.9],
+          [145.0, -198.9],
+          [121.0, -198.9]
         ],
         "zMinM": 0,
         "zMaxM": 0
@@ -1089,29 +1089,29 @@
       {
         "key": "ded5796b-27b3-4ef9-82a9-01b24f967aca",
         "id": "e3",
-        "tS": 126,
+        "tS": 120,
         "type": "detect",
-        "label": "First possible cue expected (CAM-4, 5x)",
+        "label": "First possible cue expected (CAM-4, 5x, 3 px) at about 470 m",
         "threatKey": "b47833ee-4117-4097-b634-ac43b020c815",
         "sensorKey": "933daa2a-85e1-4712-a7a6-b1d1247a8489"
       },
       {
         "key": "b3eeceed-b068-4981-99d0-b5c2f7912f23",
         "id": "e4",
-        "tS": 132,
+        "tS": 127,
         "type": "track",
-        "label": "Confirmed detection expected (CAM-3, 2x)",
+        "label": "Confirmed detection expected (CAM-4, 5x, 5 px) at about 405 m",
         "threatKey": "b47833ee-4117-4097-b634-ac43b020c815",
-        "sensorKey": "00b2cc17-83a4-4216-8316-614bc6aaa492"
+        "sensorKey": "933daa2a-85e1-4712-a7a6-b1d1247a8489"
       },
       {
         "key": "11b63e48-2c9a-4c3c-adb3-f6f3a9bbbadd",
         "id": "e5",
-        "tS": 143,
+        "tS": 137,
         "type": "identify",
-        "label": "Identified expected (CAM-1, 80 deg)",
+        "label": "Identified expected (CAM-4, 5x, 8 px) at about 255 m",
         "threatKey": "b47833ee-4117-4097-b634-ac43b020c815",
-        "sensorKey": "651c1c25-1872-4687-84a9-8fc6eca0f8c5"
+        "sensorKey": "933daa2a-85e1-4712-a7a6-b1d1247a8489"
       },
       {
         "key": "9bdc97c2-2160-4ced-a9f1-0281ed83b98e",
@@ -1124,6 +1124,67 @@
       }
     ],
     "snapshots": [],
+    "debrief": null,
+    "chainTime": {
+      "decisionS": 5,
+      "assignS": 3
+    },
+    "measures": [
+      {
+        "id": "1.1.1",
+        "op": ">=",
+        "threshold": 90,
+        "unit": "%"
+      },
+      {
+        "id": "1.1.2",
+        "op": ">=",
+        "threshold": 300,
+        "unit": "m"
+      },
+      {
+        "id": "1.1.3",
+        "op": ">=",
+        "threshold": 300,
+        "unit": "m"
+      },
+      {
+        "id": "2.1.3",
+        "op": ">=",
+        "threshold": 150,
+        "unit": "m"
+      },
+      {
+        "id": "2.1.3t",
+        "op": "<=",
+        "threshold": 10,
+        "unit": "s"
+      }
+    ],
+    "report": {
+      "notes": "Second in the order, after the ladder. Three replicate runs. The Tanq flies the fly-area axis from the NW launch point at 15 m/s and 40 m AGL, then descends at 41 deg to the aim point 60 m short of the camera line and holds at 5 m AGL. Simulated attack: no payload, no flight toward people. The deck lists the OWA as single and as a swarm; the swarm profile covers the multi-aircraft case. Before the first run: synchronize the PC, camera and telemetry clocks, record the offset with a visible time-marked event, and keep the correction (plan section 7, step 3). Safety: every path stays inside the UAS Fly Area; no path points at the camera site or at GCS-1. The One-way attack aim point sits 60 m short of the cameras. Site datum: the profile origin is the centre of the UAS Fly Area file (lat 35.289972, lon -79.385599, WGS84). Ground elevation 150 m is a planning value; survey it.",
+      "dataSources": [
+        "Four camera recordings, RTSP main stream, continuous, native resolution, 25 fps, MP4 segments with timestamps",
+        "Camera configuration snapshot per run per camera (Appendix B.1 JSON): resolution, fps, FOV, zoom, focus, exposure, time offset",
+        "Camera survey record: WGS84 position, lens height, azimuth, tilt, roll, installation photo",
+        "Aircraft GCS telemetry log at the maximum rate: GPS time, latitude, longitude, altitude, accuracy",
+        "ATOS tag track for the same aircraft (VAL fused), for comparison with the GCS log",
+        "Clock synchronization record: PC, camera, video and telemetry offsets with the measured uncertainty",
+        "Detection event table per camera: first possible, first confirmed, first identified; frame index, UTC, still image, reviewer",
+        "Computed ranges per event: aircraft and camera ENU positions, ground range, slant range, uncertainty, FOV-limited and occluded flags",
+        "Environmental record per run: sun position, sky background, cloud, visibility, wind, obstructions",
+        "Target-absent recording interval per run (120 s before launch) for the false-detection count",
+        "Warning time per camera: first cue to aim point arrival, from the event table and the GCS log"
+      ],
+      "truth": {
+        "source": "Aircraft GCS telemetry log (GPS time, lat, lon, alt); ATOS tag track as the second source",
+        "intervalS": 0.2,
+        "stationKeys": [
+          "33ecb66b-c5eb-4999-a0db-9dfcd913f243",
+          "e5fa96da-2cec-4bdd-90e4-25ffa85fb7f8"
+        ]
+      }
+    },
     "cards": [
       {
         "key": "53fee2dd-d5eb-435c-ac19-db95af2e4f7a",
@@ -1193,8 +1254,8 @@
         },
         "clip": null,
         "focus": ["b47833ee-4117-4097-b634-ac43b020c815", "933daa2a-85e1-4712-a7a6-b1d1247a8489"],
-        "tS": 126,
-        "caption": "First possible cue expected from CAM-4 at 5x. Warning time to the aim point: about 25 s.",
+        "tS": 120,
+        "caption": "First possible cue expected from CAM-4 at 5x (3 px on a 0.25 m Tanq). Warning time to the aim point: about 31 s.",
         "notes": "Mark first possible, first confirmed and first identified as separate events in each camera (plan section 7, step 6). Each event links to its frame and GCS position."
       },
       {
@@ -1229,8 +1290,8 @@
         },
         "clip": null,
         "focus": ["b47833ee-4117-4097-b634-ac43b020c815", "651c1c25-1872-4687-84a9-8fc6eca0f8c5"],
-        "tS": 143,
-        "caption": "Identified expected in the 80 deg cameras. Record horizontal and slant range at each event per camera.",
+        "tS": 137,
+        "caption": "Identified expected (CAM-4, 5x, 8 px) at about 255 m. The 80 deg cameras reach 8 px on a Tanq only inside 48 m, past the aim point. Record horizontal and slant range at each event per camera.",
         "notes": "The identification criterion is written before the run (plan section 8): a reviewer locates the same moving target across consecutive frames without the flight log as a cue."
       },
       {
@@ -1267,7 +1328,7 @@
         "focus": ["b47833ee-4117-4097-b634-ac43b020c815"],
         "tS": 149.1041660048415,
         "caption": "The terminal descent along the path: 40 m AGL to 5 m over 40 m of ground. Steep, short warning.",
-        "notes": "CAM-4 at 5x loses the target at about 200 m (elevation above its 10.6 deg limit) and CAM-3 at 2x at about 100 m as the dive begins; the 80 deg cameras hold it to the aim point. Flag the zoomed results FOV-limited from those ranges."
+        "notes": "At 40 m AGL the elevation angle passes each camera's upper limit: CAM-1 at 1x inside about 41 m, CAM-2 at 1x inside about 41 m, CAM-3 at 2x inside about 79 m, CAM-4 at 5x inside about 168 m. Sensor 2560 x 1920 assumed; a 16:9 sensor narrows the vertical FOV and moves every limit out (confirm the model). The 80 deg cameras hold it to the aim point. Flag the zoomed results FOV-limited from those ranges."
       },
       {
         "key": "b11969d6-2fd9-4b3e-aa80-b04917a7a807",
@@ -1301,7 +1362,7 @@
         },
         "clip": null,
         "focus": ["b47833ee-4117-4097-b634-ac43b020c815"],
-        "tS": 132,
+        "tS": 127,
         "caption": "The run in 3D at the confirmed detection.",
         "notes": "Orbit to show the camera sectors against the descent."
       },
@@ -1346,77 +1407,16 @@
         "caption": "Launch to impact at x2.",
         "notes": "Play in the brief: about 35 s from launch to the aim point."
       }
-    ],
-    "debrief": null,
-    "chainTime": {
-      "decisionS": 5,
-      "assignS": 3
-    },
-    "measures": [
-      {
-        "id": "1.1.1",
-        "op": ">=",
-        "threshold": 90,
-        "unit": "%"
-      },
-      {
-        "id": "1.1.2",
-        "op": ">=",
-        "threshold": 300,
-        "unit": "m"
-      },
-      {
-        "id": "1.1.3",
-        "op": ">=",
-        "threshold": 300,
-        "unit": "m"
-      },
-      {
-        "id": "2.1.3",
-        "op": ">=",
-        "threshold": 150,
-        "unit": "m"
-      },
-      {
-        "id": "2.1.3t",
-        "op": "<=",
-        "threshold": 10,
-        "unit": "s"
-      }
-    ],
-    "report": {
-      "notes": "Second in the order, after the ladder. Three replicate runs. The Tanq flies the fly-area axis from the NW launch point at 15 m/s and 40 m AGL, then descends at 41 deg to the aim point 60 m short of the camera line and holds at 5 m AGL. Simulated attack: no payload, no flight toward people. The deck lists the OWA as single and as a swarm; the swarm profile covers the multi-aircraft case. Before the first run: synchronize the PC, camera and telemetry clocks, record the offset with a visible time-marked event, and keep the correction (plan section 7, step 3). Safety: every path stays inside the UAS Fly Area; no path points at the camera site or at GCS-1. The One-way attack aim point sits 60 m short of the cameras. Site datum: the profile origin is the centre of the UAS Fly Area file (lat 35.289972, lon -79.385599, WGS84). Ground elevation 150 m is a planning value; survey it.",
-      "dataSources": [
-        "Four camera recordings, RTSP main stream, continuous, native resolution, 25 fps, MP4 segments with timestamps",
-        "Camera configuration snapshot per run per camera (Appendix B.1 JSON): resolution, fps, FOV, zoom, focus, exposure, time offset",
-        "Camera survey record: WGS84 position, lens height, azimuth, tilt, roll, installation photo",
-        "Aircraft GCS telemetry log at the maximum rate: GPS time, latitude, longitude, altitude, accuracy",
-        "ATOS tag track for the same aircraft (VAL fused), for comparison with the GCS log",
-        "Clock synchronization record: PC, camera, video and telemetry offsets with the measured uncertainty",
-        "Detection event table per camera: first possible, first confirmed, first identified; frame index, UTC, still image, reviewer",
-        "Computed ranges per event: aircraft and camera ENU positions, ground range, slant range, uncertainty, FOV-limited and occluded flags",
-        "Environmental record per run: sun position, sky background, cloud, visibility, wind, obstructions",
-        "Target-absent recording interval per run (120 s before launch) for the false-detection count",
-        "Warning time per camera: first cue to aim point arrival, from the event table and the GCS log"
-      ],
-      "truth": {
-        "source": "Aircraft GCS telemetry log (GPS time, lat, lon, alt); ATOS tag track as the second source",
-        "intervalS": 0.2,
-        "stationKeys": [
-          "33ecb66b-c5eb-4999-a0db-9dfcd913f243",
-          "e5fa96da-2cec-4bdd-90e4-25ffa85fb7f8"
-        ]
-      }
-    }
+    ]
   },
   {
     "schema": "profile-studio/8",
     "id": "JIOP-3",
     "name": "Swarm, seven aircraft with crossings",
-    "updated": "2026-11-03T02:17:21.856Z",
+    "updated": "2026-11-03T02:48:42.000Z",
     "collection": "JIOPs four-camera test, TST Ranch, 12 to 13 Nov 2026",
     "class": "Multi-aircraft",
-    "version": 160,
+    "version": 161,
     "site": {
       "name": "TST Ranch, Carthage NC",
       "lat": 35.28997178998492,
@@ -1528,7 +1528,7 @@
           {
             "key": "21a12b51-6861-42e7-a10a-3d4adddb4559",
             "x": 51.4,
-            "y": -135,
+            "y": -135.0,
             "z": 25,
             "holdS": 0
           },
@@ -1693,17 +1693,17 @@
         "x": 144.9,
         "y": -201.7,
         "z": 2.5,
-        "rangeM": 250,
+        "rangeM": 127,
         "minRangeM": 0,
-        "fovDeg": 80,
-        "bearingDeg": 322.2,
-        "elMinDeg": -24,
-        "elMaxDeg": 40,
+        "fovDeg": 80.0,
+        "bearingDeg": 313.6,
+        "elMinDeg": -22.2,
+        "elMaxDeg": 42.2,
         "model": {
           "pd": {
             "kind": "logistic",
-            "r50M": 200,
-            "widthM": 25
+            "r50M": 101.60000000000001,
+            "widthM": 12.700000000000001
           },
           "scanS": 1,
           "trackM": 3,
@@ -1715,8 +1715,8 @@
         },
         "entered": {
           "1.3": {
-            "value": 80,
-            "source": "Appendix B example value (80 deg horizontal, 2560 x 1920, 25 fps); confirm against the purchased model"
+            "value": 80.0,
+            "source": "Appendix B example value, 80 deg horizontal; confirm against the purchased model; tilt 10 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 64.4 deg; reach 127 m at 3 px on a 0.25 m target"
           }
         }
       },
@@ -1724,20 +1724,20 @@
         "key": "3fcd7767-669c-4d49-a68e-c9f081dc1f07",
         "id": "CAM-2",
         "kind": "eoir",
-        "x": 137,
+        "x": 137.0,
         "y": -207.8,
         "z": 2.5,
-        "rangeM": 250,
+        "rangeM": 127,
         "minRangeM": 0,
-        "fovDeg": 80,
-        "bearingDeg": 322.2,
-        "elMinDeg": -24,
-        "elMaxDeg": 40,
+        "fovDeg": 80.0,
+        "bearingDeg": 319.3,
+        "elMinDeg": -22.2,
+        "elMaxDeg": 42.2,
         "model": {
           "pd": {
             "kind": "logistic",
-            "r50M": 200,
-            "widthM": 25
+            "r50M": 101.60000000000001,
+            "widthM": 12.700000000000001
           },
           "scanS": 1,
           "trackM": 3,
@@ -1749,8 +1749,8 @@
         },
         "entered": {
           "1.3": {
-            "value": 80,
-            "source": "Appendix B example value (80 deg horizontal, 2560 x 1920, 25 fps); confirm against the purchased model"
+            "value": 80.0,
+            "source": "Appendix B example value, 80 deg horizontal; confirm against the purchased model; tilt 10 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 64.4 deg; reach 127 m at 3 px on a 0.25 m target"
           }
         }
       },
@@ -1761,17 +1761,17 @@
         "x": 129.1,
         "y": -213.9,
         "z": 2.5,
-        "rangeM": 400,
+        "rangeM": 254,
         "minRangeM": 0,
-        "fovDeg": 40,
-        "bearingDeg": 322.2,
-        "elMinDeg": -10,
-        "elMaxDeg": 20,
+        "fovDeg": 45.5,
+        "bearingDeg": 325.0,
+        "elMinDeg": -9.5,
+        "elMaxDeg": 25.5,
         "model": {
           "pd": {
             "kind": "logistic",
-            "r50M": 320,
-            "widthM": 40
+            "r50M": 203.20000000000002,
+            "widthM": 25.400000000000002
           },
           "scanS": 1,
           "trackM": 3,
@@ -1783,8 +1783,8 @@
         },
         "entered": {
           "1.3": {
-            "value": 40,
-            "source": "Varifocal at 2x: about 40 deg horizontal; derive from the calibrated focal length"
+            "value": 45.5,
+            "source": "Derived: 2x optical zoom of the 80 deg lens, 2 atan(tan 40 deg / 2); replace with the lens spec at the zoom step set; tilt 8 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 34.9 deg; reach 254 m at 3 px on a 0.25 m target"
           }
         }
       },
@@ -1795,17 +1795,17 @@
         "x": 121.2,
         "y": -220.1,
         "z": 2.5,
-        "rangeM": 450,
+        "rangeM": 500,
         "minRangeM": 0,
         "fovDeg": 17.6,
-        "bearingDeg": 322.2,
-        "elMinDeg": -2.6,
-        "elMaxDeg": 10.6,
+        "bearingDeg": 330.7,
+        "elMinDeg": -0.6,
+        "elMaxDeg": 12.6,
         "model": {
           "pd": {
             "kind": "logistic",
-            "r50M": 360,
-            "widthM": 45
+            "r50M": 400.0,
+            "widthM": 50.0
           },
           "scanS": 1,
           "trackM": 3,
@@ -1818,7 +1818,7 @@
         "entered": {
           "1.3": {
             "value": 17.6,
-            "source": "Varifocal at 5x: about 17.6 deg horizontal; derive from the calibrated focal length"
+            "source": "Spec value at 5x (a true 5x of the 80 deg lens gives 19.0 deg); replace with the lens spec at the zoom step set; tilt 6 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 13.2 deg; reach 500 m at 3 px on a 0.25 m target"
           }
         }
       }
@@ -1938,10 +1938,10 @@
         "kind": "asset",
         "label": "Camera site",
         "pts": [
-          [121, -222.9],
-          [145, -222.9],
-          [145, -198.9],
-          [121, -198.9]
+          [121.0, -222.9],
+          [145.0, -222.9],
+          [145.0, -198.9],
+          [121.0, -198.9]
         ],
         "zMinM": 0,
         "zMaxM": 0
@@ -1998,23 +1998,85 @@
       {
         "key": "916d4f56-ce40-4372-8784-2531455db9aa",
         "id": "e4",
-        "tS": 144,
+        "tS": 140,
         "type": "detect",
-        "label": "First cue on the runner expected (CAM-4, 5x)",
+        "label": "First cue on the runner expected (CAM-4, 5x, 3 px) at about 465 m",
         "threatKey": "31cfbcba-febd-4bfa-93e2-523a7f1483c0",
         "sensorKey": "6f67fb79-ec78-4660-bf06-64619cf79a57"
       },
       {
         "key": "efb7e1b2-70cc-4ffe-9d67-c60d778a20a9",
         "id": "e5",
-        "tS": 171,
+        "tS": 164,
         "type": "identify",
-        "label": "Mavic pair identified expected (CAM-1)",
+        "label": "Mavic pair identified expected (CAM-4, 5x, 8 px) at about 254 m",
         "threatKey": "0a0aeb7d-4f3f-45c2-be2f-b4e520a6c888",
-        "sensorKey": "be4363f3-6af4-432f-a5b5-a0230b4dbbcf"
+        "sensorKey": "6f67fb79-ec78-4660-bf06-64619cf79a57"
       }
     ],
-    "snapshots": [137, 148, 144],
+    "snapshots": [137, 148, 141],
+    "debrief": null,
+    "chainTime": {
+      "decisionS": 5,
+      "assignS": 3
+    },
+    "measures": [
+      {
+        "id": "1.1.1",
+        "op": ">=",
+        "threshold": 90,
+        "unit": "%"
+      },
+      {
+        "id": "1.6",
+        "op": ">=",
+        "threshold": 7,
+        "unit": "targets"
+      },
+      {
+        "id": "1.8",
+        "op": "<=",
+        "threshold": 20,
+        "unit": "m"
+      },
+      {
+        "id": "2.1.4",
+        "op": "<=",
+        "threshold": 10,
+        "unit": "%"
+      },
+      {
+        "id": "1.1.4",
+        "op": "<=",
+        "threshold": 2,
+        "unit": "per hour"
+      }
+    ],
+    "report": {
+      "notes": "Last in the order. Two replicate runs. Aircraft from the inventory: 2 DJI Mavic 3 (T1, T2) and 5 Rotor Riot Tanq 5 inch (T3 to T7). Launch all from the NW end; T5 launches 20 s after the others. T3 and T4 cross the axis twice with 5 m of height separation; T6 and T7 fly 16 m apart; T1 and T2 line abreast 36 m apart. Every aircraft holds its own altitude. Review rule: an observation counts for an aircraft only when its bearing and time agree with that aircraft GCS log within the stated uncertainty; otherwise log it as a wrong association. Before the first run: synchronize the PC, camera and telemetry clocks, record the offset with a visible time-marked event, and keep the correction (plan section 7, step 3). Safety: every path stays inside the UAS Fly Area; no path points at the camera site or at GCS-1. The One-way attack aim point sits 60 m short of the cameras. Site datum: the profile origin is the centre of the UAS Fly Area file (lat 35.289972, lon -79.385599, WGS84). Ground elevation 150 m is a planning value; survey it.",
+      "dataSources": [
+        "Four camera recordings, RTSP main stream, continuous, native resolution, 25 fps, MP4 segments with timestamps",
+        "Camera configuration snapshot per run per camera (Appendix B.1 JSON): resolution, fps, FOV, zoom, focus, exposure, time offset",
+        "Camera survey record: WGS84 position, lens height, azimuth, tilt, roll, installation photo",
+        "Aircraft GCS telemetry log at the maximum rate: GPS time, latitude, longitude, altitude, accuracy",
+        "ATOS tag track for the same aircraft (VAL fused), for comparison with the GCS log",
+        "Clock synchronization record: PC, camera, video and telemetry offsets with the measured uncertainty",
+        "Detection event table per camera: first possible, first confirmed, first identified; frame index, UTC, still image, reviewer",
+        "Computed ranges per event: aircraft and camera ENU positions, ground range, slant range, uncertainty, FOV-limited and occluded flags",
+        "Environmental record per run: sun position, sky background, cloud, visibility, wind, obstructions",
+        "Target-absent recording interval per run (120 s before launch) for the false-detection count",
+        "Association table per camera: observation, aircraft assigned, bearing and time residual against the GCS log, wrong-association flag",
+        "Missed-observation list per aircraft per camera"
+      ],
+      "truth": {
+        "source": "Aircraft GCS telemetry log (GPS time, lat, lon, alt); ATOS tag track as the second source",
+        "intervalS": 0.2,
+        "stationKeys": [
+          "69b7df67-a239-4b03-b05f-46d0cc9a9787",
+          "4be69c3a-2420-4408-ab8b-5060e84a8903"
+        ]
+      }
+    },
     "cards": [
       {
         "key": "1e849365-1fe1-4001-beb2-722f48535ad2",
@@ -2332,78 +2394,16 @@
         "caption": "Launch to the last arrival at x4, hulls on.",
         "notes": "Play in the brief; the timeline shows one lane per aircraft against the four cameras."
       }
-    ],
-    "debrief": null,
-    "chainTime": {
-      "decisionS": 5,
-      "assignS": 3
-    },
-    "measures": [
-      {
-        "id": "1.1.1",
-        "op": ">=",
-        "threshold": 90,
-        "unit": "%"
-      },
-      {
-        "id": "1.6",
-        "op": ">=",
-        "threshold": 7,
-        "unit": "targets"
-      },
-      {
-        "id": "1.8",
-        "op": "<=",
-        "threshold": 20,
-        "unit": "m"
-      },
-      {
-        "id": "2.1.4",
-        "op": "<=",
-        "threshold": 10,
-        "unit": "%"
-      },
-      {
-        "id": "1.1.4",
-        "op": "<=",
-        "threshold": 2,
-        "unit": "per hour"
-      }
-    ],
-    "report": {
-      "notes": "Last in the order. Two replicate runs. Aircraft from the inventory: 2 DJI Mavic 3 (T1, T2) and 5 Rotor Riot Tanq 5 inch (T3 to T7). Launch all from the NW end; T5 launches 20 s after the others. T3 and T4 cross the axis twice with 5 m of height separation; T6 and T7 fly 16 m apart; T1 and T2 line abreast 36 m apart. Every aircraft holds its own altitude. Review rule: an observation counts for an aircraft only when its bearing and time agree with that aircraft GCS log within the stated uncertainty; otherwise log it as a wrong association. Before the first run: synchronize the PC, camera and telemetry clocks, record the offset with a visible time-marked event, and keep the correction (plan section 7, step 3). Safety: every path stays inside the UAS Fly Area; no path points at the camera site or at GCS-1. The One-way attack aim point sits 60 m short of the cameras. Site datum: the profile origin is the centre of the UAS Fly Area file (lat 35.289972, lon -79.385599, WGS84). Ground elevation 150 m is a planning value; survey it.",
-      "dataSources": [
-        "Four camera recordings, RTSP main stream, continuous, native resolution, 25 fps, MP4 segments with timestamps",
-        "Camera configuration snapshot per run per camera (Appendix B.1 JSON): resolution, fps, FOV, zoom, focus, exposure, time offset",
-        "Camera survey record: WGS84 position, lens height, azimuth, tilt, roll, installation photo",
-        "Aircraft GCS telemetry log at the maximum rate: GPS time, latitude, longitude, altitude, accuracy",
-        "ATOS tag track for the same aircraft (VAL fused), for comparison with the GCS log",
-        "Clock synchronization record: PC, camera, video and telemetry offsets with the measured uncertainty",
-        "Detection event table per camera: first possible, first confirmed, first identified; frame index, UTC, still image, reviewer",
-        "Computed ranges per event: aircraft and camera ENU positions, ground range, slant range, uncertainty, FOV-limited and occluded flags",
-        "Environmental record per run: sun position, sky background, cloud, visibility, wind, obstructions",
-        "Target-absent recording interval per run (120 s before launch) for the false-detection count",
-        "Association table per camera: observation, aircraft assigned, bearing and time residual against the GCS log, wrong-association flag",
-        "Missed-observation list per aircraft per camera"
-      ],
-      "truth": {
-        "source": "Aircraft GCS telemetry log (GPS time, lat, lon, alt); ATOS tag track as the second source",
-        "intervalS": 0.2,
-        "stationKeys": [
-          "69b7df67-a239-4b03-b05f-46d0cc9a9787",
-          "4be69c3a-2420-4408-ab8b-5060e84a8903"
-        ]
-      }
-    }
+    ]
   },
   {
     "schema": "profile-studio/8",
     "id": "JIOP-4",
     "name": "Controlled repeat, optical zoom 1x against 5x",
-    "updated": "2026-11-03T02:09:51.246Z",
+    "updated": "2026-11-03T02:48:42.000Z",
     "collection": "JIOPs four-camera test, TST Ranch, 12 to 13 Nov 2026",
     "class": "Counter-UAS",
-    "version": 65,
+    "version": 66,
     "site": {
       "name": "TST Ranch, Carthage NC",
       "lat": 35.28997178998492,
@@ -2458,17 +2458,17 @@
         "x": 144.9,
         "y": -201.7,
         "z": 2.5,
-        "rangeM": 250,
+        "rangeM": 203,
         "minRangeM": 0,
-        "fovDeg": 80,
-        "bearingDeg": 322.2,
-        "elMinDeg": -24,
-        "elMaxDeg": 40,
+        "fovDeg": 80.0,
+        "bearingDeg": 313.6,
+        "elMinDeg": -22.2,
+        "elMaxDeg": 42.2,
         "model": {
           "pd": {
             "kind": "logistic",
-            "r50M": 200,
-            "widthM": 25
+            "r50M": 162.4,
+            "widthM": 20.3
           },
           "scanS": 1,
           "trackM": 3,
@@ -2480,8 +2480,8 @@
         },
         "entered": {
           "1.3": {
-            "value": 80,
-            "source": "Appendix B example value (80 deg horizontal, 2560 x 1920, 25 fps); confirm against the purchased model"
+            "value": 80.0,
+            "source": "Appendix B example value, 80 deg horizontal; confirm against the purchased model; tilt 10 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 64.4 deg; reach 203 m at 3 px on a 0.4 m target"
           }
         }
       },
@@ -2489,20 +2489,20 @@
         "key": "0ea24dbc-2779-49da-899d-c96d8927fb7c",
         "id": "CAM-2",
         "kind": "eoir",
-        "x": 137,
+        "x": 137.0,
         "y": -207.8,
         "z": 2.5,
-        "rangeM": 250,
+        "rangeM": 203,
         "minRangeM": 0,
-        "fovDeg": 80,
-        "bearingDeg": 322.2,
-        "elMinDeg": -24,
-        "elMaxDeg": 40,
+        "fovDeg": 80.0,
+        "bearingDeg": 319.3,
+        "elMinDeg": -22.2,
+        "elMaxDeg": 42.2,
         "model": {
           "pd": {
             "kind": "logistic",
-            "r50M": 200,
-            "widthM": 25
+            "r50M": 162.4,
+            "widthM": 20.3
           },
           "scanS": 1,
           "trackM": 3,
@@ -2514,8 +2514,8 @@
         },
         "entered": {
           "1.3": {
-            "value": 80,
-            "source": "Appendix B example value (80 deg horizontal, 2560 x 1920, 25 fps); confirm against the purchased model"
+            "value": 80.0,
+            "source": "Appendix B example value, 80 deg horizontal; confirm against the purchased model; tilt 10 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 64.4 deg; reach 203 m at 3 px on a 0.4 m target"
           }
         }
       },
@@ -2526,17 +2526,17 @@
         "x": 129.1,
         "y": -213.9,
         "z": 2.5,
-        "rangeM": 250,
+        "rangeM": 203,
         "minRangeM": 0,
-        "fovDeg": 80,
-        "bearingDeg": 322.2,
-        "elMinDeg": -24,
-        "elMaxDeg": 40,
+        "fovDeg": 80.0,
+        "bearingDeg": 325.0,
+        "elMinDeg": -24.2,
+        "elMaxDeg": 40.2,
         "model": {
           "pd": {
             "kind": "logistic",
-            "r50M": 200,
-            "widthM": 25
+            "r50M": 162.4,
+            "widthM": 20.3
           },
           "scanS": 1,
           "trackM": 3,
@@ -2548,8 +2548,8 @@
         },
         "entered": {
           "1.3": {
-            "value": 80,
-            "source": "Baseline level: varifocal at 1x, about 80 deg horizontal"
+            "value": 80.0,
+            "source": "Appendix B example value, 80 deg horizontal; confirm against the purchased model; tilt 8 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 64.4 deg; reach 203 m at 3 px on a 0.4 m target"
           }
         }
       },
@@ -2560,17 +2560,17 @@
         "x": 121.2,
         "y": -220.1,
         "z": 2.5,
-        "rangeM": 250,
+        "rangeM": 203,
         "minRangeM": 0,
-        "fovDeg": 80,
-        "bearingDeg": 322.2,
-        "elMinDeg": -24,
-        "elMaxDeg": 40,
+        "fovDeg": 80.0,
+        "bearingDeg": 330.7,
+        "elMinDeg": -26.2,
+        "elMaxDeg": 38.2,
         "model": {
           "pd": {
             "kind": "logistic",
-            "r50M": 200,
-            "widthM": 25
+            "r50M": 162.4,
+            "widthM": 20.3
           },
           "scanS": 1,
           "trackM": 3,
@@ -2582,8 +2582,8 @@
         },
         "entered": {
           "1.3": {
-            "value": 80,
-            "source": "Baseline level: varifocal at 1x, about 80 deg horizontal"
+            "value": 80.0,
+            "source": "Appendix B example value, 80 deg horizontal; confirm against the purchased model; tilt 6 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 64.4 deg; reach 203 m at 3 px on a 0.4 m target"
           }
         }
       },
@@ -2594,17 +2594,17 @@
         "x": 129.1,
         "y": -213.9,
         "z": 2.5,
-        "rangeM": 450,
+        "rangeM": 500,
         "minRangeM": 0,
         "fovDeg": 17.6,
-        "bearingDeg": 322.2,
-        "elMinDeg": -2.6,
-        "elMaxDeg": 10.6,
+        "bearingDeg": 325.0,
+        "elMinDeg": 1.4,
+        "elMaxDeg": 14.6,
         "model": {
           "pd": {
             "kind": "logistic",
-            "r50M": 360,
-            "widthM": 45
+            "r50M": 400.0,
+            "widthM": 50.0
           },
           "scanS": 1,
           "trackM": 3,
@@ -2617,7 +2617,7 @@
         "entered": {
           "1.3": {
             "value": 17.6,
-            "source": "Factor level: varifocal at 5x, about 17.6 deg horizontal"
+            "source": "Spec value at 5x (a true 5x of the 80 deg lens gives 19.0 deg); replace with the lens spec at the zoom step set; tilt 8 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 13.2 deg; reach 500 m at 3 px on a 0.4 m target"
           }
         }
       },
@@ -2628,17 +2628,17 @@
         "x": 121.2,
         "y": -220.1,
         "z": 2.5,
-        "rangeM": 450,
+        "rangeM": 500,
         "minRangeM": 0,
         "fovDeg": 17.6,
-        "bearingDeg": 322.2,
-        "elMinDeg": -2.6,
-        "elMaxDeg": 10.6,
+        "bearingDeg": 330.7,
+        "elMinDeg": -0.6,
+        "elMaxDeg": 12.6,
         "model": {
           "pd": {
             "kind": "logistic",
-            "r50M": 360,
-            "widthM": 45
+            "r50M": 400.0,
+            "widthM": 50.0
           },
           "scanS": 1,
           "trackM": 3,
@@ -2651,7 +2651,7 @@
         "entered": {
           "1.3": {
             "value": 17.6,
-            "source": "Factor level: varifocal at 5x, about 17.6 deg horizontal"
+            "source": "Spec value at 5x (a true 5x of the 80 deg lens gives 19.0 deg); replace with the lens spec at the zoom step set; tilt 6 deg up; sensor 2560 x 1920 (4:3) so vertical FOV 13.2 deg; reach 500 m at 3 px on a 0.4 m target"
           }
         }
       }
@@ -2771,10 +2771,10 @@
         "kind": "asset",
         "label": "Camera site",
         "pts": [
-          [121, -222.9],
-          [145, -222.9],
-          [145, -198.9],
-          [121, -198.9]
+          [121.0, -222.9],
+          [145.0, -222.9],
+          [145.0, -198.9],
+          [121.0, -198.9]
         ],
         "zMinM": 0,
         "zMaxM": 0
@@ -2807,7 +2807,7 @@
       {
         "key": "96afed68-f65b-434a-bd92-fb65549a4ccb",
         "id": "e2",
-        "tS": 129,
+        "tS": 123,
         "type": "detect",
         "label": "First cue, factor level (CAM-3 at 5x)",
         "threatKey": "a36b3a74-1ec3-4866-9cea-2b28e4de1c0c",
@@ -2816,7 +2816,7 @@
       {
         "key": "f7113394-7429-40de-82f5-862693c01e12",
         "id": "e3",
-        "tS": 154,
+        "tS": 160,
         "type": "checkpoint",
         "label": "First cue, baseline level (CAM-3 at 1x) expected here",
         "threatKey": "a36b3a74-1ec3-4866-9cea-2b28e4de1c0c",
@@ -2825,14 +2825,69 @@
       {
         "key": "928f3c07-5a29-460b-9397-0e082e13ebc1",
         "id": "e4",
-        "tS": 158,
+        "tS": 133,
         "type": "identify",
-        "label": "Identified, fixed cameras (CAM-1)",
+        "label": "Mavic 3 identified expected (CAM-3 5x, 8 px) at about 406 m",
         "threatKey": "a36b3a74-1ec3-4866-9cea-2b28e4de1c0c",
-        "sensorKey": "65bd6596-bd14-4693-8da4-590f550e2b91"
+        "sensorKey": "9d754d18-671d-45d7-bea9-0f091256b6ea"
       }
     ],
     "snapshots": [],
+    "debrief": null,
+    "chainTime": {
+      "decisionS": 5,
+      "assignS": 3
+    },
+    "measures": [
+      {
+        "id": "1.1.1",
+        "op": ">=",
+        "threshold": 90,
+        "unit": "%"
+      },
+      {
+        "id": "1.1.2",
+        "op": ">=",
+        "threshold": 250,
+        "unit": "m"
+      },
+      {
+        "id": "1.1.3",
+        "op": ">=",
+        "threshold": 250,
+        "unit": "m"
+      },
+      {
+        "id": "2.1.3",
+        "op": ">=",
+        "threshold": 120,
+        "unit": "m"
+      }
+    ],
+    "report": {
+      "notes": "Third in the order, after the One-way attack. Six runs: three at 1x, three at 5x, alternating levels (1x, 5x, 1x, 5x, 1x, 5x). Same path on every run: launch at the NW end, climb to 40 m AGL, direct approach at 8 m/s to 50 m short of the camera line, hold 10 s. Use true optical zoom, not digital crop (plan section 7, step 2); lock focus after the preflight; record the configuration snapshot before each run. Report per camera: median and percentile first-confirmed range per level, the difference between levels, and the within-level spread (Appendix C.2). Before the first run: synchronize the PC, camera and telemetry clocks, record the offset with a visible time-marked event, and keep the correction (plan section 7, step 3). Safety: every path stays inside the UAS Fly Area; no path points at the camera site or at GCS-1. The One-way attack aim point sits 60 m short of the cameras. Site datum: the profile origin is the centre of the UAS Fly Area file (lat 35.289972, lon -79.385599, WGS84). Ground elevation 150 m is a planning value; survey it.",
+      "dataSources": [
+        "Four camera recordings, RTSP main stream, continuous, native resolution, 25 fps, MP4 segments with timestamps",
+        "Camera configuration snapshot per run per camera (Appendix B.1 JSON): resolution, fps, FOV, zoom, focus, exposure, time offset",
+        "Camera survey record: WGS84 position, lens height, azimuth, tilt, roll, installation photo",
+        "Aircraft GCS telemetry log at the maximum rate: GPS time, latitude, longitude, altitude, accuracy",
+        "ATOS tag track for the same aircraft (VAL fused), for comparison with the GCS log",
+        "Clock synchronization record: PC, camera, video and telemetry offsets with the measured uncertainty",
+        "Detection event table per camera: first possible, first confirmed, first identified; frame index, UTC, still image, reviewer",
+        "Computed ranges per event: aircraft and camera ENU positions, ground range, slant range, uncertainty, FOV-limited and occluded flags",
+        "Environmental record per run: sun position, sky background, cloud, visibility, wind, obstructions",
+        "Target-absent recording interval per run (120 s before launch) for the false-detection count",
+        "Comparison table: level, run, camera, first possible, confirmed and identified range; level difference with the within-level spread"
+      ],
+      "truth": {
+        "source": "Aircraft GCS telemetry log (GPS time, lat, lon, alt); ATOS tag track as the second source",
+        "intervalS": 0.2,
+        "stationKeys": [
+          "604584ac-764f-4978-ab58-30ca886e2a90",
+          "28afa34b-13bf-43f3-8186-adb722b7a1f7"
+        ]
+      }
+    },
     "cards": [
       {
         "key": "c2d5a967-4d9d-4da1-aa35-2f727dadbf47",
@@ -2924,62 +2979,7 @@
         "caption": "",
         "notes": ""
       }
-    ],
-    "debrief": null,
-    "chainTime": {
-      "decisionS": 5,
-      "assignS": 3
-    },
-    "measures": [
-      {
-        "id": "1.1.1",
-        "op": ">=",
-        "threshold": 90,
-        "unit": "%"
-      },
-      {
-        "id": "1.1.2",
-        "op": ">=",
-        "threshold": 250,
-        "unit": "m"
-      },
-      {
-        "id": "1.1.3",
-        "op": ">=",
-        "threshold": 250,
-        "unit": "m"
-      },
-      {
-        "id": "2.1.3",
-        "op": ">=",
-        "threshold": 120,
-        "unit": "m"
-      }
-    ],
-    "report": {
-      "notes": "Third in the order, after the One-way attack. Six runs: three at 1x, three at 5x, alternating levels (1x, 5x, 1x, 5x, 1x, 5x). Same path on every run: launch at the NW end, climb to 40 m AGL, direct approach at 8 m/s to 50 m short of the camera line, hold 10 s. Use true optical zoom, not digital crop (plan section 7, step 2); lock focus after the preflight; record the configuration snapshot before each run. Report per camera: median and percentile first-confirmed range per level, the difference between levels, and the within-level spread (Appendix C.2). Before the first run: synchronize the PC, camera and telemetry clocks, record the offset with a visible time-marked event, and keep the correction (plan section 7, step 3). Safety: every path stays inside the UAS Fly Area; no path points at the camera site or at GCS-1. The One-way attack aim point sits 60 m short of the cameras. Site datum: the profile origin is the centre of the UAS Fly Area file (lat 35.289972, lon -79.385599, WGS84). Ground elevation 150 m is a planning value; survey it.",
-      "dataSources": [
-        "Four camera recordings, RTSP main stream, continuous, native resolution, 25 fps, MP4 segments with timestamps",
-        "Camera configuration snapshot per run per camera (Appendix B.1 JSON): resolution, fps, FOV, zoom, focus, exposure, time offset",
-        "Camera survey record: WGS84 position, lens height, azimuth, tilt, roll, installation photo",
-        "Aircraft GCS telemetry log at the maximum rate: GPS time, latitude, longitude, altitude, accuracy",
-        "ATOS tag track for the same aircraft (VAL fused), for comparison with the GCS log",
-        "Clock synchronization record: PC, camera, video and telemetry offsets with the measured uncertainty",
-        "Detection event table per camera: first possible, first confirmed, first identified; frame index, UTC, still image, reviewer",
-        "Computed ranges per event: aircraft and camera ENU positions, ground range, slant range, uncertainty, FOV-limited and occluded flags",
-        "Environmental record per run: sun position, sky background, cloud, visibility, wind, obstructions",
-        "Target-absent recording interval per run (120 s before launch) for the false-detection count",
-        "Comparison table: level, run, camera, first possible, confirmed and identified range; level difference with the within-level spread"
-      ],
-      "truth": {
-        "source": "Aircraft GCS telemetry log (GPS time, lat, lon, alt); ATOS tag track as the second source",
-        "intervalS": 0.2,
-        "stationKeys": [
-          "604584ac-764f-4978-ab58-30ca886e2a90",
-          "28afa34b-13bf-43f3-8186-adb722b7a1f7"
-        ]
-      }
-    }
+    ]
   },
   {
     "schema": "profile-studio/7",
