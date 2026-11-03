@@ -20,7 +20,10 @@ test('12.12 New opens Build with "Untitled profile" focused; a rename is listed 
   await expect(page.getByRole('main', { name: 'Build' })).toBeVisible();
   await expect(nameField(page)).toHaveValue('Untitled profile');
   await expect(nameField(page)).toBeFocused();
-  await expect(page.getByRole('banner')).toContainText('PROF-1');
+  // The shipped profiles hold PROF-1 to PROF-3, so New takes the next free PROF id.
+  const banner = page.getByRole('banner');
+  await expect(banner).toContainText(/PROF-\d+/);
+  const first = Number(/PROF-(\d+)/.exec((await banner.textContent()) ?? '')![1]);
   await renameAndList(page, 'Range day one');
 
   // Cmd+N (Ctrl+N) from Build does the same.
@@ -30,7 +33,7 @@ test('12.12 New opens Build with "Untitled profile" focused; a rename is listed 
   await page.keyboard.press(`${(await isMac(page)) ? 'Meta' : 'Control'}+n`);
   await expect(nameField(page)).toHaveValue('Untitled profile');
   await expect(nameField(page)).toBeFocused();
-  await expect(page.getByRole('banner')).toContainText('PROF-2');
+  await expect(page.getByRole('banner')).toContainText(`PROF-${first + 1}`);
   await renameAndList(page, 'Range day two');
   await expect(page.getByTestId('saved-card').filter({ hasText: 'Range day one' })).toBeVisible();
 });

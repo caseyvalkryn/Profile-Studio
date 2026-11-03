@@ -1,5 +1,5 @@
 // Shared steps for the acceptance suite. Each test runs in a fresh browser context, so the app
-// starts at an empty Library with nothing in IndexedDB.
+// starts with only the shipped profiles (profiles/saved/) in IndexedDB.
 import { expect, type Locator, type Page } from '@playwright/test';
 
 export const POINT_DEFENCE = 'Point defence, single quadrotor';

@@ -18,8 +18,13 @@ const storedCards = (page: Page) =>
           const db = r.result;
           if (!db.objectStoreNames.contains('vignettes')) return res([]);
           const q = db.transaction('vignettes').objectStore('vignettes').getAll();
+          // The test's own profile only: the shipped profiles are stored too.
           q.onsuccess = () =>
-            res((q.result as { cards?: unknown[] }[]).map((v) => v.cards?.length ?? 0));
+            res(
+              (q.result as { name: string; cards?: unknown[] }[])
+                .filter((v) => v.name === 'Clock check')
+                .map((v) => v.cards?.length ?? 0),
+            );
           q.onerror = () => rej(q.error);
         };
       }),
@@ -85,7 +90,7 @@ test('Phase 13: the strip is the plan clock: its rows and glyphs select and set 
     .poll(() => page.evaluate(() => localStorage.getItem('profileStudio.time') ?? ''))
     .toContain(`"tS":${Math.round(t * 10) / 10}`);
   // Autosave writes the renamed copy 500 ms after the edit; wait for it so the reload reopens it.
-  await expect.poll(() => storedNames(page)).toEqual(['Clock check']);
+  await expect.poll(() => storedNames(page)).toContain('Clock check');
   await page.reload();
   await expect(page.getByRole('main', { name: 'Build' })).toBeVisible();
   await expect(clock).toHaveValue(clockOf(t));

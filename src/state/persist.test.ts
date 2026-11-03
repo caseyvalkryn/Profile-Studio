@@ -13,6 +13,7 @@ import {
   listWithRecords,
   loadVignette,
   saveVignette,
+  seedLibrary,
   setDb,
   startAutosave,
   type VignetteDb,
@@ -234,6 +235,30 @@ describe('vignette store functions (mocked idb)', () => {
     expect(JSON.parse(text).schema).toBe(SCHEMA);
     expect(JSON.parse(text).library[0].threats[0].timed.length).toBeGreaterThan(0);
     expect(importJson(text)).toEqual([b, a]);
+  });
+});
+
+describe('shipped profiles', () => {
+  it('seedLibrary writes a missing record and a newer one, and keeps an edit made since', async () => {
+    const db = mockDb();
+    const stale = testVignette({ id: 'JIOP-9', updated: '2026-11-01T00:00:00Z' });
+    const edited = testVignette({ id: 'PROF-9', updated: '2026-11-04T00:00:00Z', name: 'mine' });
+    await db.put('vignettes', stale);
+    await db.put('vignettes', edited);
+    const shipped = [
+      testVignette({ id: 'JIOP-8', updated: '2026-11-03T00:00:00Z' }),
+      testVignette({ id: 'JIOP-9', updated: '2026-11-03T00:00:00Z', name: 'shipped' }),
+      testVignette({ id: 'PROF-9', updated: '2026-11-03T00:00:00Z', name: 'shipped' }),
+    ];
+    expect(await seedLibrary(db, shipped)).toBe(2);
+    expect((await db.get('vignettes', 'JIOP-8'))?.updated).toBe('2026-11-03T00:00:00Z');
+    expect((await db.get('vignettes', 'JIOP-9'))?.name).toBe('shipped');
+    expect((await db.get('vignettes', 'PROF-9'))?.name).toBe('mine');
+    expect(await seedLibrary(db, shipped)).toBe(0);
+  });
+
+  it('seedLibrary refuses a record with an unknown stamp', async () => {
+    await expect(seedLibrary(mockDb(), [{ schema: 'x', id: 'A' }])).rejects.toThrow(/stamp/);
   });
 });
 

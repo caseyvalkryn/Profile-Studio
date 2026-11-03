@@ -199,7 +199,10 @@ question and the F2T2EA steps it exercises, Blank last. Saved profiles below, gr
 collection, newest first, each with a thumbnail from its first card and the line "id v3 ·
 class · n cards · n paths". Search filters both. Actions: Open, Brief, Duplicate,
 Export, Delete with undo, import JSON (v8, v7, v6, v5 or legacy v4) or a KML or KMZ site file
-as a new profile, export the library as one JSON.
+as a new profile, export the library as one JSON. The profiles in `profiles/saved/` ship with
+the app: on start the store takes each one the browser lacks or holds in an older copy (by
+`updated`), so every origin lists them at their latest; an edit made in the app since keeps the
+browser's copy.
 
 **New.** The New button and Cmd+N create "Untitled profile" with the default site and one
 defended asset, open Build and focus the name field for inline rename. A menu arrow on New

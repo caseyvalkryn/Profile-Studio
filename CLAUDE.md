@@ -8,8 +8,8 @@ run or score them. React, TypeScript and Vite in `src/`. The design direction is
 ## Commands
 
 - `npm run gate`: typecheck, lint, unit tests, build, Playwright on `vite preview` (port 5175).
-  Run it before you call any change done. Baseline on 2026-11-03: 64 unit files, 612 tests,
-  12 e2e specs (14 tests), entry 252.03 kB gzip (budget 300).
+  Run it before you call any change done. Baseline on 2026-11-03: 64 unit files, 614 tests,
+  12 e2e specs (14 tests), entry 252.22 kB gzip (budget 300).
 - `npm run dev -- --port 5174 --strictPort` (also `.claude/launch.json` "dev"). Port 5173 is
   the user's rangeboard server; do not take it.
 - `npm run legacy:smoke`: the frozen ES5 app's cases in `legacy/test/cases/`.
@@ -31,7 +31,8 @@ run or score them. React, TypeScript and Vite in `src/`. The design direction is
   `docs/design-principles.md`; `docs/decisions.md` the user's settled choices;
   `docs/reference/` the DroneScore measures, JIATF-401 conventions and the local source list.
 - `profiles/jiop/` the JIOPs four-camera test profiles (JSON) and their Python generator.
-- `profiles/saved/` the profiles to import, one JSON per profile and `library.json`. Not
+- `profiles/saved/` the profiles the app ships, one JSON per profile and `library.json`, which
+  the store seeds on open (a record the browser lacks or holds in an older copy). Not
   generated: its JIOP records merge the card edits made in the app with the camera review.
 
 ## The standard

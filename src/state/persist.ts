@@ -1,5 +1,5 @@
-// Local persistence in IndexedDB (database `profile-studio`, store `vignettes`), JSON import and
-// export, and autosave of the open document.
+// Local persistence in IndexedDB (database `profile-studio`, store `vignettes`), the shipped
+// profiles seeded on open, JSON import and export, and autosave of the open document.
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import {
   importLegacyV4,
@@ -61,13 +61,39 @@ export function listingOf(v: Vignette): VignetteListing {
 
 let dbPromise: Promise<VignetteDb> | null = null;
 
-function openStudioDb(): Promise<VignetteDb> {
-  return openDB<StudioDb>(DB_NAME, DB_VERSION, {
+async function openStudioDb(): Promise<VignetteDb> {
+  const db = await openDB<StudioDb>(DB_NAME, DB_VERSION, {
     upgrade(db) {
       if (!db.objectStoreNames.contains('vignettes'))
         db.createObjectStore('vignettes', { keyPath: 'id' });
     },
   });
+  try {
+    // The profiles the app ships (profiles/saved/library.json), out of the entry chunk.
+    const { default: shipped } = await import('../../profiles/saved/library.json');
+    await seedLibrary(db, shipped as unknown[]);
+  } catch (err) {
+    console.error('Shipped profiles not seeded', err);
+  }
+  return db;
+}
+
+/**
+ * Put each shipped record the store lacks, or holds in an older copy (by `updated`), so every
+ * origin lists the shipped profiles at their latest. An edit made in the app since the shipped
+ * record's `updated` keeps the stored copy. Returns how many records were written.
+ */
+export async function seedLibrary(db: VignetteDb, shipped: unknown[]): Promise<number> {
+  let n = 0;
+  for (const item of shipped) {
+    const v = importRecord(item);
+    const stored = await db.get('vignettes', v.id);
+    if (stored && stored.updated >= v.updated) continue;
+    await db.put('vignettes', v);
+    storedIds.add(v.id);
+    n++;
+  }
+  return n;
 }
 
 export function getDb(): Promise<VignetteDb> {
