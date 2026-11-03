@@ -96,7 +96,7 @@ function allPts(scene: SceneObjects) {
   return out;
 }
 
-function maxZOf(scene: SceneObjects): number {
+export function maxZOf(scene: SceneObjects): number {
   let m = 0;
   for (const q of allPts(scene)) m = Math.max(m, q.z || 0);
   for (const v of (scene && scene.volumes) || []) m = Math.max(m, v.zmax || 0);

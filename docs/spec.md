@@ -246,11 +246,25 @@ with its bar and strip in the centre, the inspector on the right, and the top ba
 - Views. Plan: north up. Elevation: a side view with a mode, Along path (distance along the
   selected flight path) or From asset (range from the reference origin; every path, slant arcs
   with elevation limits, height planes). 3D: the axonometric camera ported from the legacy
-  axon view, drawn by the same layers as Plan and Elevation. Orbit by drag (yaw 0.45 and pitch
+  axon view, drawn by the same layers as Plan and Elevation, with the sensor volumes (below).
+  Orbit by drag (yaw 0.45 and pitch
   0.35 degrees per pixel, pitch clamped 8 to 86 degrees), zoom and fit. It animates the threats
   and track frames at the current time and prints its vertical exaggeration, yaw and pitch
   ("vertical x3  yaw -35  pitch 55"). A drag in 3D does not edit; it shows "Edit in Plan (1) or
   Elevation (2)".
+- Coverage (2026-11-03). Under the Reach toggle, one order below the reach ring, every system
+  with reach draws its volume: slant ranges to the reach, the azimuths of its field of view
+  about its bearing, the elevations between its limits from its apex. 3D: the faces (the lower
+  and upper cones, the azimuth sides and the cap of a sector) as faint fills, the edges (cap
+  arcs at the limits and at 30 and 60 degrees, meridians at the azimuth edges or at the four
+  cardinals, the limit rays), the boresight of a sector, the footprint edge where the lower
+  limit meets the ground and the cut rings where the volume meets the ceiling (the Elevation
+  frame top, 1.2 of 1.3 maxZ, 150 m least). An omnidirectional system with no limits reads as a
+  drum: the ring, four meridians and the cut ring. Elevation: the band between the limit rays
+  as a face, with the boresight. Plan: the boresight and the footprint edge. Everything on or
+  under the ground is cut away. The tint follows the ring: faint at rest, stronger while
+  covering at t; the EW ink for EW and directed energy. No hit, no label, no toggle of its own;
+  the card strip, the stage and the print page draw it through the same renderer.
 - Basemap. The blank grid with range rings, axes, compass and scale bar, as in the legacy
   board.
 - Drag labels. A drag shows the value under the cursor and, on a second line, the largest

@@ -9,7 +9,7 @@ import type { SystemRec } from '../types';
 
 const D2R = Math.PI / 180;
 
-function active(ctx: Ctx, s: SystemRec): boolean {
+export function active(ctx: Ctx, s: SystemRec): boolean {
   if (ctx.t == null || s.status === 'inactive' || typeof ctx.derived.holdsAt !== 'function')
     return false;
   const t = ctx.t;

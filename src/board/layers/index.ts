@@ -2,6 +2,7 @@
 import './grid';
 import './volumes';
 import './planes';
+import './coverage';
 import './reach';
 import './systems';
 import './envelopes';

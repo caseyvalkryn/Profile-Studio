@@ -258,6 +258,7 @@ describe('legacy render cases on the fixtures', () => {
     expect(ids).toEqual([
       'grid',
       'volumes',
+      'coverage',
       'reach',
       'systems',
       'envelopes',
@@ -356,8 +357,14 @@ const PHASE_10_DEVIATIONS: readonly LegacyPatch[] = [
 const KP_LAYER =
   /<g class="ly ly-keypoints(?:-now)?">(?:<g class="kp [^"]*" data-k="keypoint(?:-now)?"[^>]*>.*?<\/g>)+<\/g>/g;
 const ROOT_T = /^(<svg [^>]*?) style="--t:[^"]*"/;
+// The coverage layer (layers/coverage.ts, 2026-11-03) draws the sensor volume under the Reach
+// toggle: faces, edges and the boresight in 3D, the elevation band in Elevation, the footprint
+// edge and the boresight in Plan. Legacy has no such layer; it adds no hit and no label, so
+// stripping its group leaves every other byte comparable. Its geometry is asserted in
+// layers/coverage.test.ts.
+const COV_LAYER = /<g class="ly ly-coverage">.*?<\/g>(?=<g class="ly ly-|<\/svg>)/g;
 function withoutKeyPoints(svg: string): string {
-  return svg.replace(KP_LAYER, '').replace(ROOT_T, '$1');
+  return svg.replace(KP_LAYER, '').replace(COV_LAYER, '').replace(ROOT_T, '$1');
 }
 
 describe('byte parity with the legacy renderer', () => {
