@@ -50,7 +50,9 @@ register({
     const restOn = ctx.layers.labelsRest !== false;
     const kept = (c: LabelCand) =>
       c.always || restOn || first(c.id) || (focus.length > 0 && c.id != null && !ctx.dim(c.id));
-    const list = (ctx.labels || []).filter((c) => c && c.svg && (ctx.labelsOn || c.always) && kept(c));
+    const list = (ctx.labels || []).filter(
+      (c) => c && c.svg && (ctx.labelsOn || c.always) && kept(c),
+    );
     list.sort((a, b) => {
       const pa = first(a.id) ? 0 : a.p;
       const pb = first(b.id) ? 0 : b.p;

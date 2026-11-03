@@ -8,19 +8,21 @@ run or score them. React, TypeScript and Vite in `src/`. The design direction is
 ## Commands
 
 - `npm run gate`: typecheck, lint, unit tests, build, Playwright on `vite preview` (port 5175).
-  Run it before you call any change done. Baseline on 2026-11-02: 61 unit files, 584 tests,
-  12 e2e specs, entry 248.74 kB gzip (budget 300).
+  Run it before you call any change done. Baseline on 2026-11-03: 64 unit files, 612 tests,
+  12 e2e specs (14 tests), entry 252.03 kB gzip (budget 300).
 - `npm run dev -- --port 5174 --strictPort` (also `.claude/launch.json` "dev"). Port 5173 is
   the user's rangeboard server; do not take it.
 - `npm run legacy:smoke`: the frozen ES5 app's cases in `legacy/test/cases/`.
-- Prettier and ESLint are part of the gate; `npm run format` fixes formatting.
+- ESLint is part of the gate; Prettier is not. `npm run format:check` checks formatting and
+  `npm run format` fixes it.
 
 ## Layout
 
 - `src/engine/` pure geometry, preview and derived values (no DOM). `src/domain/` types, zod
   schema (stamp `profile-studio/8`), catalog, templates, migrations, `siteFile.ts` (KML, KMZ).
 - `src/state/` document store with patch undo, ui store, IndexedDB persistence.
-  `src/commands/` the command registry. `src/board/` the SVG renderer (cameras, layers).
+  `src/commands/` the command registry. `src/board/` the SVG renderer (cameras, layers; the
+  `coverage` layer draws the sensor volumes under the Reach toggle).
 - `src/features/` shell, library, build (board, rail, palette, menu, inspector, timeline), brief.
 - `e2e/` Playwright specs named by spec acceptance item; `e2e/perf/` the budgets, outside the
   gate. `fixtures/` legacy derive goldens and synthetic KML. `legacy/` the frozen v4 app and

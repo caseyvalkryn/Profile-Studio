@@ -1,7 +1,7 @@
 # Profile Studio specification
 
-Status: current as built. Dated 2026-10-30; amended through 2026-11-02 (the last prune removed
-the phase and lane references; `git show 6a2e658:docs/spec.md` has the annotated copy). Read
+Status: current as built. Dated 2026-10-30; amended through 2026-11-03 (`git show
+6a2e658:docs/spec.md` has the last copy with the build phase and lane notes). Read
 `docs/design-principles.md` first. When this spec and a principle disagree, the principle wins
 and this spec is corrected. The word "vignette" in code and in sections written before the
 amendment means the record the UI calls a profile.
@@ -97,23 +97,21 @@ TypeScript types in `src/domain/types.ts`. Runtime validation with zod in `src/d
 type Vignette = {
   schema: 'profile-studio/8'       // v8
   id: string; name: string; updated: string
-  collection: string; class: ProfileClass; version: number   // v7 (10.5); site.name migrates into collection
+  collection: string; class: ProfileClass; version: number   // v7; site.name migrates into collection
   site: { name: string; lat: number; lon: number; elevM: number }
   questions: Question[]            // Q-01 ...
-  hypotheses: Hypothesis[]         // v6 only, deprecated; dropped in v7
   threats: Threat[]
   sensors: Sensor[]
   effectors: Effector[]
   nodes: Node[]                    // C2 and TSPI stations
   areas: Area[]
-  planes: HeightPlane[]            // upgrade
-  events: AuthoredEvent[]          // upgrade: the planned row
-  snapshots: number[]              // upgrade: seconds
-  cards: Card[]                    // upgrade: the brief
-  debrief: Debrief | null          // upgrade: flown data
+  planes: HeightPlane[]
+  events: AuthoredEvent[]          // the planned row
+  snapshots: number[]              // seconds
+  cards: Card[]                    // the brief
+  debrief: Debrief | null          // flown data; nothing writes it
   chainTime: { decisionS: number; assignS: number }   // Target step inputs for the preview
   measures: MeasureSetting[]       // the measures of performance, with thresholds
-  runs: RunSummary[]               // v6 only, deprecated; dropped in v7
   report: ReportDraft              // dataSources is the data products list; v7 keeps it, truth and notes, drops the rest
 }
 type Area = { id: string; kind: 'asset'|'wez'|'nfz'|'ref'|'range'; label: string
@@ -134,8 +132,9 @@ type Clip = { t0S: number; t1S: number; rate: number; beatsS: number[] }
 type Debrief = { source: string; loadedAt: string
   tspi: Record<string /* threat key */, [number, number, number, number][] /* t, x, y, z */>
   events: { tS: number; type: AuthoredEvent['type']; threatKey: string; sensorKey: string | null }[] }
-type LayerId = 'reach'|'events'|'envelopes'|'tracks'|'telemetry'|'labels'|'rings'|'target'
-type Threat = { id: string; type: string /* catalog id */; path: Waypoint[]; speedMs?: number }
+type LayerId = 'reach'|'events'|'envelopes'|'tracks'|'telemetry'|'labels'|'labelsRest'|'rings'|'target'
+type Threat = { id: string; type: string /* catalog id */; path: Waypoint[]; speedMs?: number
+  group: string /* '' when none, a letter otherwise */ }
 type Waypoint = { x: number; y: number; z: number; holdS: number }
 type Sensor = { id: string; kind: 'radar'|'rf'|'eoir'|'acoustic'; x: number; y: number; z: number
   rangeM: number; minRangeM: number; fovDeg: number; bearingDeg: number
@@ -150,15 +149,14 @@ type ProfileClass = 'Counter-UAS'|'Multi-aircraft'|'One-way attack'|'Surrogate'|
 type Entered = { value: number | boolean | string; source: string }   // source note is required
 ```
 
-`SensorModel`, `Node`, `Area` and the deprecated v6 types (`Hypothesis`, `RunSummary`,
-`ReportDraft`) are defined in the code with the same rules. Every asset, waypoint and question
-also carries `key: string`, a UUID
-minted at creation that never changes. The display `id` (such as `RDR-1`) can be renamed.
-References between records and React list keys use `key`, never `id` or an array index. Legacy v4 records import through `src/domain/migrate.ts`. The import maps profile to
-vignette, aircraft and paths to threats, systems to sensors, effectors and nodes, volumes to
+`SensorModel`, `Question` and `ReportDraft` are defined in the code with the same rules. Every
+asset, waypoint and question also carries `key: string`, a UUID minted at creation that never
+changes. The display `id` (such as `RDR-1`) can be renamed.
+References between records and React list keys use `key`, never `id` or an array index.
+Legacy v4 records import through `src/domain/migrate.ts`. The import maps profile to vignette, aircraft and paths to threats, systems to sensors, effectors and nodes, volumes to
 areas, and MOP text to a question note. It keeps all free text.
 
-Upgrade rules for the record:
+Rules for the record:
 
 1. Height planes, area bottom and top, authored events, snapshots, cards, the data list
    (`report.dataSources`) and debrief data import from legacy v4, edit in the app, and export
@@ -227,8 +225,7 @@ with its bar and strip in the centre, the inspector on the right, and the top ba
 - Labels has three states: all, focus (the checkbox reads indeterminate, the text "Labels ·
   focus": only the selection's and the focus's labels place) and off; a press or Shift+5
   cycles them. A card stores the state as the `labels` and `labelsRest` layers.
-- Under the board: the shared timeline strip (see Brief below; lanes 12.1, 12.2 and 12.4), time
-  off by default. The strip is as tall as its lanes; a grip on its top edge sets the most it
+- Under the board: the shared timeline strip (see Brief below), time off by default. The strip is as tall as its lanes; a grip on its top edge sets the most it
   may take (96 to 720 px, default 200; arrows, Home and a double click reset) and the lanes
   scroll past that; the stage takes the rest. The strip is the plan's clock: its
   time state (cursor, time on, loop, zoom span, height, rate) persists per profile across a
@@ -384,10 +381,10 @@ item without dragging arms it for one click on the map.
 | Area | Set top, Set bottom, Add vertex here, Duplicate, Delete |
 | Height plane | Set height, Delete |
 | Authored event | Change type, Move to geometry (when it carries a warning), Delete |
-| Threat (upgrade) | also: Add event here, Formation, Split here (with a time cursor), Merge (with two or more groups) |
+| Threat, also | Add event here, Formation, Split here (with a time cursor), Merge (with two or more groups) |
 | Timeline | Set time here, Loop from here, Clear loop, Save a frame here, Save the loop as a slice |
 | Card | Open, Open in Brief, Duplicate, Move up, Move down, Delete |
-| Empty map (upgrade) | also: Save card, Add height plane |
+| Empty map, also | Save card, Add height plane |
 
 Each item shows its shortcut. A disabled item says why in its tooltip.
 
@@ -414,7 +411,7 @@ the board refits, and a toast says "2 areas from <file name>.", followed by "Sit
 name>." when the site moved. A bad file changes nothing; the toast says why in one sentence. A
 dropped file that is not KML or KMZ toasts "Drop a KML or KMZ file to import a site."
 
-**Snap** (upgrade). The placement ghost and a dragged waypoint snap to sensor rings, area
+**Snap.** The placement ghost and a dragged waypoint snap to sensor rings, area
 vertices and edges within 8 px, to 15 degree bearings with Shift, else to the grid. The label
 names the snap ("on RDR-1 ring") and the leg ("1.40 nm, 93 s"). G toggles grid snap. Alt
 bypasses every snap.
@@ -454,7 +451,9 @@ bypasses every snap.
 
 Brief keys (only in Brief): Right or Space next card; Left previous card; Home, End; Up and
 Down move the current card in the strip; Delete removes it with undo; 1, 2, 3 set the card's
-camera; =, - zoom the card; E emphasis, Shift+E its level; Q the question on the stage. Build keys that edit are off in Brief. The registry scopes a shortcut by workspace.
+camera; =, - zoom the card; E emphasis, Shift+E its level; Q the question on the stage; P play
+or pause; L the timeline display. In the Library, / focuses the search. Build keys that edit
+are off in Brief. The registry scopes a shortcut by workspace.
 
 **Commands.** One registry (`src/commands/`) defines each action once: ID, label, shortcut,
 enable rule with a reason, the kinds it applies to, and the workspaces it is active in. The
@@ -507,7 +506,13 @@ orbit, racetrack, hover and stare, terminal dive, split, multi-axis salvo.
 
 ## 12. Acceptance
 
-The MVP is done when all of these pass in the end-to-end suite:
+The live items below each have a check. A Playwright spec in `e2e/`, named by item, covers 2,
+3, 4, 9, 10, 12, 19, 26, 27 and 28, and two more specs cover the timeline and the slice;
+`e2e/perf/budgets.spec.ts` measures 21 outside the gate. The other live items hold in the unit
+tests under `src/` (the board, workspace, library, inspector and migration tests), and 20 by a
+walk. The struck items were retired on the pivot of 2026-11-01.
+
+The first set, from the MVP:
 
 1. ~~A new user opens "Point defence, single quadrotor", runs it, and sees 1.1.2 with a value,
    interval, threshold and evaluation.~~ Retired 2026-11-01 (the pivot).
@@ -527,8 +532,7 @@ The MVP is done when all of these pass in the end-to-end suite:
 11. ~~The engine package builds and runs headless in Node with no DOM.~~
     Retired 2026-11-01 (the pivot).
 
-The product is done when the items of 1 to 11 that are not retired still pass and all of
-these pass:
+The second set, from the port and the pivot:
 
 12. New (button and Cmd+N) opens Build with "Untitled profile" and the name field focused; the
     renamed profile appears in the Library.

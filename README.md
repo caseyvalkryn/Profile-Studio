@@ -19,7 +19,8 @@ the Library.
 ## Where things are
 
 - `src/` the app: `engine/`, `domain/`, `state/`, `commands/`, `board/`, `features/`.
-- `e2e/` Playwright specs. `fixtures/` test data.
+- `e2e/` Playwright specs. `fixtures/` test data. `profiles/` the JIOPs profiles with their
+  generator and the saved library to import.
 - `docs/spec.md` what is built, `docs/design-principles.md`, `docs/decisions.md`,
   `docs/reference/` the DroneScore and JIATF-401 references.
 - `legacy/` the frozen ES5 predecessor and `mockup-v3.html`, the design direction.

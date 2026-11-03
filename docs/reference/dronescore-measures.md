@@ -1,4 +1,4 @@
-Source: /Users/caseytalbot/Desktop/DroneScore Metric List.md. This is the project's gold standard for DroneScore C4 measures; treat every row and ID below as authoritative.
+Source: /Users/caseytalbot/Desktop/CENTCOM/DroneScore Metric List.md (moved 2026-11-03 from the Desktop top level). This is the project's gold standard for DroneScore C4 measures; treat every row and ID below as authoritative.
 
 DroneScore · C4 scorecard
 

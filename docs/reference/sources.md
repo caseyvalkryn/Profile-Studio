@@ -152,8 +152,8 @@ reference for test-plan structure, not as a primary source.
 
 | Path | What |
 |---|---|
-| `/Users/caseytalbot/Desktop/DroneScore Metric List.md` | Gold standard. Name every measure by its DroneScore ID and name; this is the controlling measure list for Profile Studio. |
+| `/Users/caseytalbot/Desktop/CENTCOM/DroneScore Metric List.md` (moved from the Desktop top level; `docs/reference/dronescore-measures.md` is the copy the app follows) | Gold standard. Name every measure by its DroneScore ID and name; this is the controlling measure list for Profile Studio. |
 | `/Users/caseytalbot/projects/rangeboard/docs/te-compilation/12-jiatf401.md` | JIATF-401 case study notes, compiled from the rangeboard project. |
 | `~/.claude/skills/stat-te-terminology` | Skill enforcing STAT COE / DoD T&E vocabulary. Use for all user-facing T&E wording, per `profile-studio/CLAUDE.md`. |
 
-All three paths verified to exist on this machine.
+All three paths verified to exist on this machine on 2026-11-03.

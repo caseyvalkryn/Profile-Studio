@@ -11,7 +11,12 @@ import {
   sameKeys,
 } from './focus';
 
-const ev = (key: string, id: string, threatKey: string, sensorKey: string | null): AuthoredEvent => ({
+const ev = (
+  key: string,
+  id: string,
+  threatKey: string,
+  sensorKey: string | null,
+): AuthoredEvent => ({
   key,
   id,
   tS: 10,
@@ -25,7 +30,11 @@ function vignette() {
   const v = testVignette();
   const [t0, t1] = v.threats;
   const s0 = v.sensors[0]!;
-  v.events = [ev('ek1', 'e1', t0!.key, s0.key), ev('ek2', 'e2', t1!.key, s0.key), ev('ek3', 'e3', t1!.key, null)];
+  v.events = [
+    ev('ek1', 'e1', t0!.key, s0.key),
+    ev('ek2', 'e2', t1!.key, s0.key),
+    ev('ek3', 'e3', t1!.key, null),
+  ];
   return v;
 }
 
@@ -34,7 +43,13 @@ describe('the Build focus (2026-11-02)', () => {
     const v = vignette();
     const [t0, t1] = v.threats;
     expect(expandFocus(v, [t1!.key])).toEqual([t1!.key, 'ek2', 'ek3']);
-    expect(expandFocus(v, [v.sensors[0]!.key])).toEqual([v.sensors[0]!.key, 'ek1', t0!.key, 'ek2', t1!.key]);
+    expect(expandFocus(v, [v.sensors[0]!.key])).toEqual([
+      v.sensors[0]!.key,
+      'ek1',
+      t0!.key,
+      'ek2',
+      t1!.key,
+    ]);
     expect(expandFocus(v, ['ek1'])).toEqual(['ek1', t0!.key]);
     // a waypoint key or an unknown key is dropped; a key is listed once
     expect(expandFocus(v, [t0!.path[0]!.key, 'nope', t0!.key, 'ek1'])).toEqual([t0!.key, 'ek1']);

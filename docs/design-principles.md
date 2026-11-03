@@ -11,8 +11,8 @@ does, polished and on a sound engine. The denser legacy app (`legacy/index.html`
 of parts, and a part returns only when the planner asks for it.
 
 Amended 2026-10-31 from the artifact study: sections 2, 3, 5, 7 and the new section 8. Amended
-2026-11-01 in lane 10.1 (the opening paragraph, item 3.2 and section 4) and in the handoff of
-the same day (items 1.1, 1.2, 5.8, 7.3 and sections 6 and 8, pruned to the pivot).
+2026-11-01 on the pivot: the opening paragraph, items 1.1, 1.2, 3.2, 5.8 and 7.3, sections 4,
+6 and 8.
 
 ## 1. DroneScore is the standard
 
@@ -108,8 +108,8 @@ controls stay out of the way until you need them.
    point carries its definition. A frame is a card saved at a time (2026-11-01, user request).
    One glyph vocabulary marks the key points on the strip, the board and the notes, and one
    state colour reads the cursor: reached in the text ink, current in the accent, future subtle.
-6. A slice is a card saved over a time range at a rate; it plays as a loop (phase 13). Beats,
-   caption tokens and attachments are deferred. Each returns only when the planner asks for it.
+6. A slice is a card saved over a time range at a rate; it plays as a loop. Beats, caption
+   tokens and attachments are not built. Each returns only when the planner asks for it.
 
 ## Sources
 
