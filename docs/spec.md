@@ -1,7 +1,7 @@
 # Profile Studio specification
 
 Status: current as built. Dated 2026-10-30; amended through 2026-11-03 (`git show
-6a2e658:docs/spec.md` has the last copy with the build phase and lane notes). Read
+735be7f:docs/spec.md` has the last copy with the build phase and lane notes). Read
 `docs/design-principles.md` first. When this spec and a principle disagree, the principle wins
 and this spec is corrected. The word "vignette" in code and in sections written before the
 amendment means the record the UI calls a profile.

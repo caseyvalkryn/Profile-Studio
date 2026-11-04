@@ -1,8 +1,8 @@
 # Decisions on record
 
 Settled by the user. Do not reopen one without the user. Dates are when the user decided.
-The full build history (phases, lanes, reviews) is in git: `git show 6a2e658:docs/plan.md` and
-`git show 6a2e658:reviews/` hold the last copies before the 2026-11-02 prune.
+The full build history (phases, lanes, reviews) is in git: `git show 735be7f:docs/plan.md` and
+`git show 735be7f:reviews/` hold the last copies before the 2026-11-02 prune.
 
 | Decision | Choice | Date |
 | --- | --- | --- |
